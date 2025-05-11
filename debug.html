@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Shooter Game - Debug Mode</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        font-family: 'Arial', sans-serif;
+        background-color: #111;
+        color: #fff;
+      }
+      canvas {
+        display: block;
+      }
+      #app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+      .debug-notice {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+        color: #aaa;
+        text-align: center;
+        opacity: 0.5;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div class="debug-notice">
+        <h2>Debug Mode</h2>
+        <p>Use the controls in the top-left corner to diagnose issues.</p>
+      </div>
+    </div>
+    <script type="module" src="/debug-tool.js"></script>
+  </body>
+</html>

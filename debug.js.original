@@ -1,0 +1,72 @@
+// Debug helper script
+// Add this script to your index.html to capture any errors and log them visibly
+
+// Create error display element
+const errorDisplay = document.createElement('div');
+errorDisplay.style.position = 'fixed';
+errorDisplay.style.top = '10px';
+errorDisplay.style.left = '10px';
+errorDisplay.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+errorDisplay.style.color = 'white';
+errorDisplay.style.padding = '10px';
+errorDisplay.style.borderRadius = '5px';
+errorDisplay.style.fontFamily = 'monospace';
+errorDisplay.style.zIndex = '9999';
+errorDisplay.style.maxWidth = '80%';
+errorDisplay.style.maxHeight = '80%';
+errorDisplay.style.overflow = 'auto';
+
+// Function to log messages to the display
+function logToDisplay(message, type = 'error') {
+  const logEntry = document.createElement('div');
+  logEntry.style.marginBottom = '5px';
+  logEntry.style.borderBottom = '1px solid rgba(255, 255, 255, 0.3)';
+  logEntry.style.paddingBottom = '5px';
+  logEntry.style.color =
+    type === 'error' ? '#ff9999' : type === 'warn' ? '#ffff99' : '#99ff99';
+
+  logEntry.textContent = `${new Date().toLocaleTimeString()} [${type}]: ${message}`;
+  errorDisplay.appendChild(logEntry);
+}
+
+// Capture uncaught errors
+window.addEventListener('error', function (event) {
+  logToDisplay(
+    `${event.message} at ${event.filename}:${event.lineno}:${event.colno}`
+  );
+  return false; // Let the browser handle the error too
+});
+
+// Capture unhandled promise rejections
+window.addEventListener('unhandledrejection', function (event) {
+  logToDisplay(`Unhandled Promise Rejection: ${event.reason}`);
+  return false;
+});
+
+// Override console methods to display in our UI
+const originalConsole = {
+  log: console.log,
+  warn: console.warn,
+  error: console.error,
+};
+
+console.log = function (...args) {
+  logToDisplay(args.join(' '), 'log');
+  originalConsole.log.apply(console, args);
+};
+
+console.warn = function (...args) {
+  logToDisplay(args.join(' '), 'warn');
+  originalConsole.warn.apply(console, args);
+};
+
+console.error = function (...args) {
+  logToDisplay(args.join(' '), 'error');
+  originalConsole.error.apply(console, args);
+};
+
+// Add to DOM when loaded
+document.addEventListener('DOMContentLoaded', function () {
+  document.body.appendChild(errorDisplay);
+  console.log('Debug logger initialized');
+});
