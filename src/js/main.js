@@ -226,7 +226,6 @@ export default class Game {
     wideLight.target.position.set(0, 0, -1);
     this.camera.add(wideLight.target);
   }
-
   startGame() {
     this.gameState.isGameStarted = true;
     this.uiManager.hideStartScreen();
@@ -234,18 +233,45 @@ export default class Game {
     // Initialize audio on first interaction
     this.audioManager.init();
 
-    // Play background music
-    this.audioManager.playSound('backgroundMusic', {
-      isMusic: true,
-      loop: true,
-      volume: 0.4,
-    });
+    console.log('Starting game audio...');
 
-    // Play engine hum sound
-    this.audioManager.playSound('engine', {
-      loop: true,
-      volume: 0.2,
-    });
+    // Make sure audio context is running - browsers often suspend it until user interaction
+    if (
+      this.audioManager.context &&
+      this.audioManager.context.state === 'suspended'
+    ) {
+      this.audioManager.context.resume().then(() => {
+        console.log('Audio context successfully resumed');
+      });
+    }
+
+    // Play background music with a slight delay to ensure audio context is running
+    setTimeout(() => {
+      console.log('Trying to play background music...');
+      const musicSource = this.audioManager.playSound('backgroundMusic', {
+        isMusic: true,
+        loop: true,
+        volume: 0.4,
+      });
+
+      if (musicSource) {
+        console.log('Background music started successfully');
+      } else {
+        console.warn('Failed to start background music');
+      }
+
+      // Play engine hum sound
+      const engineSource = this.audioManager.playSound('engine', {
+        loop: true,
+        volume: 0.2,
+      });
+
+      if (engineSource) {
+        console.log('Engine sound started successfully');
+      } else {
+        console.warn('Failed to start engine sound');
+      }
+    }, 100); // Small delay to ensure audio context is properly initialized
 
     // Run diagnostics after scene is initialized
     console.log('Running scene diagnostics in startGame...');

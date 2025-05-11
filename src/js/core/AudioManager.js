@@ -94,34 +94,272 @@ export default class AudioManager {
       .catch((e) => {
         console.warn(`Error loading sound ${id}: ${e.message}`);
 
-        // Create a silent buffer as fallback
-        if (this.context) {
-          try {
-            // Create a 1 second empty/silent buffer
-            const sampleRate = this.context.sampleRate;
-            const emptyBuffer = this.context.createBuffer(
-              2,
-              sampleRate,
-              sampleRate
-            );
-
-            // Set the sound with this empty buffer so playback won't fail
-            this.sounds[id] = {
-              buffer: emptyBuffer,
-              playing: new Set(),
-              isLoading: false,
-              isSilent: true, // Flag to know this is a silent fallback
-            };
-
-            console.log(`Created silent fallback for sound: ${id}`);
-          } catch (fallbackError) {
-            console.error(
-              `Failed to create fallback sound for ${id}:`,
-              fallbackError
-            );
-          }
-        }
+        // Create a synthesized sound as fallback instead of silent buffer
+        this.createSynthesizedSound(id);
       });
+  }
+
+  // Create synthesized sounds based on sound type
+  createSynthesizedSound(id) {
+    if (!this.context) {
+      console.warn(
+        'Cannot create synthesized sound: audio context not initialized'
+      );
+      return;
+    }
+
+    console.log(`Creating synthesized fallback sound for: ${id}`);
+    const ctx = this.context;
+    const duration = 1; // Default duration
+    const sampleRate = ctx.sampleRate;
+    let buffer;
+
+    switch (id) {
+      case 'shoot':
+        buffer = this.createSynthesizedShootSound();
+        break;
+      case 'explosion':
+        buffer = this.createSynthesizedExplosionSound();
+        break;
+      case 'powerup':
+        buffer = this.createSynthesizedPowerupSound();
+        break;
+      case 'engine':
+        buffer = this.createSynthesizedEngineSound();
+        break;
+      case 'backgroundMusic':
+        buffer = this.createSynthesizedBackgroundMusic();
+        break;
+      case 'playerDamage':
+        buffer = this.createSynthesizedDamageSound();
+        break;
+      case 'menuSelect':
+        buffer = this.createSynthesizedMenuSound();
+        break;
+      case 'healSound':
+        buffer = this.createSynthesizedHealSound();
+        break;
+      case 'gameOver':
+        buffer = this.createSynthesizedGameOverSound();
+        break;
+      default:
+        // Create a generic beep sound for any unhandled sound types
+        buffer = this.createGenericBeepSound();
+        break;
+    }
+
+    this.sounds[id] = {
+      buffer: buffer,
+      playing: new Set(),
+      isLoading: false,
+      isSynthesized: true, // Flag that this is a synthesized fallback
+    };
+  }
+
+  // Create generic beep sound
+  createGenericBeepSound() {
+    const duration = 0.3;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      data[i] =
+        0.5 * Math.sin(2 * Math.PI * 440 * t) * Math.max(0, 1 - t / duration);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized laser shoot sound
+  createSynthesizedShootSound() {
+    const duration = 0.3;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const frequency = 1000 - 800 * t; // Descending pitch
+      data[i] =
+        0.5 * Math.sin(2 * Math.PI * frequency * t) * (1 - t / duration);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized explosion sound
+  createSynthesizedExplosionSound() {
+    const duration = 0.8;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const envelope =
+        t < 0.1 ? t / 0.1 : Math.max(0, 1 - (t - 0.1) / (duration - 0.1));
+      data[i] =
+        envelope * (0.5 * Math.random() + 0.5 * Math.sin(2 * Math.PI * 60 * t));
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized powerup sound
+  createSynthesizedPowerupSound() {
+    const duration = 0.5;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const frequency = 440 + 660 * t; // Ascending pitch
+      data[i] = 0.3 * Math.sin(2 * Math.PI * frequency * t);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized engine sound
+  createSynthesizedEngineSound() {
+    const duration = 2.0;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      data[i] =
+        0.2 * Math.sin(2 * Math.PI * 120 * t) +
+        0.1 * Math.sin(2 * Math.PI * 240 * t) +
+        0.05 * Math.sin(2 * Math.PI * 480 * t) +
+        0.02 * Math.random(); // Add a bit of noise
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized background music
+  createSynthesizedBackgroundMusic() {
+    const duration = 30; // 30 seconds of music that can loop
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    // Use pentatonic scale for sci-fi feel
+    const notes = [220, 261.63, 329.63, 392, 440];
+    const baseFreq = notes[0];
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const noteIndex = Math.floor(t * 0.25) % 16;
+      const octave = Math.floor(noteIndex / 5);
+      const note = notes[noteIndex % 5];
+      const freq = note * (1 + octave * 0.5);
+
+      // Create a drone bass
+      const bass = 0.15 * Math.sin(2 * Math.PI * baseFreq * 0.5 * t);
+
+      // Create a melody
+      const melody =
+        noteIndex % 8 < 7 ? 0.1 * Math.sin(2 * Math.PI * freq * t) : 0;
+
+      // Add some atmosphere
+      const atmosphere =
+        0.05 * Math.sin(2 * Math.PI * baseFreq * 2 * t) * Math.sin(0.5 * t);
+
+      data[i] = bass + melody + atmosphere;
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized player damage sound
+  createSynthesizedDamageSound() {
+    const duration = 0.4;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const noise = Math.random() * 0.4;
+      const tone = 0.3 * Math.sin(2 * Math.PI * 120 * t);
+      data[i] = (noise + tone) * Math.max(0, 1 - t / duration);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized menu select sound
+  createSynthesizedMenuSound() {
+    const duration = 0.2;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const frequency = 440 + t * 440;
+      data[i] =
+        0.3 * Math.sin(2 * Math.PI * frequency * t) * (1 - t / duration);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized heal sound
+  createSynthesizedHealSound() {
+    const duration = 0.6;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const frequency1 = 440 + t * 440;
+      const frequency2 = 660 + t * 440;
+      data[i] =
+        (0.2 * Math.sin(2 * Math.PI * frequency1 * t) +
+          0.2 * Math.sin(2 * Math.PI * frequency2 * t)) *
+        Math.pow(1 - t / duration, 0.5);
+    }
+
+    return buffer;
+  }
+
+  // Create synthesized game over sound
+  createSynthesizedGameOverSound() {
+    const duration = 2.0;
+    const ctx = this.context;
+    const sampleRate = ctx.sampleRate;
+    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+      const t = i / sampleRate;
+      const frequency = 440 - t * 200;
+      const slowPulse = Math.sin(2 * Math.PI * 2 * t);
+      data[i] =
+        0.4 *
+        slowPulse *
+        Math.sin(2 * Math.PI * frequency * t) *
+        Math.pow(1 - t / duration, 0.5);
+    }
+
+    return buffer;
   }
   // Play a sound with various options
   playSound(id, options = {}) {
@@ -158,12 +396,10 @@ export default class AudioManager {
         console.warn(`Sound ${id} failed to load, can't play`);
       }
       return null;
-    }
-
-    // If this is a silent fallback sound and it's an effect (not music),
-    // we can lower the volume to avoid confusion
-    if (this.sounds[id].isSilent && !settings.isMusic) {
-      settings.volume *= 0.1; // Make fallback sounds quieter
+    } // If this is a synthesized fallback sound and it's an effect (not music),
+    // we can adjust the volume
+    if (this.sounds[id].isSynthesized && !settings.isMusic) {
+      settings.volume *= 0.7; // Adjust synthesized sounds volume
     }
 
     // Create source
