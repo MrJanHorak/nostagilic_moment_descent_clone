@@ -4,14 +4,20 @@ A 3D zero-gravity shooter game in the style of Descent, built with JavaScript an
 
 ![Game Screenshot](public/screenshot.png)
 
+## Play Now
+
+**[Play the game online here](https://aishootergame.netlify.app/)**
+
 ## Table of Contents
 
 - [Game Overview](#game-overview)
 - [Technologies Used](#technologies-used)
 - [Features](#features)
+- [Game Modes](#game-modes)
 - [Getting Started](#getting-started)
 - [Controls](#controls)
 - [Code Structure](#code-structure)
+- [Extending the Game](#extending-the-game)
 - [Technical Details](#technical-details)
 - [Future Enhancements](#future-enhancements)
 - [Credits and Acknowledgments](#credits-and-acknowledgments)
@@ -23,10 +29,10 @@ DESCENT is a first-person 3D shooter with zero-gravity movement inspired by the 
 ### Game Mechanics
 
 - **Zero Gravity Movement**: Full 6 degrees of freedom movement with your spaceship
-- **Procedurally Generated Cave System**: Endless tunnel exploration
+- **Multiple Game Modes**: Choose between level-based play or endless procedural generation
 - **Dynamic Lighting**: Advanced lighting system that brings the cave environment to life
-- **Enemy AI**: Multiple enemy types with different behaviors
-- **Power-up System**: Collect power-ups that enhance your ship's capabilities
+- **Enemy AI**: Multiple enemy types with different behaviors and attack patterns
+- **Power-up System**: Collect various power-ups that enhance your ship's capabilities
 - **Scoring System**: Earn points by defeating enemies and surviving longer
 
 ## Technologies Used
@@ -35,17 +41,42 @@ DESCENT is a first-person 3D shooter with zero-gravity movement inspired by the 
 - **Three.js**: 3D rendering engine
 - **WebGL**: GPU-accelerated rendering
 - **Vite**: Build tool and development server
-- **Web Audio API**: Advanced audio management
+- **Web Audio API**: Advanced audio management with spatial effects
+- **Netlify**: Deployment and hosting platform
 
 ## Features
 
-- Responsive 3D graphics
-- Dynamic lighting effects
+- Responsive 3D graphics with dynamic lighting
 - Particle systems for explosions and environmental effects
 - Spatial audio for immersive gameplay
-- Power-up collection and effects system
-- Enemy AI with different behavior patterns
-- Collision detection and physics
+- Multiple enemy types with unique behaviors
+- Various power-up types with distinct effects:
+  - Health restoration
+  - Speed boosts
+  - Weapon upgrades
+- Level progression system with increasing difficulty
+- Endless mode with procedurally generated content
+- Collision detection and physics system
+- Performance optimizations for smooth gameplay
+
+## Game Modes
+
+### Level-Based Mode
+
+- Multiple handcrafted levels with unique layouts:
+  - **Level 1**: Cave Introduction - A beginner-friendly level to learn the controls
+  - **Level 2**: Advanced Cave Network - More challenging with varied obstacles
+  - **Example Level**: Demonstration level showcasing all game features
+- Predefined enemy and power-up placements
+- Each level has specific obstacle patterns and lighting themes
+- Progression through increasingly difficult challenges
+
+### Endless Mode
+
+- Procedurally generated tunnel segments that continue infinitely
+- Random obstacle placement for endless variety
+- Dynamically spawning enemies and power-ups
+- Gradually increasing difficulty
 
 ## Getting Started
 
@@ -85,6 +116,8 @@ DESCENT is a first-person 3D shooter with zero-gravity movement inspired by the 
 - **Mouse**: Look around
 - **Q/E**: Roll left/right
 - **Left Click**: Shoot
+- **ESC**: Pause game
+- **R**: Restart level (after game over)
 
 ## Code Structure
 
@@ -97,7 +130,13 @@ src/
 │   │   ├── AudioManager.js
 │   │   ├── GameState.js
 │   │   ├── InputManager.js
-│   │   └── LevelManager.js
+│   │   ├── LevelManager.js
+│   │   └── levels/     # Level blueprints
+│   │       ├── LevelBlueprint.js
+│   │       ├── SegmentTypes.js
+│   │       ├── Level1.js
+│   │       ├── Level2.js
+│   │       └── ExampleLevel.js
 │   ├── entities/       # Game objects
 │   │   ├── EnemyManager.js
 │   │   ├── PowerUpManager.js
@@ -107,43 +146,68 @@ src/
 │   │   └── UIManager.js
 │   ├── utils/          # Utility functions
 │   │   ├── debugUtils.js
-│   │   └── effectsUtils.js
+│   │   ├── effectsUtils.js
+│   │   └── collisionUtils.js
 │   └── main.js         # Main game initialization
 ├── style.css
 └── index.html
 ```
 
+## Extending the Game
+
+The game is designed to be easily extendable. Check the [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for detailed instructions on:
+
+- Adding new enemy types
+- Creating new power-ups
+- Implementing additional weapons
+- Building custom level features
+- Extending the UI
+
 ## Technical Details
 
 ### Renderer
 
-The game uses Three.js WebGL renderer for high-performance 3D graphics.
+The game uses Three.js WebGL renderer for high-performance 3D graphics with dynamic lighting and shadow effects.
+
+### Level System
+
+- Blueprint-based level design system
+- Different segment types (straight, curved, boss rooms)
+- Various obstacle patterns
+- Custom light colors for atmospheric effects
+- Segment streaming for performance optimization
 
 ### Physics
 
-Custom collision detection between projectiles, enemies, and the environment.
+Custom collision detection between projectiles, enemies, and environment obstacles.
 
 ### Audio
 
-WebAudio API for 3D spatial audio effects and dynamic sound management.
+WebAudio API for 3D spatial audio effects and dynamic sound management with:
+
+- Positional audio for enemies and effects
+- Synthesized sound fallbacks with option for custom audio files
+- Adaptive audio based on game state
 
 ### Performance Optimization
 
 - Object pooling for projectiles
 - Level streaming (only rendering visible tunnel segments)
 - Distance-based enemy activation
+- Optimized collision detection
 
 ## Future Enhancements
 
 - Boss encounters
-- Weapon upgrade system
-- Additional power-ups
-- Level objectives
+- Expanded weapon upgrade system
+- Additional power-ups with unique effects
+- Level objectives and mission system
 - Multiplayer mode
 - Mobile touch controls
+- VR support
 
 ## Credits and Acknowledgments
 
 - Three.js community for the excellent 3D library
-- Sound effects from [source]
+- Sound effects created with Web Audio API
 - Inspired by the classic game Descent
