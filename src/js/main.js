@@ -59,7 +59,10 @@ export default class Game {
     this.lastEnemySpawnTime = 0;
     this.enemySpawnInterval = 5000; // ms between enemy spawns
     this.lastPowerupSpawnTime = 0;
-    this.powerupSpawnInterval = 15000; // ms between powerups
+
+    // Add level selection properties
+    this.currentLevelIndex = 0;
+    this.isEndlessMode = true;
   }
 
   async init() {
@@ -80,14 +83,14 @@ export default class Game {
       console.log('Renderer initialized');
 
       // Set up scene protection (prevent circular references)
-      setupSceneProtection(this.scene, this.camera);
-
-      // Initialize managers
-      this.uiManager = new UIManager(this.gameState, this.audioManager);
+      setupSceneProtection(this.scene, this.camera); // Initialize managers      this.uiManager = new UIManager(this.gameState, this.audioManager);
+      this.uiManager = new UIManager();
+      this.uiManager.game = this;
       this.inputManager = new InputManager(
         this.camera,
         null,
-        this.gameState
+        this.gameState,
+        this.uiManager
       ).init(this.canvas);
       this.levelManager = new LevelManager(this.scene, this.camera);
       this.projectileManager = new ProjectileManager(
@@ -100,14 +103,16 @@ export default class Game {
         this.scene,
         this.camera,
         this.gameState,
-        this.audioManager
+        this.audioManager,
+        this.levelManager
       );
       this.powerUpManager = new PowerUpManager(
         this.scene,
         this.camera,
         this.gameState,
         this.audioManager,
-        this.uiManager
+        this.uiManager,
+        this.levelManager
       );
 
       // Connect the input manager with the projectile manager
@@ -129,11 +134,17 @@ export default class Game {
       this.spaceship.attachToCamera(this.camera);
 
       // Initialize cave dust particles
-      this.caveParticles = createCaveParticles(this.scene);
-
-      // Initialize level
+      this.caveParticles = createCaveParticles(this.scene); // Initialize level manager first
       await this.levelManager.initMaterials();
-      this.levelManager.initLevel();
+
+      // Select mode: endless or level-based
+      if (this.isEndlessMode) {
+        this.levelManager.isEndless = true;
+        this.levelManager.initLevel();
+      } else {
+        this.levelManager.isEndless = false;
+        this.levelManager.loadLevel(this.currentLevelIndex);
+      }
 
       // Set enemy manager to use level segments
       this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
@@ -320,13 +331,12 @@ export default class Game {
           console.warn('Error in animation function:', error);
           this.activeAnimations.splice(i, 1);
         }
-      }
-
-      // Skip most updates if game not started yet
+      } // Skip most updates if game not started yet or is paused
       if (
         this.gameState &&
         this.gameState.isGameStarted &&
-        !this.gameState.isGameOver
+        !this.gameState.isGameOver &&
+        !this.gameState.isPaused
       ) {
         try {
           // Update player movement
@@ -369,41 +379,54 @@ export default class Game {
           if (this.caveParticles) {
             updateCaveParticles(this.caveParticles, delta);
           }
-
-          // Spawn enemies periodically
           const currentTime = Date.now();
-          if (
-            this.lastEnemySpawnTime !== undefined &&
-            this.enemySpawnInterval !== undefined &&
-            currentTime - this.lastEnemySpawnTime > this.enemySpawnInterval
-          ) {
-            if (this.enemyManager && this.levelManager) {
-              const segmentLength = this.levelManager.getSegmentLength();
-              if (segmentLength !== undefined) {
-                this.enemyManager.spawnEnemiesInTunnel(segmentLength);
+
+          // Use level blueprint enemy spawns or random spawns depending on mode
+          if (this.isEndlessMode) {
+            // Spawn enemies periodically in endless mode
+            if (
+              this.lastEnemySpawnTime !== undefined &&
+              this.enemySpawnInterval !== undefined &&
+              currentTime - this.lastEnemySpawnTime > this.enemySpawnInterval
+            ) {
+              if (this.enemyManager && this.levelManager) {
+                const segmentLength = this.levelManager.getSegmentLength();
+                if (segmentLength !== undefined) {
+                  this.enemyManager.spawnEnemiesInTunnel(segmentLength);
+                }
               }
+
+              this.lastEnemySpawnTime = currentTime;
+
+              // Gradually decrease spawn interval (increase difficulty)
+              this.enemySpawnInterval = Math.max(
+                2000,
+                this.enemySpawnInterval - 50
+              );
             }
 
-            this.lastEnemySpawnTime = currentTime;
+            // Spawn powerups periodically in endless mode
+            if (
+              this.lastPowerupSpawnTime !== undefined &&
+              this.powerupSpawnInterval !== undefined &&
+              currentTime - this.lastPowerupSpawnTime >
+                this.powerupSpawnInterval
+            ) {
+              if (this.powerUpManager) {
+                this.powerUpManager.spawnRandomPowerup();
+              }
 
-            // Gradually decrease spawn interval (increase difficulty)
-            this.enemySpawnInterval = Math.max(
-              2000,
-              this.enemySpawnInterval - 50
-            );
-          }
+              this.lastPowerupSpawnTime = currentTime;
+            }
+          } else {
+            // Use predefined spawn points in level-based mode
+            if (this.enemyManager) {
+              this.enemyManager.spawnPredefinedEnemies();
+            }
 
-          // Spawn powerups periodically
-          if (
-            this.lastPowerupSpawnTime !== undefined &&
-            this.powerupSpawnInterval !== undefined &&
-            currentTime - this.lastPowerupSpawnTime > this.powerupSpawnInterval
-          ) {
             if (this.powerUpManager) {
-              this.powerUpManager.spawnRandomPowerup();
+              this.powerUpManager.spawnPredefinedPowerUps();
             }
-
-            this.lastPowerupSpawnTime = currentTime;
           }
 
           // Update HUD
@@ -422,5 +445,96 @@ export default class Game {
     } catch (error) {
       console.error('Critical error in animation loop:', error);
     }
+  }
+
+  // Select a specific level
+  selectLevel(levelIndex) {
+    this.currentLevelIndex = levelIndex;
+    this.isEndlessMode = false;
+
+    if (this.levelManager) {
+      this.levelManager.isEndless = false;
+      this.levelManager.loadLevel(levelIndex);
+    }
+  }
+
+  // Select endless mode
+  selectEndlessMode() {
+    this.isEndlessMode = true;
+
+    if (this.levelManager) {
+      this.levelManager.isEndless = true;
+      this.levelManager.clearLevel();
+      this.levelManager.initEndlessLevel();
+    }
+  }
+
+  // Restart current level
+  restartLevel() {
+    if (this.isEndlessMode) {
+      if (this.levelManager) {
+        this.levelManager.clearLevel();
+        this.levelManager.initEndlessLevel();
+      }
+    } else {
+      if (this.levelManager) {
+        this.levelManager.loadLevel(this.currentLevelIndex);
+      }
+    }
+
+    // Reset player position and state
+    this.camera.position.set(0, 0, 0);
+    this.camera.rotation.set(0, 0, 0);
+    this.gameState.playerHealth = this.gameState.maxPlayerHealth;
+
+    // Update HUD
+    if (this.uiManager) {
+      this.uiManager.updateHUD();
+    }
+  }
+
+  // Method to handle game restart from game over state
+  restartGame() {
+    // Reset game state
+    this.gameState.isGameOver = false;
+    this.gameState.score = 0;
+    this.gameState.playerHealth = this.gameState.maxPlayerHealth;
+
+    // Hide game over display
+    if (this.uiManager && this.uiManager.hudElements.gameOverDisplay) {
+      this.uiManager.hudElements.gameOverDisplay.style.display = 'none';
+    }
+
+    // Reset player position
+    if (this.camera) {
+      this.camera.position.set(0, 0, 0);
+      this.camera.rotation.set(0, 0, 0);
+    }
+
+    // Restart current level
+    this.restartLevel();
+
+    // Update the UI
+    if (this.uiManager) {
+      this.uiManager.updateHUD();
+    }
+
+    // Show message
+    this.uiManager.showMessage('Game Restarted!', 2000, '#00ff00');
+  }
+
+  // Method to show level selection screen
+  showLevelSelection() {
+    // Hide game over or start screen if visible
+    if (this.uiManager.startScreen) {
+      this.uiManager.hideStartScreen();
+    }
+
+    if (this.uiManager.hudElements.gameOverDisplay) {
+      this.uiManager.hudElements.gameOverDisplay.style.display = 'none';
+    }
+
+    // Show level selection screen
+    this.uiManager.createLevelSelect(this);
   }
 }

@@ -111,6 +111,10 @@ class UIManager {
       finalScore.style.fontSize = '24px';
       finalScore.style.marginBottom = '30px';
       gameOverDisplay.appendChild(finalScore);
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.display = 'flex';
+      buttonContainer.style.gap = '20px';
+      buttonContainer.style.justifyContent = 'center';
 
       const restartButton = document.createElement('button');
       restartButton.textContent = 'RESTART';
@@ -121,8 +125,32 @@ class UIManager {
       restartButton.style.border = 'none';
       restartButton.style.borderRadius = '5px';
       restartButton.style.cursor = 'pointer';
-      restartButton.onclick = () => window.location.reload();
-      gameOverDisplay.appendChild(restartButton);
+      restartButton.onclick = () => {
+        if (this.game && typeof this.game.restartGame === 'function') {
+          this.game.restartGame();
+        } else {
+          window.location.reload();
+        }
+      };
+      buttonContainer.appendChild(restartButton);
+
+      const levelSelectButton = document.createElement('button');
+      levelSelectButton.textContent = 'SELECT LEVEL';
+      levelSelectButton.style.padding = '10px 30px';
+      levelSelectButton.style.fontSize = '20px';
+      levelSelectButton.style.background = '#0066aa';
+      levelSelectButton.style.color = '#fff';
+      levelSelectButton.style.border = 'none';
+      levelSelectButton.style.borderRadius = '5px';
+      levelSelectButton.style.cursor = 'pointer';
+      levelSelectButton.onclick = () => {
+        if (this.game && typeof this.game.showLevelSelection === 'function') {
+          this.game.showLevelSelection();
+        }
+      };
+      buttonContainer.appendChild(levelSelectButton);
+
+      gameOverDisplay.appendChild(buttonContainer);
 
       document.body.appendChild(gameOverDisplay);
 
@@ -161,22 +189,250 @@ class UIManager {
           <p>Space - Move up</p>
           <p>Shift/Ctrl - Move down</p>
         </div>
-        <div id="start-game-btn" style="
-          font-size: 24px;
-          cursor: pointer;
-          background-color: #00ff00; 
-          color: #000;
-          padding: 10px 30px;
-          border-radius: 5px;
-        ">START GAME</div>
+        <div style="display: flex; gap: 20px;">
+          <div id="start-game-btn" style="
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #00ff00; 
+            color: #000;
+            padding: 10px 30px;
+            border-radius: 5px;
+          ">START ENDLESS MODE</div>
+          
+          <div id="select-level-btn" style="
+            font-size: 24px;
+            cursor: pointer;
+            background-color: #00aaff; 
+            color: #000;
+            padding: 10px 30px;
+            border-radius: 5px;
+          ">SELECT LEVEL</div>
+        </div>
       `;
       document.body.appendChild(startScreen);
       this.startScreen = startScreen;
+
+      // Add event listener for the level selection button
+      const selectLevelBtn = document.getElementById('select-level-btn');
+      if (selectLevelBtn) {
+        selectLevelBtn.addEventListener('click', () => {
+          this.hideStartScreen();
+          this.createLevelSelect(this.game);
+        });
+      }
 
       return document.getElementById('start-game-btn');
     } catch (error) {
       console.error('Error creating start screen:', error);
       return null;
+    }
+  }
+
+  // Create level selection screen
+  createLevelSelect(game) {
+    this.game = game;
+
+    const menuContainer = document.createElement('div');
+    menuContainer.className = 'level-select';
+    menuContainer.style.position = 'absolute';
+    menuContainer.style.top = '50%';
+    menuContainer.style.left = '50%';
+    menuContainer.style.transform = 'translate(-50%, -50%)';
+    menuContainer.style.background = 'rgba(0, 0, 0, 0.8)';
+    menuContainer.style.padding = '20px';
+    menuContainer.style.borderRadius = '10px';
+    menuContainer.style.textAlign = 'center';
+    menuContainer.style.minWidth = '300px';
+
+    const title = document.createElement('h1');
+    title.textContent = 'SELECT LEVEL';
+    title.style.color = '#fff';
+    title.style.marginBottom = '20px';
+    menuContainer.appendChild(title);
+
+    // Get levels from the level manager
+    const levels = this.game.levelManager.levels;
+
+    levels.forEach((level, index) => {
+      const levelBtn = document.createElement('button');
+      levelBtn.textContent = `Level ${level.id}: ${level.name}`;
+      levelBtn.className = 'level-btn';
+      levelBtn.style.display = 'block';
+      levelBtn.style.margin = '10px auto';
+      levelBtn.style.padding = '10px 20px';
+      levelBtn.style.background = '#4466aa';
+      levelBtn.style.color = 'white';
+      levelBtn.style.border = 'none';
+      levelBtn.style.borderRadius = '5px';
+      levelBtn.style.cursor = 'pointer';
+
+      levelBtn.addEventListener('click', () => {
+        this.game.selectLevel(index);
+        menuContainer.remove();
+        this.game.startGame();
+      });
+
+      menuContainer.appendChild(levelBtn);
+    });
+
+    const endlessBtn = document.createElement('button');
+    endlessBtn.textContent = 'Endless Mode';
+    endlessBtn.className = 'endless-btn';
+    endlessBtn.style.display = 'block';
+    endlessBtn.style.margin = '20px auto 10px';
+    endlessBtn.style.padding = '10px 20px';
+    endlessBtn.style.background = '#aa4466';
+    endlessBtn.style.color = 'white';
+    endlessBtn.style.border = 'none';
+    endlessBtn.style.borderRadius = '5px';
+    endlessBtn.style.cursor = 'pointer';
+
+    endlessBtn.addEventListener('click', () => {
+      this.game.selectEndlessMode();
+      menuContainer.remove();
+      this.game.startGame();
+    });
+
+    menuContainer.appendChild(endlessBtn);
+
+    document.body.appendChild(menuContainer);
+    this.levelSelectMenu = menuContainer;
+
+    return menuContainer;
+  }
+
+  hideLevelSelect() {
+    if (this.levelSelectMenu) {
+      this.levelSelectMenu.style.display = 'none';
+    }
+  }
+
+  // Create pause menu
+  createPauseMenu() {
+    if (this.pauseMenu) {
+      this.togglePauseMenu();
+      return;
+    }
+
+    const pauseMenu = document.createElement('div');
+    pauseMenu.className = 'pause-menu';
+    pauseMenu.style.position = 'absolute';
+    pauseMenu.style.top = '50%';
+    pauseMenu.style.left = '50%';
+    pauseMenu.style.transform = 'translate(-50%, -50%)';
+    pauseMenu.style.background = 'rgba(0, 0, 0, 0.8)';
+    pauseMenu.style.padding = '20px';
+    pauseMenu.style.borderRadius = '10px';
+    pauseMenu.style.textAlign = 'center';
+    pauseMenu.style.minWidth = '300px';
+    pauseMenu.style.zIndex = '500';
+
+    const title = document.createElement('h2');
+    title.textContent = 'GAME PAUSED';
+    title.style.color = '#fff';
+    title.style.marginBottom = '20px';
+    pauseMenu.appendChild(title);
+
+    // Continue button
+    const continueBtn = document.createElement('button');
+    continueBtn.textContent = 'Continue';
+    continueBtn.style.display = 'block';
+    continueBtn.style.margin = '10px auto';
+    continueBtn.style.padding = '10px 20px';
+    continueBtn.style.background = '#00aa00';
+    continueBtn.style.color = 'white';
+    continueBtn.style.border = 'none';
+    continueBtn.style.borderRadius = '5px';
+    continueBtn.style.cursor = 'pointer';
+    continueBtn.style.width = '200px';
+    continueBtn.onclick = () => this.togglePauseMenu();
+    pauseMenu.appendChild(continueBtn);
+
+    // Select level button
+    const selectLevelBtn = document.createElement('button');
+    selectLevelBtn.textContent = 'Select Level';
+    selectLevelBtn.style.display = 'block';
+    selectLevelBtn.style.margin = '10px auto';
+    selectLevelBtn.style.padding = '10px 20px';
+    selectLevelBtn.style.background = '#0066aa';
+    selectLevelBtn.style.color = 'white';
+    selectLevelBtn.style.border = 'none';
+    selectLevelBtn.style.borderRadius = '5px';
+    selectLevelBtn.style.cursor = 'pointer';
+    selectLevelBtn.style.width = '200px';
+    selectLevelBtn.onclick = () => {
+      this.togglePauseMenu();
+      if (this.game) {
+        this.game.showLevelSelection();
+      }
+    };
+    pauseMenu.appendChild(selectLevelBtn);
+
+    // Restart button
+    const restartBtn = document.createElement('button');
+    restartBtn.textContent = 'Restart Level';
+    restartBtn.style.display = 'block';
+    restartBtn.style.margin = '10px auto';
+    restartBtn.style.padding = '10px 20px';
+    restartBtn.style.background = '#aa6600';
+    restartBtn.style.color = 'white';
+    restartBtn.style.border = 'none';
+    restartBtn.style.borderRadius = '5px';
+    restartBtn.style.cursor = 'pointer';
+    restartBtn.style.width = '200px';
+    restartBtn.onclick = () => {
+      this.togglePauseMenu();
+      if (this.game) {
+        this.game.restartLevel();
+      }
+    };
+    pauseMenu.appendChild(restartBtn);
+
+    // Quit to menu button
+    const quitBtn = document.createElement('button');
+    quitBtn.textContent = 'Quit to Menu';
+    quitBtn.style.display = 'block';
+    quitBtn.style.margin = '10px auto';
+    quitBtn.style.padding = '10px 20px';
+    quitBtn.style.background = '#aa0000';
+    quitBtn.style.color = 'white';
+    quitBtn.style.border = 'none';
+    quitBtn.style.borderRadius = '5px';
+    quitBtn.style.cursor = 'pointer';
+    quitBtn.style.width = '200px';
+    quitBtn.onclick = () => {
+      window.location.reload();
+    };
+    pauseMenu.appendChild(quitBtn);
+
+    document.body.appendChild(pauseMenu);
+    this.pauseMenu = pauseMenu;
+
+    // Pause the game
+    if (this.game) {
+      this.game.gameState.isPaused = true;
+    }
+
+    return pauseMenu;
+  }
+
+  // Toggle pause menu visibility
+  togglePauseMenu() {
+    if (!this.pauseMenu) {
+      this.createPauseMenu();
+      return;
+    }
+
+    if (this.pauseMenu.style.display === 'none') {
+      this.pauseMenu.style.display = 'block';
+      if (this.game) {
+        this.game.gameState.isPaused = true;
+      }
+    } else {
+      this.pauseMenu.style.display = 'none';
+      if (this.game) {
+        this.game.gameState.isPaused = false;
+      }
     }
   }
 

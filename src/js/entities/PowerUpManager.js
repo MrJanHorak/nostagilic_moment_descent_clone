@@ -59,12 +59,20 @@ export const powerupTypes = [
 ];
 
 class PowerUpManager {
-  constructor(scene, camera, gameState, audioManager, uiManager) {
+  constructor(
+    scene,
+    camera,
+    gameState,
+    audioManager,
+    uiManager,
+    levelManager = null
+  ) {
     this.scene = scene;
     this.camera = camera;
     this.gameState = gameState;
     this.audioManager = audioManager;
     this.uiManager = uiManager;
+    this.levelManager = levelManager; // Add this
     this.powerups = [];
   }
 
@@ -261,6 +269,51 @@ class PowerUpManager {
     position.y += (Math.random() - 0.5) * 4;
 
     return this.spawnPowerup(position);
+  }
+
+  // Spawn predefined power-ups from level blueprint
+  spawnPredefinedPowerUps() {
+    if (!this.levelManager || !this.levelManager.currentLevel) return;
+
+    const level = this.levelManager.currentLevel;
+
+    for (const spawnPoint of level.powerupSpawns) {
+      // Check if power-up should be visible now (based on player position)
+      const distanceToPlayer = spawnPoint.position.distanceTo(
+        this.camera.position
+      );
+
+      // Only spawn if within reasonable distance and not already spawned
+      if (distanceToPlayer < 40 && distanceToPlayer > 5) {
+        // Check if this power-up was already spawned (using position as identifier)
+        const alreadySpawned = this.powerups.some((powerup) => {
+          return (
+            powerup.userData.spawnPosition &&
+            powerup.userData.spawnPosition.distanceTo(spawnPoint.position) < 1
+          );
+        });
+
+        if (!alreadySpawned) {
+          // Find the powerup type definition
+          const powerupTypeDef = powerupTypes.find(
+            (type) => type.name === spawnPoint.powerupType
+          );
+          if (powerupTypeDef) {
+            // Create the powerup
+            const powerupMesh = this.createPowerUpMesh(powerupTypeDef);
+            powerupMesh.position.copy(spawnPoint.position);
+
+            // Mark it as a predefined spawn
+            powerupMesh.userData.isPredefined = true;
+            powerupMesh.userData.spawnPosition = spawnPoint.position.clone();
+
+            // Add to scene and track
+            this.scene.add(powerupMesh);
+            this.powerups.push(powerupMesh);
+          }
+        }
+      }
+    }
   }
 }
 

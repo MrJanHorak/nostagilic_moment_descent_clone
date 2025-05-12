@@ -2,10 +2,11 @@
 import * as THREE from 'three';
 
 class InputManager {
-  constructor(camera, projectileManager, gameState) {
+  constructor(camera, projectileManager, gameState, uiManager = null) {
     this.camera = camera;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
+    this.uiManager = uiManager;
 
     this.keyStates = {};
     this.euler = new THREE.Euler(0, 0, 0, 'YXZ'); // For camera rotation
@@ -56,10 +57,21 @@ class InputManager {
 
     this.camera.quaternion.setFromEuler(this.euler);
   }
-
   // Handle key down
   onKeyDown(event) {
     this.keyStates[event.code] = true;
+
+    // Handle escape key for pause menu
+    if (
+      event.code === 'Escape' &&
+      this.gameState &&
+      this.gameState.isGameStarted
+    ) {
+      // Toggle pause state
+      if (this.uiManager) {
+        this.uiManager.togglePauseMenu();
+      }
+    }
   }
 
   // Handle key up

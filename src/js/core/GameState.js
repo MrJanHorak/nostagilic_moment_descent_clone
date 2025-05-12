@@ -8,6 +8,7 @@ class GameState {
     this.score = 0;
     this.isGameOver = false;
     this.isGameStarted = false;
+    this.isPaused = false;
     this.speedMultiplier = 1.0;
     this.weaponPower = 1;
 

@@ -25,11 +25,12 @@ export const enemyTypes = [
 ];
 
 class EnemyManager {
-  constructor(scene, camera, gameState, audioManager) {
+  constructor(scene, camera, gameState, audioManager, levelManager = null) {
     this.scene = scene;
     this.camera = camera;
     this.gameState = gameState;
     this.audioManager = audioManager;
+    this.levelManager = levelManager; // Add this
     this.enemies = [];
     this.levelSegments = [];
   }
@@ -326,6 +327,51 @@ class EnemyManager {
 
     const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
     return this.spawnEnemy(spawnPosition, enemyType.name);
+  }
+
+  // Spawn predefined enemies from level blueprint
+  spawnPredefinedEnemies() {
+    if (!this.levelManager || !this.levelManager.currentLevel) return;
+
+    const level = this.levelManager.currentLevel;
+
+    for (const spawnPoint of level.enemySpawns) {
+      // Check if enemy should be visible now (based on player position)
+      const distanceToPlayer = spawnPoint.position.distanceTo(
+        this.camera.position
+      );
+
+      // Only spawn if within reasonable distance and not already spawned
+      if (distanceToPlayer < 50 && distanceToPlayer > 5) {
+        // Check if this enemy was already spawned (using position as identifier)
+        const alreadySpawned = this.enemies.some((enemy) => {
+          return (
+            enemy.userData.spawnPosition &&
+            enemy.userData.spawnPosition.distanceTo(spawnPoint.position) < 1
+          );
+        });
+
+        if (!alreadySpawned) {
+          // Find the enemy type definition
+          const enemyTypeDef = enemyTypes.find(
+            (type) => type.name === spawnPoint.enemyType
+          );
+          if (enemyTypeDef) {
+            // Create the enemy
+            const enemyMesh = this.createEnemyMesh(enemyTypeDef);
+            enemyMesh.position.copy(spawnPoint.position);
+
+            // Mark it as a predefined spawn
+            enemyMesh.userData.isPredefined = true;
+            enemyMesh.userData.spawnPosition = spawnPoint.position.clone();
+
+            // Add to scene and track
+            this.scene.add(enemyMesh);
+            this.enemies.push(enemyMesh);
+          }
+        }
+      }
+    }
   }
 
   // Enemy update function
