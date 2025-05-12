@@ -2,7 +2,7 @@
 
 A 3D zero-gravity shooter game in the style of Descent, built with JavaScript and Three.js. Pilot your spaceship through procedurally generated cave tunnels, battle enemies, and collect power-ups.
 
-![Game Screenshot](public/screenshot.png)
+![Game Screenshot](public/screenshot.jpg)
 
 ## Play Now
 
