@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import createLevel1 from './levels/Level1.js';
 import createLevel2 from './levels/Level2.js';
+import createExampleLevel from './levels/ExampleLevel.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 
 class LevelManager {
@@ -22,10 +23,8 @@ class LevelManager {
     this.floorMaterial = null;
 
     // Obstacles
-    this.obstacles = [];
-
-    // Level system properties
-    this.levels = [createLevel1(), createLevel2()];
+    this.obstacles = []; // Level system properties
+    this.levels = [createLevel1(), createLevel2(), createExampleLevel()];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
     this.segmentIndex = 0;

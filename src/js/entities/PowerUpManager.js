@@ -288,8 +288,11 @@ class PowerUpManager {
         // Check if this power-up was already spawned (using position as identifier)
         const alreadySpawned = this.powerups.some((powerup) => {
           return (
-            powerup.userData.spawnPosition &&
-            powerup.userData.spawnPosition.distanceTo(spawnPoint.position) < 1
+            powerup.mesh &&
+            powerup.mesh.userData.spawnPosition &&
+            powerup.mesh.userData.spawnPosition.distanceTo(
+              spawnPoint.position
+            ) < 1
           );
         });
 
@@ -300,16 +303,26 @@ class PowerUpManager {
           );
           if (powerupTypeDef) {
             // Create the powerup
-            const powerupMesh = this.createPowerUpMesh(powerupTypeDef);
-            powerupMesh.position.copy(spawnPoint.position);
-
-            // Mark it as a predefined spawn
+            const powerupMesh = this.createPowerupMesh(powerupTypeDef);
+            powerupMesh.position.copy(spawnPoint.position); // Mark it as a predefined spawn
             powerupMesh.userData.isPredefined = true;
             powerupMesh.userData.spawnPosition = spawnPoint.position.clone();
+            powerupMesh.userData.powerupId = Date.now() + Math.random();
+
+            // Create powerup object with the same structure as in spawnPowerup method
+            const powerup = {
+              mesh: powerupMesh,
+              type: powerupTypeDef,
+              id: powerupMesh.userData.powerupId,
+              collisionRadius: powerupTypeDef.size * 0.7,
+            };
 
             // Add to scene and track
             this.scene.add(powerupMesh);
-            this.powerups.push(powerupMesh);
+            this.powerups.push(powerup);
+
+            // Animate the power-up
+            this.animatePowerup(powerup);
           }
         }
       }

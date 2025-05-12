@@ -80,11 +80,11 @@ export default class Game {
       console.log('Camera initialized');
 
       this.initRenderer();
-      console.log('Renderer initialized');
+      console.log('Renderer initialized'); // Set up scene protection (prevent circular references)
+      setupSceneProtection(this.scene, this.camera);
 
-      // Set up scene protection (prevent circular references)
-      setupSceneProtection(this.scene, this.camera); // Initialize managers      this.uiManager = new UIManager(this.gameState, this.audioManager);
-      this.uiManager = new UIManager();
+      // Initialize managers
+      this.uiManager = new UIManager(this.gameState, this.audioManager);
       this.uiManager.game = this;
       this.inputManager = new InputManager(
         this.camera,
@@ -92,6 +92,9 @@ export default class Game {
         this.gameState,
         this.uiManager
       ).init(this.canvas);
+      // Connect the input manager with the game
+      this.inputManager.game = this;
+
       this.levelManager = new LevelManager(this.scene, this.camera);
       this.projectileManager = new ProjectileManager(
         this.scene,
@@ -237,12 +240,63 @@ export default class Game {
     wideLight.target.position.set(0, 0, -1);
     this.camera.add(wideLight.target);
   }
+
+  // Create bump sound for collisions
+  createBumpSound() {
+    if (this.audioManager && this.audioManager.initialized) {
+      this.audioManager.createSound('bump', () => {
+        // Simple bump/collision sound
+        const ctx = this.audioManager.context;
+        const duration = 0.15;
+        const buffer = ctx.createBuffer(
+          1,
+          ctx.sampleRate * duration,
+          ctx.sampleRate
+        );
+        const data = buffer.getChannelData(0);
+
+        for (let i = 0; i < data.length; i++) {
+          const t = i / ctx.sampleRate;
+          data[i] =
+            Math.sin(2 * Math.PI * 150 * t) *
+            (1 - t / duration) *
+            (Math.random() * 0.2 + 0.8);
+        }
+
+        return buffer;
+      });
+    }
+  }
+
   startGame() {
     this.gameState.isGameStarted = true;
-    this.uiManager.hideStartScreen();
-
-    // Initialize audio on first interaction
+    this.uiManager.hideStartScreen(); // Initialize audio on first interaction
     this.audioManager.init();
+
+    // Create collision bump sound after audio initialization
+    this.createBumpSound();
+
+    // Create hit sound for projectile collisions
+    this.audioManager.createSound('hit', () => {
+      const ctx = this.audioManager.context;
+      const duration = 0.1;
+      const buffer = ctx.createBuffer(
+        1,
+        ctx.sampleRate * duration,
+        ctx.sampleRate
+      );
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        const t = i / ctx.sampleRate;
+        data[i] =
+          Math.sin(2 * Math.PI * 500 * t) *
+          (1 - t / duration) *
+          (Math.random() * 0.1 + 0.9);
+      }
+
+      return buffer;
+    });
 
     console.log('Starting game audio...');
 

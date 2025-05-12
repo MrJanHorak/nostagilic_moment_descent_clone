@@ -1,6 +1,7 @@
 // Enemy entity module
 import * as THREE from 'three';
 import { createExplosionEffect } from '../utils/effectsUtils.js';
+import { checkProjectileEnemyCollision } from '../utils/collisionUtils.js';
 
 // Enemy type definitions
 export const enemyTypes = [
@@ -427,17 +428,23 @@ class EnemyManager {
         this.scene.remove(enemy.mesh);
         this.enemies.splice(i, 1);
         continue;
-      }
-
-      // Check projectile collision
+      } // Check projectile collision
       for (let j = projectiles.length - 1; j >= 0; j--) {
         const projectile = projectiles[j];
-        const projectilePosition = new THREE.Vector3();
-        projectile.mesh.getWorldPosition(projectilePosition);
 
-        if (enemy.collider.containsPoint(projectilePosition)) {
+        if (checkProjectileEnemyCollision(projectile, enemy)) {
           // Enemy takes damage
           enemy.health -= projectile.power;
+
+          // Visual hit feedback
+          this.createHitEffect(projectile.mesh.position.clone());
+
+          // Play hit sound
+          if (this.audioManager && this.audioManager.initialized) {
+            this.audioManager.playSound('hit', {
+              volume: Math.min(0.7, 10 / Math.max(1, distanceToPlayer)),
+            });
+          }
 
           // Remove projectile
           this.scene.remove(projectile.mesh);
@@ -460,6 +467,51 @@ class EnemyManager {
         }
       }
     }
+  }
+
+  // Create a visual effect when a projectile hits an enemy
+  createHitEffect(position) {
+    // Create a small flash at hit position
+    const flash = new THREE.PointLight(0xffff00, 2, 5);
+    flash.position.copy(position);
+    this.scene.add(flash);
+
+    // Remove after a short time
+    setTimeout(() => {
+      this.scene.remove(flash);
+    }, 100);
+
+    // Add small particles
+    const particleCount = 10;
+    const particles = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount * 3; i += 3) {
+      // Random position within small radius
+      positions[i] = position.x + (Math.random() - 0.5) * 0.3;
+      positions[i + 1] = position.y + (Math.random() - 0.5) * 0.3;
+      positions[i + 2] = position.z + (Math.random() - 0.5) * 0.3;
+    }
+
+    particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const material = new THREE.PointsMaterial({
+      color: 0xffaa00,
+      size: 0.1,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+    });
+
+    const particleSystem = new THREE.Points(particles, material);
+    this.scene.add(particleSystem);
+
+    // Remove particles after a short time
+    setTimeout(() => {
+      this.scene.remove(particleSystem);
+      particles.dispose();
+      material.dispose();
+    }, 300);
   }
 
   destroyEnemy(index) {

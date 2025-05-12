@@ -1,5 +1,7 @@
 // Input Manager for handling keyboard and mouse inputs
 import * as THREE from 'three';
+import { checkPlayerObstacleCollision } from '../utils/collisionUtils.js';
+import { shakeCamera } from '../utils/effectsUtils.js';
 
 class InputManager {
   constructor(camera, projectileManager, gameState, uiManager = null) {
@@ -7,6 +9,7 @@ class InputManager {
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.uiManager = uiManager;
+    this.game = null; // Will be set from main.js
 
     this.keyStates = {};
     this.euler = new THREE.Euler(0, 0, 0, 'YXZ'); // For camera rotation
@@ -104,7 +107,6 @@ class InputManager {
       document.removeEventListener('mousemove', this.onMouseMove, false);
     }
   }
-
   // Update player movement based on key states
   updateMovement(delta) {
     // Skip if game not started or is over
@@ -161,9 +163,65 @@ class InputManager {
       const worldDirection = direction.clone();
       worldDirection.applyQuaternion(this.camera.quaternion);
 
-      // Update camera position
-      this.camera.position.add(worldDirection);
+      // Get obstacles from level manager if available
+      const obstacles = this.game?.levelManager?.obstacles || [];
+      const tunnelWidth = this.game?.levelManager?.tunnelWidth || 15;
+      const tunnelHeight = this.game?.levelManager?.tunnelHeight || 12;
+
+      // Check for collisions before moving
+      if (
+        !checkPlayerObstacleCollision(
+          this.camera,
+          obstacles,
+          worldDirection,
+          tunnelWidth,
+          tunnelHeight
+        )
+      ) {
+        // No collision, apply movement
+        this.camera.position.add(worldDirection);
+      } else {
+        // Collision detected - play bump sound
+        if (this.game?.audioManager?.initialized) {
+          this.game.audioManager.playSound('bump', { volume: 0.3 });
+        }
+
+        // Visual feedback for collision
+        if (this.gameState) {
+          this.activateCollisionFeedback();
+        }
+      }
     }
+  } // Provide feedback when player collides with an obstacle
+  activateCollisionFeedback() {
+    // Small screen shake for collision
+    if (this.camera) {
+      const shakeAnim = shakeCamera(this.camera, 0.3);
+      if (this.game && this.game.activeAnimations) {
+        this.game.activeAnimations.push(shakeAnim);
+      }
+    }
+
+    // Visual feedback - slight flash
+    const flashEffect = document.createElement('div');
+    flashEffect.style.position = 'absolute';
+    flashEffect.style.top = '0';
+    flashEffect.style.left = '0';
+    flashEffect.style.width = '100%';
+    flashEffect.style.height = '100%';
+    flashEffect.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
+    flashEffect.style.pointerEvents = 'none';
+    flashEffect.style.zIndex = '999';
+    flashEffect.style.transition = 'opacity 0.2s ease-out';
+    document.body.appendChild(flashEffect);
+
+    // Fade out and remove
+    setTimeout(() => {
+      flashEffect.style.opacity = '0';
+      setTimeout(() => {
+        document.body.removeChild(flashEffect);
+      }, 200);
+    }, 50);
   }
 
   // Cleanup resources
