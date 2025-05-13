@@ -249,100 +249,263 @@ createScoutMesh(body, enemyType) {
   body.add(rightEyeLight);
 }
 
+  // createFighterMesh(body, enemyType) {
+  //   // Fighter - larger, more powerful enemy with complex shape
+
+  //   // Main body - hexagonal prism
+  //   const bodyGeometry = new THREE.CylinderGeometry(
+  //     enemyType.size * 0.6,
+  //     enemyType.size * 0.8,
+  //     enemyType.size * 1.8,
+  //     6
+  //   );
+  //   const bodyMaterial = new THREE.MeshStandardMaterial({
+  //     color: enemyType.color,
+  //     roughness: 0.3,
+  //     metalness: 0.7,
+  //     emissive: enemyType.color,
+  //     emissiveIntensity: 0.3,
+  //   });
+  //   const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  //   bodyMesh.name = 'fighter_body';
+  //   bodyMesh.rotation.x = Math.PI / 2; // Rotate to point forward
+  //   body.add(bodyMesh);
+
+  //   // Front weapon
+  //   const weaponGeometry = new THREE.ConeGeometry(
+  //     enemyType.size * 0.3,
+  //     enemyType.size * 0.7,
+  //     8
+  //   );
+  //   const weaponMaterial = new THREE.MeshStandardMaterial({
+  //     color: 0x444444,
+  //     roughness: 0.2,
+  //     metalness: 0.9,
+  //   });
+  //   const weaponMesh = new THREE.Mesh(weaponGeometry, weaponMaterial);
+  //   weaponMesh.name = 'fighter_weapon';
+  //   weaponMesh.position.set(0, 0, -enemyType.size * 1);
+  //   weaponMesh.rotation.x = -Math.PI / 2;
+  //   body.add(weaponMesh);
+
+  //   // Engine glow
+  //   const engineGeometry = new THREE.SphereGeometry(
+  //     enemyType.size * 0.3,
+  //     16,
+  //     16
+  //   );
+  //   const engineMaterial = new THREE.MeshBasicMaterial({
+  //     color: 0xffaa00,
+  //     transparent: true,
+  //     opacity: 0.8,
+  //   });
+  //   const engineMesh = new THREE.Mesh(engineGeometry, engineMaterial);
+  //   engineMesh.name = 'fighter_engine';
+  //   engineMesh.position.set(0, 0, enemyType.size * 0.8);
+  //   body.add(engineMesh);
+
+  //   // Wings
+  //   const wingGeometry = new THREE.BoxGeometry(
+  //     enemyType.size * 2.2,
+  //     enemyType.size * 0.2,
+  //     enemyType.size * 0.7
+  //   );
+  //   const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
+  //   wingMesh.name = 'fighter_wings';
+  //   wingMesh.position.set(0, 0, enemyType.size * 0.2);
+  //   body.add(wingMesh);
+
+  //   // Small antennas
+  //   const antennaGeometry = new THREE.CylinderGeometry(
+  //     0.02,
+  //     0.02,
+  //     enemyType.size * 0.6
+  //   );
+  //   const antennaMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+
+  //   const leftAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+  //   leftAntenna.name = 'fighter_antenna_left';
+  //   leftAntenna.position.set(
+  //     -enemyType.size * 0.3,
+  //     enemyType.size * 0.3,
+  //     -enemyType.size * 0.7
+  //   );
+  //   leftAntenna.rotation.z = Math.PI / 6;
+  //   body.add(leftAntenna);
+
+  //   const rightAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+  //   rightAntenna.name = 'fighter_antenna_right';
+  //   rightAntenna.position.set(
+  //     enemyType.size * 0.3,
+  //     enemyType.size * 0.3,
+  //     -enemyType.size * 0.7
+  //   );
+  //   rightAntenna.rotation.z = -Math.PI / 6;
+  //   body.add(rightAntenna);
+  // }
+
   createFighterMesh(body, enemyType) {
-    // Fighter - larger, more powerful enemy with complex shape
+  // Fighter - larger, more powerful enemy with complex shape
+  // This function creates the visual mesh for the fighter enemy type
+  
+  // ===== MAIN BODY =====
+  // Hexagonal prism with 6 sides for more complex look
+  // Parameters: top radius, bottom radius, height, radial segments
+  const bodyGeometry = new THREE.CylinderGeometry(
+    enemyType.size * 0.8,     // Top radius (larger/front end) 
+    enemyType.size * 0.6,     // Bottom radius (smaller/back end)
+    enemyType.size * 1.8,     // Height (length of the fighter body)
+    6                         // Radial segments (6 creates hexagonal shape)
+  );
+  
+  // Material with metallic appearance and glow
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: enemyType.color,          // Base color from enemy type
+    roughness: 0.3,                  // Lower for smoother look (0-1)
+    metalness: 0.7,                  // Higher for more metallic look (0-1)
+    emissive: enemyType.color,       // Same color glow
+    emissiveIntensity: 0.3,          // Subtle glow intensity
+  });
+  
+  const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  bodyMesh.name = 'fighter_body';
+  
+  // IMPORTANT: Change rotation to make front face player
+  bodyMesh.rotation.x = -Math.PI / 2; // Rotate to point front toward player
+  body.add(bodyMesh);
 
-    // Main body - hexagonal prism
-    const bodyGeometry = new THREE.CylinderGeometry(
-      enemyType.size * 0.6,
-      enemyType.size * 0.8,
-      enemyType.size * 1.8,
-      6
-    );
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: enemyType.color,
-      roughness: 0.3,
-      metalness: 0.7,
-      emissive: enemyType.color,
-      emissiveIntensity: 0.3,
-    });
-    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    bodyMesh.name = 'fighter_body';
-    bodyMesh.rotation.x = Math.PI / 2; // Rotate to point forward
-    body.add(bodyMesh);
+  // ===== FRONT WEAPON =====
+  // Cone-shaped weapon at front of the fighter
+  // Parameters: radius, height, radial segments
+  const weaponGeometry = new THREE.ConeGeometry(
+    enemyType.size * 0.3,     // Radius of weapon base
+    enemyType.size * 0.7,     // Length of weapon
+    8                         // Segments (octagonal weapon barrel)
+  );
+  
+  const weaponMaterial = new THREE.MeshStandardMaterial({
+    color: 0x444444,          // Dark gray color
+    roughness: 0.2,           // Smooth surface
+    metalness: 0.9,           // Very metallic appearance
+  });
+  
+  const weaponMesh = new THREE.Mesh(weaponGeometry, weaponMaterial);
+  weaponMesh.name = 'fighter_weapon';
+  
+  // Position weapon at the front of the ship (Z is now POSITIVE for front)
+  weaponMesh.position.set(0, 0, enemyType.size * 1.0);
+  
+  // Rotate weapon to point outward
+  weaponMesh.rotation.x = Math.PI / 2;
+  body.add(weaponMesh);
 
-    // Front weapon
-    const weaponGeometry = new THREE.ConeGeometry(
-      enemyType.size * 0.3,
-      enemyType.size * 0.7,
-      8
-    );
-    const weaponMaterial = new THREE.MeshStandardMaterial({
-      color: 0x444444,
-      roughness: 0.2,
-      metalness: 0.9,
-    });
-    const weaponMesh = new THREE.Mesh(weaponGeometry, weaponMaterial);
-    weaponMesh.name = 'fighter_weapon';
-    weaponMesh.position.set(0, 0, -enemyType.size * 1);
-    weaponMesh.rotation.x = -Math.PI / 2;
-    body.add(weaponMesh);
+  // ===== ENGINE GLOW =====
+  // Glowing sphere at the back representing the engine
+  // Parameters: radius, width segments, height segments
+  const engineGeometry = new THREE.SphereGeometry(
+    enemyType.size * 0.3,     // Engine size (30% of enemy size)
+    16,                       // Width segments (higher for smoother sphere)
+    16                        // Height segments (higher for smoother sphere)
+  );
+  
+  // Bright, glowing material that doesn't need lighting
+  const engineMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffaa00,          // Orange-yellow engine glow
+    transparent: true,        // Enable transparency
+    opacity: 0.8,             // Slightly transparent for glow effect
+  });
+  
+  const engineMesh = new THREE.Mesh(engineGeometry, engineMaterial);
+  engineMesh.name = 'fighter_engine';
+  
+  // Position at the BACK of the ship (now negative Z)
+  engineMesh.position.set(0, 0, -enemyType.size * 0.8);
+  body.add(engineMesh);
 
-    // Engine glow
-    const engineGeometry = new THREE.SphereGeometry(
-      enemyType.size * 0.3,
-      16,
-      16
-    );
-    const engineMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffaa00,
-      transparent: true,
-      opacity: 0.8,
-    });
-    const engineMesh = new THREE.Mesh(engineGeometry, engineMaterial);
-    engineMesh.name = 'fighter_engine';
-    engineMesh.position.set(0, 0, enemyType.size * 0.8);
-    body.add(engineMesh);
+  // Add point light for engine glow effect
+  const engineLight = new THREE.PointLight(0xffaa00, 1.0, enemyType.size * 4);
+  engineLight.position.copy(engineMesh.position);
+  body.add(engineLight);
 
-    // Wings
-    const wingGeometry = new THREE.BoxGeometry(
-      enemyType.size * 2.2,
-      enemyType.size * 0.2,
-      enemyType.size * 0.7
-    );
-    const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
-    wingMesh.name = 'fighter_wings';
-    wingMesh.position.set(0, 0, enemyType.size * 0.2);
-    body.add(wingMesh);
+  // ===== WINGS =====
+  // Wide, flat structures on the sides of the fighter
+  // Parameters: width, height, depth
+  const wingGeometry = new THREE.BoxGeometry(
+    enemyType.size * 2.7,     // Width (extends far to sides)
+    enemyType.size * 0.2,     // Height (thin wings)
+    enemyType.size * 0.7      // Depth (front-to-back size)
+  );
+  
+  const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
+  wingMesh.name = 'fighter_wings';
+  
+  // Position wings at center of body
+  wingMesh.position.set(0, 0, 0);
+  body.add(wingMesh);
 
-    // Small antennas
-    const antennaGeometry = new THREE.CylinderGeometry(
-      0.02,
-      0.02,
-      enemyType.size * 0.6
-    );
-    const antennaMaterial = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  // ===== ANTENNAS =====
+  // Thin cylinders on top for visual interest and identification
+  // Parameters: top radius, bottom radius, height, radial segments
+  const antennaGeometry = new THREE.CylinderGeometry(
+    0.02,                     // Top radius (thin)
+    0.02,                     // Bottom radius (uniform thickness)
+    enemyType.size * 0.6,     // Length of antenna
+    6                         // Radial segments
+  );
+  
+  const antennaMaterial = new THREE.MeshStandardMaterial({ 
+    color: 0x888888,          // Light gray color
+    emissive: 0x333333,       // Slight glow
+    emissiveIntensity: 0.5    // Medium intensity
+  });
 
-    const leftAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    leftAntenna.name = 'fighter_antenna_left';
-    leftAntenna.position.set(
-      -enemyType.size * 0.3,
-      enemyType.size * 0.3,
-      -enemyType.size * 0.7
-    );
-    leftAntenna.rotation.z = Math.PI / 6;
-    body.add(leftAntenna);
+  // Left antenna
+  const leftAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+  leftAntenna.name = 'fighter_antenna_left';
+  
+  // Position left antenna: left side, top of ship, slightly forward
+  leftAntenna.position.set(
+    -enemyType.size * 0.3,    // X - offset to left
+    enemyType.size * 0.5,     // Y - RAISED higher for visibility
+    enemyType.size * 0.4      // Z - CHANGED to positive to move forward
+  );
+  
+  // Angle outward at 10° for distinctive look
+  leftAntenna.rotation.z = Math.PI / 18; // ~10 degrees
+  body.add(leftAntenna);
 
-    const rightAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    rightAntenna.name = 'fighter_antenna_right';
-    rightAntenna.position.set(
-      enemyType.size * 0.3,
-      enemyType.size * 0.3,
-      -enemyType.size * 0.7
-    );
-    rightAntenna.rotation.z = -Math.PI / 6;
-    body.add(rightAntenna);
-  }
+  // Right antenna
+  const rightAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+  rightAntenna.name = 'fighter_antenna_right';
+  
+  // Position right antenna: right side, top of ship, slightly forward
+  rightAntenna.position.set(
+    enemyType.size * 0.3,     // X - offset to right
+    enemyType.size * 0.5,     // Y - RAISED higher for visibility
+    enemyType.size * 0.4      // Z - CHANGED to positive to move forward
+  );
+  
+  // Mirror angle of left antenna
+  rightAntenna.rotation.z = -Math.PI / 18; // ~-10 degrees
+  body.add(rightAntenna);
+  
+  // Add small lights to antenna tips for better visibility
+  const leftTipLight = new THREE.PointLight(0xff0000, 0.5, enemyType.size * 1.5);
+  leftTipLight.position.set(
+    leftAntenna.position.x,
+    leftAntenna.position.y + enemyType.size * 0.3,
+    leftAntenna.position.z
+  );
+  body.add(leftTipLight);
+  
+  const rightTipLight = new THREE.PointLight(0xff0000, 0.5, enemyType.size * 1.5);
+  rightTipLight.position.set(
+    rightAntenna.position.x,
+    rightAntenna.position.y + enemyType.size * 0.3,
+    rightAntenna.position.z
+  );
+  body.add(rightTipLight);
+}
 
   // Spawn enemy at a position
   spawnEnemy(position, typeName = null) {
