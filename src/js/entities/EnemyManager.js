@@ -62,53 +62,192 @@ class EnemyManager {
     return body;
   }
 
-  createScoutMesh(body, enemyType) {
-    // Scout - faster but smaller enemy with sharp angles
+  // createScoutMesh(body, enemyType) {
+  //   // Scout - faster but smaller enemy with sharp angles
 
-    // Core body - triangular prism shape
-    const bodyGeometry = new THREE.CylinderGeometry(
-      0,
-      enemyType.size,
-      enemyType.size * 1.5,
-      3
-    );
-    const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: enemyType.color,
-      roughness: 0.6,
-      metalness: 0.4,
-      emissive: enemyType.color,
-      emissiveIntensity: 0.4,
-    });
-    const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    bodyMesh.name = 'scout_body';
-    bodyMesh.rotation.x = Math.PI / 2; // Rotate to point forward
-    body.add(bodyMesh);
+  //   // Core body - triangular prism shape
+  //   const bodyGeometry = new THREE.CylinderGeometry(
+  //     0,
+  //     enemyType.size,
+  //     enemyType.size * 1.5,
+  //     3
+  //   );
+  //   const bodyMaterial = new THREE.MeshStandardMaterial({
+  //     color: enemyType.color,
+  //     roughness: 0.6,
+  //     metalness: 0.4,
+  //     emissive: enemyType.color,
+  //     emissiveIntensity: 0.4,
+  //   });
+  //   const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  //   bodyMesh.name = 'scout_body';
+  //   bodyMesh.rotation.x = Math.PI / 2; // Rotate to point forward
+  //   body.add(bodyMesh);
 
-    // Glowing eyes/sensors
-    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-    const eyeGeometry = new THREE.SphereGeometry(enemyType.size * 0.1, 8, 8);
+  //   // Glowing eyes/sensors
+  //   const eyeMaterial = new THREE.MeshBasicMaterial({
+  //     color: 0xffff00,
+  //     emissive: 0xffff00,
+  //     emissiveIntensity: 1.0,
+  //   });
+  //   // Make eyes slightly larger for better visibility
+  //   const eyeGeometry = new THREE.SphereGeometry(enemyType.size * 0.18, 8, 8);
 
-    const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.name = 'scout_eye_left';
-    leftEye.position.set(-enemyType.size * 0.2, 0, -enemyType.size * 0.5);
-    body.add(leftEye);
+  //   // Move eyes to the front of the ship instead of inside/behind
+  //   // Notice the z position change from -0.5 to -0.8
+  //   const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+  //   leftEye.name = 'scout_eye_left';
+  //   leftEye.position.set(
+  //     -enemyType.size * 0.25,
+  //     enemyType.size * 0.1,
+  //     -enemyType.size * 0.8
+  //   );
+  //   body.add(leftEye);
 
-    const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.name = 'scout_eye_right';
-    rightEye.position.set(enemyType.size * 0.2, 0, -enemyType.size * 0.5);
-    body.add(rightEye);
+  //   // Add small point light to left eye for glow effect
+  //   const leftEyeLight = new THREE.PointLight(
+  //     0xffff00,
+  //     1.5, // Increased brightness
+  //     enemyType.size * 2.5 // Increased range
+  //   );
+  //   leftEyeLight.position.copy(leftEye.position);
+  //   body.add(leftEyeLight);
 
-    // Small wings
-    const wingGeometry = new THREE.BoxGeometry(
-      enemyType.size * 1.5,
-      enemyType.size * 0.1,
-      enemyType.size * 0.5
-    );
-    const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
-    wingMesh.name = 'scout_wings';
-    wingMesh.position.set(0, 0, 0);
-    body.add(wingMesh);
-  }
+  //   const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+  //   rightEye.name = 'scout_eye_right';
+  //   rightEye.position.set(
+  //     enemyType.size * 0.25,
+  //     enemyType.size * 0.1,
+  //     -enemyType.size * 0.8
+  //   );
+  //   body.add(rightEye);
+
+  //   // Add small point light to right eye for glow effect
+  //   const rightEyeLight = new THREE.PointLight(
+  //     0xffff00,
+  //     1.5, // Increased brightness
+  //     enemyType.size * 2.5 // Increased range
+  //   );
+  //   rightEyeLight.position.copy(rightEye.position);
+  //   body.add(rightEyeLight);
+
+  //   // Small wings
+  //   const wingGeometry = new THREE.BoxGeometry(
+  //     enemyType.size * 1.5,
+  //     enemyType.size * 0.1,
+  //     enemyType.size * 0.5
+  //   );
+  //   const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
+  //   wingMesh.name = 'scout_wings';
+  //   wingMesh.position.set(0, 0, 0);
+  //   body.add(wingMesh);
+  // }
+
+createScoutMesh(body, enemyType) {
+  // Scout - faster but smaller enemy with sharp angles
+  // This function creates the visual mesh for the scout enemy type
+  
+  // ===== MAIN BODY =====
+  // Core body - triangular prism shape (pointed cone)
+  // Parameters: top radius, bottom radius, height, number of segments
+  const bodyGeometry = new THREE.CylinderGeometry(
+    enemyType.size,           // Top radius (wide end) - this will now be at the front
+    0,                        // Bottom radius (pointed end) - this will now be at the back
+    enemyType.size * 1.5,     // Height of the cylinder
+    3                         // Number of segments (3 creates triangular cross-section)
+  );
+  
+  // Material with emissive properties to make it glow slightly
+  const bodyMaterial = new THREE.MeshStandardMaterial({
+    color: enemyType.color,          // Base color from enemy type
+    roughness: 0.6,                  // Higher values = less shiny (0-1)
+    metalness: 0.2,                  // Higher values = more metallic (0-1)
+    emissive: enemyType.color,       // Same color glow
+    emissiveIntensity: 0.2,          // Strength of the glow (0-1)
+  });
+  
+  const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
+  bodyMesh.name = 'scout_body';
+  
+  // Rotate to point backward (REVERSED from previous orientation)
+  // This makes the pointed end face away from the player
+  // and the flat base (with eyes) face toward the player
+  bodyMesh.rotation.x = -Math.PI / 2; // Negative value reverses orientation
+  body.add(bodyMesh);
+
+  // ===== WINGS =====
+  // Small wings attached to the sides for visual interest
+  // Parameters: width, height, depth
+  const wingGeometry = new THREE.BoxGeometry(
+    enemyType.size * 2.5,     // Width (extends to sides)
+    enemyType.size * 0.1,     // Height (thin)
+    enemyType.size * 0.5      // Depth (front-to-back)
+  );
+  
+  const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
+  wingMesh.name = 'scout_wings';
+  wingMesh.position.set(0, 0, -0.1); // Centered on the body
+  body.add(wingMesh);
+
+  // ===== EYES / SENSORS =====
+  // Glowing eyes/sensors that are highly visible to the player
+  const eyeMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffff00,           // Bright yellow base color 
+    emissive: 0xffff00,        // Same yellow for glow
+    emissiveIntensity: 1.0,    // Maximum glow intensity
+  });
+  
+  // Spherical eyes - size affects visibility
+  const eyeGeometry = new THREE.SphereGeometry(
+    enemyType.size * 0.15,     // Radius (20% of enemy size)
+    8,                        // Width segments
+    8                         // Height segments
+  );
+
+  // ===== LEFT EYE =====
+  const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+  leftEye.name = 'scout_eye_left';
+  
+  // Position relative to body:
+  leftEye.position.set(
+    -enemyType.size * 0.18,   // X - offset left from center
+    enemyType.size * 0.2,     // Y - slightly raised from center
+    enemyType.size * 0.1      // Z - CHANGED: now positive to place at the front
+                              // (since we inverted the rotation)
+  );
+  body.add(leftEye);
+
+  // Add point light to left eye for enhanced visibility
+  const leftEyeLight = new THREE.PointLight(
+    0xffff00,                 // Yellow light color
+    2.0,                      // Brightness/intensity
+    enemyType.size * 2.0      // Range of light effect
+  );
+  leftEyeLight.position.copy(leftEye.position);
+  body.add(leftEyeLight);
+
+  // ===== RIGHT EYE =====
+  const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
+  rightEye.name = 'scout_eye_right';
+  
+  // Position relative to body:
+  rightEye.position.set(
+    enemyType.size * 0.18,    // X - offset right from center
+    enemyType.size * 0.2,     // Y - slightly raised from center
+    enemyType.size * 0.1      // Z - CHANGED: now positive to place at the front
+                              // (since we inverted the rotation)
+  );
+  body.add(rightEye);
+
+  // Add point light to right eye for enhanced visibility
+  const rightEyeLight = new THREE.PointLight(
+    0xffff00,                 // Yellow light color
+    2.0,                      // Brightness/intensity
+    enemyType.size * 2.0      // Range of light effect
+  );
+  rightEyeLight.position.copy(rightEye.position);
+  body.add(rightEyeLight);
+}
 
   createFighterMesh(body, enemyType) {
     // Fighter - larger, more powerful enemy with complex shape
@@ -414,7 +553,8 @@ class EnemyManager {
       enemy.collider.setFromObject(enemy.mesh);
 
       // Check collision with player
-      if (!this.gameState.isGameOver && distanceToPlayer < 1) {
+      const collisionDistance = enemy.type.size * 2;
+      if (!this.gameState.isGameOver && distanceToPlayer < collisionDistance) {
         // Player takes damage
         this.gameState.takeDamage(enemy.type.damage);
 
