@@ -261,7 +261,6 @@ class LevelManager {
       });
     }
   }
-
   // Load a specific level by index
   loadLevel(levelIndex) {
     // Clear existing level
@@ -272,8 +271,16 @@ class LevelManager {
     this.currentLevel = this.levels[levelIndex];
     this.segmentIndex = 0;
 
+    // Set endless mode flag based on level properties
+    this.isEndless = this.currentLevel.endless || false;
+
     // Initialize the new level
     this.initLevel();
+
+    // Reset enemy tracking for the new level (if we have an enemyManager reference)
+    if (this.enemyManager && this.enemyManager.resetLevel) {
+      this.enemyManager.resetLevel();
+    }
 
     return this.currentLevel;
   }

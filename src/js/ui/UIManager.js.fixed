@@ -469,21 +469,21 @@ class UIManager {
       enemyCountDisplay.style.marginTop = '10px';
       enemyCountDisplay.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.7)';
       enemyCountDisplay.style.color = '#ff6600';
-
+      
       const hudContainer = document.getElementById('hud-container');
       if (hudContainer) {
         hudContainer.appendChild(enemyCountDisplay);
       } else {
         document.body.appendChild(enemyCountDisplay);
       }
-
+      
       this.hudElements.enemyCountDisplay = enemyCountDisplay;
     }
-
+    
     // Update the display with current counts
     if (this.hudElements.enemyCountDisplay) {
       this.hudElements.enemyCountDisplay.textContent = `ENEMIES: ${destroyedCount}/${totalCount}`;
-
+      
       // Change color based on progress
       const percentComplete = (destroyedCount / totalCount) * 100;
       if (percentComplete < 33) {

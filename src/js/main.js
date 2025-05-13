@@ -109,6 +109,11 @@ export default class Game {
         this.audioManager,
         this.levelManager
       );
+
+      // Give the LevelManager a reference to the EnemyManager
+      if (this.levelManager) {
+        this.levelManager.enemyManager = this.enemyManager;
+      }
       this.powerUpManager = new PowerUpManager(
         this.scene,
         this.camera,
@@ -119,14 +124,13 @@ export default class Game {
       );
 
       // Connect the input manager with the projectile manager
-      this.inputManager.projectileManager = this.projectileManager;
-
-      // Set up gameState references
+      this.inputManager.projectileManager = this.projectileManager; // Set up gameState references
       this.gameState.setReferences(
         this.camera,
         this.audioManager,
         this.uiManager,
-        this.activeAnimations
+        this.activeAnimations,
+        this
       );
 
       // Initialize lighting

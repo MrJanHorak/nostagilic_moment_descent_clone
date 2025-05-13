@@ -18,13 +18,19 @@ class GameState {
     this.uiManager = null;
     this.activeAnimations = [];
   }
-
   // Set references to other game components
-  setReferences(camera, audioManager, uiManager, activeAnimations) {
+  setReferences(
+    camera,
+    audioManager,
+    uiManager,
+    activeAnimations,
+    game = null
+  ) {
     this.camera = camera;
     this.audioManager = audioManager;
     this.uiManager = uiManager;
     this.activeAnimations = activeAnimations;
+    this.game = game; // Add reference to main game object
   }
 
   // Handle player taking damage
@@ -147,6 +153,63 @@ class GameState {
     if (document.pointerLockElement) {
       document.exitPointerLock();
     }
+  }
+
+  // Handle level completion
+  levelCompleted() {
+    if (this.isGameOver) return;
+
+    // Visual feedback
+    if (this.uiManager) {
+      this.uiManager.showMessage('LEVEL COMPLETE!', 3000, '#00ff00');
+    }
+
+    // Victory sound
+    if (this.audioManager && this.audioManager.initialized) {
+      this.audioManager.playSound('powerup', { volume: 0.7 });
+    }
+
+    // Award bonus points
+    const levelBonus = 1000;
+    this.score += levelBonus;
+
+    // Show bonus notification
+    setTimeout(() => {
+      if (this.uiManager) {
+        this.uiManager.showMessage(
+          `BONUS: +${levelBonus} POINTS`,
+          2000,
+          '#ffff00'
+        );
+      }
+    }, 1500);
+
+    // Progress to next level after a delay
+    setTimeout(() => {
+      // Check if there's another level
+      if (this.game && this.game.levelManager) {
+        const nextLevelIndex = this.game.levelManager.currentLevelIndex + 1;
+
+        if (nextLevelIndex < this.game.levelManager.levels.length) {
+          // Load next level
+          this.game.levelManager.loadLevel(nextLevelIndex);
+          this.uiManager.showMessage(
+            `STARTING LEVEL ${nextLevelIndex + 1}`,
+            2000,
+            '#00ffff'
+          );
+        } else {
+          // No more levels - show game complete
+          this.uiManager.showMessage('ALL LEVELS COMPLETE!', 3000, '#ffaa00');
+          setTimeout(() => {
+            // Return to level selection or show final stats
+            if (this.game && this.game.showLevelSelection) {
+              this.game.showLevelSelection();
+            }
+          }, 4000);
+        }
+      }
+    }, 5000);
   }
 }
 
