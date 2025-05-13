@@ -9,7 +9,7 @@ class ProjectileManager {
     this.projectiles = [];
 
     this.projectileGeometry = new THREE.SphereGeometry(0.05, 8, 8);
-    this.projectileSpeed = 5; // Units per second
+    this.projectileSpeed = 15; // Units per second
     this.canvas = null; // Will be set from outside
   }
 
@@ -18,7 +18,13 @@ class ProjectileManager {
     this.canvas = canvas;
   }
   // Enhanced projectile with trail
-  createProjectileWithTrail(position, quaternion, color = 0x00ff00, power = 1) {
+  createProjectileWithTrail(
+    position,
+    quaternion,
+    color = 0x00ff00,
+    power = 1,
+    playerVelocity = null
+  ) {
     // Main projectile - using MeshStandardMaterial which supports emissive properties
     const projectileMaterial = new THREE.MeshStandardMaterial({
       color: color,
@@ -37,6 +43,11 @@ class ProjectileManager {
 
     const velocity = new THREE.Vector3(0, 0, -this.projectileSpeed);
     velocity.applyQuaternion(quaternion);
+
+    // Add player's velocity to projectile if provided
+    if (playerVelocity) {
+      velocity.add(playerVelocity * 8.5);
+    }
 
     // Trail effect - create small points that follow the projectile's path
     const trailLength = 5;
@@ -131,6 +142,21 @@ class ProjectileManager {
     const offset = new THREE.Vector3(0, 0, -2); // Adjust Z offset as needed
     offset.applyQuaternion(startQuaternion);
     startPosition.add(offset);
+
+    // Calculate player's current velocity
+    // This assumes the ship is moving with the camera
+    const playerVelocity = new THREE.Vector3();
+    if (gameState.speedMultiplier && gameState.playerVelocity) {
+      // If velocity is tracked in gameState, use that
+      playerVelocity.copy(gameState.playerVelocity);
+    } else {
+      // Otherwise approximate from speed multiplier
+      const baseSpeed = 1.0;
+      const currentSpeed = baseSpeed * (gameState.speedMultiplier || 1.0);
+      // Assume forward velocity in camera's direction
+      playerVelocity.set(0, 0, -currentSpeed);
+      playerVelocity.applyQuaternion(startQuaternion);
+    }
 
     this.createProjectileWithTrail(
       startPosition,
