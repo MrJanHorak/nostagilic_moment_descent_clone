@@ -748,7 +748,7 @@ startScreen.style.justifyContent = 'center';
 startScreen.style.alignItems = 'center';
 startScreen.style.zIndex = '1000';
 startScreen.innerHTML = `
-  <h1 style="color: #fff; font-size: 48px; margin-bottom: 20px;">DESCENT</h1>
+  <h1 style="color: #fff; font-size: 48px; margin-bottom: 20px;">DESCENDED</h1>
   <h2 style="color: #fff; font-size: 24px; margin-bottom: 40px;">Zero Gravity Shooter</h2>
   <div style="color: #fff; font-size: 18px; margin-bottom: 30px;">
     <p>Controls:</p>

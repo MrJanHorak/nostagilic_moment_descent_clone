@@ -1,6 +1,6 @@
 # Level Design Guide
 
-This guide explains how to create custom levels for the Descent game. The level system uses a blueprint-based approach that allows for complete customization of tunnel segments, obstacle patterns, enemy placement, and power-up distribution.
+This guide explains how to create custom levels for the Descended game. The level system uses a blueprint-based approach that allows for complete customization of tunnel segments, obstacle patterns, enemy placement, and power-up distribution.
 
 ## Table of Contents
 

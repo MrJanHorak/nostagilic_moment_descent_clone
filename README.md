@@ -1,4 +1,4 @@
-# DESCENT - Zero Gravity Shooter
+# DESCENDED - Zero Gravity Shooter
 
 A 3D zero-gravity shooter game in the style of Descent, built with JavaScript and Three.js. Pilot your spaceship through procedurally generated cave tunnels, battle enemies, and collect power-ups.
 
@@ -24,7 +24,7 @@ A 3D zero-gravity shooter game in the style of Descent, built with JavaScript an
 
 ## Game Overview
 
-DESCENT is a first-person 3D shooter with zero-gravity movement inspired by the classic game Descent. Navigate through procedurally generated tunnels, destroy enemy ships, and collect power-ups to increase your score and survival chances.
+DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by the classic game Descent. Navigate through procedurally generated tunnels, destroy enemy ships, and collect power-ups to increase your score and survival chances.
 
 ### Game Mechanics
 
@@ -90,8 +90,8 @@ DESCENT is a first-person 3D shooter with zero-gravity movement inspired by the 
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/yourusername/descent-game.git
-   cd descent-game
+   git clone https://github.com/yourusername/descended-game.git
+   cd descended-game
    ```
 
 2. Install dependencies:
