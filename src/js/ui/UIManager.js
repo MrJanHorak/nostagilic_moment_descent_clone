@@ -178,36 +178,191 @@ class UIManager {
       startScreen.style.zIndex = '1000';
 
       startScreen.innerHTML = `
-        <h1 style="color: #fff; font-size: 48px; margin-bottom: 20px;">DESCENDED</h1>
-        <h2 style="color: #fff; font-size: 24px; margin-bottom: 40px;">Zero Gravity Shooter</h2>
-        <div style="color: #fff; font-size: 18px; margin-bottom: 30px;">
-          <p>Controls:</p>
-          <p>WASD - Movement</p>
-          <p>Mouse - Look around</p>
-          <p>Left Click - Shoot</p>
-          <p>Q/E - Roll left/right</p>
-          <p>Space - Move up</p>
-          <p>Shift/Ctrl - Move down</p>
-        </div>
-        <div style="display: flex; gap: 20px;">
-          <div id="start-game-btn" style="
-            font-size: 24px;
-            cursor: pointer;
-            background-color: #00ff00; 
-            color: #000;
-            padding: 10px 30px;
-            border-radius: 5px;
-          ">START ENDLESS MODE</div>
+        <div class="title-container" style="
+          background: linear-gradient(rgba(0,0,0,0.7), rgba(0,10,20,0.9));
+          border: 1px solid #00aaff;
+          border-radius: 10px;
+          box-shadow: 0 0 20px #0066aa, inset 0 0 30px rgba(0,100,200,0.3);
+          padding: 40px;
+          max-width: 800px;
+          width: 90%;
+        ">
+          <div class="logo-area" style="
+            position: relative;
+            margin-bottom: 30px;
+            text-align: center;
+          ">
+            <h1 style="
+              color: #ffffff;
+              font-size: 72px;
+              margin-bottom: 10px;
+              font-family: 'Arial Black', sans-serif;
+              text-transform: uppercase;
+              letter-spacing: 6px;
+              text-shadow: 0 0 10px #00aaff, 0 0 20px #00aaff, 0 0 30px #00aaff;
+              background: linear-gradient(#ffffff, #00aaff);
+              -webkit-background-clip: text;
+              -webkit-text-fill-color: transparent;
+            ">DESCENDED</h1>
+            <h2 style="
+              color: #00ddff;
+              font-size: 24px;
+              margin-bottom: 30px;
+              font-style: italic;
+              letter-spacing: 3px;
+              text-shadow: 0 0 5px #00aaff;
+            ">Zero Gravity Shooter</h2>
+            <div style="
+              width: 80%;
+              height: 2px;
+              background: linear-gradient(to right, transparent, #00aaff, transparent);
+              margin: 0 auto 40px;
+            "></div>
+          </div>
           
-          <div id="select-level-btn" style="
-            font-size: 24px;
-            cursor: pointer;
-            background-color: #00aaff; 
-            color: #000;
-            padding: 10px 30px;
-            border-radius: 5px;
-          ">SELECT LEVEL</div>
+          <div class="controls-container" style="
+            background: rgba(0,30,60,0.5);
+            border-radius: 8px;
+            padding: 20px;
+            color: #b0e0ff;
+            font-size: 16px;
+            margin-bottom: 30px;
+            border-left: 2px solid #00aaff;
+          ">
+            <h3 style="
+              color: #ffffff;
+              font-size: 22px;
+              margin-bottom: 15px;
+              text-shadow: 0 0 5px #00aaff;
+            ">CONTROL SYSTEMS</h3>
+            
+            <div class="controls-grid" style="
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 15px;
+            ">
+              <div class="control-group">
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Movement:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">W A S D</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Look:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">Mouse</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Shoot:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">Left Click</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Pause:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">ESC</span>
+                </p>
+              </div>
+              <div class="control-group">
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Roll Left/Right:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">Q / E</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Move Up:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">Space</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Move Down:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">Shift / Ctrl</span>
+                </p>
+                <p style="margin: 5px 0; display: flex; justify-content: space-between;">
+                  <span style="color: #ffffff;">Weapon Switch:</span> 
+                  <span style="color: #00ddff; font-weight: bold;">1-4</span>
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div class="buttons-container" style="
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+          ">
+            <div id="start-game-btn" class="game-button" style="
+              font-size: 22px;
+              cursor: pointer;
+              background: linear-gradient(to bottom, #00cc22, #008800);
+              color: #fff;
+              padding: 12px 30px;
+              border-radius: 5px;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              text-shadow: 0 0 5px rgba(0,0,0,0.5);
+              box-shadow: 0 0 15px #00aa00, inset 0 0 10px rgba(255,255,255,0.3);
+              transition: all 0.2s ease;
+              font-weight: bold;
+              border: 1px solid #00dd00;
+              position: relative;
+              overflow: hidden;
+            ">
+              <span style="position: relative; z-index: 2;">START ENDLESS MODE</span>
+              <div style="
+                position: absolute;
+                top: -10%;
+                left: -10%;
+                width: 120%;
+                height: 10%;
+                background: rgba(255,255,255,0.3);
+                transform: rotate(45deg);
+                animation: shine 3s infinite;
+              "></div>
+            </div>
+            
+            <div id="select-level-btn" class="game-button" style="
+              font-size: 22px;
+              cursor: pointer;
+              background: linear-gradient(to bottom, #0088ff, #0044aa);
+              color: #fff;
+              padding: 12px 30px;
+              border-radius: 5px;
+              text-transform: uppercase;
+              letter-spacing: 2px;
+              text-shadow: 0 0 5px rgba(0,0,0,0.5);
+              box-shadow: 0 0 15px #0066cc, inset 0 0 10px rgba(255,255,255,0.3);
+              transition: all 0.2s ease;
+              font-weight: bold;
+              border: 1px solid #00aaff;
+              position: relative;
+              overflow: hidden;
+            ">
+              <span style="position: relative; z-index: 2;">SELECT LEVEL</span>
+              <div style="
+                position: absolute;
+                top: -10%;
+                left: -10%;
+                width: 120%;
+                height: 10%;
+                background: rgba(255,255,255,0.3);
+                transform: rotate(45deg);
+                animation: shine 3s infinite 1s;
+              "></div>
+            </div>
+          </div>
         </div>
+        
+        <style>
+          @keyframes shine {
+            0% { top: -10%; left: -10%; }
+            20% { top: 110%; left: 110%; }
+            100% { top: 110%; left: 110%; }
+          }
+          
+          .game-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px currentColor, inset 0 0 15px rgba(255,255,255,0.5);
+          }
+          
+          .game-button:active {
+            transform: scale(0.98);
+          }
+        </style>
       `;
       document.body.appendChild(startScreen);
       this.startScreen = startScreen;
@@ -235,36 +390,126 @@ class UIManager {
     const menuContainer = document.createElement('div');
     menuContainer.className = 'level-select';
     menuContainer.style.position = 'absolute';
-    menuContainer.style.top = '50%';
-    menuContainer.style.left = '50%';
-    menuContainer.style.transform = 'translate(-50%, -50%)';
-    menuContainer.style.background = 'rgba(0, 0, 0, 0.8)';
-    menuContainer.style.padding = '20px';
-    menuContainer.style.borderRadius = '10px';
-    menuContainer.style.textAlign = 'center';
-    menuContainer.style.minWidth = '300px';
+    menuContainer.style.top = '0';
+    menuContainer.style.left = '0';
+    menuContainer.style.width = '100%';
+    menuContainer.style.height = '100%';
+    menuContainer.style.display = 'flex';
+    menuContainer.style.justifyContent = 'center';
+    menuContainer.style.alignItems = 'center';
+    menuContainer.style.background = 'rgba(0, 0, 0, 0.7)';
+    menuContainer.style.zIndex = '1000';
 
+    const contentContainer = document.createElement('div');
+    contentContainer.style.background =
+      'linear-gradient(rgba(0,0,0,0.8), rgba(0,10,30,0.95))';
+    contentContainer.style.border = '1px solid #00aaff';
+    contentContainer.style.borderRadius = '10px';
+    contentContainer.style.boxShadow =
+      '0 0 20px #0066aa, inset 0 0 30px rgba(0,100,200,0.3)';
+    contentContainer.style.padding = '40px';
+    contentContainer.style.maxWidth = '600px';
+    contentContainer.style.width = '90%';
+    contentContainer.style.maxHeight = '80vh';
+    contentContainer.style.overflowY = 'auto';
+    contentContainer.style.textAlign = 'center';
+
+    // Title with matching style to main screen
     const title = document.createElement('h1');
-    title.textContent = 'SELECT LEVEL';
-    title.style.color = '#fff';
-    title.style.marginBottom = '20px';
-    menuContainer.appendChild(title);
+    title.textContent = 'SELECT MISSION';
+    title.style.color = '#ffffff';
+    title.style.fontSize = '48px';
+    title.style.marginBottom = '30px';
+    title.style.fontFamily = 'Arial Black, sans-serif';
+    title.style.textTransform = 'uppercase';
+    title.style.letterSpacing = '4px';
+    title.style.textShadow = '0 0 10px #00aaff, 0 0 15px #00aaff';
+    title.style.background = 'linear-gradient(#ffffff, #00aaff)';
+    title.style.webkitBackgroundClip = 'text';
+    title.style.webkitTextFillColor = 'transparent';
+    contentContainer.appendChild(title);
+
+    // Decorative divider
+    const divider = document.createElement('div');
+    divider.style.width = '80%';
+    divider.style.height = '2px';
+    divider.style.background =
+      'linear-gradient(to right, transparent, #00aaff, transparent)';
+    divider.style.margin = '0 auto 30px';
+    contentContainer.appendChild(divider);
+
+    // Levels container with styled scrollbar
+    const levelsContainer = document.createElement('div');
+    levelsContainer.style.marginBottom = '20px';
+    levelsContainer.style.maxHeight = '50vh';
+    levelsContainer.style.overflowY = 'auto';
+    levelsContainer.style.padding = '0 10px';
+    levelsContainer.style.scrollbarWidth = 'thin';
+    levelsContainer.style.scrollbarColor = '#00aaff #001830';
 
     // Get levels from the level manager
     const levels = this.game.levelManager.levels;
 
+    // Level selection buttons
     levels.forEach((level, index) => {
+      const levelBtnContainer = document.createElement('div');
+      levelBtnContainer.style.position = 'relative';
+      levelBtnContainer.style.marginBottom = '15px';
+
       const levelBtn = document.createElement('button');
       levelBtn.textContent = `Level ${level.id}: ${level.name}`;
       levelBtn.className = 'level-btn';
-      levelBtn.style.display = 'block';
-      levelBtn.style.margin = '10px auto';
-      levelBtn.style.padding = '10px 20px';
-      levelBtn.style.background = '#4466aa';
-      levelBtn.style.color = 'white';
-      levelBtn.style.border = 'none';
+      levelBtn.style.width = '100%';
+      levelBtn.style.padding = '15px 20px';
+      levelBtn.style.background =
+        'linear-gradient(to bottom, #003366, #001830)';
+      levelBtn.style.color = '#00ddff';
+      levelBtn.style.border = '1px solid #0088cc';
       levelBtn.style.borderRadius = '5px';
       levelBtn.style.cursor = 'pointer';
+      levelBtn.style.fontSize = '18px';
+      levelBtn.style.fontWeight = 'bold';
+      levelBtn.style.textTransform = 'uppercase';
+      levelBtn.style.letterSpacing = '1px';
+      levelBtn.style.textShadow = '0 0 5px rgba(0, 170, 255, 0.5)';
+      levelBtn.style.boxShadow =
+        '0 0 10px rgba(0, 100, 200, 0.3), inset 0 0 15px rgba(0, 100, 200, 0.2)';
+      levelBtn.style.transition = 'all 0.2s ease';
+      levelBtn.style.position = 'relative';
+      levelBtn.style.overflow = 'hidden';
+
+      // Add shine effect
+      const shine = document.createElement('div');
+      shine.style.position = 'absolute';
+      shine.style.top = '-10%';
+      shine.style.left = '-10%';
+      shine.style.width = '120%';
+      shine.style.height = '10%';
+      shine.style.background = 'rgba(255,255,255,0.2)';
+      shine.style.transform = 'rotate(45deg)';
+      shine.style.animation = `shine${index} 4s infinite`;
+      levelBtn.appendChild(shine);
+
+      // Add custom animation for each button with different delays
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes shine${index} {
+          0% { top: -10%; left: -10%; }
+          20% { top: 110%; left: 110%; }
+          100% { top: 110%; left: 110%; }
+        }
+        
+        .level-btn:hover {
+          transform: scale(1.03);
+          box-shadow: 0 0 15px #00aaff, inset 0 0 20px rgba(0, 170, 255, 0.3);
+          background: linear-gradient(to bottom, #004488, #002244);
+        }
+        
+        .level-btn:active {
+          transform: scale(0.98);
+        }
+      `;
+      document.head.appendChild(style);
 
       levelBtn.addEventListener('click', () => {
         this.game.selectLevel(index);
@@ -272,20 +517,85 @@ class UIManager {
         this.game.startGame();
       });
 
-      menuContainer.appendChild(levelBtn);
+      levelBtnContainer.appendChild(levelBtn);
+      levelsContainer.appendChild(levelBtnContainer);
     });
 
+    contentContainer.appendChild(levelsContainer);
+
+    // Endless mode button (special styling)
+    const endlessContainer = document.createElement('div');
+    endlessContainer.style.marginTop = '30px';
+    endlessContainer.style.position = 'relative';
+
     const endlessBtn = document.createElement('button');
-    endlessBtn.textContent = 'Endless Mode';
+    endlessBtn.textContent = 'ENDLESS MODE';
     endlessBtn.className = 'endless-btn';
-    endlessBtn.style.display = 'block';
-    endlessBtn.style.margin = '20px auto 10px';
-    endlessBtn.style.padding = '10px 20px';
-    endlessBtn.style.background = '#aa4466';
-    endlessBtn.style.color = 'white';
-    endlessBtn.style.border = 'none';
+    endlessBtn.style.width = '100%';
+    endlessBtn.style.padding = '18px 20px';
+    endlessBtn.style.background =
+      'linear-gradient(to bottom, #660033, #330011)';
+    endlessBtn.style.color = '#ff77aa';
+    endlessBtn.style.border = '1px solid #cc3366';
     endlessBtn.style.borderRadius = '5px';
     endlessBtn.style.cursor = 'pointer';
+    endlessBtn.style.fontSize = '22px';
+    endlessBtn.style.fontWeight = 'bold';
+    endlessBtn.style.textTransform = 'uppercase';
+    endlessBtn.style.letterSpacing = '2px';
+    endlessBtn.style.textShadow = '0 0 8px rgba(255, 50, 100, 0.7)';
+    endlessBtn.style.boxShadow =
+      '0 0 15px rgba(200, 50, 100, 0.4), inset 0 0 20px rgba(200, 50, 100, 0.2)';
+    endlessBtn.style.transition = 'all 0.2s ease';
+    endlessBtn.style.position = 'relative';
+    endlessBtn.style.overflow = 'hidden';
+
+    // Add pulsing effect to endless mode button
+    const pulseStyle = document.createElement('style');
+    pulseStyle.textContent = `
+      @keyframes pulse {
+        0% { box-shadow: 0 0 15px rgba(255, 50, 100, 0.4), inset 0 0 20px rgba(255, 50, 100, 0.2); }
+        50% { box-shadow: 0 0 20px rgba(255, 50, 100, 0.7), inset 0 0 30px rgba(255, 50, 100, 0.3); }
+        100% { box-shadow: 0 0 15px rgba(255, 50, 100, 0.4), inset 0 0 20px rgba(255, 50, 100, 0.2); }
+      }
+      
+      .endless-btn {
+        animation: pulse 2s infinite;
+      }
+      
+      .endless-btn:hover {
+        transform: scale(1.05);
+        background: linear-gradient(to bottom, #880044, #440022);
+      }
+      
+      .endless-btn:active {
+        transform: scale(0.98);
+      }
+    `;
+    document.head.appendChild(pulseStyle);
+
+    // Add shine effect
+    const endlessShine = document.createElement('div');
+    endlessShine.style.position = 'absolute';
+    endlessShine.style.top = '-10%';
+    endlessShine.style.left = '-10%';
+    endlessShine.style.width = '120%';
+    endlessShine.style.height = '10%';
+    endlessShine.style.background = 'rgba(255,255,255,0.3)';
+    endlessShine.style.transform = 'rotate(45deg)';
+    endlessShine.style.animation = 'endlessShine 4s infinite';
+    endlessBtn.appendChild(endlessShine);
+
+    // Add endless shine animation
+    const endlessShineStyle = document.createElement('style');
+    endlessShineStyle.textContent = `
+      @keyframes endlessShine {
+        0% { top: -10%; left: -10%; }
+        20% { top: 110%; left: 110%; }
+        100% { top: 110%; left: 110%; }
+      }
+    `;
+    document.head.appendChild(endlessShineStyle);
 
     endlessBtn.addEventListener('click', () => {
       this.game.selectEndlessMode();
@@ -293,8 +603,46 @@ class UIManager {
       this.game.startGame();
     });
 
-    menuContainer.appendChild(endlessBtn);
+    endlessContainer.appendChild(endlessBtn);
+    contentContainer.appendChild(endlessContainer);
 
+    // Return button
+    const backContainer = document.createElement('div');
+    backContainer.style.marginTop = '25px';
+
+    const backButton = document.createElement('button');
+    backButton.textContent = 'RETURN TO MAIN MENU';
+    backButton.style.padding = '10px 20px';
+    backButton.style.background =
+      'linear-gradient(to bottom, #333333, #111111)';
+    backButton.style.color = '#aaaaaa';
+    backButton.style.border = '1px solid #555555';
+    backButton.style.borderRadius = '5px';
+    backButton.style.cursor = 'pointer';
+    backButton.style.fontSize = '16px';
+    backButton.style.textTransform = 'uppercase';
+    backButton.style.transition = 'all 0.2s ease';
+    backButton.addEventListener('click', () => {
+      menuContainer.remove();
+      this.createStartScreen();
+    });
+
+    backButton.onmouseover = () => {
+      backButton.style.background =
+        'linear-gradient(to bottom, #444444, #222222)';
+      backButton.style.color = '#ffffff';
+    };
+
+    backButton.onmouseout = () => {
+      backButton.style.background =
+        'linear-gradient(to bottom, #333333, #111111)';
+      backButton.style.color = '#aaaaaa';
+    };
+
+    backContainer.appendChild(backButton);
+    contentContainer.appendChild(backContainer);
+
+    menuContainer.appendChild(contentContainer);
     document.body.appendChild(menuContainer);
     this.levelSelectMenu = menuContainer;
 
@@ -317,94 +665,279 @@ class UIManager {
     const pauseMenu = document.createElement('div');
     pauseMenu.className = 'pause-menu';
     pauseMenu.style.position = 'absolute';
-    pauseMenu.style.top = '50%';
-    pauseMenu.style.left = '50%';
-    pauseMenu.style.transform = 'translate(-50%, -50%)';
-    pauseMenu.style.background = 'rgba(0, 0, 0, 0.8)';
-    pauseMenu.style.padding = '20px';
-    pauseMenu.style.borderRadius = '10px';
-    pauseMenu.style.textAlign = 'center';
-    pauseMenu.style.minWidth = '300px';
-    pauseMenu.style.zIndex = '500';
+    pauseMenu.style.top = '0';
+    pauseMenu.style.left = '0';
+    pauseMenu.style.width = '100%';
+    pauseMenu.style.height = '100%';
+    pauseMenu.style.display = 'flex';
+    pauseMenu.style.justifyContent = 'center';
+    pauseMenu.style.alignItems = 'center';
+    pauseMenu.style.background = 'rgba(0, 0, 0, 0.7)';
+    pauseMenu.style.zIndex = '1000';
+    pauseMenu.style.backdropFilter = 'blur(5px)';
 
-    const title = document.createElement('h2');
-    title.textContent = 'GAME PAUSED';
-    title.style.color = '#fff';
+    const contentContainer = document.createElement('div');
+    contentContainer.style.background =
+      'linear-gradient(rgba(0,0,0,0.8), rgba(0,10,30,0.95))';
+    contentContainer.style.border = '1px solid #00aaff';
+    contentContainer.style.borderRadius = '10px';
+    contentContainer.style.boxShadow =
+      '0 0 20px #0066aa, inset 0 0 30px rgba(0,100,200,0.3)';
+    contentContainer.style.padding = '30px';
+    contentContainer.style.maxWidth = '400px';
+    contentContainer.style.width = '90%';
+    contentContainer.style.textAlign = 'center';
+
+    // Title with matching style to main screen
+    const title = document.createElement('h1');
+    title.textContent = 'PAUSED';
+    title.style.color = '#ffffff';
+    title.style.fontSize = '48px';
     title.style.marginBottom = '20px';
-    pauseMenu.appendChild(title);
+    title.style.fontFamily = 'Arial Black, sans-serif';
+    title.style.textTransform = 'uppercase';
+    title.style.letterSpacing = '4px';
+    title.style.textShadow = '0 0 10px #00aaff, 0 0 15px #00aaff';
+    title.style.background = 'linear-gradient(#ffffff, #00aaff)';
+    title.style.webkitBackgroundClip = 'text';
+    title.style.webkitTextFillColor = 'transparent';
+    contentContainer.appendChild(title);
+
+    // Decorative divider
+    const divider = document.createElement('div');
+    divider.style.width = '80%';
+    divider.style.height = '2px';
+    divider.style.background =
+      'linear-gradient(to right, transparent, #00aaff, transparent)';
+    divider.style.margin = '0 auto 30px';
+    contentContainer.appendChild(divider);
+
+    // Button container
+    const buttonContainer = document.createElement('div');
+    buttonContainer.style.display = 'flex';
+    buttonContainer.style.flexDirection = 'column';
+    buttonContainer.style.alignItems = 'center';
+    buttonContainer.style.gap = '15px';
 
     // Continue button
     const continueBtn = document.createElement('button');
-    continueBtn.textContent = 'Continue';
-    continueBtn.style.display = 'block';
-    continueBtn.style.margin = '10px auto';
-    continueBtn.style.padding = '10px 20px';
-    continueBtn.style.background = '#00aa00';
-    continueBtn.style.color = 'white';
-    continueBtn.style.border = 'none';
+    continueBtn.textContent = 'CONTINUE';
+    continueBtn.className = 'pause-btn continue-btn';
+    continueBtn.style.width = '100%';
+    continueBtn.style.padding = '15px 20px';
+    continueBtn.style.background =
+      'linear-gradient(to bottom, #00cc22, #008800)';
+    continueBtn.style.color = '#ffffff';
+    continueBtn.style.border = '1px solid #00dd00';
     continueBtn.style.borderRadius = '5px';
     continueBtn.style.cursor = 'pointer';
-    continueBtn.style.width = '200px';
+    continueBtn.style.fontSize = '20px';
+    continueBtn.style.fontWeight = 'bold';
+    continueBtn.style.textTransform = 'uppercase';
+    continueBtn.style.letterSpacing = '2px';
+    continueBtn.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
+    continueBtn.style.boxShadow =
+      '0 0 15px rgba(0, 170, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2)';
+    continueBtn.style.transition = 'all 0.2s ease';
+    continueBtn.style.position = 'relative';
+    continueBtn.style.overflow = 'hidden';
+
+    // Add shine effect
+    const continueShine = document.createElement('div');
+    continueShine.style.position = 'absolute';
+    continueShine.style.top = '-10%';
+    continueShine.style.left = '-10%';
+    continueShine.style.width = '120%';
+    continueShine.style.height = '10%';
+    continueShine.style.background = 'rgba(255,255,255,0.3)';
+    continueShine.style.transform = 'rotate(45deg)';
+    continueShine.style.animation = 'continueShine 3s infinite';
+    continueBtn.appendChild(continueShine);
+
     continueBtn.onclick = () => this.togglePauseMenu();
-    pauseMenu.appendChild(continueBtn);
+    buttonContainer.appendChild(continueBtn);
 
     // Select level button
     const selectLevelBtn = document.createElement('button');
-    selectLevelBtn.textContent = 'Select Level';
-    selectLevelBtn.style.display = 'block';
-    selectLevelBtn.style.margin = '10px auto';
-    selectLevelBtn.style.padding = '10px 20px';
-    selectLevelBtn.style.background = '#0066aa';
-    selectLevelBtn.style.color = 'white';
-    selectLevelBtn.style.border = 'none';
+    selectLevelBtn.textContent = 'SELECT MISSION';
+    selectLevelBtn.className = 'pause-btn select-level-btn';
+    selectLevelBtn.style.width = '100%';
+    selectLevelBtn.style.padding = '15px 20px';
+    selectLevelBtn.style.background =
+      'linear-gradient(to bottom, #0088ff, #0044aa)';
+    selectLevelBtn.style.color = '#ffffff';
+    selectLevelBtn.style.border = '1px solid #00aaff';
     selectLevelBtn.style.borderRadius = '5px';
     selectLevelBtn.style.cursor = 'pointer';
-    selectLevelBtn.style.width = '200px';
+    selectLevelBtn.style.fontSize = '20px';
+    selectLevelBtn.style.fontWeight = 'bold';
+    selectLevelBtn.style.textTransform = 'uppercase';
+    selectLevelBtn.style.letterSpacing = '2px';
+    selectLevelBtn.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
+    selectLevelBtn.style.boxShadow =
+      '0 0 15px rgba(0, 100, 200, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2)';
+    selectLevelBtn.style.transition = 'all 0.2s ease';
+    selectLevelBtn.style.position = 'relative';
+    selectLevelBtn.style.overflow = 'hidden';
+
+    // Add shine effect
+    const levelShine = document.createElement('div');
+    levelShine.style.position = 'absolute';
+    levelShine.style.top = '-10%';
+    levelShine.style.left = '-10%';
+    levelShine.style.width = '120%';
+    levelShine.style.height = '10%';
+    levelShine.style.background = 'rgba(255,255,255,0.3)';
+    levelShine.style.transform = 'rotate(45deg)';
+    levelShine.style.animation = 'levelShine 3s infinite 0.5s';
+    selectLevelBtn.appendChild(levelShine);
+
     selectLevelBtn.onclick = () => {
       this.togglePauseMenu();
       if (this.game) {
         this.game.showLevelSelection();
       }
     };
-    pauseMenu.appendChild(selectLevelBtn);
+    buttonContainer.appendChild(selectLevelBtn);
 
     // Restart button
     const restartBtn = document.createElement('button');
-    restartBtn.textContent = 'Restart Level';
-    restartBtn.style.display = 'block';
-    restartBtn.style.margin = '10px auto';
-    restartBtn.style.padding = '10px 20px';
-    restartBtn.style.background = '#aa6600';
-    restartBtn.style.color = 'white';
-    restartBtn.style.border = 'none';
+    restartBtn.textContent = 'RESTART MISSION';
+    restartBtn.className = 'pause-btn restart-btn';
+    restartBtn.style.width = '100%';
+    restartBtn.style.padding = '15px 20px';
+    restartBtn.style.background =
+      'linear-gradient(to bottom, #ff9900, #cc7700)';
+    restartBtn.style.color = '#ffffff';
+    restartBtn.style.border = '1px solid #ffaa00';
     restartBtn.style.borderRadius = '5px';
     restartBtn.style.cursor = 'pointer';
-    restartBtn.style.width = '200px';
+    restartBtn.style.fontSize = '20px';
+    restartBtn.style.fontWeight = 'bold';
+    restartBtn.style.textTransform = 'uppercase';
+    restartBtn.style.letterSpacing = '2px';
+    restartBtn.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
+    restartBtn.style.boxShadow =
+      '0 0 15px rgba(200, 100, 0, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2)';
+    restartBtn.style.transition = 'all 0.2s ease';
+    restartBtn.style.position = 'relative';
+    restartBtn.style.overflow = 'hidden';
+
+    // Add shine effect
+    const restartShine = document.createElement('div');
+    restartShine.style.position = 'absolute';
+    restartShine.style.top = '-10%';
+    restartShine.style.left = '-10%';
+    restartShine.style.width = '120%';
+    restartShine.style.height = '10%';
+    restartShine.style.background = 'rgba(255,255,255,0.3)';
+    restartShine.style.transform = 'rotate(45deg)';
+    restartShine.style.animation = 'restartShine 3s infinite 1s';
+    restartBtn.appendChild(restartShine);
+
     restartBtn.onclick = () => {
       this.togglePauseMenu();
       if (this.game) {
         this.game.restartLevel();
       }
     };
-    pauseMenu.appendChild(restartBtn);
+    buttonContainer.appendChild(restartBtn);
 
     // Quit to menu button
     const quitBtn = document.createElement('button');
-    quitBtn.textContent = 'Quit to Menu';
-    quitBtn.style.display = 'block';
-    quitBtn.style.margin = '10px auto';
-    quitBtn.style.padding = '10px 20px';
-    quitBtn.style.background = '#aa0000';
-    quitBtn.style.color = 'white';
-    quitBtn.style.border = 'none';
+    quitBtn.textContent = 'RETURN TO BASE';
+    quitBtn.className = 'pause-btn quit-btn';
+    quitBtn.style.width = '100%';
+    quitBtn.style.padding = '15px 20px';
+    quitBtn.style.background = 'linear-gradient(to bottom, #cc0033, #990022)';
+    quitBtn.style.color = '#ffffff';
+    quitBtn.style.border = '1px solid #ff0044';
     quitBtn.style.borderRadius = '5px';
     quitBtn.style.cursor = 'pointer';
-    quitBtn.style.width = '200px';
+    quitBtn.style.fontSize = '20px';
+    quitBtn.style.fontWeight = 'bold';
+    quitBtn.style.textTransform = 'uppercase';
+    quitBtn.style.letterSpacing = '2px';
+    quitBtn.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.5)';
+    quitBtn.style.boxShadow =
+      '0 0 15px rgba(200, 0, 50, 0.4), inset 0 0 15px rgba(255, 255, 255, 0.2)';
+    quitBtn.style.transition = 'all 0.2s ease';
+    quitBtn.style.position = 'relative';
+    quitBtn.style.overflow = 'hidden';
+
+    // Add shine effect
+    const quitShine = document.createElement('div');
+    quitShine.style.position = 'absolute';
+    quitShine.style.top = '-10%';
+    quitShine.style.left = '-10%';
+    quitShine.style.width = '120%';
+    quitShine.style.height = '10%';
+    quitShine.style.background = 'rgba(255,255,255,0.3)';
+    quitShine.style.transform = 'rotate(45deg)';
+    quitShine.style.animation = 'quitShine 3s infinite 1.5s';
+    quitBtn.appendChild(quitShine);
+
     quitBtn.onclick = () => {
       window.location.reload();
     };
-    pauseMenu.appendChild(quitBtn);
+    buttonContainer.appendChild(quitBtn);
 
+    // Add animations
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      @keyframes continueShine {
+        0% { top: -10%; left: -10%; }
+        20% { top: 110%; left: 110%; }
+        100% { top: 110%; left: 110%; }
+      }
+      
+      @keyframes levelShine {
+        0% { top: -10%; left: -10%; }
+        20% { top: 110%; left: 110%; }
+        100% { top: 110%; left: 110%; }
+      }
+      
+      @keyframes restartShine {
+        0% { top: -10%; left: -10%; }
+        20% { top: 110%; left: 110%; }
+        100% { top: 110%; left: 110%; }
+      }
+      
+      @keyframes quitShine {
+        0% { top: -10%; left: -10%; }
+        20% { top: 110%; left: 110%; }
+        100% { top: 110%; left: 110%; }
+      }
+      
+      .pause-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 0 25px currentColor, inset 0 0 15px rgba(255,255,255,0.5);
+      }
+      
+      .pause-btn:active {
+        transform: scale(0.98);
+      }
+      
+      .continue-btn:hover {
+        box-shadow: 0 0 20px #00cc22, inset 0 0 15px rgba(255,255,255,0.5);
+      }
+      
+      .select-level-btn:hover {
+        box-shadow: 0 0 20px #0088ff, inset 0 0 15px rgba(255,255,255,0.5);
+      }
+      
+      .restart-btn:hover {
+        box-shadow: 0 0 20px #ff9900, inset 0 0 15px rgba(255,255,255,0.5);
+      }
+      
+      .quit-btn:hover {
+        box-shadow: 0 0 20px #cc0033, inset 0 0 15px rgba(255,255,255,0.5);
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
+    contentContainer.appendChild(buttonContainer);
+    pauseMenu.appendChild(contentContainer);
     document.body.appendChild(pauseMenu);
     this.pauseMenu = pauseMenu;
 
