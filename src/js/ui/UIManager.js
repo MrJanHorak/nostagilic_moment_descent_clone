@@ -30,6 +30,9 @@ class UIManager {
       hudContainer.style.padding = '20px';
       hudContainer.style.fontFamily = 'Arial, sans-serif';
       hudContainer.style.color = '#fff';
+      hudContainer.style.display = 'flex';
+      hudContainer.style.flexDirection = 'column';
+      hudContainer.style.gap = '10px';
 
       // Make sure document.body exists before appending
       if (document && document.body) {
@@ -40,47 +43,238 @@ class UIManager {
         return; // Exit early if we can't create the UI
       }
 
-      // Health bar
+      // Top HUD wrapper
+      const topHUDWrapper = document.createElement('div');
+      topHUDWrapper.style.display = 'flex';
+      topHUDWrapper.style.justifyContent = 'space-between';
+      topHUDWrapper.style.width = '100%';
+      hudContainer.appendChild(topHUDWrapper);
+
+      // Left HUD section (Health)
+      const leftHUD = document.createElement('div');
+      leftHUD.style.display = 'flex';
+      leftHUD.style.flexDirection = 'column';
+      leftHUD.style.maxWidth = '280px';
+      topHUDWrapper.appendChild(leftHUD);
+
+      // Shield container with tech frame
       const healthContainer = document.createElement('div');
+      healthContainer.style.background =
+        'linear-gradient(rgba(0,10,20,0.7), rgba(0,20,40,0.7))';
+      healthContainer.style.border = '1px solid #00aaff';
+      healthContainer.style.borderRadius = '5px';
+      healthContainer.style.padding = '8px 12px';
+      healthContainer.style.boxShadow =
+        '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
       healthContainer.style.marginBottom = '10px';
+      leftHUD.appendChild(healthContainer);
+
+      const healthHeader = document.createElement('div');
+      healthHeader.style.display = 'flex';
+      healthHeader.style.justifyContent = 'space-between';
+      healthHeader.style.marginBottom = '5px';
+      healthHeader.style.alignItems = 'center';
+      healthContainer.appendChild(healthHeader);
 
       const healthLabel = document.createElement('div');
-      healthLabel.textContent = 'SHIELD:';
+      healthLabel.textContent = 'SHIELD INTEGRITY';
       healthLabel.style.fontSize = '14px';
-      healthLabel.style.marginBottom = '5px';
-      healthContainer.appendChild(healthLabel);
+      healthLabel.style.fontWeight = 'bold';
+      healthLabel.style.color = '#00ddff';
+      healthLabel.style.textTransform = 'uppercase';
+      healthLabel.style.letterSpacing = '1px';
+      healthLabel.style.textShadow = '0 0 5px rgba(0, 200, 255, 0.7)';
+      healthHeader.appendChild(healthLabel);
 
+      // Percentage display
+      const healthPercentage = document.createElement('div');
+      healthPercentage.id = 'health-percentage';
+      healthPercentage.textContent = '100%';
+      healthPercentage.style.fontSize = '14px';
+      healthPercentage.style.fontWeight = 'bold';
+      healthPercentage.style.color = '#00ff88';
+      healthPercentage.style.textShadow = '0 0 5px rgba(0, 255, 136, 0.7)';
+      healthHeader.appendChild(healthPercentage);
+
+      // Health bar with tech design
       const healthBarContainer = document.createElement('div');
-      healthBarContainer.style.width = '200px';
+      healthBarContainer.style.width = '100%';
       healthBarContainer.style.height = '15px';
       healthBarContainer.style.background = 'rgba(0, 0, 0, 0.5)';
       healthBarContainer.style.border = '1px solid #00aaff';
       healthBarContainer.style.borderRadius = '3px';
       healthBarContainer.style.overflow = 'hidden';
+      healthBarContainer.style.position = 'relative';
 
       const healthBarInner = document.createElement('div');
       healthBarInner.id = 'health-bar-inner';
       healthBarInner.style.height = '100%';
       healthBarInner.style.width = '100%';
       healthBarInner.style.background =
-        'linear-gradient(to right, #00ff00, #aaff00)';
+        'linear-gradient(to right, #00ff88, #00ddff)';
       healthBarInner.style.transition = 'width 0.3s ease-out';
       healthBarContainer.appendChild(healthBarInner);
+
+      // Add tech pattern overlay
+      const healthBarPattern = document.createElement('div');
+      healthBarPattern.style.position = 'absolute';
+      healthBarPattern.style.top = '0';
+      healthBarPattern.style.left = '0';
+      healthBarPattern.style.width = '100%';
+      healthBarPattern.style.height = '100%';
+      healthBarPattern.style.backgroundImage =
+        'linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)';
+      healthBarPattern.style.backgroundSize = '5px 100%';
+      healthBarPattern.style.pointerEvents = 'none';
+      healthBarContainer.appendChild(healthBarPattern);
+
       healthContainer.appendChild(healthBarContainer);
-      hudContainer.appendChild(healthContainer);
 
-      this.hudElements.healthBar = healthBarInner;
+      // Weapon system section
+      const weaponSystem = document.createElement('div');
+      weaponSystem.style.background =
+        'linear-gradient(rgba(0,10,20,0.7), rgba(0,20,40,0.7))';
+      weaponSystem.style.border = '1px solid #00aaff';
+      weaponSystem.style.borderRadius = '5px';
+      weaponSystem.style.padding = '8px 12px';
+      weaponSystem.style.boxShadow =
+        '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
+      leftHUD.appendChild(weaponSystem);
 
-      // Score display
+      const weaponLabel = document.createElement('div');
+      weaponLabel.textContent = 'WEAPON SYSTEM';
+      weaponLabel.style.fontSize = '14px';
+      weaponLabel.style.fontWeight = 'bold';
+      weaponLabel.style.color = '#00ddff';
+      weaponLabel.style.textTransform = 'uppercase';
+      weaponLabel.style.letterSpacing = '1px';
+      weaponLabel.style.textShadow = '0 0 5px rgba(0, 200, 255, 0.7)';
+      weaponLabel.style.marginBottom = '5px';
+      weaponSystem.appendChild(weaponLabel);
+
+      // Weapon selector
+      const weaponSelector = document.createElement('div');
+      weaponSelector.style.display = 'flex';
+      weaponSelector.style.gap = '5px';
+      weaponSelector.style.marginTop = '5px';
+
+      // Create weapon slots with numbers 1-4
+      const weaponSlots = ['PULSE', 'LASER', 'MISSILE', 'PLASMA'];
+      for (let i = 0; i < 4; i++) {
+        const weaponSlot = document.createElement('div');
+        weaponSlot.id = `weapon-slot-${i + 1}`;
+        weaponSlot.className = 'weapon-slot';
+        weaponSlot.style.flex = '1';
+        weaponSlot.style.padding = '4px 0';
+        weaponSlot.style.border = '1px solid #0088cc';
+        weaponSlot.style.borderRadius = '3px';
+        weaponSlot.style.textAlign = 'center';
+        weaponSlot.style.fontSize = '12px';
+        weaponSlot.style.background =
+          i === 0 ? 'rgba(0, 170, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)';
+        weaponSlot.style.color = i === 0 ? '#ffffff' : '#0088cc';
+        weaponSlot.style.cursor = 'pointer';
+        weaponSlot.style.transition = 'all 0.2s ease';
+        weaponSlot.style.position = 'relative';
+        weaponSlot.innerHTML = `<div style="font-weight: bold;">${
+          i + 1
+        }</div><div style="font-size: 10px;">${weaponSlots[i]}</div>`;
+
+        weaponSlot.onmouseover = () => {
+          if (weaponSlot.style.background !== 'rgba(0, 170, 255, 0.3)') {
+            weaponSlot.style.background = 'rgba(0, 100, 150, 0.3)';
+            weaponSlot.style.color = '#00aaff';
+          }
+        };
+
+        weaponSlot.onmouseout = () => {
+          if (weaponSlot.style.background !== 'rgba(0, 170, 255, 0.3)') {
+            weaponSlot.style.background = 'rgba(0, 0, 0, 0.3)';
+            weaponSlot.style.color = '#0088cc';
+          }
+        };
+
+        weaponSelector.appendChild(weaponSlot);
+      }
+
+      weaponSystem.appendChild(weaponSelector);
+
+      // Right HUD section (Score, etc.)
+      const rightHUD = document.createElement('div');
+      rightHUD.style.textAlign = 'right';
+      rightHUD.style.display = 'flex';
+      rightHUD.style.flexDirection = 'column';
+      rightHUD.style.alignItems = 'flex-end';
+      topHUDWrapper.appendChild(rightHUD);
+
+      // Score display with tech frame
+      const scoreContainer = document.createElement('div');
+      scoreContainer.style.background =
+        'linear-gradient(rgba(0,10,20,0.7), rgba(0,20,40,0.7))';
+      scoreContainer.style.border = '1px solid #00aaff';
+      scoreContainer.style.borderRadius = '5px';
+      scoreContainer.style.padding = '8px 15px';
+      scoreContainer.style.boxShadow =
+        '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
+      scoreContainer.style.marginBottom = '10px';
+      rightHUD.appendChild(scoreContainer);
+
+      const scoreLabel = document.createElement('div');
+      scoreLabel.textContent = 'COMBAT SCORE';
+      scoreLabel.style.fontSize = '14px';
+      scoreLabel.style.fontWeight = 'bold';
+      scoreLabel.style.color = '#00ddff';
+      scoreLabel.style.textTransform = 'uppercase';
+      scoreLabel.style.letterSpacing = '1px';
+      scoreLabel.style.textShadow = '0 0 5px rgba(0, 200, 255, 0.7)';
+      scoreLabel.style.marginBottom = '5px';
+      scoreContainer.appendChild(scoreLabel);
+
       const scoreDisplay = document.createElement('div');
       scoreDisplay.id = 'score-display';
       scoreDisplay.style.fontSize = '24px';
       scoreDisplay.style.fontWeight = 'bold';
-      scoreDisplay.style.textShadow = '0 0 5px rgba(0, 0, 0, 0.7)';
-      scoreDisplay.textContent = 'SCORE: 0';
-      hudContainer.appendChild(scoreDisplay);
+      scoreDisplay.style.fontFamily = 'Arial Black, sans-serif';
+      scoreDisplay.style.color = '#ffffff';
+      scoreDisplay.style.textShadow = '0 0 10px rgba(0, 170, 255, 0.7)';
+      scoreDisplay.textContent = '0';
+      scoreContainer.appendChild(scoreDisplay);
 
+      // Enemy counter with tech frame
+      const enemyContainer = document.createElement('div');
+      enemyContainer.style.background =
+        'linear-gradient(rgba(0,10,20,0.7), rgba(0,20,40,0.7))';
+      enemyContainer.style.border = '1px solid #00aaff';
+      enemyContainer.style.borderRadius = '5px';
+      enemyContainer.style.padding = '8px 15px';
+      enemyContainer.style.boxShadow =
+        '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
+      rightHUD.appendChild(enemyContainer);
+
+      const enemyLabel = document.createElement('div');
+      enemyLabel.textContent = 'THREAT ANALYSIS';
+      enemyLabel.style.fontSize = '14px';
+      enemyLabel.style.fontWeight = 'bold';
+      enemyLabel.style.color = '#00ddff';
+      enemyLabel.style.textTransform = 'uppercase';
+      enemyLabel.style.letterSpacing = '1px';
+      enemyLabel.style.textShadow = '0 0 5px rgba(0, 200, 255, 0.7)';
+      enemyLabel.style.marginBottom = '5px';
+      enemyContainer.appendChild(enemyLabel);
+
+      const enemyCountDisplay = document.createElement('div');
+      enemyCountDisplay.id = 'enemy-count-display';
+      enemyCountDisplay.style.fontSize = '18px';
+      enemyCountDisplay.style.fontWeight = 'bold';
+      enemyCountDisplay.style.color = '#ff6600';
+      enemyCountDisplay.style.textShadow = '0 0 5px rgba(255, 102, 0, 0.7)';
+      enemyCountDisplay.textContent = 'SCANNING...';
+      enemyContainer.appendChild(enemyCountDisplay);
+
+      this.hudElements.healthBar = healthBarInner;
+      this.hudElements.healthPercentage = healthPercentage;
       this.hudElements.scoreDisplay = scoreDisplay;
+      this.hudElements.enemyCountDisplay = enemyCountDisplay;
 
       // Game over display (initially hidden)
       const gameOverDisplay = document.createElement('div');
@@ -95,36 +289,62 @@ class UIManager {
       gameOverDisplay.style.pointerEvents = 'auto';
       gameOverDisplay.style.width = '400px';
       gameOverDisplay.style.padding = '30px';
-      gameOverDisplay.style.background = 'rgba(0, 0, 0, 0.7)';
-      gameOverDisplay.style.border = '2px solid #ff0000';
+      gameOverDisplay.style.background =
+        'linear-gradient(rgba(0,0,0,0.85), rgba(40,0,0,0.95))';
+      gameOverDisplay.style.border = '2px solid #ff0044';
       gameOverDisplay.style.borderRadius = '10px';
+      gameOverDisplay.style.boxShadow =
+        '0 0 30px rgba(255, 0, 68, 0.5), inset 0 0 30px rgba(255, 0, 68, 0.2)';
 
       const gameOverTitle = document.createElement('h2');
-      gameOverTitle.textContent = 'GAME OVER';
-      gameOverTitle.style.color = '#ff0000';
+      gameOverTitle.textContent = 'SYSTEM FAILURE';
+      gameOverTitle.style.color = '#ff0044';
       gameOverTitle.style.fontSize = '36px';
+      gameOverTitle.style.fontFamily = 'Arial Black, sans-serif';
+      gameOverTitle.style.textTransform = 'uppercase';
+      gameOverTitle.style.letterSpacing = '3px';
       gameOverTitle.style.marginBottom = '20px';
+      gameOverTitle.style.textShadow = '0 0 10px rgba(255, 0, 68, 0.7)';
       gameOverDisplay.appendChild(gameOverTitle);
 
       const finalScore = document.createElement('p');
       finalScore.id = 'final-score';
       finalScore.style.fontSize = '24px';
       finalScore.style.marginBottom = '30px';
+      finalScore.style.color = '#ffffff';
+      finalScore.style.textShadow = '0 0 5px rgba(255, 255, 255, 0.7)';
       gameOverDisplay.appendChild(finalScore);
+
       const buttonContainer = document.createElement('div');
       buttonContainer.style.display = 'flex';
       buttonContainer.style.gap = '20px';
       buttonContainer.style.justifyContent = 'center';
 
       const restartButton = document.createElement('button');
-      restartButton.textContent = 'RESTART';
-      restartButton.style.padding = '10px 30px';
-      restartButton.style.fontSize = '20px';
-      restartButton.style.background = '#aa0000';
+      restartButton.textContent = 'REBOOT';
+      restartButton.style.padding = '12px 30px';
+      restartButton.style.fontSize = '18px';
+      restartButton.style.fontWeight = 'bold';
+      restartButton.style.background =
+        'linear-gradient(to bottom, #cc0033, #990022)';
       restartButton.style.color = '#fff';
-      restartButton.style.border = 'none';
+      restartButton.style.border = '1px solid #ff0044';
       restartButton.style.borderRadius = '5px';
       restartButton.style.cursor = 'pointer';
+      restartButton.style.textTransform = 'uppercase';
+      restartButton.style.letterSpacing = '2px';
+      restartButton.style.boxShadow = '0 0 10px rgba(255, 0, 68, 0.5)';
+      restartButton.style.transition = 'all 0.2s ease';
+      restartButton.onmouseover = () => {
+        restartButton.style.background =
+          'linear-gradient(to bottom, #dd0044, #aa0033)';
+        restartButton.style.boxShadow = '0 0 15px rgba(255, 0, 68, 0.7)';
+      };
+      restartButton.onmouseout = () => {
+        restartButton.style.background =
+          'linear-gradient(to bottom, #cc0033, #990022)';
+        restartButton.style.boxShadow = '0 0 10px rgba(255, 0, 68, 0.5)';
+      };
       restartButton.onclick = () => {
         if (this.game && typeof this.game.restartGame === 'function') {
           this.game.restartGame();
@@ -135,14 +355,30 @@ class UIManager {
       buttonContainer.appendChild(restartButton);
 
       const levelSelectButton = document.createElement('button');
-      levelSelectButton.textContent = 'SELECT LEVEL';
-      levelSelectButton.style.padding = '10px 30px';
-      levelSelectButton.style.fontSize = '20px';
-      levelSelectButton.style.background = '#0066aa';
+      levelSelectButton.textContent = 'MISSION SELECT';
+      levelSelectButton.style.padding = '12px 30px';
+      levelSelectButton.style.fontSize = '18px';
+      levelSelectButton.style.fontWeight = 'bold';
+      levelSelectButton.style.background =
+        'linear-gradient(to bottom, #0088ff, #0044aa)';
       levelSelectButton.style.color = '#fff';
-      levelSelectButton.style.border = 'none';
+      levelSelectButton.style.border = '1px solid #00aaff';
       levelSelectButton.style.borderRadius = '5px';
       levelSelectButton.style.cursor = 'pointer';
+      levelSelectButton.style.textTransform = 'uppercase';
+      levelSelectButton.style.letterSpacing = '2px';
+      levelSelectButton.style.boxShadow = '0 0 10px rgba(0, 136, 255, 0.5)';
+      levelSelectButton.style.transition = 'all 0.2s ease';
+      levelSelectButton.onmouseover = () => {
+        levelSelectButton.style.background =
+          'linear-gradient(to bottom, #0099ff, #0055bb)';
+        levelSelectButton.style.boxShadow = '0 0 15px rgba(0, 136, 255, 0.7)';
+      };
+      levelSelectButton.onmouseout = () => {
+        levelSelectButton.style.background =
+          'linear-gradient(to bottom, #0088ff, #0044aa)';
+        levelSelectButton.style.boxShadow = '0 0 10px rgba(0, 136, 255, 0.5)';
+      };
       levelSelectButton.onclick = () => {
         if (this.game && typeof this.game.showLevelSelection === 'function') {
           this.game.showLevelSelection();
@@ -151,11 +387,26 @@ class UIManager {
       buttonContainer.appendChild(levelSelectButton);
 
       gameOverDisplay.appendChild(buttonContainer);
-
       document.body.appendChild(gameOverDisplay);
 
       this.hudElements.gameOverDisplay = gameOverDisplay;
       this.hudElements.finalScore = finalScore;
+
+      // Add animation style for the health bar
+      const hudStyle = document.createElement('style');
+      hudStyle.textContent = `
+        @keyframes healthPulse {
+          0% { opacity: 0.7; }
+          50% { opacity: 1; }
+          100% { opacity: 0.7; }
+        }
+        
+        .weapon-slot {
+          user-select: none;
+          pointer-events: auto;
+        }
+      `;
+      document.head.appendChild(hudStyle);
     } catch (error) {
       console.error('Error initializing HUD:', error);
     }
@@ -974,21 +1225,29 @@ class UIManager {
     const healthPercent =
       (this.gameState.playerHealth / this.gameState.maxPlayerHealth) * 100;
     this.hudElements.healthBar.style.width = `${healthPercent}%`;
+    this.hudElements.healthPercentage.textContent = `${Math.floor(
+      healthPercent
+    )}%`;
 
     // Change color based on health level
     if (healthPercent > 60) {
       this.hudElements.healthBar.style.background =
-        'linear-gradient(to right, #00ff00, #aaff00)';
+        'linear-gradient(to right, #00ff88, #00ddff)';
+      this.hudElements.healthPercentage.style.color = '#00ff88';
     } else if (healthPercent > 30) {
       this.hudElements.healthBar.style.background =
         'linear-gradient(to right, #ffaa00, #ffdd00)';
+      this.hudElements.healthPercentage.style.color = '#ffdd00';
     } else {
       this.hudElements.healthBar.style.background =
-        'linear-gradient(to right, #ff0000, #ff6600)';
+        'linear-gradient(to right, #ff0044, #ff6600)';
+      this.hudElements.healthPercentage.style.color = '#ff6600';
+      // Add pulsing effect when health is low
+      this.hudElements.healthBar.style.animation = 'healthPulse 0.8s infinite';
     }
 
     // Update score
-    this.hudElements.scoreDisplay.textContent = `SCORE: ${this.gameState.score}`;
+    this.hudElements.scoreDisplay.textContent = `${this.gameState.score}`;
   }
 
   // Update enemy count display
