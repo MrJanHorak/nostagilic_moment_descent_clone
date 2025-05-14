@@ -11,7 +11,7 @@ function animatePulsatingComponent(child, currentTime) {
   const pulseAxis = child.userData.pulseAxis || 'all';
 
   // Calculate pulse factor
-  const pulseFactor = Math.sin(currentTime * pulseSpeed) * 0.5 + 0.5;
+  const pulseFactor = Math.sin(currentTime * pulseSpeed * 0.01) * 0.5 + 0.5;
   const scale = pulseMin + pulseFactor * (pulseMax - pulseMin);
 
   // Apply scale based on the specified axis

@@ -1,0 +1,48 @@
+// Enemy type definitions
+export const enemyTypes = [
+  {
+    name: 'scout',
+    color: 0xff0000,
+    size: 0.4,
+    health: 10,
+    speed: 0.05,
+    damage: 5,
+    pointValue: 50,
+  },
+  {
+    name: 'fighter',
+    color: 0xff6600,
+    size: 0.6,
+    health: 25,
+    speed: 0.03,
+    damage: 10,
+    pointValue: 100,
+  },
+  {
+    name: 'bomber',
+    color: 0xffcc00,
+    size: 0.8,
+    health: 50,
+    speed: 0.02,
+    damage: 20,
+    pointValue: 200,
+  },
+  {
+    name: 'destroyer',
+    color: 0x00ff00,
+    size: 1.0,
+    health: 100,
+    speed: 0.01,
+    damage: 30,
+    pointValue: 500,
+  },
+  {
+    name: 'boss',
+    color: 0x0000ff,
+    size: 1.5,
+    health: 200,
+    speed: 0.005,
+    damage: 50,
+    pointValue: 1000,
+  },
+];
