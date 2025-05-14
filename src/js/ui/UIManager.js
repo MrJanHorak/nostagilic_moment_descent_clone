@@ -205,6 +205,7 @@ class UIManager {
       rightHUD.style.display = 'flex';
       rightHUD.style.flexDirection = 'column';
       rightHUD.style.alignItems = 'flex-end';
+      rightHUD.style.marginRight = '2.2em';
       topHUDWrapper.appendChild(rightHUD);
 
       // Score display with tech frame
@@ -217,6 +218,8 @@ class UIManager {
       scoreContainer.style.boxShadow =
         '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
       scoreContainer.style.marginBottom = '10px';
+      scoreContainer.style.width = '150px';
+      scoreContainer.style.textAlign = 'center';
       rightHUD.appendChild(scoreContainer);
 
       const scoreLabel = document.createElement('div');
@@ -249,6 +252,8 @@ class UIManager {
       enemyContainer.style.padding = '8px 15px';
       enemyContainer.style.boxShadow =
         '0 0 8px rgba(0, 170, 255, 0.4), inset 0 0 10px rgba(0, 100, 200, 0.2)';
+      enemyContainer.style.width = '150px';
+      enemyContainer.style.textAlign = 'center';
       rightHUD.appendChild(enemyContainer);
 
       const enemyLabel = document.createElement('div');
