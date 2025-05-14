@@ -31,7 +31,17 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 - **Zero Gravity Movement**: Full 6 degrees of freedom movement with your spaceship
 - **Multiple Game Modes**: Choose between level-based play or endless procedural generation
 - **Dynamic Lighting**: Advanced lighting system that brings the cave environment to life
-- **Enemy AI**: Multiple enemy types with different behaviors and attack patterns
+- **Enemy AI**: Five distinct enemy types with unique behaviors and attack patterns:
+  - **Scouts**: Fast but fragile reconnaissance ships
+  - **Fighters**: Balanced combat ships with moderate firepower
+  - **Bombers**: Heavy ships that deploy explosives
+  - **Destroyers**: Heavily armored ships with devastating weaponry
+  - **Bosses**: Massive command ships with multiple attack patterns
+- **Weapon System**: Multiple weapon types with unique characteristics:
+  - **Pulse**: Basic weapon with unlimited ammo
+  - **Laser**: High-accuracy beam weapon
+  - **Missile**: Explosive projectiles with splash damage
+  - **Plasma**: Advanced energy weapon with high damage
 - **Power-up System**: Collect various power-ups that enhance your ship's capabilities
 - **Scoring System**: Earn points by defeating enemies and surviving longer
 
@@ -49,11 +59,18 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 - Responsive 3D graphics with dynamic lighting
 - Particle systems for explosions and environmental effects
 - Spatial audio for immersive gameplay
-- Multiple enemy types with unique behaviors
+- Multiple enemy types with unique behaviors:
+  - **Scouts**: Fast, agile ships with basic attacks
+  - **Fighters**: Balanced ships with moderate firepower
+  - **Bombers**: Slow but powerful ships with explosive weapons
+  - **Destroyers**: Heavy ships with strong armor and high damage
+  - **Bosses**: End-level enemies with complex attack patterns and high health
 - Various power-up types with distinct effects:
-  - Health restoration
-  - Speed boosts
-  - Weapon upgrades
+  - **Health**: Repair your shield by 25%
+  - **Speed Boost**: Temporarily increase movement speed
+  - **Weapon Upgrade**: Temporarily enhance weapon power
+  - **Weapon Pickup**: Acquire new weapons with ammo
+  - **Ammo Pickup**: Replenish ammunition for special weapons
 - Level progression system with increasing difficulty
 - Endless mode with procedurally generated content
 - Collision detection and physics system
@@ -66,10 +83,12 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 - Multiple handcrafted levels with unique layouts:
   - **Level 1**: Cave Introduction - A beginner-friendly level to learn the controls
   - **Level 2**: Advanced Cave Network - More challenging with varied obstacles
+  - **Level 3**: Deep Complex - Higher difficulty with more enemies
   - **Example Level**: Demonstration level showcasing all game features
 - Predefined enemy and power-up placements
 - Each level has specific obstacle patterns and lighting themes
 - Progression through increasingly difficult challenges
+- Boss encounters at the end of key levels
 
 ### Endless Mode
 

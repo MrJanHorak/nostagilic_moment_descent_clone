@@ -20,7 +20,7 @@ The level system consists of several key components:
 
 - **LevelBlueprint.js**: Defines the base class for level blueprints
 - **SegmentTypes.js**: Contains segment type and obstacle pattern enums
-- **Level1.js** and **Level2.js**: Example level implementations
+- **Level1.js**, **Level2.js**, and **Level3.js**: Example level implementations
 - **LevelManager.js** (parent folder): Manages level loading, rendering, and updating
 
 The levels are constructed from tunnel segments that connect to form a complete level. Each segment can have different properties like width, height, curve, lighting, and obstacle placement.
@@ -164,56 +164,101 @@ export default function createLevel3() {
 
 ## Enemy and Power-Up Placement
 
-Enemies and power-ups can be placed at specific positions in your level:
-
-```javascript
-// Add enemies at specific locations
-// Scout enemy at position (0, 0, -50)
-level.addEnemySpawn(new THREE.Vector3(0, 0, -50), 'scout');
-
-// Fighter enemy at position (2, 1, -100)
-level.addEnemySpawn(new THREE.Vector3(2, 1, -100), 'fighter');
-
-// Add power-ups at specific locations
-// Health power-up at position (-2, 0, -75)
-level.addPowerupSpawn(new THREE.Vector3(-2, 0, -75), 'health');
-
-// Speed boost power-up at position (2, 1, -125)
-level.addPowerupSpawn(new THREE.Vector3(2, 1, -125), 'speedBoost');
-```
-
 ### Enemy Types
 
-Available enemy types are defined in `EnemyManager.js`:
+The game features five distinct enemy types that you can place in your levels:
 
-- `scout`: Fast but weak
-- `fighter`: Slower but stronger
+1. **Scout**: Fast, agile reconnaissance ships with low health (10) but high speed (0.05)
+
+   ```javascript
+   level.addEnemySpawn(new THREE.Vector3(2, 1, 5), 'scout');
+   ```
+
+2. **Fighter**: Balanced combat ships with medium health (25) and speed (0.03)
+
+   ```javascript
+   level.addEnemySpawn(new THREE.Vector3(-2, 0, 15), 'fighter');
+   ```
+
+3. **Bomber**: Heavy ships that deploy explosive weapons, high health (50), slower speed (0.02)
+
+   ```javascript
+   level.addEnemySpawn(new THREE.Vector3(0, 2, 25), 'bomber');
+   ```
+
+4. **Destroyer**: Heavily armored ships with devastating weapons, very high health (100), slow speed (0.01)
+
+   ```javascript
+   level.addEnemySpawn(new THREE.Vector3(-1, -1, 35), 'destroyer');
+   ```
+
+5. **Boss**: Massive command ships with multiple attack patterns, extreme health (200), very slow speed (0.005)
+   ```javascript
+   level.addEnemySpawn(new THREE.Vector3(0, 0, 45), 'boss');
+   ```
 
 ### Power-up Types
 
-Available power-up types are defined in `PowerUpManager.js`:
+You can place various power-ups throughout your level:
 
-- `health`: Restores player health
-- `speedBoost`: Increases player speed temporarily
-- `weaponUpgrade`: Upgrades player weapons temporarily
+1. **Health**: Repairs player shield by 25% of max health
+
+   ```javascript
+   level.addPowerupSpawn(new THREE.Vector3(3, 2, 10), 'health');
+   ```
+
+2. **Speed Boost**: Temporarily increases player movement speed by 50% for 10 seconds
+
+   ```javascript
+   level.addPowerupSpawn(new THREE.Vector3(-3, 1, 20), 'speedBoost');
+   ```
+
+3. **Weapon Upgrade**: Temporarily doubles weapon damage for 15 seconds
+
+   ```javascript
+   level.addPowerupSpawn(new THREE.Vector3(2, -1, 30), 'weaponUpgrade');
+   ```
+
+4. **Weapon Pickup**: Provides a random weapon (laser, missile, or plasma) with ammunition
+
+   ```javascript
+   level.addPowerupSpawn(new THREE.Vector3(-2, -2, 40), 'weaponPickup');
+   ```
+
+5. **Ammo Pickup**: Replenishes ammunition for special weapons
+   ```javascript
+   level.addPowerupSpawn(new THREE.Vector3(1, 2, 50), 'ammoPickup');
+   ```
+
+### Projectile Types
+
+The game features different projectile effects that enemies and the player can use:
+
+1. **Standard**: Basic projectiles with direct damage
+2. **Explosive**: Projectiles that cause damage in an area upon impact
+3. **Guided**: Projectiles that can follow targets with limited tracking ability
+4. **Heat-seeking**: Advanced projectiles with strong target tracking
+5. **Unstable**: Projectiles like bombs that detonate after a time period
 
 ## Adding Your Level to the Game
 
-Once you've created your level, add it to the game:
+Once you've created your level file, follow these steps to make it available in the game:
 
-1. Import your level creation function in `LevelManager.js`:
-
-```javascript
-import createLevel1 from './levels/Level1.js';
-import createLevel2 from './levels/Level2.js';
-import createLevel3 from './levels/Level3.js'; // Add your new level
-```
-
-2. Add it to the levels array in the LevelManager constructor:
-
-```javascript
-this.levels = [createLevel1(), createLevel2(), createLevel3()]; // Add your level
-```
+1. Open `src/js/core/LevelManager.js`
+2. Import your new level blueprint:
+   ```javascript
+   import createLevel3 from './levels/Level3.js';
+   ```
+3. Add it to the levels array:
+   ```javascript
+   this.levels = [
+     createLevel1(),
+     createLevel2(),
+     createLevel3(), // Your new level
+     createExampleLevel(),
+   ];
+   ```
+4. Update the level selection menu in the UI if necessary
 
 ## Advanced Customizations
 
@@ -232,6 +277,73 @@ level.addSegment({
     { position: new THREE.Vector3(0, 2, -15), type: 'crate' },
   ],
   lightColor: 0xffaa44,
+});
+```
+
+### Custom Boss Rooms
+
+To create a boss room with a challenging encounter:
+
+```javascript
+// Add a boss room segment
+level.addSegment({
+  type: SegmentType.BOSS_ROOM,
+  width: 12,
+  height: 8,
+  length: 15,
+  obstaclePattern: ObstaclePattern.CUSTOM,
+  obstacles: [
+    { position: new THREE.Vector3(3, 0, 7), scale: new THREE.Vector3(1, 2, 1) },
+    {
+      position: new THREE.Vector3(-3, 0, 7),
+      scale: new THREE.Vector3(1, 2, 1),
+    },
+    // Add more obstacles for cover or visual interest
+  ],
+  lightColor: 0xff0000, // Red lighting for dramatic effect
+  lightIntensity: 0.8,
+});
+
+// Place a boss enemy in the center
+level.addEnemySpawn(new THREE.Vector3(0, 0, 7.5), 'boss');
+
+// Place support enemies
+level.addEnemySpawn(new THREE.Vector3(4, 1, 5), 'fighter');
+level.addEnemySpawn(new THREE.Vector3(-4, 1, 5), 'fighter');
+
+// Add power-ups for the battle
+level.addPowerupSpawn(new THREE.Vector3(5, 2, 10), 'health');
+level.addPowerupSpawn(new THREE.Vector3(-5, 2, 10), 'weaponPickup');
+```
+
+### Custom Lighting Scenarios
+
+Create atmospheric lighting with custom colors and intensities:
+
+```javascript
+// Eerie blue corridor
+level.addSegment({
+  type: SegmentType.STRAIGHT,
+  width: 4,
+  height: 4,
+  length: 12,
+  obstaclePattern: ObstaclePattern.NARROW_PATH,
+  lightColor: 0x0044ff,
+  lightIntensity: 0.6,
+  ambientLight: 0.2,
+});
+
+// Dangerous red zone
+level.addSegment({
+  type: SegmentType.JUNCTION,
+  width: 6,
+  height: 5,
+  length: 8,
+  obstaclePattern: ObstaclePattern.RANDOM,
+  lightColor: 0xff2200,
+  lightIntensity: 0.7,
+  ambientLight: 0.3,
+  pulsatingLights: true,
 });
 ```
 
@@ -309,6 +421,35 @@ Different segment types have different tunnel widths:
 9. **Ensure Fairness**: Always ensure there's a path through the obstacles that doesn't require perfect play.
 
 10. **Memory Considerations**: Don't make levels too long, as all segments are loaded into memory.
+
+11. **Difficulty Progression**: Start easier and gradually increase difficulty.
+
+12. **Enemy Variety**: Mix different enemy types to create varied combat scenarios.
+
+13. **Strategic Power-ups**: Place power-ups where they create interesting choices for players.
+
+14. **Visual Diversity**: Vary segment types, sizes, and lighting to create a sense of journey.
+
+15. **Combat Spaces**: Create wider areas for intense combat, narrower areas for tension.
+
+16. **Boss Encounters**: Design boss rooms with enough space for movement but with strategic cover.
+
+17. **Breathing Room**: Don't overload every segment with enemies and obstacles.
+
+18. **Visual Landmarks**: Create memorable spaces by using unique combinations of geometry and lighting.
+
+19. **Reward Exploration**: Hide valuable power-ups in less obvious locations.
+
+20. **Testing**: Ensure your level is actually completable and balanced.
+
+When designing levels, consider combining different enemy types to create challenging scenarios:
+
+- Scouts and fighters for fast-paced combat
+- Bombers behind obstacles for strategic gameplay
+- Destroyers in wider spaces with room to maneuver
+- Bosses with support from smaller enemies for epic battles
+
+Remember that the difficulty of your level will impact player experience significantly. Test thoroughly and adjust enemy placement and power-up distribution to achieve the desired challenge level.
 
 ## Example: Minimal Working Level
 
