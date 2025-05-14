@@ -73,280 +73,280 @@ class EnemyManager {
   }
 
   createScoutMesh(body, enemyType) {
-    // Scout - faster but smaller enemy with sharp angles
-    // This function creates the visual mesh for the scout enemy type
+    // ========== SCOUT SHIP MESH ==========
+    // The Scout is a fast, small enemy ship with a sharp triangular design.
+    // This function constructs and adds the 3D mesh components to the given 'body' Object3D.
+    // It consists of a triangular main body, thin wings, and glowing front-facing eyes.
 
-    // ===== MAIN BODY =====
-    // Core body - triangular prism shape (pointed cone)
-    // Parameters: top radius, bottom radius, height, number of segments
+    // ==========================
+    //        MAIN BODY
+    // ==========================
+
+    // Create a triangular prism using a cylinder with 3 radial segments (triangular cross-section)
     const bodyGeometry = new THREE.CylinderGeometry(
-      enemyType.size, // Top radius (wide end) - this will now be at the front
-      0, // Bottom radius (pointed end) - this will now be at the back
-      enemyType.size * 1.5, // Height of the cylinder
-      3 // Number of segments (3 creates triangular cross-section)
+      enemyType.size, // Top radius (will face FORWARD toward the player due to rotation)
+      0, // Bottom radius (sharp point at the back)
+      enemyType.size * 1.5, // Height/length of the scout's body
+      3 // Segments to form a triangular cross-section
     );
 
-    // Material with emissive properties to make it glow slightly
     const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: enemyType.color, // Base color from enemy type
-      roughness: 0.6, // Higher values = less shiny (0-1)
-      metalness: 0.2, // Higher values = more metallic (0-1)
-      emissive: enemyType.color, // Same color glow
-      emissiveIntensity: 0.2, // Strength of the glow (0-1)
+      color: enemyType.color, // Primary color from the enemy type
+      roughness: 0.6, // Moderate matte surface
+      metalness: 0.2, // Slight metallic sheen
+      emissive: enemyType.color, // Emits same color as body
+      emissiveIntensity: 0.2, // Low subtle glow effect
     });
 
     const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
     bodyMesh.name = 'scout_body';
 
-    // Rotate to point backward (REVERSED from previous orientation)
-    // This makes the pointed end face away from the player
-    // and the flat base (with eyes) face toward the player
-    bodyMesh.rotation.x = -Math.PI / 2; // Negative value reverses orientation
+    // Rotate the prism so the flat face points toward the player and the sharp point trails behind
+    bodyMesh.rotation.x = -Math.PI / 2; // -90° around X axis
     body.add(bodyMesh);
 
-    // ===== WINGS =====
-    // Small wings attached to the sides for visual interest
-    // Parameters: width, height, depth
+    // ==========================
+    //         WINGS
+    // ==========================
+
+    // Small box-shaped wings, wide but very thin
     const wingGeometry = new THREE.BoxGeometry(
-      enemyType.size * 2.5, // Width (extends to sides)
-      enemyType.size * 0.1, // Height (thin)
+      enemyType.size * 2.5, // Width (extends far out from center)
+      enemyType.size * 0.1, // Height (very thin)
       enemyType.size * 0.5 // Depth (front-to-back)
     );
 
     const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
     wingMesh.name = 'scout_wings';
-    wingMesh.position.set(0, 0, -0.1); // Centered on the body
+
+    // Position the wings near the middle-bottom of the body
+    wingMesh.position.set(
+      0, // Centered on X
+      0, // Centered on Y
+      -0.1 // Slightly offset backwards (Z-axis)
+    );
     body.add(wingMesh);
 
-    // ===== EYES / SENSORS =====
-    // Glowing eyes/sensors that are highly visible to the player
-    const eyeMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffff00, // Bright yellow base color
-      emissive: 0xffff00, // Same yellow for glow
-      emissiveIntensity: 1.0, // Maximum glow intensity
+    // ==========================
+    //       GLOWING EYES
+    // ==========================
+
+    // Bright glowing eyes help the player visually track the scout
+    const eyeMaterial = new THREE.MeshStandardMaterial({
+      // CHANGED FROM MeshBasicMaterial
+      color: 0xffff00, // Bright yellow
+      emissive: 0xffff00, // Same yellow glow
+      emissiveIntensity: 1.0, // Full intensity for high visibility
     });
 
-    // Spherical eyes - size affects visibility
     const eyeGeometry = new THREE.SphereGeometry(
-      enemyType.size * 0.15, // Radius (20% of enemy size)
-      8, // Width segments
+      enemyType.size * 0.15, // Radius (15% of scout's size)
+      8, // Width segments (low poly is fine)
       8 // Height segments
     );
 
-    // ===== LEFT EYE =====
+    // ---- LEFT EYE ----
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     leftEye.name = 'scout_eye_left';
 
-    // Position relative to body:
+    // Positioning relative to the flat (front) side of the ship
     leftEye.position.set(
-      -enemyType.size * 0.18, // X - offset left from center
-      enemyType.size * 0.2, // Y - slightly raised from center
-      enemyType.size * 0.1 // Z - CHANGED: now positive to place at the front
-      // (since we inverted the rotation)
+      -enemyType.size * 0.18, // Left of center
+      enemyType.size * 0.2, // Slightly raised
+      enemyType.size * 0.1 // Forward on the Z-axis (points to player)
     );
     body.add(leftEye);
 
-    // Add point light to left eye for enhanced visibility
+    // Add a glowing yellow point light inside the eye
     const leftEyeLight = new THREE.PointLight(
-      0xffff00, // Yellow light color
-      2.0, // Brightness/intensity
-      enemyType.size * 2.0 // Range of light effect
+      0xffff00, // Yellow
+      2.0, // Brightness
+      enemyType.size * 2.0 // Range of influence
     );
     leftEyeLight.position.copy(leftEye.position);
     body.add(leftEyeLight);
 
-    // ===== RIGHT EYE =====
+    // ---- RIGHT EYE ----
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
     rightEye.name = 'scout_eye_right';
 
-    // Position relative to body:
     rightEye.position.set(
-      enemyType.size * 0.18, // X - offset right from center
-      enemyType.size * 0.2, // Y - slightly raised from center
-      enemyType.size * 0.1 // Z - CHANGED: now positive to place at the front
-      // (since we inverted the rotation)
+      enemyType.size * 0.18, // Right of center
+      enemyType.size * 0.2, // Slightly raised
+      enemyType.size * 0.1 // Forward on Z-axis
     );
     body.add(rightEye);
 
-    // Add point light to right eye for enhanced visibility
     const rightEyeLight = new THREE.PointLight(
-      0xffff00, // Yellow light color
-      2.0, // Brightness/intensity
-      enemyType.size * 2.0 // Range of light effect
+      0xffff00, // Yellow
+      2.0, // Brightness
+      enemyType.size * 2.0 // Range
     );
     rightEyeLight.position.copy(rightEye.position);
     body.add(rightEyeLight);
   }
 
   createFighterMesh(body, enemyType) {
-    // Fighter - larger, more powerful enemy with complex shape
-    // This function creates the visual mesh for the fighter enemy type
-
     // ===== MAIN BODY =====
-    // Hexagonal prism with 6 sides for more complex look
-    // Parameters: top radius, bottom radius, height, radial segments
     const bodyGeometry = new THREE.CylinderGeometry(
-      enemyType.size * 0.8, // Top radius (larger/front end)
-      enemyType.size * 0.6, // Bottom radius (smaller/back end)
-      enemyType.size * 1.8, // Height (length of the fighter body)
-      6 // Radial segments (6 creates hexagonal shape)
+      enemyType.size * 0.9,
+      enemyType.size * 0.5,
+      enemyType.size * 2,
+      6
     );
 
-    // Material with metallic appearance and glow
     const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: enemyType.color, // Base color from enemy type
-      roughness: 0.3, // Lower for smoother look (0-1)
-      metalness: 0.7, // Higher for more metallic look (0-1)
-      emissive: enemyType.color, // Same color glow
-      emissiveIntensity: 0.3, // Subtle glow intensity
+      color: enemyType.color,
+      roughness: 0.2,
+      metalness: 0.8,
+      emissive: enemyType.color,
+      emissiveIntensity: 0.4,
     });
 
     const bodyMesh = new THREE.Mesh(bodyGeometry, bodyMaterial);
     bodyMesh.name = 'fighter_body';
-
-    // IMPORTANT: Change rotation to make front face player
-    bodyMesh.rotation.x = -Math.PI / 2; // Rotate to point front toward player
+    bodyMesh.rotation.x = -Math.PI / 2;
     body.add(bodyMesh);
 
     // ===== FRONT WEAPON =====
-    // Cone-shaped weapon at front of the fighter
-    // Parameters: radius, height, radial segments
-    const weaponGeometry = new THREE.ConeGeometry(
-      enemyType.size * 0.3, // Radius of weapon base
-      enemyType.size * 0.7, // Length of weapon
-      8 // Segments (octagonal weapon barrel)
+    const weaponGeometry = new THREE.CylinderGeometry(
+      enemyType.size * 0.1,
+      enemyType.size * 0.15,
+      enemyType.size * 0.9,
+      12
     );
 
     const weaponMaterial = new THREE.MeshStandardMaterial({
-      color: 0x444444, // Dark gray color
-      roughness: 0.2, // Smooth surface
-      metalness: 0.9, // Very metallic appearance
+      color: 0x222222,
+      roughness: 0.1,
+      metalness: 1.0,
+      emissive: 0xff0000,
+      emissiveIntensity: 0.8,
     });
 
     const weaponMesh = new THREE.Mesh(weaponGeometry, weaponMaterial);
     weaponMesh.name = 'fighter_weapon';
-
-    // Position weapon at the front of the ship (Z is now POSITIVE for front)
-    weaponMesh.position.set(0, 0, enemyType.size * 1.0);
-
-    // Rotate weapon to point outward
     weaponMesh.rotation.x = Math.PI / 2;
+    weaponMesh.position.set(0, 0, enemyType.size * 1.2);
     body.add(weaponMesh);
 
     // ===== ENGINE GLOW =====
-    // Glowing sphere at the back representing the engine
-    // Parameters: radius, width segments, height segments
     const engineGeometry = new THREE.SphereGeometry(
-      enemyType.size * 0.3, // Engine size (30% of enemy size)
-      16, // Width segments (higher for smoother sphere)
-      16 // Height segments (higher for smoother sphere)
+      enemyType.size * 0.3,
+      16,
+      16
     );
 
-    // Bright, glowing material that doesn't need lighting
-    const engineMaterial = new THREE.MeshBasicMaterial({
-      color: 0xffaa00, // Orange-yellow engine glow
-      transparent: true, // Enable transparency
-      opacity: 0.8, // Slightly transparent for glow effect
+    // MeshBasicMaterial doesn't need or support emissive
+    const engineMaterial = new THREE.MeshStandardMaterial({
+      color: 0xff5500,
+      transparent: true,
+      opacity: 0.9,
     });
 
     const engineMesh = new THREE.Mesh(engineGeometry, engineMaterial);
     engineMesh.name = 'fighter_engine';
-
-    // Position at the BACK of the ship (now negative Z)
-    engineMesh.position.set(0, 0, -enemyType.size * 0.8);
+    engineMesh.position.set(0, 0, -enemyType.size);
     body.add(engineMesh);
 
-    // Add point light for engine glow effect
-    const engineLight = new THREE.PointLight(0xffaa00, 1.0, enemyType.size * 4);
+    const engineLight = new THREE.PointLight(0xff5500, 1.5, enemyType.size * 4);
     engineLight.position.copy(engineMesh.position);
     body.add(engineLight);
 
-    // ===== WINGS =====
-    // Wide, flat structures on the sides of the fighter
-    // Parameters: width, height, depth
+    // ENGINE TRAILS section
+    for (let i = -1; i <= 1; i += 2) {
+      const trailGeometry = new THREE.CylinderGeometry(
+        0.05,
+        0.1,
+        enemyType.size * 1.2,
+        8
+      );
+
+      const trailMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff5500,
+        transparent: true,
+        opacity: 0.3,
+      });
+
+      const trailMesh = new THREE.Mesh(trailGeometry, trailMaterial);
+      trailMesh.position.set(
+        i * enemyType.size * 0.3,
+        0,
+        -enemyType.size * 1.6
+      );
+      trailMesh.rotation.x = Math.PI / 2;
+      body.add(trailMesh);
+    }
+
+    // ===== LAYERED WINGS =====
+    const wingMaterial = new THREE.MeshStandardMaterial({
+      color: 0x333333,
+      roughness: 0.3,
+      metalness: 0.6,
+      emissive: 0x111111,
+      emissiveIntensity: 0.3,
+    });
+
     const wingGeometry = new THREE.BoxGeometry(
-      enemyType.size * 2.7, // Width (extends far to sides)
-      enemyType.size * 0.2, // Height (thin wings)
-      enemyType.size * 0.7 // Depth (front-to-back size)
+      enemyType.size * 2.2,
+      enemyType.size * 0.15,
+      enemyType.size * 0.6
     );
 
-    const wingMesh = new THREE.Mesh(wingGeometry, bodyMaterial);
-    wingMesh.name = 'fighter_wings';
+    // Make sure wings are properly created
+    for (let i = 0; i < 2; i++) {
+      const wingMesh = new THREE.Mesh(wingGeometry, wingMaterial);
+      wingMesh.name = `fighter_wing_${i}`;
+      wingMesh.position.set(
+        0,
+        i * enemyType.size * 0.12 - enemyType.size * 0.06,
+        0
+      );
+      body.add(wingMesh);
+    }
 
-    // Position wings at center of body
-    wingMesh.position.set(0, 0, 0);
-    body.add(wingMesh);
-
-    // ===== ANTENNAS =====
-    // Thin cylinders on top for visual interest and identification
-    // Parameters: top radius, bottom radius, height, radial segments
+    // ===== ANTENNAS WITH LIGHT TIPS =====
+    const antennaHeight = enemyType.size * 0.6;
     const antennaGeometry = new THREE.CylinderGeometry(
-      0.02, // Top radius (thin)
-      0.02, // Bottom radius (uniform thickness)
-      enemyType.size * 0.6, // Length of antenna
-      6 // Radial segments
+      0.02,
+      0.02,
+      antennaHeight,
+      8
     );
 
     const antennaMaterial = new THREE.MeshStandardMaterial({
-      color: 0x888888, // Light gray color
-      emissive: 0x333333, // Slight glow
-      emissiveIntensity: 0.5, // Medium intensity
+      color: 0xaaaaaa,
+      emissive: 0x333333,
+      emissiveIntensity: 0.5,
     });
 
-    // Left antenna
-    const leftAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    leftAntenna.name = 'fighter_antenna_left';
+    const antennaOffset = enemyType.size * 0.4;
 
-    // Position left antenna: left side, top of ship, slightly forward
-    leftAntenna.position.set(
-      -enemyType.size * 0.3, // X - offset to left
-      enemyType.size * 0.5, // Y - RAISED higher for visibility
-      enemyType.size * 0.4 // Z - CHANGED to positive to move forward
-    );
+    // Ensure antenna loop is complete
+    for (let side of [-1, 1]) {
+      const antenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
+      antenna.name = `fighter_antenna_${side > 0 ? 'right' : 'left'}`;
+      antenna.position.set(
+        side * antennaOffset,
+        enemyType.size * 0.5,
+        enemyType.size * 0.3
+      );
+      antenna.rotation.z = (side * Math.PI) / 20;
+      body.add(antenna);
 
-    // Angle outward at 10° for distinctive look
-    leftAntenna.rotation.z = Math.PI / 18; // ~10 degrees
-    body.add(leftAntenna);
-
-    // Right antenna
-    const rightAntenna = new THREE.Mesh(antennaGeometry, antennaMaterial);
-    rightAntenna.name = 'fighter_antenna_right';
-
-    // Position right antenna: right side, top of ship, slightly forward
-    rightAntenna.position.set(
-      enemyType.size * 0.3, // X - offset to right
-      enemyType.size * 0.5, // Y - RAISED higher for visibility
-      enemyType.size * 0.4 // Z - CHANGED to positive to move forward
-    );
-
-    // Mirror angle of left antenna
-    rightAntenna.rotation.z = -Math.PI / 18; // ~-10 degrees
-    body.add(rightAntenna);
-
-    // Add small lights to antenna tips for better visibility
-    const leftTipLight = new THREE.PointLight(
-      0xff0000,
-      0.5,
-      enemyType.size * 1.5
-    );
-    leftTipLight.position.set(
-      leftAntenna.position.x,
-      leftAntenna.position.y + enemyType.size * 0.3,
-      leftAntenna.position.z
-    );
-    body.add(leftTipLight);
-
-    const rightTipLight = new THREE.PointLight(
-      0xff0000,
-      0.5,
-      enemyType.size * 1.5
-    );
-    rightTipLight.position.set(
-      rightAntenna.position.x,
-      rightAntenna.position.y + enemyType.size * 0.3,
-      rightAntenna.position.z
-    );
-    body.add(rightTipLight);
+      const tipLight = new THREE.PointLight(
+        0xff0000,
+        0.6,
+        enemyType.size * 1.5
+      );
+      tipLight.name = `fighter_antenna_light_${side > 0 ? 'right' : 'left'}`;
+      tipLight.position.set(
+        antenna.position.x,
+        antenna.position.y + antennaHeight / 2,
+        antenna.position.z
+      );
+      body.add(tipLight);
+    }
   }
 
   // Spawn enemy at a position
@@ -458,7 +458,7 @@ class EnemyManager {
     // Create a visual debug marker for the spawn point
     const debugSpawn = new THREE.Mesh(
       new THREE.SphereGeometry(0.2, 8, 8),
-      new THREE.MeshBasicMaterial({ color: 0xff00ff })
+      new THREE.MeshStandardMaterial({ color: 0xff00ff })
     );
     debugSpawn.position.copy(spawnPosition);
     this.scene.add(debugSpawn);
@@ -670,18 +670,35 @@ class EnemyManager {
 
           // Play hit sound
           if (this.audioManager && this.audioManager.initialized) {
-            this.audioManager.playSound('hit', {
-              volume: Math.min(0.7, 10 / Math.max(1, distanceToPlayer)),
-            });
+            try {
+              this.audioManager.playSound('hit', {
+                volume: Math.min(0.7, 10 / Math.max(1, distanceToPlayer)),
+                fallback: 'explosion', // Try playing explosion sound if hit is not available
+              });
+            } catch (e) {
+              console.warn('Error playing hit sound:', e);
+            }
           }
 
           // Remove projectile
-          this.scene.remove(projectile.mesh);
-          this.scene.remove(projectile.trail);
-          projectile.mesh.geometry.dispose();
-          projectile.mesh.material.dispose();
-          projectile.trail.geometry.dispose();
-          projectile.trail.material.dispose();
+          if (projectile.mesh.parent) {
+            projectile.mesh.parent.remove(projectile.mesh);
+          }
+          if (projectile.trail.parent) {
+            projectile.trail.parent.remove(projectile.trail);
+          }
+
+          if (projectile.mesh.geometry) projectile.mesh.geometry.dispose();
+          if (projectile.mesh.material) projectile.mesh.material.dispose();
+          if (projectile.trail.geometry) projectile.trail.geometry.dispose();
+          if (projectile.trail.material) projectile.trail.material.dispose();
+
+          // Clear references
+          projectile.mesh.geometry = null;
+          projectile.mesh.material = null;
+          projectile.trail.geometry = null;
+          projectile.trail.material = null;
+
           projectiles.splice(j, 1);
 
           // Check if enemy is destroyed
@@ -707,7 +724,9 @@ class EnemyManager {
 
     // Remove after a short time
     setTimeout(() => {
-      this.scene.remove(flash);
+      if (flash.parent) {
+        flash.parent.remove(flash); // Use parent.remove instead of scene.remove
+      }
     }, 100);
 
     // Add small particles
@@ -737,11 +756,23 @@ class EnemyManager {
 
     // Remove particles after a short time
     setTimeout(() => {
-      this.scene.remove(particleSystem);
-      particles.dispose();
-      material.dispose();
+      if (particleSystem.parent) {
+        particleSystem.parent.remove(particleSystem);
+
+        // Make sure to dispose of the buffer attributes too
+        if (particles.attributes.position) {
+          particles.attributes.position.array = null;
+        }
+        particles.dispose();
+        material.dispose();
+
+        // Clear references
+        particleSystem.geometry = null;
+        particleSystem.material = null;
+      }
     }, 300);
   }
+
   destroyEnemy(index) {
     const enemy = this.enemies[index];
 
@@ -761,10 +792,29 @@ class EnemyManager {
       this.checkLevelCompletion();
     }
 
+    // First, let's make sure lights are removed first
+    const lightsToRemove = [];
+    enemy.mesh.traverse((child) => {
+      if (child.isLight) {
+        lightsToRemove.push(child);
+      }
+    });
+
+    // Remove lights separately to avoid modification during traversal
+    for (const light of lightsToRemove) {
+      if (light.parent) {
+        light.parent.remove(light);
+      }
+    }
+
+    // Create explosion particle effect (do this before removing from scene)
+    createExplosionEffect(this.scene, enemy.mesh.position.clone());
+
+    // Remove the entire enemy mesh from scene
     this.scene.remove(enemy.mesh);
 
     // Play explosion sound
-    if (this.audioManager.initialized) {
+    if (this.audioManager && this.audioManager.initialized) {
       // Calculate volume based on distance to player
       const distanceToPlayer = enemy.mesh.position.distanceTo(
         this.camera.position
@@ -773,25 +823,130 @@ class EnemyManager {
       this.audioManager.playSound('explosion', { volume });
     }
 
-    // Create explosion particle effect
-    createExplosionEffect(this.scene, enemy.mesh.position.clone());
+    // Properly dispose of all resources
+    const disposeMaterial = (material) => {
+      if (!material) return;
 
-    // Dispose of geometries and materials
+      // Dispose textures
+      const propertiesToCheck = [
+        'map',
+        'lightMap',
+        'bumpMap',
+        'normalMap',
+        'specularMap',
+        'envMap',
+        'emissiveMap',
+        'roughnessMap',
+        'metalnessMap',
+        'alphaMap',
+      ];
+
+      propertiesToCheck.forEach((prop) => {
+        if (material[prop]) {
+          material[prop].dispose();
+        }
+      });
+
+      material.dispose();
+    };
+
+    // Clean up resources with enhanced disposal
     enemy.mesh.traverse((child) => {
       if (child.geometry) {
         child.geometry.dispose();
       }
+
       if (child.material) {
         if (Array.isArray(child.material)) {
-          child.material.forEach((mat) => mat.dispose());
+          child.material.forEach(disposeMaterial);
         } else {
-          child.material.dispose();
+          disposeMaterial(child.material);
         }
+
+        // Remove material reference from the child
+        child.material = undefined;
       }
     });
 
+    // Remove reference from array
     this.enemies.splice(index, 1);
   }
+
+  // destroyEnemy(index) {
+  //   const enemy = this.enemies[index];
+
+  //   // Check if this is a predefined enemy and mark as permanently destroyed
+  //   if (enemy.mesh.userData.isPredefined && enemy.mesh.userData.spawnPointId) {
+  //     this.destroyedPredefinedEnemies.add(enemy.mesh.userData.spawnPointId);
+
+  //     // Update the UI with new count
+  //     if (this.gameState && this.gameState.uiManager) {
+  //       this.gameState.uiManager.updateEnemyCount(
+  //         this.destroyedPredefinedEnemies.size,
+  //         this.totalPredefinedEnemies
+  //       );
+  //     }
+
+  //     // Check if level is complete
+  //     this.checkLevelCompletion();
+  //   }
+
+  //   // First remove all lights that might be part of the enemy mesh
+  //   enemy.mesh.traverse((child) => {
+  //     if (child.isLight) {
+  //       enemy.mesh.remove(child);
+  //     }
+  //   });
+
+  //   // Create explosion particle effect (do this before removing from scene)
+  //   createExplosionEffect(this.scene, enemy.mesh.position.clone());
+
+  //   // Remove the entire enemy mesh from scene
+  //   this.scene.remove(enemy.mesh);
+
+  //   // Play explosion sound
+  //   if (this.audioManager && this.audioManager.initialized) {
+  //     // Calculate volume based on distance to player
+  //     const distanceToPlayer = enemy.mesh.position.distanceTo(
+  //       this.camera.position
+  //     );
+  //     const volume = Math.min(0.8, 10 / Math.max(1, distanceToPlayer));
+  //     this.audioManager.playSound('explosion', { volume });
+  //   }
+
+  //   // Dispose of geometries and materials
+  //   enemy.mesh.traverse((child) => {
+  //     if (child.geometry) {
+  //       child.geometry.dispose();
+  //     }
+
+  //     // Handle material disposal with explicit checks
+  //     if (child.material) {
+  //       if (Array.isArray(child.material)) {
+  //         child.material.forEach((mat) => {
+  //           if (mat.map) mat.map.dispose();
+  //           if (mat.lightMap) mat.lightMap.dispose();
+  //           if (mat.bumpMap) mat.bumpMap.dispose();
+  //           if (mat.normalMap) mat.normalMap.dispose();
+  //           if (mat.specularMap) mat.specularMap.dispose();
+  //           if (mat.envMap) mat.envMap.dispose();
+  //           mat.dispose();
+  //         });
+  //       } else {
+  //         if (child.material.map) child.material.map.dispose();
+  //         if (child.material.lightMap) child.material.lightMap.dispose();
+  //         if (child.material.bumpMap) child.material.bumpMap.dispose();
+  //         if (child.material.normalMap) child.material.normalMap.dispose();
+  //         if (child.material.specularMap) child.material.specularMap.dispose();
+  //         if (child.material.envMap) child.material.envMap.dispose();
+  //         child.material.dispose();
+  //       }
+  //     }
+  //   });
+
+  //   // Remove reference from array
+  //   this.enemies.splice(index, 1);
+  // }
 }
 
 export default EnemyManager;
