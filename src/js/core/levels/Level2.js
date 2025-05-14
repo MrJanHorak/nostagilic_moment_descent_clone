@@ -19,6 +19,13 @@ export default function createLevel2() {
     });
   }
 
+  // Introduce basic enemies
+  level.addEnemySpawn(new THREE.Vector3(0, 0, -40), 'scout');
+  level.addEnemySpawn(new THREE.Vector3(2, 1, -45), 'scout');
+
+  // Missile weapon pickup - great against bombers
+  level.addPowerupSpawn(new THREE.Vector3(-2, 0, -60), 'weaponPickup');
+
   // Curve section
   level.addSegment({
     type: SegmentType.CURVE_LEFT,
@@ -32,36 +39,51 @@ export default function createLevel2() {
     lightColor: 0xff6644,
   });
 
+  // Introduce bomber enemy
+  level.addEnemySpawn(new THREE.Vector3(0, 2, -80), 'bomber');
+
   // Complex obstacle patterns
   for (let i = 0; i < 4; i++) {
     level.addSegment({
       type: SegmentType.STRAIGHT,
       obstacles:
-        i % 2 === 0 ? ObstaclePattern.NARROW_PATH : ObstaclePattern.RANDOM,
-      lightColor: 0x66ddff,
+        i % 2 === 0 ? ObstaclePattern.RANDOM : ObstaclePattern.CENTER_BLOCK,
+      lightColor: 0xdd6644,
     });
   }
 
-  // Another curve
+  // Health pickup after the challenges
+  level.addPowerupSpawn(new THREE.Vector3(0, -1, -100), 'health');
+
+  // More bomber enemies
+  level.addEnemySpawn(new THREE.Vector3(2, 1, -110), 'fighter');
+  level.addEnemySpawn(new THREE.Vector3(-2, -1, -115), 'bomber');
+
+  // Speed boost for evasion
+  level.addPowerupSpawn(new THREE.Vector3(2, 1, -130), 'speedBoost');
+
+  // Junction area - wider space for a mini-battle
   level.addSegment({
-    type: SegmentType.CURVE_RIGHT,
-    obstacles: ObstaclePattern.NONE,
-    lightColor: 0xff6644,
+    type: SegmentType.JUNCTION,
+    obstacles: ObstaclePattern.RANDOM,
+    lightColor: 0xff4444, // Red warning light
   });
 
-  level.addSegment({
-    type: SegmentType.CURVE_RIGHT,
-    obstacles: ObstaclePattern.CENTER_BLOCK,
-    lightColor: 0xff6644,
-  });
+  // Mini-battle with multiple enemies
+  level.addEnemySpawn(new THREE.Vector3(0, 2, -140), 'fighter');
+  level.addEnemySpawn(new THREE.Vector3(-3, 0, -145), 'bomber');
+  level.addEnemySpawn(new THREE.Vector3(3, 0, -145), 'fighter');
 
-  // A segment with custom obstacles forming a slalom pattern
+  // Plasma weapon pickup - powerful for the upcoming destroyer
+  level.addPowerupSpawn(new THREE.Vector3(0, -1, -150), 'weaponPickup');
+
+  // Challenging tunnel section with custom obstacles
   level.addSegment({
     type: SegmentType.STRAIGHT,
     obstacles: ObstaclePattern.CUSTOM,
     customObstacles: [
-      { position: new THREE.Vector3(3, 0, -5), type: 'rock' },
-      { position: new THREE.Vector3(-3, 0, -10), type: 'rock' },
+      { position: new THREE.Vector3(2, 1, -5), type: 'pipe' },
+      { position: new THREE.Vector3(-2, -1, -10), type: 'rock' },
       { position: new THREE.Vector3(3, 0, -15), type: 'rock' },
       { position: new THREE.Vector3(-3, 0, -20), type: 'rock' },
     ],
@@ -69,7 +91,7 @@ export default function createLevel2() {
   });
 
   // Final challenging section
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     level.addSegment({
       type: SegmentType.STRAIGHT,
       obstacles: ObstaclePattern.RANDOM,
@@ -77,12 +99,21 @@ export default function createLevel2() {
     });
   }
 
-  // Boss room at the end
+  // Extra ammo pickup
+  level.addPowerupSpawn(new THREE.Vector3(-1, 2, -180), 'ammoPickup');
+
+  // Health before boss
+  level.addPowerupSpawn(new THREE.Vector3(0, 0, -190), 'health');
+
+  // Boss room at the end - destroyer mini-boss
   level.addSegment({
     type: SegmentType.BOSS_ROOM,
     obstacles: ObstaclePattern.NONE,
     lightColor: 0xff4444,
   });
+
+  // Destroyer enemy as mini-boss
+  level.addEnemySpawn(new THREE.Vector3(0, 0, -240), 'destroyer');
 
   // End segment with exit
   level.addSegment({
@@ -90,32 +121,6 @@ export default function createLevel2() {
     obstacles: ObstaclePattern.NONE,
     lightColor: 0x44ff44,
   });
-
-  // Add predefined enemy spawn points (more than Level 1)
-  level.addEnemySpawn(new THREE.Vector3(0, 0, -40), 'scout');
-
-  level.addEnemySpawn(new THREE.Vector3(2, 1, -80), 'fighter');
-
-  level.addEnemySpawn(new THREE.Vector3(-2, -1, -120), 'scout');
-
-  level.addEnemySpawn(new THREE.Vector3(0, 2, -160), 'fighter');
-
-  level.addEnemySpawn(new THREE.Vector3(-3, 0, -200), 'scout');
-
-  // Boss enemy at the end
-  level.addEnemySpawn(
-    new THREE.Vector3(0, 0, -240),
-    'fighter' // Could be replaced with a boss type
-  );
-
-  // Add predefined power-up spawn points
-  level.addPowerupSpawn(new THREE.Vector3(-2, 0, -60), 'health');
-
-  level.addPowerupSpawn(new THREE.Vector3(2, 1, -100), 'speedBoost');
-
-  level.addPowerupSpawn(new THREE.Vector3(0, -1, -140), 'weaponUpgrade');
-
-  level.addPowerupSpawn(new THREE.Vector3(-1, 2, -180), 'health');
 
   return level;
 }

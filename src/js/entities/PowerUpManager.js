@@ -65,16 +65,16 @@ export const powerupTypes = [
       // Randomly choose a weapon to give
       const weapons = ['laser', 'missile', 'plasma'];
       const weaponWeights = {
-        laser: 0.5,    // 50% chance for laser
-        missile: 0.3,  // 30% chance for missile
-        plasma: 0.2    // 20% chance for plasma
+        laser: 0.5, // 50% chance for laser
+        missile: 0.3, // 30% chance for missile
+        plasma: 0.2, // 20% chance for plasma
       };
-      
+
       // Weighted random selection
       const rand = Math.random();
       let weapon;
       let cumulativeWeight = 0;
-      
+
       for (const [w, weight] of Object.entries(weaponWeights)) {
         cumulativeWeight += weight;
         if (rand <= cumulativeWeight) {
@@ -82,23 +82,32 @@ export const powerupTypes = [
           break;
         }
       }
-      
+
       // Add ammo amounts based on weapon rarity
       const ammoAmounts = {
         laser: 30,
         missile: 15,
-        plasma: 8
+        plasma: 8,
       };
-      
+
       // Unlock the weapon and give ammo
       gameState.weaponInventory[weapon].unlocked = true;
       gameState.weaponInventory[weapon].ammo += ammoAmounts[weapon];
-      
+
+      // Record weapon pickup for stats
+      if (gameState.recordWeaponPickup) {
+        gameState.recordWeaponPickup(weapon);
+      }
+
       // Switch to the new weapon
       gameState.switchWeapon(weapon);
-      
+
       // Show message
-      uiManager.showMessage(`${weapon.toUpperCase()} WEAPON ACQUIRED!`, 3000, '#ff00ff');
+      uiManager.showMessage(
+        `${weapon.toUpperCase()} WEAPON ACQUIRED!`,
+        3000,
+        '#ff00ff'
+      );
     },
     message: 'Weapon Acquired!',
   },
@@ -110,38 +119,52 @@ export const powerupTypes = [
     effect: function (gameState, uiManager) {
       // Determine which weapon to give ammo for
       let ammoAdded = false;
-      
+
       // First try to add ammo to the current weapon if it's not pulse
       const currentWeapon = gameState.currentWeapon;
-      if (currentWeapon !== 'pulse' && gameState.weaponInventory[currentWeapon].unlocked) {
+      if (
+        currentWeapon !== 'pulse' &&
+        gameState.weaponInventory[currentWeapon].unlocked
+      ) {
         const ammoAmounts = {
           laser: 15,
           missile: 8,
-          plasma: 5
+          plasma: 5,
         };
-        
-        gameState.weaponInventory[currentWeapon].ammo += ammoAmounts[currentWeapon];
-        uiManager.showMessage(`${currentWeapon.toUpperCase()} AMMO ADDED`, 2000, '#ff8800');
+
+        gameState.weaponInventory[currentWeapon].ammo +=
+          ammoAmounts[currentWeapon];
+        uiManager.showMessage(
+          `${currentWeapon.toUpperCase()} AMMO ADDED`,
+          2000,
+          '#ff8800'
+        );
         ammoAdded = true;
       } else {
         // If not using a special weapon, add ammo to a random unlocked weapon
-        const unlockedWeapons = Object.keys(gameState.weaponInventory)
-          .filter(w => w !== 'pulse' && gameState.weaponInventory[w].unlocked);
-        
+        const unlockedWeapons = Object.keys(gameState.weaponInventory).filter(
+          (w) => w !== 'pulse' && gameState.weaponInventory[w].unlocked
+        );
+
         if (unlockedWeapons.length > 0) {
-          const weapon = unlockedWeapons[Math.floor(Math.random() * unlockedWeapons.length)];
+          const weapon =
+            unlockedWeapons[Math.floor(Math.random() * unlockedWeapons.length)];
           const ammoAmounts = {
             laser: 15,
             missile: 8,
-            plasma: 5
+            plasma: 5,
           };
-          
+
           gameState.weaponInventory[weapon].ammo += ammoAmounts[weapon];
-          uiManager.showMessage(`${weapon.toUpperCase()} AMMO ADDED`, 2000, '#ff8800');
+          uiManager.showMessage(
+            `${weapon.toUpperCase()} AMMO ADDED`,
+            2000,
+            '#ff8800'
+          );
           ammoAdded = true;
         }
       }
-      
+
       // If no ammo could be added (no special weapons unlocked), give a health boost instead
       if (!ammoAdded) {
         // Heal player for 10% of max health
@@ -153,7 +176,7 @@ export const powerupTypes = [
         uiManager.updateHUD();
         uiManager.showMessage('Minor Shield Repair', 2000, '#00ff00');
       }
-      
+
       // Update the weapon UI
       uiManager.updateWeaponUI();
     },

@@ -1639,6 +1639,11 @@ class EnemyManager {
             // Add score
             this.gameState.score += enemy.type.pointValue;
 
+            // Record the kill in statistics
+            if (this.gameState && this.gameState.recordEnemyKill) {
+              this.gameState.recordEnemyKill(enemy.type.name);
+            }
+
             // Create weapon pickup chance based on enemy type
             const position = enemy.mesh.position.clone();
             this.spawnEnemyDrop(position, enemy.type.name);

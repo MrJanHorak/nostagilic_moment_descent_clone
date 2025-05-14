@@ -7,6 +7,7 @@ export default function createLevel1() {
   const level = new LevelBlueprint(1, 'Cave Introduction', {
     segmentCount: 20,
     difficulty: 1,
+    hasEndSegment: true, // Add proper ending
   });
 
   // Tutorial section - no obstacles
@@ -29,13 +30,20 @@ export default function createLevel1() {
   }
 
   // Introduce more complex obstacle patterns
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 3; i++) {
     level.addSegment({
       type: SegmentType.STRAIGHT,
       obstacles: ObstaclePattern.RANDOM,
       lightColor: 0x4466aa,
     });
   }
+
+  // First encounter with scouts
+  level.addEnemySpawn(new THREE.Vector3(0, 0, -50), 'scout');
+  level.addEnemySpawn(new THREE.Vector3(-2, 1, -55), 'scout');
+  
+  // Health powerup after first engagement
+  level.addPowerupSpawn(new THREE.Vector3(-2, 0, -75), 'health');
 
   // A segment with custom obstacles
   level.addSegment({
@@ -49,8 +57,24 @@ export default function createLevel1() {
     lightColor: 0xaa4466,
   });
 
+  // Introduce weapon pickup (laser)
+  level.addPowerupSpawn(new THREE.Vector3(0, 1, -90), 'weaponPickup');
+  
+  // Fighter enemy to test new weapon on
+  level.addEnemySpawn(new THREE.Vector3(2, 1, -100), 'fighter');
+  
+  // Curve section for variety
+  level.addSegment({
+    type: SegmentType.CURVE_LEFT,
+    obstacles: ObstaclePattern.SIDE_BLOCKS,
+    lightColor: 0x6644aa,
+  });
+
+  // Speed boost pickup
+  level.addPowerupSpawn(new THREE.Vector3(2, 1, -125), 'speedBoost');
+
   // More challenging section to end the level
-  for (let i = 0; i < 7; i++) {
+  for (let i = 0; i < 5; i++) {
     level.addSegment({
       type: SegmentType.STRAIGHT,
       obstacles: ObstaclePattern.NARROW_PATH,
@@ -58,19 +82,19 @@ export default function createLevel1() {
     });
   }
 
-  // Add predefined enemy spawn points
-  level.addEnemySpawn(new THREE.Vector3(0, 0, -50), 'scout');
-
-  level.addEnemySpawn(new THREE.Vector3(2, 1, -100), 'fighter');
-
+  // Final enemy encounters
   level.addEnemySpawn(new THREE.Vector3(-2, -1, -150), 'scout');
-
-  // Add predefined power-up spawn points
-  level.addPowerupSpawn(new THREE.Vector3(-2, 0, -75), 'health');
-
-  level.addPowerupSpawn(new THREE.Vector3(2, 1, -125), 'speedBoost');
-
+  level.addEnemySpawn(new THREE.Vector3(2, 0, -160), 'fighter');
+  
+  // Weapon upgrade to help with final fight
   level.addPowerupSpawn(new THREE.Vector3(0, -1, -175), 'weaponUpgrade');
+
+  // End segment with exit
+  level.addSegment({
+    type: SegmentType.END,
+    obstacles: ObstaclePattern.NONE,
+    lightColor: 0x44ff44, // Green for exit
+  });
 
   return level;
 }

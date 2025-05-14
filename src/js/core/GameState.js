@@ -26,6 +26,40 @@ class GameState {
     this.audioManager = null;
     this.uiManager = null;
     this.activeAnimations = [];
+    // Track player's enemy kill statistics
+    this.enemyKills = {
+      scout: 0,
+      fighter: 0,
+      bomber: 0,
+      destroyer: 0,
+      boss: 0,
+    };
+
+    // Track collected weapon pickups
+    this.weaponPickups = {
+      laser: 0,
+      missile: 0,
+      plasma: 0,
+    };
+  }
+
+  // Record an enemy kill
+  recordEnemyKill(enemyType) {
+    if (this.enemyKills[enemyType] !== undefined) {
+      this.enemyKills[enemyType]++;
+
+      // Update UI if needed
+      if (this.uiManager && this.uiManager.updateKillCounter) {
+        this.uiManager.updateKillCounter(this.enemyKills);
+      }
+    }
+  }
+
+  // Record weapon pickup
+  recordWeaponPickup(weaponType) {
+    if (this.weaponPickups[weaponType] !== undefined) {
+      this.weaponPickups[weaponType]++;
+    }
   }
 
   // Switch weapon if it's unlocked
