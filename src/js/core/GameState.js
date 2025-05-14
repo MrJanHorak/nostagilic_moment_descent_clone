@@ -179,7 +179,8 @@ class GameState {
         this.uiManager.showMessage(
           `BONUS: +${levelBonus} POINTS`,
           2000,
-          '#ffff00'
+          '#ffff00',
+          80 // Default position
         );
       }
     }, 1500);
@@ -196,7 +197,8 @@ class GameState {
           this.uiManager.showMessage(
             `STARTING LEVEL ${nextLevelIndex + 1}`,
             2000,
-            '#00ffff'
+            '#00ffff',
+            80 // Appears lower
           );
         } else {
           // No more levels - show game complete

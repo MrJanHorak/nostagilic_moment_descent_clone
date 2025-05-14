@@ -1306,10 +1306,10 @@ class UIManager {
     }
   }
 
-  showMessage(message, duration = 2000, color = '#ffffff') {
+  showMessage(message, duration = 2000, color = '#ffffff', verticalOffset = 0) {
     const messageElement = document.createElement('div');
     messageElement.style.position = 'absolute';
-    messageElement.style.top = '30%';
+    messageElement.style.top = `calc(30% + ${verticalOffset}px)`;
     messageElement.style.left = '50%';
     messageElement.style.transform = 'translate(-50%, -50%)';
     messageElement.style.color = color;
