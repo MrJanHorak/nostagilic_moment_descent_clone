@@ -59,8 +59,7 @@ class InputManager {
     this.euler.x = Math.max(-this.PI_2, Math.min(this.PI_2, this.euler.x)); // Clamp pitch
 
     this.camera.quaternion.setFromEuler(this.euler);
-  }
-  // Handle key down
+  } // Handle key down
   onKeyDown(event) {
     this.keyStates[event.code] = true;
 
@@ -73,6 +72,23 @@ class InputManager {
       // Toggle pause state
       if (this.uiManager) {
         this.uiManager.togglePauseMenu();
+      }
+    }
+
+    // Handle weapon switching with number keys 1-4
+    if (
+      !this.gameState.isGameOver &&
+      this.gameState.isGameStarted &&
+      !this.gameState.isPaused
+    ) {
+      const weaponKeys = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
+      const keyIndex = weaponKeys.indexOf(event.code);
+
+      if (keyIndex !== -1) {
+        const weaponTypes = ['pulse', 'laser', 'missile', 'plasma'];
+        const weaponType = weaponTypes[keyIndex];
+
+        this.gameState.switchWeapon(weaponType);
       }
     }
   }

@@ -1634,12 +1634,14 @@ class EnemyManager {
           projectile.trail.geometry = null;
           projectile.trail.material = null;
 
-          projectiles.splice(j, 1);
-
-          // Check if enemy is destroyed
+          projectiles.splice(j, 1); // Check if enemy is destroyed
           if (enemy.health <= 0) {
             // Add score
             this.gameState.score += enemy.type.pointValue;
+
+            // Create weapon pickup chance based on enemy type
+            const position = enemy.mesh.position.clone();
+            this.spawnEnemyDrop(position, enemy.type.name);
 
             // Destroy the enemy
             this.destroyEnemy(i);
@@ -2754,6 +2756,86 @@ class EnemyManager {
           }
         }
       }
+    }
+  }
+
+  // Spawn item drops when enemies are destroyed
+  spawnEnemyDrop(position, enemyType) {
+    // Check if PowerUpManager exists
+    if (!this.powerUpManager) return;
+
+    // Different drop chances based on enemy type
+    let dropChance = 0;
+    let weaponDropChance = 0;
+
+    switch (enemyType) {
+      case 'scout':
+        dropChance = 0.2; // 20% chance to drop something
+        weaponDropChance = 0.2; // 20% of drops are weapons (4% overall)
+        break;
+      case 'fighter':
+        dropChance = 0.3; // 30% chance
+        weaponDropChance = 0.3; // 30% of drops are weapons (9% overall)
+        break;
+      case 'bomber':
+        dropChance = 0.5; // 50% chance
+        weaponDropChance = 0.4; // 40% of drops are weapons (20% overall)
+        break;
+      case 'destroyer':
+        dropChance = 0.7; // 70% chance
+        weaponDropChance = 0.6; // 60% of drops are weapons (42% overall)
+        break;
+      case 'boss':
+        dropChance = 1.0; // 100% chance to drop something
+        weaponDropChance = 0.8; // 80% chance it's a weapon
+        break;
+      default:
+        dropChance = 0.2;
+        weaponDropChance = 0.3;
+    }
+
+    // Determine if we should drop something
+    if (Math.random() > dropChance) return;
+
+    // Determine what type of item to drop
+    if (Math.random() < weaponDropChance) {
+      // Weapon drop
+      const weaponFound =
+        this.gameState.weaponInventory.laser.unlocked &&
+        this.gameState.weaponInventory.missile.unlocked &&
+        this.gameState.weaponInventory.plasma.unlocked;
+
+      if (!weaponFound) {
+        // If player doesn't have all weapons, higher chance for new weapon
+        this.powerUpManager.spawnPowerup(position, 'weaponPickup');
+      } else {
+        // Player has all weapons, give ammo
+        this.powerUpManager.spawnPowerup(position, 'ammoPickup');
+      }
+    } else {
+      // Other powerups - distribute randomly
+      const powerupTypes = [
+        'health',
+        'speedBoost',
+        'weaponUpgrade',
+        'ammoPickup',
+      ];
+      const weights = [0.4, 0.2, 0.2, 0.2]; // 40% health, 20% others
+
+      // Weighted random selection
+      const rand = Math.random();
+      let powerup;
+      let cumulativeWeight = 0;
+
+      for (let i = 0; i < powerupTypes.length; i++) {
+        cumulativeWeight += weights[i];
+        if (rand <= cumulativeWeight) {
+          powerup = powerupTypes[i];
+          break;
+        }
+      }
+
+      this.powerUpManager.spawnPowerup(position, powerup);
     }
   }
 }

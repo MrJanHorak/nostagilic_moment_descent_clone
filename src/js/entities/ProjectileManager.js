@@ -215,7 +215,6 @@ class ProjectileManager {
       trailType: 'standard',
     });
   }
-
   // Fire a projectile from the player's viewpoint
   fireProjectile(gameState) {
     if (
@@ -226,30 +225,114 @@ class ProjectileManager {
     )
       return;
 
+    // Check if we have the weapon and ammo
+    const currentWeapon = gameState.currentWeapon || 'pulse';
+    const weaponInventory = gameState.weaponInventory || {
+      pulse: { unlocked: true, ammo: Infinity },
+    };
+
+    if (!weaponInventory[currentWeapon]?.unlocked) {
+      return;
+    }
+
+    // Check and consume ammo for non-infinite weapons
+    if (
+      weaponInventory[currentWeapon].ammo <= 0 &&
+      weaponInventory[currentWeapon].ammo !== Infinity
+    ) {
+      // Out of ammo, play click sound and show message
+      if (this.audioManager && this.audioManager.initialized) {
+        this.audioManager.playSound('empty', { volume: 0.2 });
+      }
+
+      if (gameState.uiManager) {
+        gameState.uiManager.showMessage('NO AMMO', 1500, '#ff6600');
+      }
+
+      // Fallback to pulse weapon
+      gameState.currentWeapon = 'pulse';
+      if (gameState.uiManager) {
+        gameState.uiManager.updateWeaponUI();
+      }
+      return;
+    }
+
+    // Consume ammo if not infinite
+    if (weaponInventory[currentWeapon].ammo !== Infinity) {
+      weaponInventory[currentWeapon].ammo--;
+
+      // Update UI if low on ammo
+      if (weaponInventory[currentWeapon].ammo <= 5 && gameState.uiManager) {
+        gameState.uiManager.updateWeaponUI();
+      }
+    }
+
     // Use weapon power from gameState
     const weaponPower = gameState.weaponPower || 1;
 
-    // Default green projectile
-    let projectileColor = 0x00ff00;
-    let projectileType = 'standard';
+    // Configure weapon properties based on type
+    let projectileColor, projectileType, projectileOptions;
 
-    // If weapon is upgraded, use different projectiles
-    if (weaponPower > 2) {
-      projectileColor = 0x00ffff; // Blue for highly upgraded weapon
-      projectileType = 'plasma';
-    } else if (weaponPower > 1) {
-      projectileColor = 0x00ffdd; // Cyan for upgraded weapon
-      projectileType = 'laser';
+    switch (currentWeapon) {
+      case 'pulse':
+        projectileColor = 0x00ff00;
+        projectileType = 'standard';
+        projectileOptions = {
+          speed: this.projectileSpeed,
+          power: 1 * weaponPower,
+        };
+        break;
+
+      case 'laser':
+        projectileColor = 0x00ffff;
+        projectileType = 'laser';
+        projectileOptions = {
+          speed: this.projectileSpeed + 5, // Faster
+          power: 1.5 * weaponPower,
+          penetrating: true, // Can go through multiple enemies
+        };
+        break;
+
+      case 'missile':
+        projectileColor = 0xff8800;
+        projectileType = 'missile';
+        projectileOptions = {
+          speed: this.projectileSpeed - 2, // Slower but more powerful
+          power: 3 * weaponPower,
+          explosive: true,
+          explosionRadius: 1.5,
+          unstable: true,
+        };
+        break;
+
+      case 'plasma':
+        projectileColor = 0xff00ff;
+        projectileType = 'plasma';
+        projectileOptions = {
+          speed: this.projectileSpeed,
+          power: 2 * weaponPower,
+          pulsate: true,
+          explosive: true,
+          explosionRadius: 1.0,
+        };
+        break;
     }
 
-    // Play weapon sound - different sound for upgraded weapons
-    if (this.audioManager.initialized) {
-      if (weaponPower > 2) {
-        this.audioManager.playSound('shoot', { volume: 0.5, pitch: 1.4 });
-      } else if (weaponPower > 1) {
-        this.audioManager.playSound('shoot', { volume: 0.4, pitch: 1.2 });
-      } else {
-        this.audioManager.playSound('shoot', { volume: 0.3 });
+    // Play appropriate weapon sound based on weapon type
+    if (this.audioManager && this.audioManager.initialized) {
+      switch (currentWeapon) {
+        case 'pulse':
+          this.audioManager.playSound('shoot', { volume: 0.3 });
+          break;
+        case 'laser':
+          this.audioManager.playSound('shoot', { volume: 0.4, pitch: 1.2 });
+          break;
+        case 'missile':
+          this.audioManager.playSound('shoot', { volume: 0.5, pitch: 0.8 });
+          break;
+        case 'plasma':
+          this.audioManager.playSound('shoot', { volume: 0.4, pitch: 1.4 });
+          break;
       }
     }
 
@@ -266,23 +349,25 @@ class ProjectileManager {
 
     // Calculate player's current velocity
     const playerVelocity = new THREE.Vector3();
-    if (gameState.speedMultiplier && gameState.playerVelocity) {
+    if (gameState.playerVelocity) {
       playerVelocity.copy(gameState.playerVelocity);
     }
 
-    // Create projectile with appropriate options based on weapon power
+    // Create projectile with configured options
     const options = {
       type: projectileType,
       color: projectileColor,
-      power: weaponPower,
+      power: projectileOptions.power,
       playerVelocity: playerVelocity,
-      speed: this.projectileSpeed + (weaponPower - 1) * 2, // Faster projectiles for upgraded weapons
-      trailType: weaponPower > 1 ? projectileType : 'standard',
+      speed: projectileOptions.speed,
+      trailType: currentWeapon,
+      explosive: projectileOptions.explosive || false,
+      explosionRadius: projectileOptions.explosionRadius || 1.0,
+      penetrating: projectileOptions.penetrating || false,
+      pulsate: projectileOptions.pulsate || false,
+      unstable: projectileOptions.unstable || false,
+      guided: currentWeapon === 'missile' && weaponPower > 1,
     };
-
-    if (weaponPower > 2) {
-      options.pulsate = true;
-    }
 
     return this.createProjectile(startPosition, startQuaternion, options);
   }

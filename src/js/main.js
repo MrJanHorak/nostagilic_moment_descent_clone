@@ -102,18 +102,6 @@ export default class Game {
         this.audioManager
       );
       this.projectileManager.setCanvas(this.canvas);
-      this.enemyManager = new EnemyManager(
-        this.scene,
-        this.camera,
-        this.gameState,
-        this.audioManager,
-        this.levelManager
-      );
-
-      // Give the LevelManager a reference to the EnemyManager
-      if (this.levelManager) {
-        this.levelManager.enemyManager = this.enemyManager;
-      }
       this.powerUpManager = new PowerUpManager(
         this.scene,
         this.camera,
@@ -122,6 +110,22 @@ export default class Game {
         this.uiManager,
         this.levelManager
       );
+
+      this.enemyManager = new EnemyManager(
+        this.scene,
+        this.camera,
+        this.gameState,
+        this.audioManager,
+        this.levelManager
+      );
+
+      // Connect EnemyManager to PowerUpManager so it can drop weapon pickups
+      this.enemyManager.powerUpManager = this.powerUpManager;
+
+      // Give the LevelManager a reference to the EnemyManager
+      if (this.levelManager) {
+        this.levelManager.enemyManager = this.enemyManager;
+      }
 
       // Connect the input manager with the projectile manager
       this.inputManager.projectileManager = this.projectileManager; // Set up gameState references
@@ -159,6 +163,11 @@ export default class Game {
       // Create start screen and set up event listener
       const startButton = this.uiManager.createStartScreen();
       startButton.addEventListener('click', () => this.startGame());
+      // Initialize the weapon UI if it exists
+      if (this.gameState && this.uiManager) {
+        this.gameState.resetWeaponInventory();
+        this.uiManager.updateWeaponUI();
+      }
 
       // Start animation loop
       this.animate();
@@ -271,11 +280,54 @@ export default class Game {
       });
     }
   }
-
   startGame() {
     this.gameState.isGameStarted = true;
     this.uiManager.hideStartScreen(); // Initialize audio on first interaction
     this.audioManager.init();
+
+    // Reset weapon inventory to start with just the basic pulse weapon
+    this.gameState.resetWeaponInventory();
+
+    // Create empty sound for when out of ammo
+    this.audioManager.createSound('empty', () => {
+      const ctx = this.audioManager.context;
+      const duration = 0.05;
+      const buffer = ctx.createBuffer(
+        1,
+        ctx.sampleRate * duration,
+        ctx.sampleRate
+      );
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        const t = i / ctx.sampleRate;
+        data[i] = Math.sin(2 * Math.PI * 80 * t) * (1 - t / duration) * 0.2;
+      }
+
+      return buffer;
+    });
+
+    // Create weapon switch sound
+    this.audioManager.createSound('weaponSwitch', () => {
+      const ctx = this.audioManager.context;
+      const duration = 0.15;
+      const buffer = ctx.createBuffer(
+        1,
+        ctx.sampleRate * duration,
+        ctx.sampleRate
+      );
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < data.length; i++) {
+        const t = i / ctx.sampleRate;
+        data[i] =
+          Math.sin(2 * Math.PI * (1000 + 500 * t) * t) *
+          (1 - t / duration) *
+          0.3;
+      }
+
+      return buffer;
+    });
 
     // Create collision bump sound after audio initialization
     this.createBumpSound();

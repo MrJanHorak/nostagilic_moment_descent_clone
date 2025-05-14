@@ -56,6 +56,109 @@ export const powerupTypes = [
     },
     message: 'Weapons Upgraded!',
   },
+  {
+    name: 'weaponPickup',
+    color: 0xff00ff, // Purple for weapon pickups
+    size: 0.5,
+    duration: 0,
+    effect: function (gameState, uiManager) {
+      // Randomly choose a weapon to give
+      const weapons = ['laser', 'missile', 'plasma'];
+      const weaponWeights = {
+        laser: 0.5,    // 50% chance for laser
+        missile: 0.3,  // 30% chance for missile
+        plasma: 0.2    // 20% chance for plasma
+      };
+      
+      // Weighted random selection
+      const rand = Math.random();
+      let weapon;
+      let cumulativeWeight = 0;
+      
+      for (const [w, weight] of Object.entries(weaponWeights)) {
+        cumulativeWeight += weight;
+        if (rand <= cumulativeWeight) {
+          weapon = w;
+          break;
+        }
+      }
+      
+      // Add ammo amounts based on weapon rarity
+      const ammoAmounts = {
+        laser: 30,
+        missile: 15,
+        plasma: 8
+      };
+      
+      // Unlock the weapon and give ammo
+      gameState.weaponInventory[weapon].unlocked = true;
+      gameState.weaponInventory[weapon].ammo += ammoAmounts[weapon];
+      
+      // Switch to the new weapon
+      gameState.switchWeapon(weapon);
+      
+      // Show message
+      uiManager.showMessage(`${weapon.toUpperCase()} WEAPON ACQUIRED!`, 3000, '#ff00ff');
+    },
+    message: 'Weapon Acquired!',
+  },
+  {
+    name: 'ammoPickup',
+    color: 0xff8800, // Orange for ammo pickups
+    size: 0.4,
+    duration: 0,
+    effect: function (gameState, uiManager) {
+      // Determine which weapon to give ammo for
+      let ammoAdded = false;
+      
+      // First try to add ammo to the current weapon if it's not pulse
+      const currentWeapon = gameState.currentWeapon;
+      if (currentWeapon !== 'pulse' && gameState.weaponInventory[currentWeapon].unlocked) {
+        const ammoAmounts = {
+          laser: 15,
+          missile: 8,
+          plasma: 5
+        };
+        
+        gameState.weaponInventory[currentWeapon].ammo += ammoAmounts[currentWeapon];
+        uiManager.showMessage(`${currentWeapon.toUpperCase()} AMMO ADDED`, 2000, '#ff8800');
+        ammoAdded = true;
+      } else {
+        // If not using a special weapon, add ammo to a random unlocked weapon
+        const unlockedWeapons = Object.keys(gameState.weaponInventory)
+          .filter(w => w !== 'pulse' && gameState.weaponInventory[w].unlocked);
+        
+        if (unlockedWeapons.length > 0) {
+          const weapon = unlockedWeapons[Math.floor(Math.random() * unlockedWeapons.length)];
+          const ammoAmounts = {
+            laser: 15,
+            missile: 8,
+            plasma: 5
+          };
+          
+          gameState.weaponInventory[weapon].ammo += ammoAmounts[weapon];
+          uiManager.showMessage(`${weapon.toUpperCase()} AMMO ADDED`, 2000, '#ff8800');
+          ammoAdded = true;
+        }
+      }
+      
+      // If no ammo could be added (no special weapons unlocked), give a health boost instead
+      if (!ammoAdded) {
+        // Heal player for 10% of max health
+        const healAmount = gameState.maxPlayerHealth * 0.1;
+        gameState.playerHealth = Math.min(
+          gameState.maxPlayerHealth,
+          gameState.playerHealth + healAmount
+        );
+        uiManager.updateHUD();
+        uiManager.showMessage('Minor Shield Repair', 2000, '#00ff00');
+      }
+      
+      // Update the weapon UI
+      uiManager.updateWeaponUI();
+    },
+    message: 'Ammo Acquired!',
+  },
 ];
 
 class PowerUpManager {
@@ -211,7 +314,7 @@ class PowerUpManager {
         powerup.type.effect(this.gameState, this.uiManager);
 
         // Play sound
-        if (this.audioManager.initialized) {
+        if (this.audioManager && this.audioManager.initialized) {
           this.audioManager.playSound('powerup', { volume: 0.5 });
         }
 
@@ -284,47 +387,9 @@ class PowerUpManager {
       );
 
       // Only spawn if within reasonable distance and not already spawned
-      if (distanceToPlayer < 40 && distanceToPlayer > 5) {
-        // Check if this power-up was already spawned (using position as identifier)
-        const alreadySpawned = this.powerups.some((powerup) => {
-          return (
-            powerup.mesh &&
-            powerup.mesh.userData.spawnPosition &&
-            powerup.mesh.userData.spawnPosition.distanceTo(
-              spawnPoint.position
-            ) < 1
-          );
-        });
-
-        if (!alreadySpawned) {
-          // Find the powerup type definition
-          const powerupTypeDef = powerupTypes.find(
-            (type) => type.name === spawnPoint.powerupType
-          );
-          if (powerupTypeDef) {
-            // Create the powerup
-            const powerupMesh = this.createPowerupMesh(powerupTypeDef);
-            powerupMesh.position.copy(spawnPoint.position); // Mark it as a predefined spawn
-            powerupMesh.userData.isPredefined = true;
-            powerupMesh.userData.spawnPosition = spawnPoint.position.clone();
-            powerupMesh.userData.powerupId = Date.now() + Math.random();
-
-            // Create powerup object with the same structure as in spawnPowerup method
-            const powerup = {
-              mesh: powerupMesh,
-              type: powerupTypeDef,
-              id: powerupMesh.userData.powerupId,
-              collisionRadius: powerupTypeDef.size * 0.7,
-            };
-
-            // Add to scene and track
-            this.scene.add(powerupMesh);
-            this.powerups.push(powerup);
-
-            // Animate the power-up
-            this.animatePowerup(powerup);
-          }
-        }
+      if (distanceToPlayer < 50 && !spawnPoint.spawned) {
+        this.spawnPowerup(spawnPoint.position, spawnPoint.type);
+        spawnPoint.spawned = true;
       }
     }
   }

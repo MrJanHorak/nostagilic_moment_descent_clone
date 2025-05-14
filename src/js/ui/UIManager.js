@@ -156,9 +156,7 @@ class UIManager {
       const weaponSelector = document.createElement('div');
       weaponSelector.style.display = 'flex';
       weaponSelector.style.gap = '5px';
-      weaponSelector.style.marginTop = '5px';
-
-      // Create weapon slots with numbers 1-4
+      weaponSelector.style.marginTop = '5px'; // Create weapon slots with numbers 1-4
       const weaponSlots = ['PULSE', 'LASER', 'MISSILE', 'PLASMA'];
       for (let i = 0; i < 4; i++) {
         const weaponSlot = document.createElement('div');
@@ -173,12 +171,15 @@ class UIManager {
         weaponSlot.style.background =
           i === 0 ? 'rgba(0, 170, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)';
         weaponSlot.style.color = i === 0 ? '#ffffff' : '#0088cc';
-        weaponSlot.style.cursor = 'pointer';
+        weaponSlot.style.cursor = i === 0 ? 'pointer' : 'not-allowed';
         weaponSlot.style.transition = 'all 0.2s ease';
         weaponSlot.style.position = 'relative';
+        weaponSlot.style.opacity = i === 0 ? '1.0' : '0.5';
         weaponSlot.innerHTML = `<div style="font-weight: bold;">${
           i + 1
-        }</div><div style="font-size: 10px;">${weaponSlots[i]}</div>`;
+        }</div><div style="font-size: 10px;">${weaponSlots[i]}</div>${
+          i === 0 ? '<div style="font-size: 9px;">∞</div>' : ''
+        }`;
 
         weaponSlot.onmouseover = () => {
           if (weaponSlot.style.background !== 'rgba(0, 170, 255, 0.3)') {
@@ -636,6 +637,52 @@ class UIManager {
     } catch (error) {
       console.error('Error creating start screen:', error);
       return null;
+    }
+  }
+
+  // Update weapon UI to reflect current weapon selection and ammo counts
+  updateWeaponUI() {
+    const weaponTypes = ['pulse', 'laser', 'missile', 'plasma'];
+
+    for (let i = 0; i < 4; i++) {
+      const slot = document.getElementById(`weapon-slot-${i + 1}`);
+      const weaponType = weaponTypes[i];
+
+      if (slot) {
+        const isUnlocked =
+          this.gameState.weaponInventory?.[weaponType]?.unlocked ||
+          weaponType === 'pulse';
+        const isSelected = this.gameState.currentWeapon === weaponType;
+        const ammo = this.gameState.weaponInventory?.[weaponType]?.ammo || 0;
+
+        // Update appearance
+        slot.style.opacity = isUnlocked ? '1.0' : '0.5';
+        slot.style.background = isSelected
+          ? 'rgba(0, 170, 255, 0.3)'
+          : 'rgba(0, 0, 0, 0.3)';
+        slot.style.color = isSelected ? '#ffffff' : '#0088cc';
+
+        // Update ammo display
+        const ammoDisplay = ammo === Infinity ? '∞' : ammo;
+        slot.innerHTML = `<div style="font-weight: bold;">${i + 1}</div>
+                          <div style="font-size: 10px;">${weaponTypes[
+                            i
+                          ].toUpperCase()}</div>
+                          ${
+                            isUnlocked && ammo !== Infinity
+                              ? `<div style="font-size: 9px;">${ammoDisplay}</div>`
+                              : ''
+                          }`;
+
+        // Update click handler
+        slot.onclick = isUnlocked
+          ? () => {
+              this.gameState.switchWeapon(weaponType);
+            }
+          : null;
+
+        slot.style.cursor = isUnlocked ? 'pointer' : 'not-allowed';
+      }
     }
   }
 

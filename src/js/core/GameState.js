@@ -12,12 +12,74 @@ class GameState {
     this.speedMultiplier = 1.0;
     this.weaponPower = 1;
 
+    // Weapon system
+    this.currentWeapon = 'pulse'; // Default weapon
+    this.weaponInventory = {
+      pulse: { unlocked: true, ammo: Infinity }, // Basic weapon with unlimited ammo
+      laser: { unlocked: false, ammo: 0 },
+      missile: { unlocked: false, ammo: 0 },
+      plasma: { unlocked: false, ammo: 0 },
+    };
+
     // References to other game systems (assigned by main.js)
     this.camera = null;
     this.audioManager = null;
     this.uiManager = null;
     this.activeAnimations = [];
   }
+
+  // Switch weapon if it's unlocked
+  switchWeapon(weaponType) {
+    if (this.weaponInventory[weaponType]?.unlocked) {
+      this.currentWeapon = weaponType;
+      // Update weapon UI if UI manager exists
+      if (this.uiManager) {
+        this.uiManager.updateWeaponUI();
+      }
+
+      // Play weapon switch sound if audio manager exists
+      if (this.audioManager && this.audioManager.initialized) {
+        this.audioManager.playSound('weaponSwitch', { volume: 0.3 });
+      }
+
+      return true;
+    }
+    return false;
+  }
+
+  // Add ammo to a weapon type and unlock it if not already unlocked
+  addWeaponAmmo(weaponType, amount) {
+    if (this.weaponInventory[weaponType]) {
+      this.weaponInventory[weaponType].unlocked = true;
+
+      // Only add ammo if not infinite
+      if (this.weaponInventory[weaponType].ammo !== Infinity) {
+        this.weaponInventory[weaponType].ammo += amount;
+      }
+
+      // Update weapon UI
+      if (this.uiManager) {
+        this.uiManager.updateWeaponUI();
+      }
+    }
+  }
+
+  // Reset weapon inventory (e.g., when starting a new game)
+  resetWeaponInventory() {
+    this.currentWeapon = 'pulse';
+    this.weaponInventory = {
+      pulse: { unlocked: true, ammo: Infinity },
+      laser: { unlocked: false, ammo: 0 },
+      missile: { unlocked: false, ammo: 0 },
+      plasma: { unlocked: false, ammo: 0 },
+    };
+
+    // Update weapon UI
+    if (this.uiManager) {
+      this.uiManager.updateWeaponUI();
+    }
+  }
+
   // Set references to other game components
   setReferences(
     camera,
