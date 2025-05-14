@@ -1,0 +1,21 @@
+{
+  "metadata": { "version": 4.5, "type": "Object", "generator": "Object3D.toJSON" },
+  "geometries": [
+    { "uuid": "scout-cone", "type": "ConeGeometry", "radius": 1.6, "height": 4.4, "radialSegments": 16 },
+    { "uuid": "scout-eye", "type": "SphereGeometry", "radius": 0.24, "widthSegments": 16, "heightSegments": 16 }
+  ],
+  "materials": [
+    { "uuid": "mat-red", "type": "MeshStandardMaterial", "color": 16711680, "metalness": 0.3, "roughness": 0.5 },
+    { "uuid": "mat-yellow", "type": "MeshStandardMaterial", "color": 16776960, "emissive": 16776960, "emissiveIntensity": 1.2 }
+  ],
+  "object": {
+    "uuid": "scout-ship",
+    "type": "Group",
+    "name": "ScoutShip",
+    "children": [
+      { "uuid": "scout-body", "type": "Mesh", "geometry": "scout-cone", "material": "mat-red", "rotation": [ -1.57, 0, 0 ] },
+      { "uuid": "eye-left", "type": "Mesh", "geometry": "scout-eye", "material": "mat-yellow", "position": [ -0.36, 0.4, 1.4 ] },
+      { "uuid": "eye-right", "type": "Mesh", "geometry": "scout-eye", "material": "mat-yellow", "position": [ 0.36, 0.4, 1.4 ] }
+    ]
+  }
+}

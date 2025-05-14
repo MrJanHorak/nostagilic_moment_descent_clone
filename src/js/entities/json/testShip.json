@@ -1,0 +1,131 @@
+{
+  "metadata": {
+    "version": 4.5,
+    "type": "Object",
+    "generator": "Object3D.toJSON"
+  },
+  "geometries": [
+    {
+      "uuid": "geo-cone",
+      "type": "ConeGeometry",
+      "radius": 1.6,
+      "height": 4.4,
+      "radialSegments": 12
+    },
+    {
+      "uuid": "geo-wing",
+      "type": "ExtrudeGeometry",
+      "shapes": [
+        {
+          "type": "Shape",
+          "uuid": "wing-shape",
+          "curves": [
+            {"type": "LineCurve", "v1": {"x": 0, "y": 0}, "v2": {"x": 0, "y": 1}},
+            {"type": "LineCurve", "v1": {"x": 0, "y": 1}, "v2": {"x": 1, "y": 0}},
+            {"type": "LineCurve", "v1": {"x": 1, "y": 0}, "v2": {"x": 0, "y": 0}}
+          ]
+        }
+      ],
+      "options": { "depth": 0.1, "bevelEnabled": false }
+    },
+    {
+      "uuid": "geo-eye",
+      "type": "SphereGeometry",
+      "radius": 0.24,
+      "widthSegments": 16,
+      "heightSegments": 16
+    }
+  ],
+  "materials": [
+    {
+      "uuid": "mat-red",
+      "type": "MeshStandardMaterial",
+      "color": 16711680,
+      "metalness": 0.3,
+      "roughness": 0.5,
+      "emissive": 16711680,
+      "emissiveIntensity": 0.2
+    },
+    {
+      "uuid": "mat-yellow",
+      "type": "MeshStandardMaterial",
+      "color": 16776960,
+      "emissive": 16776960,
+      "emissiveIntensity": 1.2,
+      "metalness": 0.5,
+      "roughness": 0.2
+    }
+  ],
+  "object": {
+    "uuid": "scout-ship",
+    "type": "Group",
+    "name": "ScoutShip",
+    "children": [
+      {
+        "uuid": "scout-body",
+        "type": "Mesh",
+        "name": "scout_body",
+        "geometry": "geo-cone",
+        "material": "mat-red",
+        "rotation": [-1.5708, 0, 0]
+      },
+      {
+        "uuid": "wing-left",
+        "type": "Mesh",
+        "name": "scout_wing_left",
+        "geometry": "geo-wing",
+        "material": "mat-red",
+        "position": [-0.4, 0, -1.2],
+        "rotation": [0, 0, 3.1416]
+      },
+      {
+        "uuid": "wing-right",
+        "type": "Mesh",
+        "name": "scout_wing_right",
+        "geometry": "geo-wing",
+        "material": "mat-red",
+        "position": [0.4, 0, -1.2]
+      },
+      {
+        "uuid": "eye-left",
+        "type": "Mesh",
+        "name": "scout_eye_left",
+        "geometry": "geo-eye",
+        "material": "mat-yellow",
+        "position": [-0.36, 0.4, 1.4]
+      },
+      {
+        "uuid": "eye-right",
+        "type": "Mesh",
+        "name": "scout_eye_right",
+        "geometry": "geo-eye",
+        "material": "mat-yellow",
+        "position": [0.36, 0.4, 1.4]
+      },
+      {
+        "uuid": "eye-left-light",
+        "type": "PointLight",
+        "color": 16776960,
+        "intensity": 2.5,
+        "distance": 3,
+        "position": [-0.36, 0.4, 1.4]
+      },
+      {
+        "uuid": "eye-right-light",
+        "type": "PointLight",
+        "color": 16776960,
+        "intensity": 2.5,
+        "distance": 3,
+        "position": [0.36, 0.4, 1.4]
+      },
+      {
+        "uuid": "rear-engine-light",
+        "type": "PointLight",
+        "color": 16711680,
+        "intensity": 1.5,
+        "distance": 2,
+        "position": [0, 0, -2.4]
+      }
+    ]
+  }
+}

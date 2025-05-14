@@ -1,0 +1,21 @@
+{
+  "metadata": { "version": 4.5, "type": "Object", "generator": "Object3D.toJSON" },
+  "geometries": [
+    { "uuid": "recon-cylinder", "type": "CylinderGeometry", "radiusTop": 0.7, "radiusBottom": 0.7, "height": 3, "radialSegments": 16 },
+    { "uuid": "recon-dome", "type": "SphereGeometry", "radius": 0.5, "widthSegments": 16, "heightSegments": 16 }
+  ],
+  "materials": [
+    { "uuid": "mat-red", "type": "MeshStandardMaterial", "color": 16711680 },
+    { "uuid": "mat-blue", "type": "MeshStandardMaterial", "color": 255 }
+  ],
+  "object": {
+    "uuid": "recon-ship",
+    "type": "Group",
+    "name": "ReconShip",
+    "children": [
+      { "uuid": "recon-body", "type": "Mesh", "geometry": "recon-cylinder", "material": "mat-red", "rotation": [ 0, 0, 1.5708 ] },
+      { "uuid": "sensor-1", "type": "Mesh", "geometry": "recon-dome", "material": "mat-blue", "position": [ 0, 1, 1 ] },
+      { "uuid": "sensor-2", "type": "Mesh", "geometry": "recon-dome", "material": "mat-blue", "position": [ 0, -1, 1 ] }
+    ]
+  }
+}
