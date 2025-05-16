@@ -25,7 +25,12 @@ class LevelManager {
 
     // Obstacles
     this.obstacles = []; // Level system properties
-    this.levels = [createLevel1(), createLevel2(), createLevel3(), createExampleLevel()];
+    this.levels = [
+      createLevel1(),
+      createLevel2(),
+      createLevel3(),
+      createExampleLevel(),
+    ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
     this.segmentIndex = 0;
@@ -168,28 +173,42 @@ class LevelManager {
 
   // Add lights to a tunnel segment
   addLightsToSegment(segment, color = 0x4466aa) {
-    const light = new THREE.PointLight(color, 0.6, 10, 2);
+    // Add multiple lights per segment for better illumination
+    const lightCount = 3; // Multiple lights per segment
 
-    // Random position within the segment
-    const x = (Math.random() - 0.5) * 8;
-    const y = -3 + Math.random() * 6; // Mostly lower in the tunnel
-    const z = -Math.random() * this.segmentLength;
+    for (let i = 0; i < lightCount; i++) {
+      // Create a point light with increased intensity and range
+      const light = new THREE.PointLight(color, 1.2, 15, 2); // Increased intensity and range
 
-    light.position.set(x, y, z);
-    segment.add(light);
+      // Distribute lights evenly through the segment
+      const segmentProgress = i / (lightCount - 1 || 1); // Avoid division by zero
 
-    // Add a small glowing sphere to represent the light source
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.7,
-    });
-    const glowSphere = new THREE.Mesh(
-      new THREE.SphereGeometry(0.1, 8, 8),
-      glowMaterial
-    );
-    glowSphere.position.copy(light.position);
-    segment.add(glowSphere);
+      // Position light with more controlled randomness
+      const x = (Math.random() - 0.5) * 8;
+      const y = (Math.random() - 0.5) * 4; // More centered vertically
+      const z = -segmentProgress * this.segmentLength;
+
+      light.position.set(x, y, z);
+      segment.add(light);
+
+      // Make light source visible with slightly larger glowing sphere
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.7,
+      });
+
+      const glowSphere = new THREE.Mesh(
+        new THREE.SphereGeometry(0.2, 8, 8), // Slightly larger for better visibility
+        glowMaterial
+      );
+      glowSphere.position.copy(light.position);
+      segment.add(glowSphere);
+    }
+
+    // Add a subtle ambient light to each segment to prevent completely dark areas
+    const ambientLight = new THREE.AmbientLight(color, 0.2);
+    segment.add(ambientLight);
   }
 
   // Add obstacles to a tunnel segment
@@ -351,6 +370,13 @@ class LevelManager {
     const segment = new THREE.Group();
     segment.position.copy(position);
 
+    // Store segment type in userData for reference by other systems
+    segment.userData = {
+      type: segmentDef.type,
+      index: index,
+      segmentLength: this.segmentLength,
+    };
+
     // Create the basic tunnel structure (walls, floor, ceiling)
     this.createBaseTunnelStructure(segment, segmentDef);
 
@@ -367,10 +393,52 @@ class LevelManager {
       }
     }
 
+    // Add fog particles for atmosphere
+    this.addAtmosphericEffects(segment, lightColor);
+
     this.scene.add(segment);
     this.levelSegments.push(segment);
 
     return segment;
+  }
+
+  // Add atmospheric effects to tunnel segments
+  addAtmosphericEffects(segment, lightColor) {
+    // Skip for some segments to vary density
+    if (Math.random() > 0.7) return;
+
+    // Create dust/fog particles
+    const particleCount = 50;
+    const particleGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+
+    // Create particles throughout the segment volume
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      particlePositions[i3] = (Math.random() - 0.5) * this.tunnelWidth * 0.8;
+      particlePositions[i3 + 1] =
+        (Math.random() - 0.5) * this.tunnelHeight * 0.8;
+      particlePositions[i3 + 2] = -Math.random() * this.segmentLength;
+    }
+
+    particleGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(particlePositions, 3)
+    );
+
+    // Derive particle color from the light color but make it subtle
+    const color = new THREE.Color(lightColor);
+    const particleMaterial = new THREE.PointsMaterial({
+      color: color,
+      size: 0.05,
+      transparent: true,
+      opacity: 0.3,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    segment.add(particles);
   }
 
   // Create the basic tunnel structure
@@ -450,9 +518,259 @@ class LevelManager {
 
   // Apply curve transformation to a segment
   applyCurveToSegment(segment, direction) {
-    // This is a simplified version - a proper implementation would
-    // bend the geometry according to a curve
-    segment.rotation.y = direction * (Math.PI / 8); // Slight rotation
+    // Create a properly curved tunnel segment instead of simply rotating
+    // Store the original uncurved geometry for reference
+    const oldFloor = segment.children.find(
+      (child) =>
+        child.position.y < 0 &&
+        child.rotation.x < 0 &&
+        child.geometry &&
+        child.geometry.type === 'PlaneGeometry'
+    );
+
+    const oldCeiling = segment.children.find(
+      (child) =>
+        child.position.y > 0 &&
+        child.rotation.x > 0 &&
+        child.geometry &&
+        child.geometry.type === 'PlaneGeometry'
+    );
+
+    const oldLeftWall = segment.children.find(
+      (child) => child.rotation.y > 0 && child.position.x < 0 && child.geometry
+    );
+
+    const oldRightWall = segment.children.find(
+      (child) => child.rotation.y < 0 && child.position.x > 0 && child.geometry
+    );
+
+    // Remove the old walls if found
+    if (oldLeftWall) segment.remove(oldLeftWall);
+    if (oldRightWall) segment.remove(oldRightWall);
+
+    // Get dimensions
+    const width = oldFloor
+      ? oldFloor.geometry.parameters.width
+      : this.tunnelWidth;
+    const height = this.tunnelHeight;
+    const length = this.segmentLength;
+    const halfWidth = width / 2;
+    const halfHeight = height / 2;
+
+    // Create curved walls with segments
+    const wallSegments = 8; // More segments = smoother curve
+    const curveAmount = direction * 0.4; // How much the tunnel curves
+    const curveAngle = direction * (Math.PI / 4); // 45 degree turn    // Create curved wall geometries
+    const leftWallGeom = new THREE.BufferGeometry();
+    const rightWallGeom = new THREE.BufferGeometry();
+
+    const leftVertices = [];
+    const rightVertices = [];
+    const wallUVs = [];
+    const wallIndices = [];
+
+    // Variables to store final segment angle values for the end wall
+    let finalCosAngle, finalSinAngle;
+
+    // Generate curved walls vertex by vertex
+    for (let i = 0; i <= wallSegments; i++) {
+      const t = i / wallSegments;
+      const segmentAngle = t * curveAngle;
+      const cosAngle = Math.cos(segmentAngle);
+      const sinAngle = Math.sin(segmentAngle);
+
+      // Save the last segment's angle values for the end wall
+      if (i === wallSegments) {
+        finalCosAngle = cosAngle;
+        finalSinAngle = sinAngle;
+      }
+
+      // Calculate positions along the curve
+      const xOffset = length * t * sinAngle * curveAmount;
+      const zPos = -t * length;
+      const zOffset = length * t * (1 - cosAngle) * curveAmount;
+
+      // Left wall vertices (bottom and top)
+      leftVertices.push(
+        -halfWidth + xOffset,
+        -halfHeight,
+        zPos - zOffset,
+        -halfWidth + xOffset,
+        halfHeight,
+        zPos - zOffset
+      );
+
+      // Right wall vertices (bottom and top)
+      rightVertices.push(
+        halfWidth + xOffset,
+        -halfHeight,
+        zPos - zOffset,
+        halfWidth + xOffset,
+        halfHeight,
+        zPos - zOffset
+      );
+
+      // UVs
+      wallUVs.push(t, 0, t, 1);
+
+      // Create triangles (except for the first segment)
+      if (i > 0) {
+        const base = (i - 1) * 2;
+        // Each segment creates two triangles
+        wallIndices.push(
+          base,
+          base + 1,
+          base + 2,
+          base + 1,
+          base + 3,
+          base + 2
+        );
+      }
+    }
+
+    // Create the buffer geometry attributes
+    leftWallGeom.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(leftVertices, 3)
+    );
+    leftWallGeom.setAttribute(
+      'uv',
+      new THREE.Float32BufferAttribute(wallUVs, 2)
+    );
+    leftWallGeom.setIndex(wallIndices);
+    leftWallGeom.computeVertexNormals();
+
+    rightWallGeom.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(rightVertices, 3)
+    );
+    rightWallGeom.setAttribute(
+      'uv',
+      new THREE.Float32BufferAttribute(wallUVs, 2)
+    );
+    rightWallGeom.setIndex(wallIndices.slice()); // Copy the indices
+    rightWallGeom.computeVertexNormals();
+
+    // Create the curved wall meshes
+    const leftWall = new THREE.Mesh(leftWallGeom, this.wallMaterial);
+    const rightWall = new THREE.Mesh(rightWallGeom, this.wallMaterial);
+
+    // Add new curved walls to segment
+    segment.add(leftWall);
+    segment.add(rightWall);
+
+    // Add curved end wall at the end of the segment to close the tunnel
+    const endWall = new THREE.Mesh(
+      new THREE.PlaneGeometry(width, height),
+      this.wallMaterial
+    );
+    endWall.rotation.y = Math.PI + curveAngle;
+    endWall.position.set(
+      length * finalSinAngle * curveAmount,
+      0,
+      -length - length * (1 - finalCosAngle) * curveAmount
+    );
+    segment.add(endWall);
+
+    // Adjust floor and ceiling to follow the curve if they exist
+    if (oldFloor && oldCeiling) {
+      // Use curved geometry for floor and ceiling too
+      oldFloor.geometry = this.createCurvedSurface(
+        width,
+        length,
+        curveAmount,
+        curveAngle,
+        wallSegments,
+        true
+      );
+      oldCeiling.geometry = this.createCurvedSurface(
+        width,
+        length,
+        curveAmount,
+        curveAngle,
+        wallSegments,
+        false
+      );
+
+      // Properly update UVs for floor/ceiling
+      const floorUVs = oldFloor.geometry.attributes.uv;
+      const ceilingUVs = oldCeiling.geometry.attributes.uv;
+
+      for (let i = 0; i < floorUVs.count; i++) {
+        const u = floorUVs.getX(i);
+        floorUVs.setXY(i, u * 2, i % 2);
+        ceilingUVs.setXY(i, u * 2, i % 2);
+      }
+
+      floorUVs.needsUpdate = true;
+      ceilingUVs.needsUpdate = true;
+    }
+  }
+
+  // Helper method to create curved floor/ceiling
+  createCurvedSurface(
+    width,
+    length,
+    curveAmount,
+    curveAngle,
+    segments,
+    isFloor
+  ) {
+    const geom = new THREE.BufferGeometry();
+    const vertices = [];
+    const uvs = [];
+    const indices = [];
+    const halfWidth = width / 2;
+
+    // Generate points along the curve
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments;
+      const segmentAngle = t * curveAngle;
+      const cosAngle = Math.cos(segmentAngle);
+      const sinAngle = Math.sin(segmentAngle);
+
+      // Calculate position along curve
+      const xOffset = length * t * sinAngle * curveAmount;
+      const zPos = -t * length;
+      const zOffset = length * t * (1 - cosAngle) * curveAmount;
+
+      // Left and right points at this segment
+      vertices.push(
+        -halfWidth + xOffset,
+        0,
+        zPos - zOffset, // left point
+        halfWidth + xOffset,
+        0,
+        zPos - zOffset // right point
+      );
+
+      // UVs
+      uvs.push(0, t, 1, t);
+
+      // Create triangles (except for the first segment)
+      if (i > 0) {
+        const base = (i - 1) * 2;
+
+        if (isFloor) {
+          // Floor triangles (face down)
+          indices.push(base, base + 2, base + 3, base, base + 3, base + 1);
+        } else {
+          // Ceiling triangles (face up)
+          indices.push(base, base + 1, base + 3, base, base + 3, base + 2);
+        }
+      }
+    }
+
+    // Create the buffer geometry
+    geom.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+    geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+
+    return geom;
   }
 
   // Add custom obstacle pattern

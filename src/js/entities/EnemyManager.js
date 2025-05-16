@@ -16,18 +16,22 @@ class EnemyManager {
     this.gameState = gameState;
     this.audioManager = audioManager;
     this.levelManager = levelManager;
-    
+
     // Initialize supporting systems
     this.enemyFactory = new EnemyFactory(scene);
     this.projectileManager = new ProjectileManager(scene, audioManager);
     this.effectsManager = new EffectsManager(scene);
     this.objectPool = new ObjectPool();
-    
+
     // Enemy tracking
     this.enemies = [];
     this.levelSegments = [];
     this.destroyedPredefinedEnemies = new Set();
     this.totalPredefinedEnemies = 0;
+
+    // Tunnel properties (used for spawning calculations)
+    this.tunnelWidth = levelManager ? levelManager.tunnelWidth : 15;
+    this.tunnelHeight = levelManager ? levelManager.tunnelHeight : 12;
 
     // For endless mode
     this.lastRandomSpawnTime = 0;
@@ -46,8 +50,12 @@ class EnemyManager {
       : enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
 
     // Use the factory to create the enemy
-    const enemy = this.enemyFactory.createEnemy(enemyType, position, this.camera);
-    
+    const enemy = this.enemyFactory.createEnemy(
+      enemyType,
+      position,
+      this.camera
+    );
+
     this.enemies.push(enemy);
     return enemy;
   }
@@ -67,65 +75,143 @@ class EnemyManager {
 
     if (!validSegments[segmentIndex]) return;
 
-    const segment = validSegments[segmentIndex];
+    let segment = validSegments[segmentIndex];
+
+    // Check if this segment is suitable for spawning
+    // Avoid spawning in curve segments as they cause position calculation issues
+    const isCurved =
+      segment.userData &&
+      segment.userData.type &&
+      (segment.userData.type === 'curveLeft' ||
+        segment.userData.type === 'curveRight');
+
+    // If the segment is curved, try to find a better segment
+    if (isCurved) {
+      // Try segments before or after this one
+      const trySegments = [];
+      if (validSegments[segmentIndex - 1])
+        trySegments.push(validSegments[segmentIndex - 1]);
+      if (validSegments[segmentIndex + 1])
+        trySegments.push(validSegments[segmentIndex + 1]);
+
+      // If we have alternatives, pick one randomly
+      if (trySegments.length > 0) {
+        const altSegment =
+          trySegments[Math.floor(Math.random() * trySegments.length)];
+        if (altSegment) segment = altSegment;
+      }
+    }
 
     // Calculate a position somewhere in the segment
     const segmentPosition = segment.position.clone();
 
-    // Get segment dimensions from children (assuming first child is floor)
-    let segmentWidth = 10;
-    let segmentHeight = 10;
+    // Get segment dimensions from children more reliably
+    let segmentWidth = 8; // More conservative default width
+    let segmentHeight = 8; // More conservative default height
 
-    if (segment.children.length >= 4) {
-      // For simplicity assume the order: floor, ceiling, leftWall, rightWall
-      const floor = segment.children.find(
-        (child) =>
-          child.position.y < 0 &&
-          child.geometry &&
-          child.geometry.type === 'PlaneGeometry'
-      );
-      const ceiling = segment.children.find(
-        (child) =>
-          child.position.y > 0 &&
-          child.geometry &&
-          child.geometry.type === 'PlaneGeometry'
-      );
+    // Find floor and ceiling more reliably
+    const floor = segment.children.find(
+      (child) =>
+        child.position.y < 0 &&
+        child.rotation.x < 0 && // Floor typically has negative x rotation
+        child.geometry
+    );
 
-      if (floor && floor.geometry.parameters) {
-        segmentWidth = floor.geometry.parameters.width * 0.8; // 80% of width to stay away from walls
-      }
+    const ceiling = segment.children.find(
+      (child) =>
+        child.position.y > 0 &&
+        child.rotation.x > 0 && // Ceiling typically has positive x rotation
+        child.geometry
+    );
 
-      if (floor && ceiling) {
-        segmentHeight = Math.abs(ceiling.position.y - floor.position.y) * 0.8; // 80% of height to stay away from floor/ceiling
-      }
+    // Get actual dimensions from geometry if possible
+    if (floor && floor.geometry && floor.geometry.parameters) {
+      segmentWidth = floor.geometry.parameters.width * 0.7; // More conservative width (70%)
     }
 
-    // Random position within segment bounds - placed in middle of tunnel for visibility
-    const x = (Math.random() - 0.5) * segmentWidth * 0.6;
-    const y = (Math.random() - 0.5) * segmentHeight * 0.6;
-    const z = -segmentLength * (Math.random() * 0.7 + 0.15); // Position between 15% and 85% through segment
+    if (floor && ceiling) {
+      segmentHeight = Math.abs(ceiling.position.y - floor.position.y) * 0.6; // More conservative height (60%)
+    }
 
+    // Use more conservative position bounds within the segment
+    const x = (Math.random() - 0.5) * segmentWidth * 0.8;
+    const y = (Math.random() - 0.5) * segmentHeight * 0.8;
+
+    // Position along the segment length (avoid edges)
+    const z = -segmentLength * (Math.random() * 0.6 + 0.2); // Position between 20% and 80% through segment
+
+    // Convert local coordinates to world coordinates
+    // Apply the segment's world matrix to get the correct position
+    segment.updateMatrixWorld(true); // Ensure matrix is up to date
     const spawnPosition = new THREE.Vector3(x, y, z).applyMatrix4(
       segment.matrixWorld
     );
 
-    // Create a visual debug marker for the spawn point
+    // Verify position is inside level bounds - perform raycasting check
+    const tooCloseToWall = this.isPositionTooCloseToWalls(
+      spawnPosition,
+      segment
+    );
+    if (tooCloseToWall) {
+      // If too close to wall, try again with more conservative positioning
+      // Move towards center of tunnel
+      spawnPosition.x *= 0.5;
+      spawnPosition.y *= 0.5;
+    }
+
+    // Create debug visualization for spawn point (useful for development)
     const debugSpawn = new THREE.Mesh(
       new THREE.SphereGeometry(0.2, 8, 8),
-      new THREE.MeshStandardMaterial({ color: 0xff00ff })
+      new THREE.MeshStandardMaterial({
+        color: tooCloseToWall ? 0xff0000 : 0x00ff00,
+        emissive: tooCloseToWall ? 0xff0000 : 0x00ff00,
+        emissiveIntensity: 0.5,
+      })
     );
     debugSpawn.position.copy(spawnPosition);
     this.scene.add(debugSpawn);
 
-    // Remove debug marker after 5 seconds
+    // Remove debug marker after a few seconds
     setTimeout(() => {
       this.scene.remove(debugSpawn);
-      debugSpawn.geometry.dispose();
-      debugSpawn.material.dispose();
+      if (debugSpawn.geometry) debugSpawn.geometry.dispose();
+      if (debugSpawn.material) debugSpawn.material.dispose();
     }, 5000);
 
-    const enemyType = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
-    return this.spawnEnemy(spawnPosition, enemyType.name);
+    // Choose an enemy type appropriate for the current game progress
+    const enemyTypesForCurrentProgress = this.getEnemyTypesForCurrentProgress();
+    const enemyType =
+      enemyTypesForCurrentProgress[
+        Math.floor(Math.random() * enemyTypesForCurrentProgress.length)
+      ];
+
+    // Create and return the enemy
+    const enemy = this.spawnEnemy(spawnPosition, enemyType.name);
+
+    // Store reference to originating segment
+    if (enemy && enemy.mesh) {
+      enemy.mesh.userData.originSegment = segment.id;
+    }
+
+    return enemy;
+  }
+
+  // Helper method to check if a position is too close to walls
+  isPositionTooCloseToWalls(position, segment) {
+    // Simple distance check from segment center
+    const horizontalDistance = Math.sqrt(
+      Math.pow(position.x - segment.position.x, 2) +
+        Math.pow(position.z - segment.position.z, 2)
+    );
+
+    // If more than 80% of the way to the edge, consider it too close
+    return horizontalDistance > this.tunnelWidth * 0.4;
+  }
+
+  // Get appropriate enemy types based on current game progress
+  getEnemyTypesForCurrentProgress() {
+    // By default return all enemy types except boss
+    return enemyTypes.filter((type) => type.name !== 'boss');
   }
 
   // Spawn predefined enemies from level blueprint
@@ -466,14 +552,20 @@ class EnemyManager {
             if (Math.random() < 0.3) {
               setTimeout(() => {
                 if (enemy && enemy.mesh && enemy.mesh.parent) {
-                  this.projectileManager.fireEnemyProjectile(enemy, this.camera);
+                  this.projectileManager.fireEnemyProjectile(
+                    enemy,
+                    this.camera
+                  );
                 }
               }, 200);
 
               if (Math.random() < 0.2) {
                 setTimeout(() => {
                   if (enemy && enemy.mesh && enemy.mesh.parent) {
-                    this.projectileManager.fireEnemyProjectile(enemy, this.camera);
+                    this.projectileManager.fireEnemyProjectile(
+                      enemy,
+                      this.camera
+                    );
                   }
                 }, 400);
               }
@@ -487,7 +579,12 @@ class EnemyManager {
     }
 
     // Update enemy projectiles
-    this.projectileManager.updateProjectiles(delta, this.camera, this.gameState, this.effectsManager);
+    this.projectileManager.updateProjectiles(
+      delta,
+      this.camera,
+      this.gameState,
+      this.effectsManager
+    );
   }
 
   destroyEnemy(index) {
