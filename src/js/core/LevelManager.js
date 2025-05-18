@@ -23,6 +23,17 @@ class LevelManager {
     this.wallMaterial = null;
     this.floorMaterial = null;
 
+    // Geometry caches for reuse
+    this._planeGeometry = new THREE.PlaneGeometry(
+      this.tunnelWidth,
+      this.tunnelHeight
+    );
+    this._segmentWallGeometry = new THREE.PlaneGeometry(
+      this.segmentLength,
+      this.tunnelHeight
+    );
+    this._glowSphereGeometry = new THREE.SphereGeometry(0.15, 6, 6); // Lower segment count
+
     // Obstacles
     this.obstacles = []; // Level system properties
     this.levels = [
@@ -66,18 +77,14 @@ class LevelManager {
       this.floorTexture.wrapT = THREE.RepeatWrapping;
       this.floorTexture.repeat.set(4, 8);
 
-      // Create materials
-      this.wallMaterial = new THREE.MeshStandardMaterial({
+      // Use MeshLambertMaterial for much faster rendering (no PBR lighting calculations)
+      this.wallMaterial = new THREE.MeshLambertMaterial({
         map: this.wallTexture,
-        roughness: 0.7,
-        metalness: 0.2,
         color: 0x888888,
       });
 
-      this.floorMaterial = new THREE.MeshStandardMaterial({
+      this.floorMaterial = new THREE.MeshLambertMaterial({
         map: this.floorTexture,
-        roughness: 0.9,
-        metalness: 0.1,
         color: 0x666666,
       });
 
@@ -86,16 +93,12 @@ class LevelManager {
       console.error('Error loading textures:', error);
 
       // Fallback materials if textures fail to load
-      this.wallMaterial = new THREE.MeshStandardMaterial({
+      this.wallMaterial = new THREE.MeshLambertMaterial({
         color: 0x555555,
-        roughness: 0.7,
-        metalness: 0.2,
       });
 
-      this.floorMaterial = new THREE.MeshStandardMaterial({
+      this.floorMaterial = new THREE.MeshLambertMaterial({
         color: 0x333333,
-        roughness: 0.9,
-        metalness: 0.1,
       });
 
       return false;
@@ -107,11 +110,9 @@ class LevelManager {
     const segment = new THREE.Group();
     segment.position.copy(position);
 
-    // Create walls, floor and ceiling
-    const planeGeometry = new THREE.PlaneGeometry(
-      this.tunnelWidth,
-      this.tunnelHeight
-    );
+    // Use cached geometries
+    const planeGeometry = this._planeGeometry;
+    const wallGeometry = this._segmentWallGeometry;
 
     // Floor
     const floor = new THREE.Mesh(planeGeometry, this.floorMaterial);
@@ -128,40 +129,30 @@ class LevelManager {
     segment.add(ceiling);
 
     // Left wall
-    const leftWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(this.segmentLength, this.tunnelHeight),
-      this.wallMaterial
-    );
+    const leftWall = new THREE.Mesh(wallGeometry, this.wallMaterial);
     leftWall.rotation.y = Math.PI / 2;
     leftWall.position.x = -this.tunnelWidth / 2;
     leftWall.position.z = -this.segmentLength;
     segment.add(leftWall);
 
     // Right wall
-    const rightWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(this.segmentLength, this.tunnelHeight),
-      this.wallMaterial
-    );
+    const rightWall = new THREE.Mesh(wallGeometry, this.wallMaterial);
     rightWall.rotation.y = -Math.PI / 2;
     rightWall.position.x = this.tunnelWidth / 2;
     rightWall.position.z = -this.segmentLength;
     segment.add(rightWall);
 
     // End wall
-    const endWall = new THREE.Mesh(
-      new THREE.PlaneGeometry(this.tunnelWidth, this.tunnelHeight),
-      this.wallMaterial
-    );
+    const endWall = new THREE.Mesh(planeGeometry, this.wallMaterial);
     endWall.rotation.y = Math.PI;
     endWall.position.z = -this.segmentLength;
     segment.add(endWall);
 
-    // Add lights to segment
+    // Add optimized lights to segment
     this.addLightsToSegment(segment);
 
     // Add some obstacles
-    if (Math.random() > 0.3) {
-      // 70% chance to add obstacles
+    if (Math.random() > 0.5) {
       this.addObstacles(segment);
     }
 
@@ -171,63 +162,38 @@ class LevelManager {
     return segment;
   }
 
-  // Add lights to a tunnel segment
+  // Add lights to a tunnel segment (optimized)
   addLightsToSegment(segment, color = 0x4466aa) {
-    // Add multiple lights per segment for better illumination
-    const lightCount = 3; // Multiple lights per segment
+    // Only one point light per segment for performance
+    const light = new THREE.PointLight(color, 1.5, 20, 2);
+    light.position.set(0, 0, -this.segmentLength / 2);
+    segment.add(light);
 
-    for (let i = 0; i < lightCount; i++) {
-      // Create a point light with increased intensity and range
-      const light = new THREE.PointLight(color, 1.2, 15, 2); // Increased intensity and range
+    // Make light source visible with a glowing sphere (lower geometry complexity)
+    const glowMaterial = new THREE.MeshBasicMaterial({
+      color: color,
+      transparent: true,
+      opacity: 0.7,
+    });
+    const glowSphere = new THREE.Mesh(this._glowSphereGeometry, glowMaterial);
+    glowSphere.position.copy(light.position);
+    segment.add(glowSphere);
 
-      // Distribute lights evenly through the segment
-      const segmentProgress = i / (lightCount - 1 || 1); // Avoid division by zero
-
-      // Position light with more controlled randomness
-      const x = (Math.random() - 0.5) * 8;
-      const y = (Math.random() - 0.5) * 4; // More centered vertically
-      const z = -segmentProgress * this.segmentLength;
-
-      light.position.set(x, y, z);
-      segment.add(light);
-
-      // Make light source visible with slightly larger glowing sphere
-      const glowMaterial = new THREE.MeshBasicMaterial({
-        color: color,
-        transparent: true,
-        opacity: 0.7,
-      });
-
-      const glowSphere = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 8, 8), // Slightly larger for better visibility
-        glowMaterial
-      );
-      glowSphere.position.copy(light.position);
-      segment.add(glowSphere);
-    }
-
-    // Add a subtle ambient light to each segment to prevent completely dark areas
-    const ambientLight = new THREE.AmbientLight(color, 0.2);
+    // Add a subtle ambient light
+    const ambientLight = new THREE.AmbientLight(color, 0.25);
     segment.add(ambientLight);
   }
 
-  // Add obstacles to a tunnel segment
+  // Add obstacles to a tunnel segment (bounding box only once)
   addObstacles(segment) {
-    // Number of obstacles to add
-    const obstacleCount = Math.floor(Math.random() * 3) + 1;
-
+    const obstacleCount = Math.floor(Math.random() * 2) + 1;
     for (let i = 0; i < obstacleCount; i++) {
-      // Random position within segment bounds
-      const x = (Math.random() - 0.5) * (this.tunnelWidth - 2); // Stay away from walls
-      const y = (Math.random() - 0.5) * (this.tunnelHeight - 2); // Stay away from floor/ceiling
-      const z = -Math.random() * (this.segmentLength - 5) - 5; // Position within segment, away from start
-
-      // Random obstacle type
+      const x = (Math.random() - 0.5) * (this.tunnelWidth - 2);
+      const y = (Math.random() - 0.5) * (this.tunnelHeight - 2);
+      const z = -Math.random() * (this.segmentLength - 5) - 5;
       const obstacleType = Math.random();
       let obstacle;
-
       if (obstacleType < 0.4) {
-        // Create rock/crystal obstacles
         const size = 0.5 + Math.random() * 1.0;
         const geometry = new THREE.DodecahedronGeometry(size, 0);
         const material = new THREE.MeshStandardMaterial({
@@ -237,7 +203,6 @@ class LevelManager {
         });
         obstacle = new THREE.Mesh(geometry, material);
       } else if (obstacleType < 0.7) {
-        // Create pipe/mechanical obstacles
         const height = 0.5 + Math.random() * 2.0;
         const radius = 0.2 + Math.random() * 0.3;
         const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
@@ -247,12 +212,9 @@ class LevelManager {
           metalness: 0.8,
         });
         obstacle = new THREE.Mesh(geometry, material);
-
-        // Random rotation
         obstacle.rotation.x = Math.random() * Math.PI;
         obstacle.rotation.z = Math.random() * Math.PI;
       } else {
-        // Create crate/box obstacles
         const size = 0.8 + Math.random() * 0.8;
         const geometry = new THREE.BoxGeometry(size, size, size);
         const material = new THREE.MeshStandardMaterial({
@@ -261,19 +223,12 @@ class LevelManager {
           metalness: 0.1,
         });
         obstacle = new THREE.Mesh(geometry, material);
-
-        // Random rotation
         obstacle.rotation.y = Math.random() * Math.PI;
       }
-
-      // Position the obstacle
       obstacle.position.set(x, y, z);
-
-      // Add collider data
+      // Only calculate bounding box once (not every frame)
       obstacle.userData.isObstacle = true;
       obstacle.userData.boundingBox = new THREE.Box3().setFromObject(obstacle);
-
-      // Add to segment and track obstacle
       segment.add(obstacle);
       this.obstacles.push({
         mesh: obstacle,
@@ -405,10 +360,10 @@ class LevelManager {
   // Add atmospheric effects to tunnel segments
   addAtmosphericEffects(segment, lightColor) {
     // Skip for some segments to vary density
-    if (Math.random() > 0.7) return;
+    if (Math.random() > 0.9) return; // Changed from 0.85 to 0.90 (even less frequent)
 
     // Create dust/fog particles
-    const particleCount = 50;
+    const particleCount = 25; // Reduced from 50 to 25
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
 
@@ -433,7 +388,7 @@ class LevelManager {
       size: 0.05,
       transparent: true,
       opacity: 0.3,
-      blending: THREE.AdditiveBlending,
+      blending: THREE.NormalBlending, // Changed from AdditiveBlending
       sizeAttenuation: true,
     });
 
@@ -558,7 +513,7 @@ class LevelManager {
     const halfHeight = height / 2;
 
     // Create curved walls with segments
-    const wallSegments = 8; // More segments = smoother curve
+    const wallSegments = 4; // Reduced from 8 to 4 for performance
     const curveAmount = direction * 0.4; // How much the tunnel curves
     const curveAngle = direction * (Math.PI / 4); // 45 degree turn    // Create curved wall geometries
     const leftWallGeom = new THREE.BufferGeometry();

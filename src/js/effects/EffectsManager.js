@@ -21,10 +21,10 @@ class EffectsManager {
     // Create a small flash at hit position - reuse an existing light if possible
     const flash =
       this.objectPool.getFromPool('hitLight') ||
-      new THREE.PointLight(0xffff00, 2, 5);
+      new THREE.PointLight(0xffff00, 1.5, 4); // Reduced intensity and distance
     flash.position.copy(position);
     flash.visible = true;
-    flash.intensity = 2;
+    flash.intensity = 1.5; // Reduced intensity
 
     // Add to scene
     this.scene.add(flash);
@@ -59,12 +59,12 @@ class EffectsManager {
     // Get light from pool or create new one
     const explosionLight =
       this.objectPool.getFromPool('explosionLight') ||
-      new THREE.PointLight(color, 2.0, isExplosive ? 5.0 : 2.0);
+      new THREE.PointLight(color, 1.5, isExplosive ? 4.0 : 1.5); // Reduced intensity and distance
 
     // Configure the light
     explosionLight.color.set(color);
-    explosionLight.intensity = 2.0;
-    explosionLight.distance = isExplosive ? 5.0 : 2.0;
+    explosionLight.intensity = 1.5; // Reduced intensity
+    explosionLight.distance = isExplosive ? 4.0 : 1.5; // Reduced distance
     explosionLight.position.copy(position);
     explosionLight.visible = true;
 
@@ -89,7 +89,7 @@ class EffectsManager {
       let explosion = this.objectPool.getFromPool('explosionMesh');
 
       if (!explosion) {
-        const explosionGeometry = new THREE.SphereGeometry(1.0, 16, 16);
+        const explosionGeometry = new THREE.SphereGeometry(1.0, 12, 12); // Reduced segments from 16 to 12
         const explosionMaterial = new THREE.MeshBasicMaterial({
           transparent: true,
           opacity: 0.7,
@@ -124,7 +124,7 @@ class EffectsManager {
 
   // Create a reusable hit particle system
   createHitParticleSystem() {
-    const particleCount = 10;
+    const particleCount = 5; // Reduced from 10
     const particles = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
 
@@ -139,10 +139,10 @@ class EffectsManager {
 
     const material = new THREE.PointsMaterial({
       color: 0xffaa00,
-      size: 0.1,
+      size: 0.08, // Reduced from 0.1
       transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.7, // Reduced from 0.8
+      blending: THREE.NormalBlending, // Changed from AdditiveBlending
     });
 
     return new THREE.Points(particles, material);
@@ -167,6 +167,10 @@ class EffectsManager {
       if (!light || !light.userData) {
         this.activeHitLights.splice(i, 1);
         continue;
+      }
+      // Optimization: Reduce light intensity quickly
+      if (light.userData.isActive) {
+        light.intensity *= 0.9; // Dim light quickly
       }
 
       if (light.userData.removeTime && light.userData.isActive) {
@@ -213,7 +217,7 @@ class EffectsManager {
 
         // Fade out particles
         if (effect.particleSystem.material) {
-          effect.particleSystem.material.opacity = 0.8 * (1 - progress);
+          effect.particleSystem.material.opacity = 0.7 * (1 - progress);
         }
 
         // Remove completed effect
@@ -257,6 +261,10 @@ class EffectsManager {
         this.activeExplosionLights.splice(i, 1);
         continue;
       }
+      // Optimization: Reduce light intensity quickly
+      if (light.userData.isActive) {
+        light.intensity *= 0.85; // Dim light quickly
+      }
 
       if (light.userData.removeTime && light.userData.isActive) {
         if (currentTime > light.userData.removeTime) {
@@ -279,7 +287,7 @@ class EffectsManager {
 
       if (effect.mesh) {
         // Expand
-        const scale = 1.0 + progress * 2.0;
+        const scale = 1.0 + progress * 1.5; // Reduced expansion from 2.0 to 1.5
         const baseSize = effect.mesh.userData.baseSize || 1.0;
         effect.mesh.scale.set(
           scale * baseSize,

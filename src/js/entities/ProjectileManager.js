@@ -146,30 +146,30 @@ class ProjectileManager {
     // Configure trail based on type
     switch (trailType) {
       case 'missile':
-        trailLength = 12;
-        trailSize = 0.04;
-        trailOpacity = 0.7;
+        trailLength = 8; // Reduced from 12
+        trailSize = 0.03; // Reduced from 0.04
+        trailOpacity = 0.6; // Reduced from 0.7
         trailColor = 0xffaa00;
         break;
 
       case 'plasma':
-        trailLength = 8;
-        trailSize = 0.05;
-        trailOpacity = 0.6;
+        trailLength = 6; // Reduced from 8
+        trailSize = 0.04; // Reduced from 0.05
+        trailOpacity = 0.5; // Reduced from 0.6
         trailColor = color;
         break;
 
       case 'laser':
-        trailLength = 6;
-        trailSize = 0.03;
-        trailOpacity = 0.5;
+        trailLength = 4; // Reduced from 6
+        trailSize = 0.02; // Reduced from 0.03
+        trailOpacity = 0.4; // Reduced from 0.5
         trailColor = color;
         break;
 
-      default:
-        trailLength = 5;
-        trailSize = 0.03;
-        trailOpacity = 0.8;
+      default: // 'standard' and others
+        trailLength = 3; // Reduced from 5
+        trailSize = 0.02; // Reduced from 0.03
+        trailOpacity = 0.7; // Reduced from 0.8
         trailColor = color;
     }
 
@@ -588,7 +588,8 @@ class ProjectileManager {
       // Update trail if exists
       if (projectile.trail && projectile.trailPositions) {
         // Only update trail every 20ms for performance
-        if (currentTime - projectile.lastTrailUpdate > 20) {
+        if (currentTime - projectile.lastTrailUpdate > 30) {
+          // Increased from 20ms
           // Shift existing positions back
           for (let j = projectile.trailPositions.length - 3; j >= 3; j -= 3) {
             projectile.trailPositions[j] = projectile.trailPositions[j - 3];
@@ -638,7 +639,8 @@ class ProjectileManager {
 
         // Update trail if present
         if (projectile.trail && projectile.trailPositions) {
-          if (currentTime - projectile.lastTrailUpdate > 30) {
+          if (currentTime - projectile.lastTrailUpdate > 40) {
+            // Increased from 30ms
             // Update trail every 30ms
             projectile.lastTrailUpdate = currentTime;
 
