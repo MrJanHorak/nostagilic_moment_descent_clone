@@ -46,6 +46,10 @@ class LevelManager {
     this.currentLevel = null;
     this.segmentIndex = 0;
     this.isEndless = true; // Default to endless mode
+
+    // Bidirectional segment management
+    this.segmentMap = new Map(); // key: segment index, value: segment object
+    this.buffer = 7; // segments ahead and behind to keep loaded
   }
 
   // Initialize textures and materials
@@ -106,7 +110,7 @@ class LevelManager {
   }
 
   // Create a tunnel segment
-  createTunnelSegment(position) {
+  createTunnelSegment(position, addEndWall = true) {
     const segment = new THREE.Group();
     segment.position.copy(position);
 
@@ -142,11 +146,14 @@ class LevelManager {
     rightWall.position.z = -this.segmentLength;
     segment.add(rightWall);
 
-    // End wall
-    const endWall = new THREE.Mesh(planeGeometry, this.wallMaterial);
-    endWall.rotation.y = Math.PI;
-    endWall.position.z = -this.segmentLength;
-    segment.add(endWall);
+    // End wall (only if requested)
+    if (addEndWall) {
+      const endWall = new THREE.Mesh(planeGeometry, this.wallMaterial);
+      endWall.rotation.y = Math.PI;
+      endWall.position.z = -this.segmentLength;
+      endWall.name = 'endWall';
+      segment.add(endWall);
+    }
 
     // Add optimized lights to segment
     this.addLightsToSegment(segment);
@@ -1060,58 +1067,52 @@ class LevelManager {
   }
   // Update level segments based on player position
   updateLevel() {
-    if (this.levelSegments.length === 0) return;
+    if (this.segmentLength === 0) return;
+    const playerZ = this.camera.position.z;
+    const currentIndex = Math.round(-playerZ / this.segmentLength);
 
-    const playerPosition = this.camera.position;
-    const firstSegment = this.levelSegments[0];
-
-    // If player has moved past the first segment, remove it and add a new one at the end
-    if (playerPosition.z < firstSegment.position.z - this.segmentLength) {
-      // Remove the first segment
-      this.scene.remove(firstSegment);
-
-      // Clean up any obstacles in the segment
-      this.obstacles = this.obstacles.filter(
-        (obs) => obs.segment !== firstSegment
-      );
-
-      // Remove from array
-      this.levelSegments.shift();
-
-      if (!this.isEndless && this.currentLevel) {
-        // Blueprint-based level generation
-        if (this.segmentIndex < this.currentLevel.segments.length) {
-          // Get the next segment from the blueprint
-          const segDef = this.currentLevel.segments[this.segmentIndex];
-          const lastSegment = this.levelSegments[this.levelSegments.length - 1];
-
-          const newPosition = new THREE.Vector3(
-            lastSegment.position.x,
-            lastSegment.position.y,
-            lastSegment.position.z - this.segmentLength
+    // Load needed segments ahead and behind
+    for (
+      let i = currentIndex - this.buffer;
+      i <= currentIndex + this.buffer;
+      i++
+    ) {
+      if (!this.segmentMap.has(i)) {
+        const position = new THREE.Vector3(0, 0, -i * this.segmentLength);
+        // Only add end wall if there is no segment at i-1
+        const hasPrev = this.segmentMap.has(i - 1);
+        const segment = this.createTunnelSegment(position, !hasPrev);
+        this.segmentMap.set(i, segment);
+        this.scene.add(segment);
+        // If previous segment exists, remove its end wall (to open tunnel)
+        if (hasPrev) {
+          const prevSegment = this.segmentMap.get(i - 1);
+          const endWall = prevSegment.children.find(
+            (child) => child.name === 'endWall'
           );
-
-          this.createBlueprintSegment(newPosition, segDef, this.segmentIndex);
-          this.segmentIndex++;
-        } else if (this.currentLevel.endSegment) {
-          // We've reached the end of the level blueprints
-          this.createEndSegment();
-        } else {
-          // Loop back to the beginning of the level
-          this.segmentIndex = 0;
+          if (endWall) prevSegment.remove(endWall);
         }
       } else {
-        // Original endless mode
-        const lastSegment = this.levelSegments[this.levelSegments.length - 1];
-        const newPosition = new THREE.Vector3(
-          lastSegment.position.x,
-          lastSegment.position.y,
-          lastSegment.position.z - this.segmentLength
-        );
-
-        this.createTunnelSegment(newPosition);
+        // If segment exists but is not in the scene, re-add it
+        const segment = this.segmentMap.get(i);
+        if (!this.scene.children.includes(segment)) {
+          this.scene.add(segment);
+        }
       }
     }
+
+    // Unload segments far away (optional, for memory)
+    for (const [i, segment] of this.segmentMap.entries()) {
+      if (Math.abs(i - currentIndex) > this.buffer) {
+        this.scene.remove(segment);
+        this.segmentMap.delete(i);
+      }
+    }
+
+    // Update levelSegments array for compatibility (optional)
+    this.levelSegments = Array.from(this.segmentMap.values()).sort(
+      (a, b) => a.position.z - b.position.z
+    );
   }
 
   // Get all active level segments
