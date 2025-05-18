@@ -4,6 +4,10 @@ class Spaceship {
   constructor() {
     this.group = new THREE.Group();
     this.createModel();
+
+    this.velocity = new THREE.Vector3(); // Add velocity for drift
+    this.acceleration = 40; // Tune as needed
+    this.damping = 0.98; // 1.0 = pure zero-g, <1 = slight friction
   }
 
   createModel() {
@@ -98,6 +102,31 @@ class Spaceship {
   attachToCamera(camera) {
     this.group.position.set(0, -0.2, -1.5);
     camera.add(this.group);
+  }
+
+  update(delta, input) {
+    // delta: time since last frame in seconds
+    // input: { left, right, up, down, forward, backward }
+
+    // Apply input as acceleration (X/Y for lateral, Z for forward/back)
+    if (input.left) this.velocity.x -= this.acceleration * delta;
+    if (input.right) this.velocity.x += this.acceleration * delta;
+    if (input.up) this.velocity.y += this.acceleration * delta;
+    if (input.down) this.velocity.y -= this.acceleration * delta;
+    if (input.forward) this.velocity.z -= this.acceleration * delta;
+    if (input.backward) this.velocity.z += this.acceleration * delta;
+
+    // Optionally clamp velocity to a max speed
+    const maxSpeed = 30;
+    this.velocity.x = THREE.MathUtils.clamp(this.velocity.x, -maxSpeed, maxSpeed);
+    this.velocity.y = THREE.MathUtils.clamp(this.velocity.y, -maxSpeed, maxSpeed);
+    this.velocity.z = THREE.MathUtils.clamp(this.velocity.z, -maxSpeed, maxSpeed);
+
+    // Apply damping (simulate minimal space friction)
+    this.velocity.multiplyScalar(this.damping);
+
+    // Update group position by velocity
+    this.group.position.add(this.velocity.clone().multiplyScalar(delta));
   }
 }
 

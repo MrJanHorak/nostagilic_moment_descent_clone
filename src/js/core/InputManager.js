@@ -130,83 +130,29 @@ class InputManager {
       return;
     }
 
-    // Apply speed multiplier from game state
-    const currentSpeed = this.moveSpeed * this.gameState.speedMultiplier;
+    // Gather input for spaceship drift physics
+    const input = {
+      left: !!this.keyStates['KeyA'],
+      right: !!this.keyStates['KeyD'],
+      up: !!this.keyStates['Space'],
+      down: !!this.keyStates['ShiftLeft'] || !!this.keyStates['ControlLeft'],
+      forward: !!this.keyStates['KeyW'],
+      backward: !!this.keyStates['KeyS'],
+    };
 
-    // Calculate movement direction in local space
-    const direction = new THREE.Vector3();
-
-    // Forward/backward
-    if (this.keyStates['KeyW']) {
-      direction.z -= 1;
-    }
-    if (this.keyStates['KeyS']) {
-      direction.z += 1;
-    }
-
-    // Left/right
-    if (this.keyStates['KeyA']) {
-      direction.x -= 1;
-    }
-    if (this.keyStates['KeyD']) {
-      direction.x += 1;
+    // Pass input to spaceship for drift/inertia physics
+    if (this.game && this.game.spaceship) {
+      this.game.spaceship.update(delta, input);
+      // Camera follows spaceship position
+      this.camera.position.copy(this.game.spaceship.group.position);
     }
 
-    // Up/down
-    if (this.keyStates['Space']) {
-      direction.y += 1;
-    }
-    if (this.keyStates['ShiftLeft'] || this.keyStates['ControlLeft']) {
-      direction.y -= 1;
-    }
-
-    // Roll left/right
+    // Roll left/right (still handled here)
     if (this.keyStates['KeyQ']) {
       this.camera.rotateZ(this.rotationSpeed);
     }
     if (this.keyStates['KeyE']) {
       this.camera.rotateZ(-this.rotationSpeed);
-    }
-
-    // Normalize direction vector for consistent speed in all directions
-    if (direction.lengthSq() > 0) {
-      direction.normalize();
-
-      // Apply speed
-      direction.multiplyScalar(currentSpeed);
-
-      // Convert to world space
-      const worldDirection = direction.clone();
-      worldDirection.applyQuaternion(this.camera.quaternion);
-
-      // Get obstacles from level manager if available
-      const obstacles = this.game?.levelManager?.obstacles || [];
-      const tunnelWidth = this.game?.levelManager?.tunnelWidth || 15;
-      const tunnelHeight = this.game?.levelManager?.tunnelHeight || 12;
-
-      // Check for collisions before moving
-      if (
-        !checkPlayerObstacleCollision(
-          this.camera,
-          obstacles,
-          worldDirection,
-          tunnelWidth,
-          tunnelHeight
-        )
-      ) {
-        // No collision, apply movement
-        this.camera.position.add(worldDirection);
-      } else {
-        // Collision detected - play bump sound
-        if (this.game?.audioManager?.initialized) {
-          this.game.audioManager.playSound('bump', { volume: 0.3 });
-        }
-
-        // Visual feedback for collision
-        if (this.gameState) {
-          this.activateCollisionFeedback();
-        }
-      }
     }
   } // Provide feedback when player collides with an obstacle
   activateCollisionFeedback() {
