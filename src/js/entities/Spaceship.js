@@ -6,8 +6,13 @@ class Spaceship {
     this.createModel();
 
     this.velocity = new THREE.Vector3(); // Add velocity for drift
-    this.acceleration = 40; // Tune as needed
-    this.damping = 0.98; // 1.0 = pure zero-g, <1 = slight friction
+    this.acceleration = 8; // Lowered for better control
+    this.damping = 0.96; // Slightly more friction
+    this.maxSpeed = 6; // Cap the max speed
+
+    this.pitch = 0; // Radians, for nose up/down
+    this.pitchSpeed = 1.5; // Radians per second
+    this.maxPitch = Math.PI / 3; // Clamp to +/- 60 degrees
   }
 
   createModel() {
@@ -106,27 +111,50 @@ class Spaceship {
 
   update(delta, input) {
     // delta: time since last frame in seconds
-    // input: { left, right, up, down, forward, backward }
+    // input: { left, right, up, down, forward, backward, pitchUp, pitchDown }
+
+    // Pitch control (nose up/down)
+    if (input.pitchUp) this.pitch += this.pitchSpeed * delta;
+    if (input.pitchDown) this.pitch -= this.pitchSpeed * delta;
+    // Clamp pitch
+    this.pitch = Math.max(-this.maxPitch, Math.min(this.maxPitch, this.pitch));
+    this.group.rotation.x = this.pitch;
 
     // Apply input as acceleration (X/Y for lateral, Z for forward/back)
-    if (input.left) this.velocity.x -= this.acceleration * delta;
-    if (input.right) this.velocity.x += this.acceleration * delta;
-    if (input.up) this.velocity.y += this.acceleration * delta;
-    if (input.down) this.velocity.y -= this.acceleration * delta;
-    if (input.forward) this.velocity.z -= this.acceleration * delta;
-    if (input.backward) this.velocity.z += this.acceleration * delta;
+    let inputApplied = false;
+    if (input.left) {
+      this.velocity.x -= this.acceleration * delta;
+      inputApplied = true;
+    }
+    if (input.right) {
+      this.velocity.x += this.acceleration * delta;
+      inputApplied = true;
+    }
+    if (input.up) {
+      this.velocity.y += this.acceleration * delta;
+      inputApplied = true;
+    }
+    if (input.down) {
+      this.velocity.y -= this.acceleration * delta;
+      inputApplied = true;
+    }
+    if (input.forward) {
+      this.velocity.z -= this.acceleration * delta;
+      inputApplied = true;
+    }
+    if (input.backward) {
+      this.velocity.z += this.acceleration * delta;
+      inputApplied = true;
+    }
 
-    // Optionally clamp velocity to a max speed
-    const maxSpeed = 30;
-    this.velocity.x = THREE.MathUtils.clamp(this.velocity.x, -maxSpeed, maxSpeed);
-    this.velocity.y = THREE.MathUtils.clamp(this.velocity.y, -maxSpeed, maxSpeed);
-    this.velocity.z = THREE.MathUtils.clamp(this.velocity.z, -maxSpeed, maxSpeed);
+    // Clamp velocity to max speed
+    this.velocity.clampLength(0, this.maxSpeed);
 
-    // Apply damping (simulate minimal space friction)
-    this.velocity.multiplyScalar(this.damping);
-
-    // Update group position by velocity
-    this.group.position.add(this.velocity.clone().multiplyScalar(delta));
+    // Only apply damping if no input is being applied
+    if (!inputApplied) {
+      this.velocity.multiplyScalar(this.damping);
+    }
+    // (Position update is now handled by main.js via tunnel offset)
   }
 }
 

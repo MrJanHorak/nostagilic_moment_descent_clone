@@ -416,6 +416,15 @@ class PowerUpManager {
       }
     }
   }
+
+  // Move all power-ups by offset (Vector3)
+  offsetPowerUps(offset) {
+    for (const powerUp of this.powerUps) {
+      if (powerUp && powerUp.mesh && powerUp.mesh.position) {
+        powerUp.mesh.position.add(offset);
+      }
+    }
+  }
 }
 
 export default PowerUpManager;

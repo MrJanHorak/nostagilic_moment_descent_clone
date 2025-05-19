@@ -751,6 +751,15 @@ class ProjectileManager {
   getProjectiles() {
     return this.projectiles;
   }
+
+  // Move all projectiles by offset (Vector3)
+  offsetProjectiles(offset) {
+    for (const proj of this.projectiles) {
+      if (proj && proj.mesh && proj.mesh.position) {
+        proj.mesh.position.add(offset);
+      }
+    }
+  }
 }
 
 export default ProjectileManager;

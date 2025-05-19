@@ -793,6 +793,15 @@ class EnemyManager {
   setPowerUpManager(manager) {
     this.powerUpManager = manager;
   }
+
+  // Move all enemies by offset (Vector3)
+  offsetEnemies(offset) {
+    for (const enemy of this.enemies) {
+      if (enemy && enemy.mesh && enemy.mesh.position) {
+        enemy.mesh.position.add(offset);
+      }
+    }
+  }
 }
 
 export default EnemyManager;

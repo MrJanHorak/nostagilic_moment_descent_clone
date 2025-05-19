@@ -1115,6 +1115,20 @@ class LevelManager {
     );
   }
 
+  // Move all tunnel segments and obstacles by offset (Vector3)
+  offsetLevel(offset) {
+    // Move tunnel segments
+    for (const segment of this.segments.values()) {
+      segment.group.position.add(offset);
+    }
+    // Move obstacles
+    for (const obs of this.obstacles) {
+      if (obs && obs.mesh && obs.mesh.position) {
+        obs.mesh.position.add(offset);
+      }
+    }
+  }
+
   // Get all active level segments
   getLevelSegments() {
     return this.levelSegments;

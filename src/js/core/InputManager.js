@@ -61,6 +61,7 @@ class InputManager {
     this.camera.quaternion.setFromEuler(this.euler);
   } // Handle key down
   onKeyDown(event) {
+    // Always set keyStates, even if pointer lock is not active
     this.keyStates[event.code] = true;
 
     // Handle escape key for pause menu
@@ -95,6 +96,7 @@ class InputManager {
 
   // Handle key up
   onKeyUp(event) {
+    // Always unset keyStates, even if pointer lock is not active
     this.keyStates[event.code] = false;
   }
 
@@ -132,28 +134,25 @@ class InputManager {
 
     // Gather input for spaceship drift physics
     const input = {
-      left: !!this.keyStates['KeyA'],
-      right: !!this.keyStates['KeyD'],
+      left: !!this.keyStates['KeyA'] || !!this.keyStates['ArrowLeft'],
+      right: !!this.keyStates['KeyD'] || !!this.keyStates['ArrowRight'],
       up: !!this.keyStates['Space'],
       down: !!this.keyStates['ShiftLeft'] || !!this.keyStates['ControlLeft'],
       forward: !!this.keyStates['KeyW'],
       backward: !!this.keyStates['KeyS'],
+      pitchUp: !!this.keyStates['ArrowUp'],
+      pitchDown: !!this.keyStates['ArrowDown'],
+      rollLeft: !!this.keyStates['KeyQ'],
+      rollRight: !!this.keyStates['KeyE'],
     };
 
     // Pass input to spaceship for drift/inertia physics
     if (this.game && this.game.spaceship) {
       this.game.spaceship.update(delta, input);
-      // Camera follows spaceship position
-      this.camera.position.copy(this.game.spaceship.group.position);
     }
 
-    // Roll left/right (still handled here)
-    if (this.keyStates['KeyQ']) {
-      this.camera.rotateZ(this.rotationSpeed);
-    }
-    if (this.keyStates['KeyE']) {
-      this.camera.rotateZ(-this.rotationSpeed);
-    }
+    // Optionally, handle roll here if you want to rotate the ship visually
+    // (e.g., this.game.spaceship.group.rotation.z += ...)
   } // Provide feedback when player collides with an obstacle
   activateCollisionFeedback() {
     // Small screen shake for collision

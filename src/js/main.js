@@ -26,6 +26,7 @@ import {
   updateCaveParticles,
   shakeCamera,
 } from '../js/utils/effectsUtils.js';
+import { checkPlayerObstacleCollision } from '../js/utils/collisionUtils.js';
 
 // Import UI
 import UIManager from '../js/ui/UIManager.js';
@@ -407,12 +408,10 @@ export default class Game {
   animate() {
     try {
       requestAnimationFrame(() => this.animate());
-
       if (!this.clock) {
         console.warn('Clock is undefined in animate loop');
         return;
       }
-
       const delta = this.clock.getDelta();
 
       // Make sure activeAnimations exists
@@ -449,9 +448,61 @@ export default class Game {
         !this.gameState.isPaused
       ) {
         try {
-          // Update player movement
+          // === Update player movement FIRST ===
           if (this.inputManager) {
             this.inputManager.updateMovement(delta);
+          }
+
+          // === Player movement and collision ===
+          if (this.spaceship && this.levelManager) {
+            // Calculate intended movement (velocity * delta)
+            const intendedMove = this.spaceship.velocity
+              .clone()
+              .multiplyScalar(delta);
+            // Check for collision (still use ship's group for collision)
+            const collision = checkPlayerObstacleCollision(
+              this.spaceship.group,
+              this.levelManager.obstacles,
+              intendedMove,
+              this.levelManager.tunnelWidth,
+              this.levelManager.tunnelHeight
+            );
+            if (!collision) {
+              // Instead of moving the ship, move the tunnel/obstacles/enemies in the opposite direction
+              this.levelManager.offsetLevel(intendedMove.clone().negate());
+              if (this.enemyManager)
+                this.enemyManager.offsetEnemies(intendedMove.clone().negate());
+              if (this.projectileManager)
+                this.projectileManager.offsetProjectiles(
+                  intendedMove.clone().negate()
+                );
+              if (this.powerUpManager)
+                this.powerUpManager.offsetPowerUps(
+                  intendedMove.clone().negate()
+                );
+              // Optionally, move cave particles too
+              if (this.caveParticles) {
+                for (
+                  let i = 0;
+                  i < this.caveParticles.geometry.attributes.position.count;
+                  i++
+                ) {
+                  this.caveParticles.geometry.attributes.position.setZ(
+                    i,
+                    this.caveParticles.geometry.attributes.position.getZ(i) -
+                      intendedMove.z
+                  );
+                }
+                this.caveParticles.geometry.attributes.position.needsUpdate = true;
+              }
+            } else {
+              // Collision: stop velocity in that direction
+              this.spaceship.velocity.set(0, 0, 0);
+              // Play bump sound if available
+              if (this.audioManager) {
+                this.audioManager.playSound('bump');
+              }
+            }
           }
 
           // Update level
@@ -546,6 +597,15 @@ export default class Game {
         } catch (error) {
           console.error('Error in game update loop:', error);
         }
+      }
+
+      // === Camera follows ship exactly ===
+      if (this.spaceship && this.camera) {
+        // Set camera position directly relative to ship
+        const cameraOffset = new THREE.Vector3(0, 2, 6); // y=up, z=back
+        const shipPos = this.spaceship.group.position;
+        this.camera.position.copy(shipPos.clone().add(cameraOffset));
+        this.camera.lookAt(shipPos);
       }
 
       // Render the scene
