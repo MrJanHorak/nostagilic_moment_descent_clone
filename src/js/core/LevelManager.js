@@ -168,27 +168,27 @@ class LevelManager {
 
     return segment;
   }
-
-  // Add lights to a tunnel segment (optimized)
+  // Add lights to a tunnel segment (optimized for performance)
   addLightsToSegment(segment, color = 0x4466aa) {
-    // Only one point light per segment for performance
-    const light = new THREE.PointLight(color, 1.5, 20, 2);
-    light.position.set(0, 0, -this.segmentLength / 2);
-    segment.add(light);
+    // Reduced lighting per segment for better performance
+    // Only add lights to every other segment to reduce total light count
+    if (Math.random() > 0.6) {
+      const light = new THREE.PointLight(color, 1.2, 15, 2); // Reduced intensity and range
+      light.position.set(0, 0, -this.segmentLength / 2);
+      segment.add(light);
 
-    // Make light source visible with a glowing sphere (lower geometry complexity)
-    const glowMaterial = new THREE.MeshBasicMaterial({
-      color: color,
-      transparent: true,
-      opacity: 0.7,
-    });
-    const glowSphere = new THREE.Mesh(this._glowSphereGeometry, glowMaterial);
-    glowSphere.position.copy(light.position);
-    segment.add(glowSphere);
+      // Smaller, less complex glow sphere
+      const glowMaterial = new THREE.MeshBasicMaterial({
+        color: color,
+        transparent: true,
+        opacity: 0.5, // Reduced opacity
+      });
+      const glowSphere = new THREE.Mesh(this._glowSphereGeometry, glowMaterial);
+      glowSphere.position.copy(light.position);
+      segment.add(glowSphere);
+    }
 
-    // Add a subtle ambient light
-    const ambientLight = new THREE.AmbientLight(color, 0.25);
-    segment.add(ambientLight);
+    // Remove ambient light per segment as it's redundant with global ambient lighting
   }
 
   // Add obstacles to a tunnel segment (bounding box only once)
@@ -266,7 +266,6 @@ class LevelManager {
 
     return this.currentLevel;
   }
-
   clearLevel() {
     // Remove all segments and obstacles
     for (const segment of this.levelSegments) {
@@ -274,6 +273,10 @@ class LevelManager {
     }
     this.levelSegments = [];
     this.obstacles = [];
+
+    // Clear segmentMap for dynamic level management
+    this.segmentMap.clear();
+    this.lastSegmentIndex = undefined;
   }
 
   // Override the existing initLevel method
@@ -299,7 +302,6 @@ class LevelManager {
       this.createTunnelSegment(position);
     }
   }
-
   initBlueprintLevel() {
     if (!this.currentLevel) {
       this.currentLevel = this.levels[0];
@@ -307,6 +309,10 @@ class LevelManager {
 
     const initialPosition = new THREE.Vector3(0, 0, 0);
     const blueprint = this.currentLevel;
+
+    // Clear existing segment tracking
+    this.segmentMap.clear();
+    this.lastSegmentIndex = undefined;
 
     // Create the initial segments based on the blueprint
     const segmentsToCreate = Math.min(
@@ -322,7 +328,11 @@ class LevelManager {
         initialPosition.z - i * this.segmentLength
       );
 
-      this.createBlueprintSegment(position, segDef, i);
+      const segment = this.createBlueprintSegment(position, segDef, i);
+
+      // Add segment to segmentMap for dynamic level updating
+      this.segmentMap.set(i, segment);
+
       this.segmentIndex = i + 1;
     }
   }
@@ -363,14 +373,13 @@ class LevelManager {
 
     return segment;
   }
-
   // Add atmospheric effects to tunnel segments
   addAtmosphericEffects(segment, lightColor) {
-    // Skip for some segments to vary density
-    if (Math.random() > 0.9) return; // Changed from 0.85 to 0.90 (even less frequent)
+    // Skip most segments to greatly reduce particle count
+    if (Math.random() > 0.95) return; // Increased from 0.90 to 0.95 (much less frequent)
 
-    // Create dust/fog particles
-    const particleCount = 25; // Reduced from 50 to 25
+    // Create dust/fog particles with even lower count
+    const particleCount = 15; // Further reduced from 25 to 15
     const particleGeometry = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
 
@@ -392,10 +401,10 @@ class LevelManager {
     const color = new THREE.Color(lightColor);
     const particleMaterial = new THREE.PointsMaterial({
       color: color,
-      size: 0.05,
+      size: 0.04, // Reduced size from 0.05 to 0.04
       transparent: true,
-      opacity: 0.3,
-      blending: THREE.NormalBlending, // Changed from AdditiveBlending
+      opacity: 0.25, // Reduced opacity from 0.3 to 0.25
+      blending: THREE.NormalBlending,
       sizeAttenuation: true,
     });
 
@@ -1064,12 +1073,15 @@ class LevelManager {
     this.levelSegments.push(segment);
 
     return segment;
-  }
-  // Update level segments based on player position
+  } // Update level segments based on player position
   updateLevel() {
     if (this.segmentLength === 0) return;
     const playerZ = this.camera.position.z;
     const currentIndex = Math.round(-playerZ / this.segmentLength);
+
+    // Only update if player has moved to a different segment
+    if (this.lastSegmentIndex === currentIndex) return;
+    this.lastSegmentIndex = currentIndex;
 
     // Load needed segments ahead and behind
     for (
@@ -1079,12 +1091,39 @@ class LevelManager {
     ) {
       if (!this.segmentMap.has(i)) {
         const position = new THREE.Vector3(0, 0, -i * this.segmentLength);
-        // Only add end wall if there is no segment at i-1
-        const hasPrev = this.segmentMap.has(i - 1);
-        const segment = this.createTunnelSegment(position, !hasPrev);
+        let segment;
+
+        if (this.isEndless) {
+          // Endless mode: create random tunnel segments
+          const hasPrev = this.segmentMap.has(i - 1);
+          segment = this.createTunnelSegment(position, !hasPrev);
+        } else {
+          // Blueprint mode: use predefined level segments
+          if (this.currentLevel && this.currentLevel.segments) {
+            const segmentIndex = Math.max(0, i);
+            if (segmentIndex < this.currentLevel.segments.length) {
+              const segDef = this.currentLevel.segments[segmentIndex];
+              segment = this.createBlueprintSegment(
+                position,
+                segDef,
+                segmentIndex
+              );
+            } else {
+              // Beyond level end - don't create more segments or create end segment
+              continue;
+            }
+          } else {
+            // Fallback to endless if no blueprint
+            const hasPrev = this.segmentMap.has(i - 1);
+            segment = this.createTunnelSegment(position, !hasPrev);
+          }
+        }
+
         this.segmentMap.set(i, segment);
         this.scene.add(segment);
+
         // If previous segment exists, remove its end wall (to open tunnel)
+        const hasPrev = this.segmentMap.has(i - 1);
         if (hasPrev) {
           const prevSegment = this.segmentMap.get(i - 1);
           const endWall = prevSegment.children.find(
@@ -1114,12 +1153,11 @@ class LevelManager {
       (a, b) => a.position.z - b.position.z
     );
   }
-
   // Move all tunnel segments and obstacles by offset (Vector3)
   offsetLevel(offset) {
-    // Move tunnel segments
-    for (const segment of this.segments.values()) {
-      segment.group.position.add(offset);
+    // Move tunnel segments from segmentMap
+    for (const segment of this.segmentMap.values()) {
+      segment.position.add(offset);
     }
     // Move obstacles
     for (const obs of this.obstacles) {

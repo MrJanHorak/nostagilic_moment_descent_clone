@@ -583,13 +583,11 @@ class ProjectileManager {
         if (projectile.mesh.material.transparent) {
           projectile.mesh.material.opacity = 0.7 + pulseFactor * 0.3;
         }
-      }
-
-      // Update trail if exists
+      } // Update trail if exists (optimized frequency)
       if (projectile.trail && projectile.trailPositions) {
-        // Only update trail every 20ms for performance
-        if (currentTime - projectile.lastTrailUpdate > 30) {
-          // Increased from 20ms
+        // Update trail every 50ms for better performance
+        if (currentTime - projectile.lastTrailUpdate > 50) {
+          // Increased from 30ms to 50ms
           // Shift existing positions back
           for (let j = projectile.trailPositions.length - 3; j >= 3; j -= 3) {
             projectile.trailPositions[j] = projectile.trailPositions[j - 3];
@@ -635,13 +633,10 @@ class ProjectileManager {
         }
 
         // Apply velocity with delta time
-        projectile.mesh.position.addScaledVector(projectile.velocity, delta);
-
-        // Update trail if present
+        projectile.mesh.position.addScaledVector(projectile.velocity, delta); // Update trail if present (optimized frequency)
         if (projectile.trail && projectile.trailPositions) {
-          if (currentTime - projectile.lastTrailUpdate > 40) {
-            // Increased from 30ms
-            // Update trail every 30ms
+          if (currentTime - projectile.lastTrailUpdate > 60) {
+            // Increased from 40ms to 60ms for better performance
             projectile.lastTrailUpdate = currentTime;
 
             // Shift positions back

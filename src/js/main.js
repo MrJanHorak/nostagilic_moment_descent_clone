@@ -404,7 +404,6 @@ export default class Game {
     // Request pointer lock to start the game
     this.canvas.requestPointerLock();
   }
-
   animate() {
     try {
       requestAnimationFrame(() => this.animate());
@@ -412,7 +411,26 @@ export default class Game {
         console.warn('Clock is undefined in animate loop');
         return;
       }
-      const delta = this.clock.getDelta();
+
+      const rawDelta = this.clock.getDelta();
+      // Clamp delta to prevent large spikes that cause performance issues
+      const delta = Math.min(rawDelta, 0.0333); // Cap at ~30 FPS equivalent (1/30 = 0.0333)
+
+      // Performance monitoring (update every 60 frames)
+      if (!this.frameCount) this.frameCount = 0;
+      if (!this.lastFPSCheck) this.lastFPSCheck = performance.now();
+
+      this.frameCount++;
+      if (this.frameCount % 60 === 0) {
+        const now = performance.now();
+        const fps = Math.round(60000 / (now - this.lastFPSCheck));
+        this.lastFPSCheck = now;
+
+        // Log performance if FPS is low
+        if (fps < 45) {
+          console.warn(`Low FPS detected: ${fps} FPS (target: 60)`);
+        }
+      }
 
       // Make sure activeAnimations exists
       if (!this.activeAnimations) {
@@ -479,21 +497,9 @@ export default class Game {
               if (this.powerUpManager)
                 this.powerUpManager.offsetPowerUps(
                   intendedMove.clone().negate()
-                );
-              // Optionally, move cave particles too
-              if (this.caveParticles) {
-                for (
-                  let i = 0;
-                  i < this.caveParticles.geometry.attributes.position.count;
-                  i++
-                ) {
-                  this.caveParticles.geometry.attributes.position.setZ(
-                    i,
-                    this.caveParticles.geometry.attributes.position.getZ(i) -
-                      intendedMove.z
-                  );
-                }
-                this.caveParticles.geometry.attributes.position.needsUpdate = true;
+                ); // Move cave particles using batch operation
+              if (this.caveParticles && intendedMove.z !== 0) {
+                this.caveParticles.position.z -= intendedMove.z;
               }
             } else {
               // Collision: stop velocity in that direction
@@ -534,11 +540,16 @@ export default class Game {
           // Update power-ups
           if (this.powerUpManager) {
             this.powerUpManager.update();
-          }
-
-          // Update particles
+          } // Update particles (reduced frequency for performance)
           if (this.caveParticles) {
-            updateCaveParticles(this.caveParticles, delta);
+            if (!this.lastParticleUpdate) this.lastParticleUpdate = 0;
+            const currentTime = performance.now();
+
+            // Update particles every 50ms instead of every frame
+            if (currentTime - this.lastParticleUpdate > 50) {
+              updateCaveParticles(this.caveParticles, delta);
+              this.lastParticleUpdate = currentTime;
+            }
           }
           const currentTime = Date.now();
 

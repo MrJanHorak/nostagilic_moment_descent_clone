@@ -73,27 +73,27 @@ export function createExplosionEffect(scene, position) {
 
 // Create cave dust particle system
 export function createCaveParticles(scene) {
-  const particleCount = 1000;
+  const particleCount = 600; // Reduced from 1000 to 600 for better performance
   const particles = new THREE.BufferGeometry();
   const positions = new Float32Array(particleCount * 3);
   const colors = new Float32Array(particleCount * 3);
 
   // Range for particles
-  const spread = 30;
-  const centerOffset = 10; // How far to distribute ahead of player
+  const spread = 25; // Reduced from 30 to 25
+  const centerOffset = 8; // Reduced from 10 to 8
 
   // Fill arrays with random positions and colors
   for (let i = 0; i < particleCount * 3; i += 3) {
     // Position particles in a cylindrical distribution ahead of player
     const angle = Math.random() * Math.PI * 2;
-    const radius = Math.random() * 5;
+    const radius = Math.random() * 4; // Reduced from 5 to 4
 
     positions[i] = Math.cos(angle) * radius; // x
     positions[i + 1] = Math.sin(angle) * radius; // y
     positions[i + 2] = -Math.random() * spread - centerOffset; // z (ahead of player)
 
     // Slight blue/white color variation
-    const brightness = 0.2 + Math.random() * 0.3;
+    const brightness = 0.15 + Math.random() * 0.25; // Reduced brightness slightly
     colors[i] = brightness * 0.5; // R
     colors[i + 1] = brightness * 0.7; // G
     colors[i + 2] = brightness; // B (brightest)
@@ -101,12 +101,11 @@ export function createCaveParticles(scene) {
 
   particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   particles.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-
   // Material that will catch the lights
   const particleMaterial = new THREE.PointsMaterial({
-    size: 0.05,
+    size: 0.04, // Reduced from 0.05 to 0.04
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.5, // Reduced from 0.6 to 0.5
     vertexColors: true,
     blending: THREE.AdditiveBlending,
     sizeAttenuation: true,
@@ -122,12 +121,16 @@ export function createCaveParticles(scene) {
 export function updateCaveParticles(particleSystem, delta) {
   const positions = particleSystem.geometry.attributes.position.array;
   const particleCount = positions.length / 3;
-  const spread = 30;
-  const centerOffset = 10;
+  const spread = 25; // Updated to match createCaveParticles
+  const centerOffset = 8; // Updated to match createCaveParticles
 
-  for (let i = 0; i < particleCount * 3; i += 3) {
+  // Update only every other particle for better performance
+  const updateStep = 2; // Update every 2nd particle
+  const startIndex = (Math.floor(Date.now() / 100) % updateStep) * 3; // Rotate which particles get updated
+
+  for (let i = startIndex; i < particleCount * 3; i += 3 * updateStep) {
     // Move particles slowly toward player
-    positions[i + 2] += (0.5 + Math.random() * 0.5) * delta;
+    positions[i + 2] += (0.4 + Math.random() * 0.4) * delta; // Slightly reduced speed
 
     // If particle is behind player, reset it ahead
     if (positions[i + 2] > 5) {
@@ -135,7 +138,7 @@ export function updateCaveParticles(particleSystem, delta) {
 
       // Also randomize X and Y when resetting
       const angle = Math.random() * Math.PI * 2;
-      const radius = Math.random() * 5;
+      const radius = Math.random() * 4; // Updated to match createCaveParticles
       positions[i] = Math.cos(angle) * radius;
       positions[i + 1] = Math.sin(angle) * radius;
     }
