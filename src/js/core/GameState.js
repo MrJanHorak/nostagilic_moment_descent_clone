@@ -53,6 +53,7 @@ export default class GameState {
   }
 
   resetWeaponInventory() {
+    this.pulseAmmoCapacity = Infinity;
     this.currentWeapon = 'pulse';
     this.weaponInventory = {
       pulse: { unlocked: true, ammo: Infinity },

@@ -64,13 +64,19 @@ export default class RuntimeDiagnostics {
         this.deathButton.addEventListener('click', () => game.gameState.takeDamage(game.gameState.maxPlayerHealth));
         this.completionButton = document.createElement('button');
         this.completionButton.textContent = 'Complete mission (test)';
-        this.completionButton.addEventListener('click', () => game.completeSession());
+        this.completionButton.addEventListener('click', () => {
+          if (!game.mission) game.completeSession();
+          else for (const enemy of [...game.enemyManager.enemies]) {
+            game.enemyManager.hitEnemy(enemy, { power: 10000 }, enemy.mesh.position.clone());
+          }
+        });
         this.controls.append(this.deathButton, this.completionButton);
         document.body.appendChild(this.controls);
       }
       if (this.controls) {
         this.deathButton.disabled = gameState.session.phase !== 'playing';
         this.completionButton.disabled = gameState.session.phase !== 'playing' || game.isEndlessMode;
+        this.completionButton.textContent = game.mission ? 'Neutralize drones (test)' : 'Complete mission (test)';
       }
     }
     this.panel.textContent = [

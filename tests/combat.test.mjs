@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { segmentBoxFraction, segmentSphereFraction, traceShot, hasLineOfSight } from '../src/js/utils/combatTrace.js';
+import MissionObjective from '../src/js/core/MissionObjective.js';
+import createCombatArena from '../src/js/core/levels/CombatArena.js';
 import Game from '../src/js/main.js';
 import Spaceship from '../src/js/entities/Spaceship.js';
 import InputManager from '../src/js/core/InputManager.js';
@@ -25,7 +27,7 @@ function fixture(t) {
   game.spaceship = new Spaceship(); game.spaceship.attachCamera(game.camera);
   game.results = [];
   game.uiManager = { resetSessionUI() {}, updateHUD() {}, updateEnemyCount() {}, updateWeaponUI() {}, hideStartScreen() {},
-    hideLevelSelect() {}, showPauseMenu() {}, hidePauseMenu() {}, createStartScreen() {},
+    hideLevelSelect() {}, showPauseMenu() {}, hidePauseMenu() {}, createStartScreen() {}, showMessage() {},
     showCompletion() { game.results.push('completed'); }, showGameOver() { game.results.push('dead'); },
     showSessionError(error) { throw error; } };
   game.levelManager = new LevelManager(game.scene, game.spaceship.group);
@@ -195,7 +197,7 @@ test('enemy body cannot follow a clear sight ray through an opening narrower tha
   }
 });
 
-test('lethal projectile scoring/completion is latched and ten restarts restore the encounter', (t) => {
+test('ten shot-clear/extraction/restart cycles award completion only at the exit and restore the encounter', (t) => {
   const game = fixture(t), definition = JSON.stringify(game.levelManager.currentLevel);
   for (let i = 0; i < 10; i++) {
     for (const enemy of [...game.enemyManager.enemies]) {
@@ -204,6 +206,12 @@ test('lethal projectile scoring/completion is latched and ten restarts restore t
       shot(game, start, v(0, 0, -600), 100);
       game.projectileManager.updateProjectiles(1 / 60);
     }
+    assert.equal(game.session.phase, 'playing');
+    assert.equal(game.gameState.score, 150);
+    assert.equal(game.mission.ready, true);
+    assert.equal(game.completeSession(), false);
+    game.spaceship.group.position.copy(game.mission.exitPosition);
+    game.updateSimulation(1 / 60);
     assert.equal(game.session.phase, 'completed');
     assert.equal(game.gameState.score, 1150);
     assert.equal(game.enemyManager.destroyedPredefinedEnemies.size, 2);
@@ -212,6 +220,9 @@ test('lethal projectile scoring/completion is latched and ten restarts restore t
     game.restartGame(); game.updateSimulation(1 / 60);
     assert.equal(game.session.phase, 'playing'); assert.equal(game.gameState.score, 0);
     assert.equal(game.enemyManager.enemies.length, 2);
+    assert.equal(game.powerUpManager.powerups.length, 2);
+    assert.equal(game.gameState.weaponInventory.pulse.ammo, 40);
+    assert.equal(game.mission.ready, false);
     assert.equal(game.projectileManager.projectiles.length, 0);
     assert.equal(game.enemyManager.projectileManager.enemyProjectiles.length, 0);
     assert.equal(JSON.stringify(game.levelManager.currentLevel), definition);
@@ -245,4 +256,163 @@ test('finite encounter fires pulse from the real pose and blocks unfinished weap
   assert.equal(game.gameState.score, 100);
   assert.equal(game.enemyManager.destroyedPredefinedEnemies.size, 1);
   assert.equal(game.session.phase, 'playing'); // A second enemy still exists.
+});
+
+function clearWithShots(game) {
+  for (const enemy of [...game.enemyManager.enemies]) {
+    shot(game, enemy.mesh.position.clone().add(v(0, 0, 2)), v(0, 0, -600), 100);
+    game.projectileManager.updateProjectiles(1 / 60);
+  }
+}
+
+test('objective accepts each required combat event once, filters cleanup/unknown IDs and requires full exit clearance', () => {
+  const mission = new MissionObjective(createCombatArena().mission);
+  assert.equal(mission.recordDefeat('combat:fighter', 'cleanup'), false);
+  assert.equal(mission.recordDefeat('unknown', 'shot'), false);
+  assert.equal(mission.tryComplete(v(0, 0, -24), 0.5), false);
+  assert.equal(mission.recordDefeat('combat:fighter', 'shot'), true);
+  assert.equal(mission.recordDefeat('combat:fighter', 'ram'), false);
+  assert.equal(mission.recordDefeat('combat:scout', 'ram'), true);
+  assert.equal(mission.canExit(v(0, 0, -22.99), 0.5), false);
+  assert.equal(mission.tryComplete(v(0, 0, -23), 0.5), true);
+  assert.equal(mission.tryComplete(v(0, 0, -24), 0.5), false);
+  assert.deepEqual([...mission.defeats.values()], ['shot', 'ram']);
+});
+
+test('locked exit and direct completion cannot bypass the objective; marker unlocks after real shots', (t) => {
+  const game = fixture(t);
+  game.spaceship.group.position.copy(game.mission.exitPosition);
+  game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'playing');
+  assert.equal(game.completeSession(), false);
+  const marker = game.levelManager.levelSegments[0].getObjectByName('arena:exit');
+  assert.equal(marker.children[0].material.color.getHex(), 0xffb343);
+  game.spaceship.group.position.set(0, 0, 6);
+  clearWithShots(game); game.updateSimulation(1 / 60);
+  assert.equal(marker.children[0].material.color.getHex(), 0x45ff96);
+  assert.equal(game.gameState.score, 150);
+  game.spaceship.group.position.copy(game.mission.exitPosition); game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'completed');
+  game.updateSimulation(1); assert.equal(game.gameState.score, 1150);
+});
+
+test('ramming neutralizes a required drone without kill points or kill statistics', (t) => {
+  const game = fixture(t), scout = game.enemyManager.enemies.find(e => e.type.name === 'scout');
+  game.spaceship.group.position.copy(scout.mesh.position).add(v(0, 0, 1));
+  game.updateSimulation(1 / 60);
+  assert.equal(scout.isActive, false);
+  assert.equal(game.mission.defeats.get('combat:scout'), 'ram');
+  assert.equal(game.gameState.score, 0); assert.equal(game.gameState.enemyKills.scout, 0);
+  assert.equal(game.gameState.playerHealth, 95);
+  clearWithShots(game); assert.equal(game.mission.ready, true);
+  game.spaceship.group.position.copy(game.mission.exitPosition); game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'completed'); assert.equal(game.gameState.score, 1100);
+});
+
+test('ordinary enemy cleanup neither advances objective nor awards points; fatal ramming cannot unlock the exit', (t) => {
+  const game = fixture(t);
+  game.enemyManager.removeEnemy(0);
+  assert.equal(game.mission.defeats.size, 0); assert.equal(game.gameState.score, 0);
+  const scout = game.enemyManager.enemies[0];
+  game.gameState.playerHealth = 1;
+  game.spaceship.group.position.copy(scout.mesh.position).add(v(0, 0, 1));
+  game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'dead'); assert.equal(game.mission.ready, false);
+  assert.equal(game.mission.defeats.size, 0);
+  game.restartGame(); game.updateSimulation(1 / 60);
+  assert.equal(game.enemyManager.enemies.length, 2); assert.equal(game.mission.defeats.size, 0);
+});
+
+test('authored exit and pickups are inside open space and definitions remain immutable', (t) => {
+  const game = fixture(t), level = game.levelManager.currentLevel;
+  const spots = [[v(...level.mission.exit.position), level.mission.exit.radius],
+    ...level.powerupSpawns.map(spawn => [spawn.position, 0.55])];
+  for (const [position, radius] of spots) for (const collider of game.levelManager.solidColliders) {
+    assert.ok(collider.box.distanceToPoint(position) >= radius, collider.id);
+  }
+  assert.ok(Object.isFrozen(level.mission.exit.position));
+  assert.ok(Object.isFrozen(level.powerupSpawns[0].position));
+  assert.deepEqual(game.powerUpManager.powerups.map(p => p.spawnId).sort(), ['arena:ammo', 'arena:health']);
+});
+
+test('authored health waits when full, heals once and does not respawn before restart', (t) => {
+  const game = fixture(t), powers = game.powerUpManager;
+  const health = powers.powerups.find(p => p.spawnId === 'arena:health');
+  game.spaceship.group.position.copy(health.mesh.position);
+  powers.update(0); assert.ok(powers.powerups.includes(health));
+  game.gameState.playerHealth = 60;
+  powers.update(0); assert.equal(game.gameState.playerHealth, 85);
+  powers.update(0); assert.equal(game.gameState.playerHealth, 85);
+  assert.equal(powers.powerups.length, 1);
+  game.restartGame(); game.updateSimulation(1 / 60);
+  assert.equal(game.gameState.playerHealth, 100);
+  assert.equal(powers.powerups.length, 2);
+});
+
+test('authored ammo refills pulse by 20 with a capacity cap and stays when full', (t) => {
+  const game = fixture(t), powers = game.powerUpManager;
+  const ammo = powers.powerups.find(p => p.spawnId === 'arena:ammo');
+  game.spaceship.group.position.copy(ammo.mesh.position);
+  game.gameState.weaponInventory.pulse.ammo = 80;
+  powers.update(0); assert.ok(powers.powerups.includes(ammo));
+  game.gameState.weaponInventory.pulse.ammo = 75;
+  powers.update(0); assert.equal(game.gameState.weaponInventory.pulse.ammo, 80);
+  powers.update(0); assert.equal(powers.powerups.length, 1);
+  game.restartGame(); game.updateSimulation(1 / 60);
+  game.gameState.weaponInventory.pulse.ammo = 0;
+  game.spaceship.group.position.set(-3, 0, 1); powers.update(0);
+  assert.equal(game.gameState.weaponInventory.pulse.ammo, 20);
+});
+
+test('authored pickups persist after twenty seconds and cannot be collected through a solid', (t) => {
+  const game = fixture(t), powers = game.powerUpManager;
+  game.session.advance(21); powers.update(21);
+  assert.equal(powers.powerups.length, 2);
+  const ammo = powers.powerups.find(p => p.spawnId === 'arena:ammo');
+  game.spaceship.group.position.copy(ammo.mesh.position).add(v(0.6));
+  game.levelManager.solidColliders.push({ box: box([-2.8, -2, 0], [-2.79, 2, 2]) });
+  powers.update(0); assert.ok(powers.powerups.includes(ammo));
+  game.levelManager.solidColliders.pop(); powers.update(0);
+  assert.equal(game.gameState.weaponInventory.pulse.ammo, 60);
+});
+
+test('F fires once per press without capture, consumes ammo, and is disabled during pause/menu/death', (t) => {
+  const game = fixture(t), manager = game.projectileManager;
+  manager.setCanvas({});
+  const key = { code: 'KeyF', repeat: false };
+  game.inputManager.onKeyDown(key);
+  assert.equal(manager.projectiles.length, 1); assert.equal(game.gameState.weaponInventory.pulse.ammo, 39);
+  game.inputManager.onKeyDown({ ...key, repeat: true }); assert.equal(manager.projectiles.length, 1);
+  game.pauseGame(); game.inputManager.onKeyDown(key); assert.equal(manager.projectiles.length, 1);
+  game.resumeGame(); game.gameState.takeDamage(1000);
+  game.inputManager.onKeyDown(key); assert.equal(manager.projectiles.length, 1);
+  game.endSession(); game.inputManager.onKeyDown(key); assert.equal(manager.projectiles.length, 0);
+});
+
+test('empty pulse cannot fire or go negative; quiet flight practice restores unlimited ammo', (t) => {
+  const game = fixture(t); game.projectileManager.setCanvas({});
+  game.gameState.weaponInventory.pulse.ammo = 0;
+  for (let i = 0; i < 3; i++) game.inputManager.onKeyDown({ code: 'KeyF' });
+  assert.equal(game.projectileManager.projectiles.length, 0);
+  assert.equal(game.gameState.weaponInventory.pulse.ammo, 0);
+  game.selectLevel(0);
+  assert.equal(game.mission, null); assert.equal(game.gameState.weaponInventory.pulse.ammo, Infinity);
+  game.updateSimulation(1); assert.equal(game.powerUpManager.powerups.length, 0);
+});
+
+test('pause freezes ready-exit completion; resume completes once; death at the exit wins over extraction', (t) => {
+  const game = fixture(t);
+  clearWithShots(game); game.spaceship.group.position.copy(game.mission.exitPosition);
+  game.pauseGame(); game.advanceFrame(1); game.updateMission();
+  assert.equal(game.session.phase, 'paused'); assert.equal(game.mission.completed, false);
+  game.resumeGame(); game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'completed'); assert.deepEqual(game.results, ['completed']);
+  game.restartGame(); game.updateSimulation(1 / 60);
+  const enemyShot = hostile(game, v(), v(), 1000);
+  clearWithShots(game);
+  game.spaceship.group.position.copy(game.mission.exitPosition);
+  enemyShot.mesh.position.copy(game.mission.exitPosition).add(v(0, 0, 2)); enemyShot.velocity.set(0, 0, -600);
+  game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'dead'); assert.equal(game.mission.completed, false);
+  assert.equal(game.gameState.score, 150); assert.deepEqual(game.results, ['completed', 'dead']);
 });

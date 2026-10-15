@@ -1,6 +1,6 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 15, 2026):** Local six-axis flight, reliable session reset/pause, and solid finite arenas are implemented. The new [combat checkpoint](docs/progress/M1_COMBAT.md) adds wall-aware shots, visibility-gated enemies, and a pulse-only two-enemy encounter under **Select Level → Combat Training Arena**. **Start Flight Arena** remains quiet flight practice; older levels remain labeled legacy. All 78 regression tests pass. An explicit objective/exit, mission pickups, normal-browser playtesting and toolchain updates remain ahead. Several features below describe intended behavior. See the [assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
+> **Project status (October 15, 2026):** The new [Arena Escape mission](docs/progress/M1_MISSION.md) is playable from menu to extraction: six-axis flight, solid walls, wall-aware pulse combat, two drones, finite ammo, repair/refill pickups, a visible locked exit, loss/win and reliable restart. Choose **Select Level > Arena Escape**; **Start Flight Arena** remains quiet practice. All 89 tests and the production build pass, with a production keyboard playthrough verifying victory, death and reboot. Regular-browser mouse capture, flight tuning, profiling and toolchain updates remain ahead. Older levels remain legacy content, and several features below describe intended behavior. See the [assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
 
 Run `npm test` for regression checks. Run `npm run smoke` and open `http://127.0.0.1:5183/?smoke=1` for a development-only frame/update/error overlay and the startup verification workflow.
 
@@ -42,7 +42,7 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
   - **Destroyers**: Heavily armored ships with devastating weaponry
   - **Bosses**: Massive command ships with multiple attack patterns
 - **Weapon System**: Multiple weapon types with unique characteristics:
-  - **Pulse**: Basic weapon with unlimited ammo
+  - **Pulse**: Basic weapon; Arena Escape starts with 40 rounds and has a refill, while practice/legacy modes retain unlimited ammo
   - **Laser**: High-accuracy beam weapon
   - **Missile**: Explosive projectiles with splash damage
   - **Plasma**: Advanced energy weapon with high damage
@@ -139,9 +139,9 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 - **Mouse**: Look around
 - **Q/E**: Roll left/right
 - **Arrow keys**: Local yaw/pitch (keyboard alternative to mouse look)
-- **Left Click**: Shoot
+- **Left Click / F**: Shoot (F works without mouse capture; one shot per key press)
 - **ESC**: Pause game
-- **R**: Restart level (after game over)
+- **Reboot / Replay buttons**: Restart after death or completion; restart during play from the pause menu
 
 ## Code Structure
 

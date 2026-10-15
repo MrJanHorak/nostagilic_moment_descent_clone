@@ -10,6 +10,7 @@ import PowerUpManager from './entities/PowerUpManager.js';
 import UIManager from './ui/UIManager.js';
 import SimulationStepper from './core/SimulationStepper.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
+import MissionObjective from './core/MissionObjective.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 import { moveSphere } from './utils/sphereMovement.js';
@@ -23,6 +24,7 @@ export default class Game {
     this.gameState = new GameState();
     this.session = this.gameState.session;
     this.activeAnimations = [];
+    this.mission = null;
     this.currentLevelIndex = 0;
     this.isEndlessMode = true;
     this.powerupSpawnInterval = 15000;
@@ -129,6 +131,7 @@ export default class Game {
   endSession() {
     this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
+    this.mission = null;
     this.inputManager?.clearKeys();
     this.releasePointerLock();
     this.audioManager.stopAllSounds();
@@ -164,6 +167,15 @@ export default class Game {
         this.levelManager.currentLevel = null;
         this.levelManager.initEndlessLevel();
       } else this.levelManager.loadLevel(levelIndex);
+      const level = this.levelManager.currentLevel;
+      this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
+      if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
+        this.gameState.weaponInventory.pulse.ammo = level.combat.initialPulseAmmo;
+        this.gameState.pulseAmmoCapacity = level.combat.maxPulseAmmo;
+      }
+      this.enemyManager.onEnemyDefeated = (id, cause) => {
+        if (this.session.phase === 'playing') this.mission?.recordDefeat(id, cause);
+      };
       this.projectileManager.setCombatWorld?.({
         getColliders: () => this.levelManager.solidColliders,
         getTargets: () => this.enemyManager.enemies,
@@ -183,6 +195,7 @@ export default class Game {
       this.clock.getDelta(); // Discard time spent in menus/loading.
       this.uiManager.hideStartScreen();
       this.uiManager.hideLevelSelect();
+      this.uiManager.updateWeaponUI();
       this.uiManager.updateHUD();
       this.uiManager.updateEnemyCount(0, endless ? 0 : this.levelManager.currentLevel.enemySpawns.length);
       if (!endless && this.levelManager.currentLevel?.kind === 'arena') this.uiManager.showArenaGuide?.();
@@ -244,6 +257,7 @@ export default class Game {
 
   completeSession() {
     if (this.session.phase !== 'playing' || this.isEndlessMode) return false;
+    if (this.mission && !this.mission.completed) return false;
     this.session.transition('completed');
     this.session.tasks.clear();
     this.gameState.score += 1000;
@@ -274,6 +288,12 @@ export default class Game {
     this.uiManager.createStartScreen();
   }
 
+  updateMission() {
+    if (!this.mission || this.session.phase !== 'playing') return;
+    this.levelManager.updateExitMarker(this.mission.ready);
+    if (this.mission.tryComplete(this.spaceship.group.position, this.spaceship.radius)) this.completeSession();
+  }
+
   updateSimulation(delta) {
     if (this.session.phase !== 'playing') return;
     const generation = this.session.id;
@@ -300,6 +320,8 @@ export default class Game {
     this.projectileManager.updateProjectiles(delta);
     if (this.session.phase !== 'playing') return;
     this.powerUpManager.update(delta);
+    this.updateMission();
+    if (this.session.phase !== 'playing') return;
     if (this.caveParticles && this.session.timeMs - this.lastParticleUpdate >= 50) {
       updateCaveParticles(this.caveParticles, (this.session.timeMs - this.lastParticleUpdate) / 1000);
       this.lastParticleUpdate = this.session.timeMs;

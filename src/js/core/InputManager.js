@@ -65,6 +65,11 @@ class InputManager {
     // Always set keyStates, even if pointer lock is not active
     this.keyStates[event.code] = true;
 
+    if (event.code === 'KeyF' && !event.repeat && this.gameState.session.phase === 'playing') {
+      event.preventDefault?.();
+      this.projectileManager.fireProjectile(this.gameState, { requirePointerLock: false });
+    }
+
     // Handle escape key for pause menu
     if (
       event.code === 'Escape' &&

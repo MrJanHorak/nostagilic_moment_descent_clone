@@ -1,5 +1,7 @@
 # M1 wall-aware combat checkpoint
 
+> Historical checkpoint. [Arena Escape](M1_MISSION.md) supersedes the encounter name, unlimited-ammo rule and kill-all completion described below with an explicit objective/exit and authored pickups.
+
 Implemented October 15, 2026, following the [finite arena checkpoint](M1_ARENA.md).
 
 ## Delivered and how to try it

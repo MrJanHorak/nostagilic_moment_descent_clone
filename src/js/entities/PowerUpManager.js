@@ -1,10 +1,12 @@
 // PowerUp Manager for handling all power-ups in the game
 import * as THREE from 'three';
+import { hasLineOfSight } from '../utils/combatTrace.js';
 
 // Power-up type definitions
 export const powerupTypes = [
   {
     name: 'health',
+    canCollect: (state) => state.playerHealth < state.maxPlayerHealth,
     color: 0x00ff00,
     size: 0.5,
     duration: 0,
@@ -19,6 +21,19 @@ export const powerupTypes = [
       uiManager.showMessage('Shield Repaired!', 2000, '#00ff00');
     },
     message: 'Shield Repaired!',
+  },
+  {
+    name: 'pulseAmmo', color: 0xffa64d, size: 0.5, duration: 0,
+    canCollect: (state) => Number.isFinite(state.weaponInventory.pulse.ammo) &&
+      state.weaponInventory.pulse.ammo < state.pulseAmmoCapacity,
+    effect(state, ui) {
+      const weapon = state.weaponInventory.pulse;
+      const before = weapon.ammo;
+      weapon.ammo = Math.min(state.pulseAmmoCapacity, weapon.ammo + 20);
+      ui.updateWeaponUI();
+      ui.showMessage(`PULSE AMMO +${weapon.ammo - before}`, 2000, '#ffa64d');
+    },
+    message: 'Pulse ammo refilled',
   },
   {
     name: 'speedBoost',
@@ -243,11 +258,12 @@ class PowerUpManager {
   }
 
   // Spawn a power-up at a position
-  spawnPowerup(position, typeName = null, { persistent = false } = {}) {
+  spawnPowerup(position, typeName = null, { persistent = false, spawnId = null } = {}) {
     // If no specific type requested, choose randomly
+    const randomTypes = powerupTypes.filter(type => type.name !== 'pulseAmmo' || Number.isFinite(this.gameState?.weaponInventory.pulse.ammo));
     const powerupType = typeName
       ? powerupTypes.find((t) => t.name === typeName)
-      : powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
+      : randomTypes[Math.floor(Math.random() * randomTypes.length)];
 
     if (!powerupType) {
       throw new RangeError(`Unknown power-up type: ${typeName}`);
@@ -263,6 +279,7 @@ class PowerUpManager {
       mesh: powerupMesh,
       type: powerupType,
       id: powerupMesh.userData.powerupId,
+      spawnId,
       collisionRadius: powerupType.size * 0.7,
       age: 0,
       lifetime: persistent ? Infinity : 20,
@@ -299,7 +316,9 @@ class PowerUpManager {
       const distance = powerup.mesh.position.distanceTo(playerPosition);
 
       // Check collision with player
-      if (distance < powerup.collisionRadius + 0.5) {
+      if (distance < powerup.collisionRadius + 0.5 &&
+        (powerup.type.canCollect?.(this.gameState) ?? true) &&
+        hasLineOfSight(playerPosition, powerup.mesh.position, this.levelManager?.solidColliders)) {
         // 0.5 is approx. player radius
         // Apply power-up effect
         powerup.type.effect(this.gameState, this.uiManager);
@@ -375,7 +394,7 @@ class PowerUpManager {
 
       // Only spawn if within reasonable distance and not already spawned
       if (distanceToPlayer < 50 && !this.spawnedIds.has(spawnId)) {
-        this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType, { persistent: true });
+        this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType, { persistent: true, spawnId });
         this.spawnedIds.add(spawnId);
       }
     }

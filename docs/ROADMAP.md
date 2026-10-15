@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** The startup, session lifecycle, flight and finite arena foundations are followed by the [wall-aware combat checkpoint](progress/M1_COMBAT.md). The selectable combat arena adds swept shot traces (including muzzle paths), one-hit damage ownership, visibility-gated enemies and solid-body movement. All 78 tests pass. First-work-queue items 1–6 are delivered for the new finite arenas; legacy geometry remains unrepaired. Kill-all combat completion is tested, but an explicit objective/exit, authored mission pickups and a normal-browser full playthrough are still required for M1. Item 7 is next.
+**Implementation progress (October 15, 2026):** The [objective/extraction checkpoint](progress/M1_MISSION.md) turns the combat fixture into **Arena Escape**, with two required drones, a locked/ready exit, finite pulse ammo, authored repair/refill pickups and clean combat-versus-cleanup events. All 89 tests and the production build pass. A production keyboard playthrough verified completion, replay, enemy-fire death and reboot without game console errors. First-work-queue items 1-8 are implemented for the finite mission; legacy geometry remains unrepaired. M1 still needs regular-browser captured-mouse/inverted-flight acceptance and handling/readability tuning. The next engineering checkpoint is item 9: dependency/runtime baseline and CI, followed by measured resource/performance checks before M3 shared level data.
 
 ## Scope and effort
 

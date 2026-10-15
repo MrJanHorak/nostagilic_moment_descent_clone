@@ -296,6 +296,7 @@ class EnemyManager {
 
   // Check if all enemies in the level are destroyed
   checkLevelCompletion() {
+    if (this.levelManager?.currentLevel?.mission) return; // Extraction owns mission completion.
     if (
       !this.levelComplete &&
       this.gameState.session?.phase === 'playing' &&
@@ -451,7 +452,7 @@ class EnemyManager {
         this.gameState.takeDamage(enemy.type.damage);
 
         // Destroy the enemy
-        this.destroyEnemy(i);
+        this.destroyEnemy(i, 'ram');
         continue;
       }
 
@@ -541,127 +542,27 @@ class EnemyManager {
     this.enemies.splice(index, 1);
   }
 
-  destroyEnemy(index) {
-    // Check if we have a valid array and index
-    if (!this.enemies || index < 0 || index >= this.enemies.length) {
-      return;
-    }
-
+  destroyEnemy(index, cause = 'shot') {
     const enemy = this.enemies[index];
-    if (!enemy) return;
-    enemy.isActive = false;
-
-    // Check if this is a predefined enemy and mark as permanently destroyed
-    if (
-      enemy.mesh &&
-      enemy.mesh.userData &&
-      enemy.mesh.userData.isPredefined &&
-      enemy.mesh.userData.spawnPointId
-    ) {
-      this.destroyedPredefinedEnemies.add(enemy.mesh.userData.spawnPointId);
-
-      // Update the UI with new count
-      if (this.gameState && this.gameState.uiManager) {
-        this.gameState.uiManager.updateEnemyCount(
-          this.destroyedPredefinedEnemies.size,
-          this.totalPredefinedEnemies
-        );
-      }
-
-      // Check if level is complete
+    if (!enemy?.isActive) return false;
+    const spawnId = enemy.mesh.userData.isPredefined ? enemy.mesh.userData.spawnPointId : null;
+    this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);
+    if (this.audioManager?.initialized) {
+      const distance = this.playerTransform?.position.distanceTo(enemy.mesh.position) ?? 20;
+      const volume = Math.min(0.8, 10 / Math.max(1, distance));
+      try { this.audioManager.playSound('explosion', { volume }); }
+      catch (error) { console.warn('Unable to play explosion sound:', error); }
+    }
+    // One disposal path for shot deaths, ramming and ordinary teardown.
+    // Only combat destruction below emits objective progress; removeEnemy never does.
+    this.removeEnemy(index);
+    if (spawnId) {
+      this.destroyedPredefinedEnemies.add(spawnId);
+      this.onEnemyDefeated?.(spawnId, cause);
+      this.gameState.uiManager?.updateEnemyCount(this.destroyedPredefinedEnemies.size, this.totalPredefinedEnemies);
       this.checkLevelCompletion();
     }
-
-    // First, let's make sure lights are removed first
-    const lightsToRemove = [];
-    enemy.mesh.traverse((child) => {
-      if (child.isLight) {
-        lightsToRemove.push(child);
-      }
-    });
-
-    // Remove lights separately to avoid modification during traversal
-    for (const light of lightsToRemove) {
-      if (light.parent) {
-        light.parent.remove(light);
-      }
-    }
-
-    // Create explosion effect (do this before removing from scene)
-    if (this.scene && enemy.mesh && enemy.mesh.position) {
-      this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);
-
-      // Remove the entire enemy mesh from scene
-      this.scene.remove(enemy.mesh);
-    }
-
-    // Play explosion sound with defensive checks
-    if (
-      this.audioManager &&
-      this.audioManager.initialized &&
-      enemy.mesh &&
-      enemy.mesh.position &&
-      this.playerTransform
-    ) {
-      try {
-        // Calculate volume based on distance to player
-        const distanceToPlayer = enemy.mesh.position.distanceTo(
-          this.playerTransform.position
-        );
-        const volume = Math.min(0.8, 10 / Math.max(1, distanceToPlayer));
-        this.audioManager.playSound('explosion', { volume });
-      } catch (error) {
-        console.warn('Error playing explosion sound:', error);
-      }
-    }
-
-    // Properly dispose of all resources
-    const disposeMaterial = (material) => {
-      if (!material) return;
-
-      // Dispose textures
-      const propertiesToCheck = [
-        'map',
-        'lightMap',
-        'bumpMap',
-        'normalMap',
-        'specularMap',
-        'envMap',
-        'emissiveMap',
-        'roughnessMap',
-        'metalnessMap',
-        'alphaMap',
-      ];
-
-      propertiesToCheck.forEach((prop) => {
-        if (material[prop]) {
-          material[prop].dispose();
-        }
-      });
-
-      material.dispose();
-    };
-
-    // Clean up resources with enhanced disposal
-    enemy.mesh.traverse((child) => {
-      if (child.geometry) {
-        child.geometry.dispose();
-      }
-
-      if (child.material) {
-        if (Array.isArray(child.material)) {
-          child.material.forEach(disposeMaterial);
-        } else {
-          disposeMaterial(child.material);
-        }
-
-        // Remove material reference from the child
-        child.material = undefined;
-      }
-    });
-
-    // Remove reference from array
-    this.enemies.splice(index, 1);
+    return true;
   }
 
   // Spawn item drops when enemies are destroyed

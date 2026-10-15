@@ -512,7 +512,7 @@ class UIManager {
                 </p>
                 <p style="margin: 5px 0; display: flex; justify-content: space-between;">
                   <span style="color: #ffffff;">Shoot:</span> 
-                  <span style="color: #00ddff; font-weight: bold;">Left Click</span>
+                  <span style="color: #00ddff; font-weight: bold;">Left Click / F</span>
                 </p>
                 <p style="margin: 5px 0; display: flex; justify-content: space-between;">
                   <span style="color: #ffffff;">Pause:</span> 
@@ -675,7 +675,7 @@ class UIManager {
                             i
                           ].toUpperCase()}</div>
                           ${
-                            isUnlocked && ammo !== Infinity
+                            isUnlocked
                               ? `<div style="font-size: 9px;">${ammoDisplay}</div>`
                               : ''
                           }`;
@@ -1274,6 +1274,26 @@ class UIManager {
     document.body.appendChild(guide);
     this.transientElements.add(guide);
     this.arenaGuide = guide;
+    this.updateMissionUI();
+    if (this.game.mission) {
+      const reticle = document.createElement('div');
+      reticle.id = 'aim-reticle';
+      reticle.textContent = '+';
+      Object.assign(reticle.style, { position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+        color: '#cafaff', opacity: '0.85', font: '20px monospace', pointerEvents: 'none', zIndex: '90' });
+      document.body.appendChild(reticle);
+      this.transientElements.add(reticle);
+    }
+  }
+
+  updateMissionUI() {
+    const mission = this.game?.mission;
+    if (!mission || !this.arenaGuide) return;
+    const status = mission.ready ? 'EXIT READY · Fly into the green ring at the far end'
+      : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring at far end)`;
+    const text = `ARENA ESCAPE · ${status} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    if (this.arenaGuide.textContent !== text) this.arenaGuide.textContent = text;
+    this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
   }
 
   resetSessionUI() {
@@ -1281,6 +1301,7 @@ class UIManager {
     this.presentationTimers.clear();
     for (const element of this.transientElements) element.remove();
     this.transientElements.clear();
+    this.arenaGuide = null;
     this.hidePauseMenu();
     this.resultScreen?.remove();
     this.resultScreen = null;
@@ -1371,6 +1392,7 @@ class UIManager {
 
     // Update score
     this.hudElements.scoreDisplay.textContent = `${this.gameState.score}`;
+    this.updateMissionUI();
   }
 
   // Update enemy count display

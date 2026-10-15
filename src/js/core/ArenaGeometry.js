@@ -21,6 +21,23 @@ export default function buildArena(level) {
   grid.position.set(0, -5.99, -8);
   group.add(grid);
 
+  if (level.mission) {
+    const exit = new THREE.Group();
+    exit.name = level.mission.exit.id;
+    exit.position.fromArray(level.mission.exit.position);
+    const material = new THREE.MeshBasicMaterial({ color: 0xffb343 });
+    exit.add(new THREE.Mesh(new THREE.TorusGeometry(level.mission.exit.radius, 0.09, 8, 48), material));
+    // Four inward pointers make the extraction center readable without a texture asset.
+    for (let i = 0; i < 4; i++) {
+      const pointer = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.4, 4), material);
+      const angle = i * Math.PI / 2;
+      pointer.position.set(Math.sin(angle) * 1.85, Math.cos(angle) * 1.85, 0);
+      pointer.rotation.z = Math.PI - angle;
+      exit.add(pointer);
+    }
+    group.add(exit); // Decorative marker; the mission owns its trigger, not a solid wall.
+  }
+
   // Flush frame markings: decorative strips stay outside the traversable opening.
   const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x45e5ed });
   for (const z of [-7.47, -8.53]) {

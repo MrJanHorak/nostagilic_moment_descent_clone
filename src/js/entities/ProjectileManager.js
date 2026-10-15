@@ -254,10 +254,10 @@ class ProjectileManager {
     });
   }
   // Fire a projectile from the player's viewpoint
-  fireProjectile(gameState) {
+  fireProjectile(gameState, { requirePointerLock = true } = {}) {
     if (
       !this.canvas ||
-      document.pointerLockElement !== this.canvas ||
+      (requirePointerLock && document.pointerLockElement !== this.canvas) ||
       gameState.isGameOver ||
       gameState.session.phase !== 'playing' ||
       !gameState.isGameStarted
@@ -303,7 +303,7 @@ class ProjectileManager {
       weaponInventory[currentWeapon].ammo--;
 
       // Update UI if low on ammo
-      if (weaponInventory[currentWeapon].ammo <= 5 && gameState.uiManager) {
+      if (gameState.uiManager) {
         gameState.uiManager.updateWeaponUI();
       }
     }

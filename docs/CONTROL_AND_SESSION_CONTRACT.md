@@ -1,6 +1,6 @@
 # Control and session contract for M1
 
-Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, finite arenas, wall-aware shot traces and basic enemy visibility/collision are implemented. **An explicit objective/exit and full mission acceptance remain pending.** See [current progress](progress/M1_COMBAT.md).
+Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, finite arenas, wall-aware shots, basic enemy visibility/collision, and the Arena Escape objective/exit are implemented. A production keyboard playthrough covers victory, loss and reboot. Regular-browser captured-mouse/inverted-flight acceptance and handling tuning remain pending. See [current progress](progress/M1_MISSION.md).
 
 ## Player and world ownership
 
@@ -34,7 +34,7 @@ The finite training arena uses static world-space axis-aligned boxes generated w
 | Roll | Q / E | Local +Z / -Z rotation |
 | Yaw alternative | Left / Right arrows | Local yaw; A/D retain strafe |
 | Pitch alternative | Up / Down arrows | Local pitch; same player orientation as mouse input |
-| Primary fire | Left click | Fire only during active play with mouse capture |
+| Primary fire | Left click / F | Click requires mouse capture; F fires once per key press without capture; both require active play |
 | Weapon selection | 1–4 | Only select unlocked weapons during active play |
 | Pause | Escape | One transition per key press; key repeat must not toggle repeatedly |
 | Restart after death | Reboot UI initially | Start a fresh session; a keyboard shortcut can follow |
@@ -68,6 +68,12 @@ Keep level definitions immutable. Per-session sets track stable spawned/killed/c
 
 Cooldowns, projectile lifetimes, buffs, and managed effects advance on session simulation time and freeze during pause. Independent pickup RAF loops and gameplay `setTimeout` calls have been removed; presentation-only UI/audio timers are cleaned up on teardown. A bounded accumulator now runs the active simulation at 60 Hz, with at most 100 ms/six steps per rendered frame. Excess wall time is discarded after a stall; pause/teardown discard partial time. There is no render interpolation yet.
 
+## Arena Escape mission contract
+
+The immutable definition identifies two required drones and an exit at `(0,0,-24)`. Shot kills and nonfatal ramming neutralize required drones; cleanup never advances objectives. Only shot kills award kill points/statistics. Both drones must be neutralized and the player sphere fully inside the radius-1.5 exit before a single completion/1,000-point bonus. Enemy damage runs before exit checks, so death wins in the same step. Clearing the drones alone leaves the session playing.
+
+Arena Escape starts with 40 pulse rounds, capped at 80; its authored ammo refill grants up to 20 and repair grants up to 25 health. Full inventory/health preserves the pickup. Both authored pickups persist until collected, require proximity plus unobstructed structural sight, and reset with the session. Practice/legacy pulse remains unlimited. Mission progress, marker state, ammo capacity and pickup spawn tracking reset on every restart.
+
 ## Startup and failure contract implemented in the first checkpoint
 
 - `AudioManager.init()` returns a success boolean; unsupported/failed devices do not prevent starting play. Partial initialization is cleaned up and can be retried.
@@ -81,6 +87,6 @@ Cooldowns, projectile lifetimes, buffs, and managed effects advance on session s
 
 `npm test` covers startup/audio failure contracts, pickup behavior, both mode pipelines, session transitions/reset, pause-frozen timers, callback cancellation, cleanup, terminal latches, and mission selection. The Node fixtures use real Three.js/game managers; they do not validate WebGL, flight feel, native mouse capture, or a level's actual winnability.
 
-`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
+`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death controls exercise lifecycle/UI wiring. For Arena Escape, the neutralize-drones test button uses the normal damage path and still requires reaching the exit; legacy completion controls exercise their existing flow. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
-The 78 tests cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS flight simulations, view-shake isolation, restarts, paused clocks and terminal latches; solid-wall sliding, doorway traversal and arena cleanup; and earliest-hit shot traces, muzzle obstruction, single damage ownership, enemy visibility/body clearance and repeated combat completion/reset. A normal objective/exit mission playthrough remains the next acceptance work. See the combat checkpoint for collision limits, evidence and remaining manual checks.
+The 89 tests cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS flight simulations, view-shake isolation, restarts, paused clocks and terminal latches; solid-wall sliding, doorway traversal and arena cleanup; earliest-hit shot traces, muzzle obstruction, single damage ownership, enemy visibility/body clearance; and objective/exit gating, ramming versus cleanup, pickups, finite ammo, keyboard firing and repeated completion/reset. Production keyboard play verifies victory, death and reboot. See the mission checkpoint for evidence and remaining manual checks.

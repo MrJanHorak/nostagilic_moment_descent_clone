@@ -299,6 +299,14 @@ class LevelManager {
     }
   }
 
+  updateExitMarker(ready) {
+    const exitId = this.currentLevel?.mission?.exit.id;
+    const marker = exitId && this.levelSegments[0]?.getObjectByName(exitId);
+    marker?.traverse(child => {
+      if (child.isMesh) child.material.color.setHex(ready ? 0x45ff96 : 0xffb343);
+    });
+  }
+
   initEndlessLevel() {
     // Original endless tunnel code
     const initialPosition = new THREE.Vector3(0, 0, 0);
