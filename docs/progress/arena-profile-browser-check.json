@@ -1,0 +1,472 @@
+{
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "status": "passed",
+      "durationMs": 54459,
+      "errors": []
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "status": "passed",
+      "durationMs": 35079,
+      "errors": []
+    }
+  ],
+  "resources": {
+    "date": "2026-10-15T17:37:39.626Z",
+    "node": "v24.22.0",
+    "browser": "156.0.8078.4",
+    "platform": "win32",
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "renderer": "Chromium ANGLE SwiftShader (software)",
+    "warmupCycles": 1,
+    "measuredCycles": 10,
+    "samples": [
+      {
+        "cycle": 0,
+        "phase": "paused",
+        "session": 5,
+        "timeMs": 466.66666666666686,
+        "frames": 40,
+        "steps": 28,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 6,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 39,
+          "p50FrameMs": 17.3,
+          "p95FrameMs": 469.9,
+          "p95WorkMs": 166.6
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 1,
+        "phase": "paused",
+        "session": 7,
+        "timeMs": 133.33333333333334,
+        "frames": 65,
+        "steps": 8,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 64,
+          "p50FrameMs": 25.8,
+          "p95FrameMs": 420.2,
+          "p95WorkMs": 232.8
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 2,
+        "phase": "paused",
+        "session": 9,
+        "timeMs": 166.66666666666666,
+        "frames": 85,
+        "steps": 10,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 84,
+          "p50FrameMs": 70.4,
+          "p95FrameMs": 420.2,
+          "p95WorkMs": 241.3
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 3,
+        "phase": "paused",
+        "session": 11,
+        "timeMs": 199.99999999999997,
+        "frames": 102,
+        "steps": 12,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 101,
+          "p50FrameMs": 82.8,
+          "p95FrameMs": 452.5,
+          "p95WorkMs": 245.7
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 4,
+        "phase": "paused",
+        "session": 13,
+        "timeMs": 199.99999999999997,
+        "frames": 124,
+        "steps": 12,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 123,
+          "p50FrameMs": 75.7,
+          "p95FrameMs": 455.7,
+          "p95WorkMs": 274.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 5,
+        "phase": "paused",
+        "session": 15,
+        "timeMs": 166.66666666666666,
+        "frames": 149,
+        "steps": 10,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 148,
+          "p50FrameMs": 78.4,
+          "p95FrameMs": 455.7,
+          "p95WorkMs": 290.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 6,
+        "phase": "paused",
+        "session": 17,
+        "timeMs": 199.99999999999997,
+        "frames": 174,
+        "steps": 12,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 173,
+          "p50FrameMs": 82.8,
+          "p95FrameMs": 452.5,
+          "p95WorkMs": 290.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 7,
+        "phase": "paused",
+        "session": 19,
+        "timeMs": 199.99999999999997,
+        "frames": 191,
+        "steps": 12,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 190,
+          "p50FrameMs": 82.8,
+          "p95FrameMs": 452.5,
+          "p95WorkMs": 290.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 8,
+        "phase": "paused",
+        "session": 21,
+        "timeMs": 150,
+        "frames": 209,
+        "steps": 9,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 208,
+          "p50FrameMs": 78.6,
+          "p95FrameMs": 452.5,
+          "p95WorkMs": 302.8
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 9,
+        "phase": "paused",
+        "session": 23,
+        "timeMs": 183.33333333333331,
+        "frames": 229,
+        "steps": 11,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 228,
+          "p50FrameMs": 84,
+          "p95FrameMs": 437.9,
+          "p95WorkMs": 290.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      },
+      {
+        "cycle": 10,
+        "phase": "paused",
+        "session": 25,
+        "timeMs": 166.66666666666666,
+        "frames": 256,
+        "steps": 10,
+        "tasks": 0,
+        "errors": 0,
+        "enemies": 2,
+        "shots": 0,
+        "pickups": 2,
+        "position": [
+          0,
+          0,
+          6
+        ],
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "timing": {
+          "samples": 240,
+          "p50FrameMs": 97.2,
+          "p95FrameMs": 420.2,
+          "p95WorkMs": 290.4
+        },
+        "profile": {
+          "status": "idle"
+        }
+      }
+    ]
+  }
+}

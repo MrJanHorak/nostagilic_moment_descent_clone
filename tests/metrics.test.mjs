@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { FrameMetrics, collectResources } from '../src/js/utils/runtimeMetrics.js';
+import { FrameMetrics, ProfileCapture, collectResources } from '../src/js/utils/runtimeMetrics.js';
 import RuntimeDiagnostics from '../src/js/utils/RuntimeDiagnostics.js';
 
 test('frame metrics keep a bounded recent window and compute percentiles without changing it', () => {
@@ -31,4 +31,61 @@ test('disabled diagnostics collect no frames, timings or resources', () => {
   diagnostics.recordFrame({ get game() { throw new Error('must not inspect production game'); } }, 10);
   assert.equal(diagnostics.frames, 0);
   assert.equal(diagnostics.metrics.snapshot().samples, 0);
+});
+
+test('finite capture measures only its own active window and latches a completed result', () => {
+  const capture = new ProfileCapture(100);
+  const state = { session: { id: 1, phase: 'playing', timeMs: 5000 } };
+  let reads = 0;
+  const resources = () => { reads++; return { lights: 14 }; };
+  assert.equal(capture.start(state, 2000, { lights: 14 }), true);
+  assert.equal(capture.start(state, 2010, {}), false);
+  for (const [now, work] of [[2000, 2], [2050, 3], [2100, 4]]) {
+    state.session.timeMs = now + 3000;
+    capture.record(state, now, work, resources);
+  }
+  assert.equal(capture.result.status, 'complete');
+  assert.equal(capture.result.elapsedMs, 100);
+  assert.equal(capture.result.simulationDeltaMs, 100);
+  assert.equal(capture.result.frames, 3);
+  assert.deepEqual(capture.result.timing, { samples: 2, p50FrameMs: 50, p95FrameMs: 50, p95WorkMs: 4 });
+  capture.record(state, 9000, 500, resources);
+  assert.equal(reads, 1);
+  assert.equal(capture.result.frames, 3);
+});
+
+test('pause, death and session replacement abort capture instead of mixing lifecycle stalls', () => {
+  for (const change of [{ phase: 'paused' }, { phase: 'dead' }, { id: 2 }]) {
+    const capture = new ProfileCapture(100);
+    const state = { session: { id: 1, phase: 'playing', timeMs: 0 } };
+    capture.start(state, 0, {});
+    Object.assign(state.session, change);
+    capture.record(state, 100, 2, () => { throw new Error('must not collect final resources'); });
+    assert.equal(capture.result.status, 'aborted');
+  }
+  const capture = new ProfileCapture();
+  assert.equal(capture.start({ session: { phase: 'paused' } }, 0, {}), false);
+  assert.equal(capture.result.status, 'idle');
+});
+
+test('capture flags truncated histories and a new run discards old timings', () => {
+  const capture = new ProfileCapture(100, 2);
+  const state = { session: { id: 1, phase: 'playing', timeMs: 0 } };
+  capture.start(state, 0, {});
+  for (const now of [0, 50, 100]) capture.record(state, now, 1, () => ({}));
+  assert.equal(capture.result.truncated, true);
+  capture.start(state, 1000, {});
+  capture.record(state, 1100, 2, () => ({}));
+  assert.equal(capture.result.truncated, false);
+  assert.equal(capture.result.timing.samples, 0, 'no interval carried in from an old run');
+});
+
+test('pause cancellation cannot be hidden by resuming before the next rendered frame', () => {
+  const diagnostics = new RuntimeDiagnostics(true);
+  const state = { session: { id: 1, phase: 'playing', timeMs: 0 } };
+  diagnostics.capture.start(state, 0, {});
+  diagnostics.invalidateCapture('Paused during capture');
+  diagnostics.capture.record(state, 10000, 2, () => ({}));
+  assert.equal(diagnostics.capture.result.status, 'aborted');
+  assert.equal(diagnostics.capture.result.frames, 0);
 });

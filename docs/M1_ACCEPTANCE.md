@@ -12,7 +12,7 @@ Updated October 15, 2026. **Implementation complete for Arena Escape; acceptance
 | Captured mouse aiming/firing and lock-loss recovery | Embedded browser refused capture; refusal handling was checked | Regular-browser check pending |
 | Handling and objective/pickup readability | Reticle, objective guide, exit marker and provisional tuning implemented | Hands-on assessment pending |
 
-See [mission evidence](progress/M1_MISSION.md) and [control contract](CONTROL_AND_SESSION_CONTRACT.md). Frame-time/resource budgets belong to M2; they are still unmeasured.
+See [mission evidence](progress/M1_MISSION.md) and [control contract](CONTROL_AND_SESSION_CONTRACT.md). Frame-time/resource budgets belong to M2: [hardware profiling](progress/M2_PERFORMANCE.md) now records an Intel GPU baseline and bounded restart resources, while the frame-time target remains unmet.
 
 ## Remaining hands-on run
 

@@ -17,7 +17,8 @@
     "verify": "npm test && npm run build",
     "audit:deps": "npm audit --audit-level=moderate",
     "test:browser": "npm run build && playwright test",
-    "browser:install": "playwright install chromium"
+    "browser:install": "playwright install chromium",
+    "profile:arena": "node scripts/profile-arena.mjs"
   },
   "devDependencies": {
     "@playwright/test": "1.64.1",

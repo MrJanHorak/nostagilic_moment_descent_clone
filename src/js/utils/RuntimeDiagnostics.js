@@ -1,6 +1,6 @@
 // Development-only status for the repeatable ?smoke=1 browser check.
-// This never changes gameplay state or exposes a game object on window.
-import { FrameMetrics, collectResources } from './runtimeMetrics.js';
+// Metrics are read-only; labeled controls exercise game paths without exposing a global game object.
+import { FrameMetrics, ProfileCapture, collectResources } from './runtimeMetrics.js';
 
 export default class RuntimeDiagnostics {
   constructor(enabled = false) {
@@ -12,6 +12,7 @@ export default class RuntimeDiagnostics {
     this.panel = null;
     this.lastError = '';
     this.metrics = new FrameMetrics();
+    this.capture = new ProfileCapture();
   }
 
   recordFrame(gameState, workMs = 0) {
@@ -19,6 +20,7 @@ export default class RuntimeDiagnostics {
     this.frames++;
     const now = performance.now();
     this.metrics.record(now, workMs);
+    this.capture.record(gameState, now, workMs, () => collectResources(gameState.game));
     if (now - this.lastRefresh < 250) return;
     this.lastRefresh = now;
     this.refresh(gameState);
@@ -26,6 +28,10 @@ export default class RuntimeDiagnostics {
 
   recordUpdate() {
     if (this.enabled) this.updates++;
+  }
+
+  invalidateCapture(reason) {
+    if (this.enabled) this.capture.cancel(reason);
   }
 
   reportError(error, stage) {
@@ -60,6 +66,7 @@ export default class RuntimeDiagnostics {
         shots: (game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0),
         pickups: game?.powerUpManager?.powerups.length ?? 0,
         position: ship?.group.position.toArray(), resources: collectResources(game), timing: this.metrics.snapshot(),
+        profile: this.capture.result,
       };
       this.panel.setAttribute('data-snapshot', JSON.stringify(snapshot));
       const r = snapshot.resources, t = snapshot.timing;
@@ -86,12 +93,17 @@ export default class RuntimeDiagnostics {
           }
         });
         this.controls.append(this.deathButton, this.completionButton);
+        this.profileButton = document.createElement('button');
+        this.profileButton.textContent = 'Profile 10 seconds (test)';
+        this.profileButton.addEventListener('click', () => this.capture.start(gameState, performance.now(), collectResources(game)));
+        this.controls.append(this.profileButton);
         document.body.appendChild(this.controls);
       }
       if (this.controls) {
         this.deathButton.disabled = gameState.session.phase !== 'playing';
         this.completionButton.disabled = gameState.session.phase !== 'playing' || game.isEndlessMode;
         this.completionButton.textContent = game.mission ? 'Neutralize drones (test)' : 'Complete mission (test)';
+        this.profileButton.disabled = gameState.session.phase !== 'playing' || this.capture.result.status === 'running';
       }
     }
     this.panel.textContent = [
@@ -102,6 +114,7 @@ export default class RuntimeDiagnostics {
       this.flightStatus,
       this.arenaStatus,
       this.resourceStatus,
+      `Profile: ${this.capture.result.status}${this.capture.result.elapsedMs ? ` (${(this.capture.result.elapsedMs / 1000).toFixed(1)}s)` : ''}`,
       this.lastError,
     ].filter(Boolean).join('\n');
   }

@@ -17,7 +17,7 @@ class EnemyFactory {
     };
   }
 
-  createEnemy(enemyType, position, playerTransform = null) {
+  createEnemy(enemyType, position, playerTransform = null, { accentLights = true } = {}) {
     const body = new THREE.Group();
     body.name = `${enemyType.name}_enemy`;
 
@@ -32,6 +32,14 @@ class EnemyFactory {
     const meshBuilder = this.meshBuilders[enemyType.name];
     if (meshBuilder) {
       meshBuilder.buildMesh(body, enemyType);
+    }
+
+    // Emissive engine/eye meshes remain visible. Finite arenas use one shared fill
+    // per enemy instead of separate engine, eye and antenna illumination.
+    if (!accentLights) {
+      const lights = [];
+      body.traverse(child => { if (child.isLight) lights.push(child); });
+      for (const light of lights) light.removeFromParent();
     }
 
     // Conservative body envelope around the origin, independent of facing.

@@ -28,6 +28,49 @@ export class FrameMetrics {
   }
 }
 
+// A finite active-play window. Pauses, terminal phases and new sessions invalidate it.
+export class ProfileCapture {
+  constructor(durationMs = 10000, limit = 6000) {
+    this.durationMs = durationMs;
+    this.limit = limit;
+    this.result = { status: 'idle' };
+  }
+
+  start(state, now, resources) {
+    if (state.session.phase !== 'playing' || this.result.status === 'running') return false;
+    this.metrics = new FrameMetrics(this.limit);
+    this.startedAt = now;
+    this.startedTimeMs = state.session.timeMs;
+    this.result = { status: 'running', session: state.session.id, frames: 0, elapsedMs: 0,
+      fromResources: resources };
+    return true;
+  }
+
+  cancel(reason) {
+    if (this.result.status !== 'running') return;
+    this.result.status = 'aborted';
+    this.result.reason = reason;
+  }
+
+  record(state, now, workMs, resources) {
+    if (this.result.status !== 'running') return;
+    if (state.session.phase !== 'playing' || state.session.id !== this.result.session) {
+      this.cancel('Session or phase changed during capture');
+      return;
+    }
+    this.metrics.record(now, workMs);
+    this.result.frames++;
+    this.result.elapsedMs = Number((now - this.startedAt).toFixed(2));
+    if (now - this.startedAt >= this.durationMs) {
+      this.result.status = 'complete';
+      this.result.timing = this.metrics.snapshot();
+      this.result.truncated = this.result.frames > this.limit;
+      this.result.simulationDeltaMs = Number((state.session.timeMs - this.startedTimeMs).toFixed(2));
+      this.result.toResources = resources();
+    }
+  }
+}
+
 export function collectResources(game) {
   const info = game?.renderer?.info;
   const materials = new Set();

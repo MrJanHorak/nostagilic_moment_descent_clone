@@ -1,0 +1,150 @@
+{
+  "date": "2026-10-15T17:32:40.647Z",
+  "node": "v24.22.0",
+  "platform": "win32",
+  "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "requestedRenderer": "hardware",
+  "scenario": "combat",
+  "warmupMs": 8000,
+  "captureMs": 10000,
+  "samples": [
+    {
+      "run": 1,
+      "status": "complete",
+      "session": 3,
+      "frames": 601,
+      "elapsedMs": 10010.5,
+      "fromResources": {
+        "geometries": 42,
+        "textures": 0,
+        "programs": 12,
+        "calls": 43,
+        "triangles": 4214,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 2
+      },
+      "timing": {
+        "samples": 600,
+        "p50FrameMs": 16.7,
+        "p95FrameMs": 17.9,
+        "p95WorkMs": 0.8
+      },
+      "truncated": false,
+      "simulationDeltaMs": 10016.67,
+      "toResources": {
+        "geometries": 42,
+        "textures": 0,
+        "programs": 12,
+        "calls": 43,
+        "triangles": 4214,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 2
+      }
+    },
+    {
+      "run": 2,
+      "status": "complete",
+      "session": 3,
+      "frames": 601,
+      "elapsedMs": 10013.3,
+      "fromResources": {
+        "geometries": 42,
+        "textures": 0,
+        "programs": 12,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 2
+      },
+      "timing": {
+        "samples": 600,
+        "p50FrameMs": 16.6,
+        "p95FrameMs": 17.9,
+        "p95WorkMs": 0.9
+      },
+      "truncated": false,
+      "simulationDeltaMs": 10016.67,
+      "toResources": {
+        "geometries": 42,
+        "textures": 0,
+        "programs": 12,
+        "calls": 44,
+        "triangles": 4710,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 1
+      }
+    },
+    {
+      "run": 3,
+      "status": "complete",
+      "session": 3,
+      "frames": 601,
+      "elapsedMs": 10000.1,
+      "fromResources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 6,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 0
+      },
+      "timing": {
+        "samples": 600,
+        "p50FrameMs": 16.6,
+        "p95FrameMs": 18,
+        "p95WorkMs": 0.9
+      },
+      "truncated": false,
+      "simulationDeltaMs": 10016.67,
+      "toResources": {
+        "geometries": 42,
+        "textures": 0,
+        "programs": 12,
+        "calls": 44,
+        "triangles": 4710,
+        "points": 0,
+        "objects": 73,
+        "lights": 9,
+        "materials": 35,
+        "effectLights": 0,
+        "pooledEffects": 1
+      }
+    }
+  ],
+  "errors": [],
+  "browserArgs": [
+    "--use-angle=d3d11"
+  ],
+  "browser": "156.0.8078.4",
+  "gpu": {
+    "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A60) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "vendor": "Google Inc. (Intel)",
+    "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+  },
+  "status": "complete"
+}

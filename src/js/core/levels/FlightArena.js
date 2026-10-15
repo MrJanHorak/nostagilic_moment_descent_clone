@@ -7,6 +7,7 @@ const solid = (id, center, size, color) => Object.freeze({
 export default function createFlightArena() {
   return Object.freeze({
     id: 'flight-arena', kind: 'arena', name: 'Flight Training Arena',
+    rendering: Object.freeze({ enemyAccentLights: false }),
     spawn: Object.freeze([0, 0, 6]),
     enemySpawns: Object.freeze([]), powerupSpawns: Object.freeze([]),
     solids: Object.freeze([

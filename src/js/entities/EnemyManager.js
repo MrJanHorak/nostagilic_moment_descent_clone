@@ -91,7 +91,8 @@ class EnemyManager {
     const enemy = this.enemyFactory.createEnemy(
       enemyType,
       position,
-      this.playerTransform
+      this.playerTransform,
+      { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true }
     );
 
     this.enemies.push(enemy);

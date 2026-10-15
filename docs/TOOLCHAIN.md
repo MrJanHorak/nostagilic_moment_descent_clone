@@ -18,7 +18,7 @@ npm run verify
 npm run audit:deps
 ```
 
-Use `npm ci` for an existing checkout. It replaces `node_modules` from the lockfile, fails on manifest/lock mismatch, and does not update locked versions. Preserve optional platform dependencies; Rollup/esbuild need the matching native binary. `npm run verify` runs all 92 simulation/metrics tests followed by the production build, stopping if tests fail. The separate audit includes development dependencies and fails at moderate severity or above; network failures also fail that step. `npm run browser:install` downloads Chromium; `npm run test:browser` builds and runs the two browser checks.
+Use `npm ci` for an existing checkout. It replaces `node_modules` from the lockfile, fails on manifest/lock mismatch, and does not update locked versions. Preserve optional platform dependencies; Rollup/esbuild need the matching native binary. `npm run verify` runs all 98 unit/simulation/metrics tests followed by the production build, stopping if tests fail. The separate audit includes development dependencies and fails at moderate severity or above; network failures also fail that step. `npm run browser:install` downloads Chromium; `npm run test:browser` builds and runs the two browser checks. `npm run profile:arena` runs a separate hardware benchmark; see the [profiling checkpoint](progress/M2_PERFORMANCE.md).
 
 Run `npm run dev` for normal play, `npm run smoke` for the development diagnostics, or `npm run preview -- --host 127.0.0.1` after building for a production preview. See [M1 acceptance](M1_ACCEPTANCE.md) for the remaining hands-on checks.
 
@@ -46,4 +46,4 @@ Useful primary references: [Node releases](https://nodejs.org/en/about/previous-
 
 On Windows, a clean install with Node 24.22.0/npm 11.21.1 passed, all 89 tests passed, and Vite 6.4.4 built the production game. All 89 tests also passed on the existing Node 22.14.0/npm 11.2.0. The workflow parsed successfully with YAML 2.8.1; this does not prove hosted GitHub execution. The output asset retains the prior filename/hash and approximately 644 kB minified / 162 kB gzip; the existing chunk-size warning remains. The source map changes with the upgraded bundler. No gameplay source changed in this checkpoint.
 
-This records the first M2 toolchain checkpoint. The follow-up [browser/resource checkpoint](progress/M2_BROWSER.md) adds two passing browser flows, 92 simulation/metrics tests and ten-restart resource evidence against the patched toolchain. Lint/type checks, steady hardware profiling, usability settings and broader source cleanup remain.
+This records the first M2 toolchain checkpoint. Follow-ups add passing [browser/resource regressions](progress/M2_BROWSER.md), 98 unit/simulation/metrics tests and a [three-run Intel GPU baseline plus arena lighting reduction](progress/M2_PERFORMANCE.md). The frame-time target, lint/type checks, usability settings and broader source cleanup remain.

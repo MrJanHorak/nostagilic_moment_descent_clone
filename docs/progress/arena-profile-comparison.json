@@ -1,0 +1,72 @@
+{
+  "environment": {
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+    "gpu": {
+      "renderer": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A60) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "vendor": "Google Inc. (Intel)",
+      "version": "WebGL 2.0 (OpenGL ES 3.0 Chromium)"
+    },
+    "intelDriver": "31.0.101.1999",
+    "node": "v24.22.0",
+    "browser": "156.0.8078.4",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "method": {
+    "runs": 3,
+    "warmupMs": 8000,
+    "captureMs": 10000,
+    "scenario": "stationary player at Arena Escape spawn with normal enemy AI and fire"
+  },
+  "results": {
+    "before": {
+      "p50FrameMs": [
+        16.6,
+        16.7,
+        16.6
+      ],
+      "p95FrameMs": [
+        18.1,
+        18.1,
+        17.9
+      ],
+      "p95WorkMs": [
+        0.8,
+        0.9,
+        0.8
+      ],
+      "medianFrameP95Ms": 18.1,
+      "baseSceneLights": [
+        14,
+        14,
+        14
+      ]
+    },
+    "after": {
+      "p50FrameMs": [
+        16.7,
+        16.6,
+        16.6
+      ],
+      "p95FrameMs": [
+        17.9,
+        17.9,
+        18
+      ],
+      "p95WorkMs": [
+        0.8,
+        0.9,
+        0.9
+      ],
+      "medianFrameP95Ms": 17.9,
+      "baseSceneLights": [
+        9,
+        9,
+        9
+      ]
+    }
+  },
+  "conclusion": "Base scene lights reduced 14 to 9. Timing difference is within run variation; no meaningful FPS gain established. Frame p95 remains above the provisional 16.7 ms target."
+}

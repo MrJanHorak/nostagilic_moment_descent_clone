@@ -1,5 +1,7 @@
 # M2 browser regression and resource checkpoint
 
+> Historical measurements below precede the [hardware profiling and lighting checkpoint](M2_PERFORMANCE.md), which reduces the arena to nine lights and adds a separate steady capture.
+
 Implemented October 15, 2026, following the [runtime/dependency baseline](../TOOLCHAIN.md).
 
 ## Delivered

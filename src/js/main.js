@@ -129,6 +129,7 @@ export default class Game {
   }
 
   endSession() {
+    this.diagnostics.invalidateCapture?.('Session ended during capture');
     this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.mission = null;
@@ -220,6 +221,7 @@ export default class Game {
 
   pauseGame() {
     if (this.session.phase !== 'playing') return false;
+    this.diagnostics.invalidateCapture?.('Paused during capture');
     this.stepper.reset();
     this.session.transition('paused');
     this.inputManager.clearKeys();

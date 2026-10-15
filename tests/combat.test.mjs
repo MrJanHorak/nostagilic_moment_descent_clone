@@ -11,6 +11,9 @@ import LevelManager from '../src/js/core/LevelManager.js';
 import EnemyManager from '../src/js/entities/EnemyManager.js';
 import ProjectileManager from '../src/js/entities/ProjectileManager.js';
 import PowerUpManager from '../src/js/entities/PowerUpManager.js';
+import EnemyFactory from '../src/js/entities/EnemyFactory.js';
+import { enemyTypes } from '../src/js/entities/EnemyTypes.js';
+import disposeObject from '../src/js/utils/disposeObject.js';
 
 const v = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 const box = (min, max) => new THREE.Box3(v(...min), v(...max));
@@ -59,6 +62,40 @@ function hostile(game, start, velocity, power = 10) {
   delete projectile.launchOrigin;
   return projectile;
 }
+
+test('finite arena keeps one light per enemy without losing emissive model geometry', t => {
+  const game = fixture(t);
+  assert.equal(game.enemyManager.enemies.length, 2);
+  for (const enemy of game.enemyManager.enemies) {
+    let lights = 0, emissiveMeshes = 0;
+    enemy.mesh.traverse(child => {
+      if (child.isLight) lights++;
+      if (child.isMesh && child.material.emissive?.getHex()) emissiveMeshes++;
+    });
+    assert.equal(lights, 1);
+    assert.ok(emissiveMeshes > 0);
+  }
+});
+
+test('light reduction preserves meshes, colliders and body clearance; default factory retains legacy lights', () => {
+  const factory = new EnemyFactory(new THREE.Scene());
+  for (const [name, fullLights] of [['fighter', 4], ['scout', 3]]) {
+    const type = enemyTypes.find(type => type.name === name);
+    const full = factory.createEnemy(type, v(1, 2, 3));
+    const reduced = factory.createEnemy(type, v(1, 2, 3), null, { accentLights: false });
+    const counts = enemy => {
+      let lights = 0, meshes = 0;
+      enemy.mesh.traverse(child => { if (child.isLight) lights++; if (child.isMesh) meshes++; });
+      return { lights, meshes };
+    };
+    assert.equal(counts(full).lights, fullLights);
+    assert.equal(counts(reduced).lights, 1);
+    assert.equal(counts(full).meshes, counts(reduced).meshes);
+    assert.ok(full.collider.equals(reduced.collider));
+    assert.equal(full.collisionRadius, reduced.collisionRadius);
+    disposeObject(full.mesh); disposeObject(reduced.mesh);
+  }
+});
 
 test('finite traces handle zero travel, start overlap, parallel axes and sphere crossings', () => {
   const wall = box([0, -1, -1], [0.01, 1, 1]);
