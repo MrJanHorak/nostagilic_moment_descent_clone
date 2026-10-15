@@ -1,6 +1,6 @@
 // Enemy entity module
 import * as THREE from 'three';
-import { createExplosionEffect } from '../utils/effectsUtils.js';
+import disposeObject from '../utils/disposeObject.js';
 import { checkProjectileEnemyCollision } from '../utils/collisionUtils.js';
 import { animateEnemy, getEnemyFiringRange } from './EnemyAnimations.js';
 import { enemyTypes } from './EnemyTypes.js';
@@ -19,8 +19,8 @@ class EnemyManager {
 
     // Initialize supporting systems
     this.enemyFactory = new EnemyFactory(scene);
-    this.projectileManager = new ProjectileManager(scene, camera, audioManager);
-    this.effectsManager = new EffectsManager(scene);
+    this.projectileManager = new ProjectileManager(scene, camera, audioManager, gameState.session);
+    this.effectsManager = new EffectsManager(scene, gameState.session);
     this.objectPool = new ObjectPool();
 
     // Enemy tracking
@@ -57,6 +57,7 @@ class EnemyManager {
     );
 
     this.enemies.push(enemy);
+    enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
     return enemy;
   }
 
@@ -159,25 +160,6 @@ class EnemyManager {
       spawnPosition.y *= 0.5;
     }
 
-    // Create debug visualization for spawn point (useful for development)
-    const debugSpawn = new THREE.Mesh(
-      new THREE.SphereGeometry(0.2, 8, 8),
-      new THREE.MeshStandardMaterial({
-        color: tooCloseToWall ? 0xff0000 : 0x00ff00,
-        emissive: tooCloseToWall ? 0xff0000 : 0x00ff00,
-        emissiveIntensity: 0.5,
-      })
-    );
-    debugSpawn.position.copy(spawnPosition);
-    this.scene.add(debugSpawn);
-
-    // Remove debug marker after a few seconds
-    setTimeout(() => {
-      this.scene.remove(debugSpawn);
-      if (debugSpawn.geometry) debugSpawn.geometry.dispose();
-      if (debugSpawn.material) debugSpawn.material.dispose();
-    }, 5000);
-
     // Choose an enemy type appropriate for the current game progress
     const enemyTypesForCurrentProgress = this.getEnemyTypesForCurrentProgress();
     const enemyType =
@@ -232,9 +214,9 @@ class EnemyManager {
       }
     }
 
-    for (const spawnPoint of level.enemySpawns) {
+    for (const [index, spawnPoint] of level.enemySpawns.entries()) {
       // Generate a unique ID for this spawn point
-      const spawnPointId = `${spawnPoint.position.x}_${spawnPoint.position.y}_${spawnPoint.position.z}`;
+      const spawnPointId = spawnPoint.id ?? `enemy:${index}`;
 
       // Skip if this enemy was permanently destroyed
       if (this.destroyedPredefinedEnemies.has(spawnPointId)) {
@@ -277,13 +259,15 @@ class EnemyManager {
   // Check if all enemies in the level are destroyed
   checkLevelCompletion() {
     if (
+      !this.levelComplete &&
+      this.gameState.session?.phase === 'playing' &&
+      !this.levelManager?.isEndless &&
       this.levelManager &&
       this.levelManager.currentLevel &&
       this.destroyedPredefinedEnemies.size >= this.totalPredefinedEnemies &&
       this.totalPredefinedEnemies > 0
     ) {
-      // All enemies destroyed - level complete!
-      console.log('Level completed! All enemies destroyed.');
+      this.levelComplete = true;
 
       // Notify game state that level is complete
       if (this.gameState && this.gameState.levelCompleted) {
@@ -307,36 +291,25 @@ class EnemyManager {
 
   // Reset enemies for new level with defensive checks
   resetLevel() {
-    // Clear tracking of destroyed enemies
-    if (this.destroyedPredefinedEnemies) {
-      this.destroyedPredefinedEnemies.clear();
-    } else {
-      this.destroyedPredefinedEnemies = new Set();
-    }
-
+    for (let i = this.enemies.length - 1; i >= 0; i--) this.removeEnemy(i);
+    this.projectileManager.clear();
+    this.effectsManager.clear();
+    this.destroyedPredefinedEnemies.clear();
     this.totalPredefinedEnemies = 0;
-
-    // Remove all existing enemies with defensive checks
-    if (this.enemies && this.enemies.length) {
-      for (let i = this.enemies.length - 1; i >= 0; i--) {
-        this.destroyEnemy(i);
-      }
-    }
-
-    this.enemies = [];
-
-    // Reset endless mode timers
+    this.levelComplete = false;
+    this.levelSegments = [];
     this.lastRandomSpawnTime = 0;
     this.randomSpawnInterval = 5000;
   }
 
   // Enemy update function
   updateEnemies(delta, projectiles) {
+    if (this.gameState.session?.phase !== 'playing') return;
     // Update effects first
-    this.effectsManager.update();
+    this.effectsManager.update(delta);
 
     // Check if level has predefined enemies or if we should use endless mode
-    const currentTime = Date.now();
+    const currentTime = this.gameState.session.timeMs;
     if (this.levelManager && this.levelManager.isEndless) {
       this.updateEndlessMode(currentTime);
     } else {
@@ -344,6 +317,7 @@ class EnemyManager {
     }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
+      if (this.gameState.session.phase !== 'playing') break;
       const enemy = this.enemies[i];
       if (!enemy.isActive) continue;
 
@@ -422,7 +396,7 @@ class EnemyManager {
         enemy.mesh.lookAt(this.camera.position);
 
         // Apply animations to enemy mesh based on its type
-        animateEnemy(enemy, delta);
+        animateEnemy(enemy, delta, currentTime / 1000);
       }
 
       // Update enemy collider
@@ -442,8 +416,7 @@ class EnemyManager {
 
       // Check distance - if enemy is too far behind player, remove it
       if (distanceToPlayer > 50) {
-        this.scene.remove(enemy.mesh);
-        this.enemies.splice(i, 1);
+        this.removeEnemy(i);
         continue;
       }
 
@@ -475,26 +448,7 @@ class EnemyManager {
             }
           }
 
-          // Remove projectile
-          if (projectile.mesh.parent) {
-            projectile.mesh.parent.remove(projectile.mesh);
-          }
-          if (projectile.trail.parent) {
-            projectile.trail.parent.remove(projectile.trail);
-          }
-
-          if (projectile.mesh.geometry) projectile.mesh.geometry.dispose();
-          if (projectile.mesh.material) projectile.mesh.material.dispose();
-          if (projectile.trail.geometry) projectile.trail.geometry.dispose();
-          if (projectile.trail.material) projectile.trail.material.dispose();
-
-          // Clear references
-          projectile.mesh.geometry = null;
-          projectile.mesh.material = null;
-          projectile.trail.geometry = null;
-          projectile.trail.material = null;
-
-          projectiles.splice(j, 1); // Check if enemy is destroyed
+          projectile.ownerManager.removeProjectile(projectile);
           if (enemy.health <= 0) {
             // Add score
             this.gameState.score += enemy.type.pointValue;
@@ -515,6 +469,7 @@ class EnemyManager {
         }
       }
 
+      if (!enemy.isActive || this.gameState.session.phase !== 'playing') continue;
       // Handle enemy firing projectiles
       if (
         enemy.type.name !== 'scout' &&
@@ -550,24 +505,24 @@ class EnemyManager {
 
             // Boss occasionally fires from multiple weapons at once
             if (Math.random() < 0.3) {
-              setTimeout(() => {
+              this.gameState.session.schedule(200, () => {
                 if (enemy && enemy.mesh && enemy.mesh.parent) {
                   this.projectileManager.fireEnemyProjectile(
                     enemy,
                     this.camera
                   );
                 }
-              }, 200);
+              });
 
               if (Math.random() < 0.2) {
-                setTimeout(() => {
+                this.gameState.session.schedule(400, () => {
                   if (enemy && enemy.mesh && enemy.mesh.parent) {
                     this.projectileManager.fireEnemyProjectile(
                       enemy,
                       this.camera
                     );
                   }
-                }, 400);
+                });
               }
             }
           } else {
@@ -587,6 +542,14 @@ class EnemyManager {
     );
   }
 
+  removeEnemy(index) {
+    const enemy = this.enemies[index];
+    if (!enemy) return;
+    enemy.isActive = false;
+    disposeObject(enemy.mesh);
+    this.enemies.splice(index, 1);
+  }
+
   destroyEnemy(index) {
     // Check if we have a valid array and index
     if (!this.enemies || index < 0 || index >= this.enemies.length) {
@@ -595,6 +558,7 @@ class EnemyManager {
 
     const enemy = this.enemies[index];
     if (!enemy) return;
+    enemy.isActive = false;
 
     // Check if this is a predefined enemy and mark as permanently destroyed
     if (
@@ -634,7 +598,7 @@ class EnemyManager {
 
     // Create explosion effect (do this before removing from scene)
     if (this.scene && enemy.mesh && enemy.mesh.position) {
-      createExplosionEffect(this.scene, enemy.mesh.position.clone());
+      this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);
 
       // Remove the entire enemy mesh from scene
       this.scene.remove(enemy.mesh);

@@ -1,0 +1,53 @@
+{
+  "date": "2026-10-14",
+  "browser": "Codex in-app Chromium browser",
+  "developmentChecks": [
+    {
+      "scenario": "Pause freezes clock and steps",
+      "first": "Session 2; 6.22s; 999 steps; frame 1476",
+      "later": "SMOKE CHECK | PAUSED\nFrames: 6888 | Updates: 999 | Errors: 0\nSession: 2 | Time: 6.22s | Steps: 999 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Simulated death",
+      "status": "SMOKE CHECK | DEAD\nFrames: 9006 | Updates: 757 | Errors: 0\nSession: 3 | Time: 4.65s | Steps: 757 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Reboot after death",
+      "status": "SMOKE CHECK | PLAYING\nFrames: 9575 | Updates: 1290 | Errors: 0\nSession: 5 | Time: 3.34s | Steps: 533 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Completion via test control",
+      "status": "SMOKE CHECK | COMPLETED\nFrames: 14659 | Updates: 1371 | Errors: 0\nSession: 5 | Time: 3.83s | Steps: 614 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0",
+      "score": "SHIELD INTEGRITY\n100%\nWEAPON SYSTEM\n1\nPULSE\n2\nLASER\n3\nMISSILE\n4\nPLASMA\nCOMBAT SCORE\n1000\nTHREAT ANALYSIS\nENEMIES: 0/5"
+    },
+    {
+      "scenario": "Next mission before restart",
+      "status": "SMOKE CHECK | PAUSED\nFrames: 15548 | Updates: 1873 | Errors: 0\nSession: 7 | Time: 5.46s | Steps: 502 | Tasks: 0\nEnemies: 2 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Restart retains next-mission selection and resets clock",
+      "status": "SMOKE CHECK | PAUSED\nFrames: 16286 | Updates: 1874 | Errors: 0\nSession: 9 | Time: 0.00s | Steps: 1 | Tasks: 0\nEnemies: 1 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Mission selection ends simulation",
+      "status": "SMOKE CHECK | MENU\nFrames: 16765 | Updates: 1874 | Errors: 0\nSession: 10 | Time: 0.00s | Steps: 0 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0"
+    },
+    {
+      "scenario": "Main menu stays idle",
+      "status": "SMOKE CHECK | MENU\nFrames: 29502 | Updates: 1874 | Errors: 0\nSession: 11 | Time: 0.00s | Steps: 0 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0"
+    }
+  ],
+  "developmentErrors": [],
+  "production": {
+    "bundle": "/assets/index-QiLfiwhq.js",
+    "errors": [],
+    "diagnostics": 0,
+    "testControls": 0,
+    "flow": "Start endless -> pause -> restart -> pause -> return to main menu; no page reload"
+  },
+  "limits": [
+    "Death and completion were invoked with labeled development-only test buttons. This verifies lifecycle/UI wiring, not a completed combat mission.",
+    "Embedded browser refused pointer lock. Mouse capture and automatic lock-loss behavior are covered by controlled tests, not a native captured-mouse playthrough.",
+    "Flight, wall collision, authored map traversal and campaign balance remain unverified and incomplete."
+  ]
+}

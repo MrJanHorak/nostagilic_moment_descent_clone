@@ -46,13 +46,34 @@ export default class RuntimeDiagnostics {
       document.body.appendChild(this.panel);
     }
     if (gameState) {
-      this.phase = !gameState.isGameStarted ? 'MENU'
-        : gameState.isGameOver ? 'GAME OVER'
-        : gameState.isPaused ? 'PAUSED' : 'RUNNING';
+      this.phase = gameState.session.phase.toUpperCase();
+      const game = gameState.game;
+      this.sessionStatus = `Session: ${gameState.session.id} | Time: ${(gameState.session.timeMs / 1000).toFixed(2)}s | Steps: ${gameState.session.steps} | Tasks: ${gameState.session.tasks.size}`;
+      this.entityStatus = `Enemies: ${game?.enemyManager?.enemies.length ?? 0} | Shots: ${(game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0)} | Pickups: ${game?.powerUpManager?.powerups.length ?? 0}`;
+      if (game && !this.controls) {
+        this.controls = document.createElement('aside');
+        this.controls.setAttribute('aria-label', 'Session smoke controls');
+        Object.assign(this.controls.style, { position: 'fixed', bottom: '8px', right: '8px',
+          zIndex: '2000', display: 'flex', gap: '8px', padding: '8px', background: '#00131ee8' });
+        this.deathButton = document.createElement('button');
+        this.deathButton.textContent = 'Simulate death (test)';
+        this.deathButton.addEventListener('click', () => game.gameState.takeDamage(game.gameState.maxPlayerHealth));
+        this.completionButton = document.createElement('button');
+        this.completionButton.textContent = 'Complete mission (test)';
+        this.completionButton.addEventListener('click', () => game.completeSession());
+        this.controls.append(this.deathButton, this.completionButton);
+        document.body.appendChild(this.controls);
+      }
+      if (this.controls) {
+        this.deathButton.disabled = gameState.session.phase !== 'playing';
+        this.completionButton.disabled = gameState.session.phase !== 'playing' || game.isEndlessMode;
+      }
     }
     this.panel.textContent = [
       `SMOKE CHECK | ${this.phase || 'INITIALIZING'}`,
       `Frames: ${this.frames} | Updates: ${this.updates} | Errors: ${this.errors}`,
+      this.sessionStatus,
+      this.entityStatus,
       this.lastError,
     ].filter(Boolean).join('\n');
   }

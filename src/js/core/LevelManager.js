@@ -1,5 +1,6 @@
 // Level Manager for creating and managing the tunnel environment
 import * as THREE from 'three';
+import disposeObject from '../utils/disposeObject.js';
 import createLevel1 from './levels/Level1.js';
 import createLevel2 from './levels/Level2.js';
 import createLevel3 from './levels/Level3.js';
@@ -259,18 +260,11 @@ class LevelManager {
     // Initialize the new level
     this.initLevel();
 
-    // Reset enemy tracking for the new level (if we have an enemyManager reference)
-    if (this.enemyManager && this.enemyManager.resetLevel) {
-      this.enemyManager.resetLevel();
-    }
-
     return this.currentLevel;
   }
   clearLevel() {
     // Remove all segments and obstacles
-    for (const segment of this.levelSegments) {
-      this.scene.remove(segment);
-    }
+    for (const segment of new Set([...this.levelSegments, ...this.segmentMap.values()])) this.removeSegment(segment);
     this.levelSegments = [];
     this.obstacles = [];
 
@@ -299,7 +293,8 @@ class LevelManager {
         initialPosition.y,
         initialPosition.z - i * this.segmentLength
       );
-      this.createTunnelSegment(position);
+      const segment = this.createTunnelSegment(position, false);
+      this.segmentMap.set(i, segment);
     }
   }
   initBlueprintLevel() {
@@ -1143,7 +1138,7 @@ class LevelManager {
     // Unload segments far away (optional, for memory)
     for (const [i, segment] of this.segmentMap.entries()) {
       if (Math.abs(i - currentIndex) > this.buffer) {
-        this.scene.remove(segment);
+        this.removeSegment(segment);
         this.segmentMap.delete(i);
       }
     }
@@ -1154,6 +1149,13 @@ class LevelManager {
     );
   }
   // Move all tunnel segments and obstacles by offset (Vector3)
+  removeSegment(segment) {
+    this.obstacles = this.obstacles.filter((obstacle) => obstacle.segment !== segment);
+    disposeObject(segment,
+      new Set([this._planeGeometry, this._segmentWallGeometry, this._glowSphereGeometry]),
+      new Set([this.wallMaterial, this.floorMaterial]));
+  }
+
   offsetLevel(offset) {
     // Move tunnel segments from segmentMap
     for (const segment of this.segmentMap.values()) {

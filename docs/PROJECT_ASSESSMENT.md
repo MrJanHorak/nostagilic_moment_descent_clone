@@ -2,7 +2,7 @@
 
 Assessment date: **October 14, 2026** (America/New_York). Baseline: **`7e70489`**, last repository commit dated May 25, 2025. This review adds documentation and diagnostic evidence; it does not repair the game or upgrade dependencies.
 
-**Historical baseline:** This assessment records the game before implementation. Subsequent fixes and current verification are tracked in the [M1 startup checkpoint](progress/M1_STARTUP.md); its two P0 startup defects are now fixed. The remaining findings are still relevant unless the progress notes say otherwise.
+**Historical baseline:** This assessment records the game before implementation. Subsequent fixes and current verification are tracked in the [startup checkpoint](progress/M1_STARTUP.md) and [session-lifecycle checkpoint](progress/M1_SESSION_LIFECYCLE.md). The P0 startup defects and much of the lifecycle/cleanup work are now repaired; remaining findings apply unless the progress notes say otherwise.
 
 ## Honest assessment
 

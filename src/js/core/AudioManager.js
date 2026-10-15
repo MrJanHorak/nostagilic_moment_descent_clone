@@ -4,6 +4,7 @@ export default class AudioManager {
     this.sounds = {};
     this.music = null;
     this.isMuted = false;
+    this.isPaused = false;
 
     // Set default volumes
     this.musicVolume = 0.4;
@@ -391,7 +392,7 @@ export default class AudioManager {
   }
   // Play a sound with various options
   playSound(id, options = {}) {
-    if (!this.initialized || this.isMuted) {
+    if (!this.initialized || this.isMuted || this.isPaused) {
       return null;
     }
 
@@ -450,6 +451,7 @@ export default class AudioManager {
       this.sounds[id].playing = new Set();
     }
 
+    const sound = this.sounds[id];
     // Store source info
     const sourceInfo = {
       source,
@@ -460,22 +462,25 @@ export default class AudioManager {
         const now = this.context.currentTime;
         gainNode.gain.setValueAtTime(gainNode.gain.value, now);
         gainNode.gain.linearRampToValueAtTime(0, now + duration);
-        setTimeout(() => {
+        clearTimeout(sourceInfo.fadeTimer);
+        sourceInfo.fadeTimer = setTimeout(() => {
           try {
             source.stop();
           } catch (e) {
             // Already stopped
           }
-          this.sounds[id].playing.delete(sourceInfo);
+          sound.playing.delete(sourceInfo);
         }, duration * 1000);
       },
       stop: () => {
+        clearTimeout(sourceInfo.fadeTimer);
         try {
           source.stop();
         } catch (e) {
           // Already stopped
         }
-        this.sounds[id].playing.delete(sourceInfo);
+        sound.playing.delete(sourceInfo);
+        if (this.music === sourceInfo) this.music = null;
       },
     };
 
@@ -492,8 +497,9 @@ export default class AudioManager {
 
     // Cleanup when finished
     source.onended = () => {
-      this.sounds[id].playing.delete(sourceInfo);
-      if (settings.isMusic) {
+      clearTimeout(sourceInfo.fadeTimer);
+      sound.playing.delete(sourceInfo);
+      if (this.music === sourceInfo) {
         this.music = null;
       }
     };
@@ -508,6 +514,7 @@ export default class AudioManager {
     }
 
     this.sounds[id].playing.forEach((sourceInfo) => {
+      if (sourceInfo.stop) { sourceInfo.stop(); return; }
       try {
         sourceInfo.source.stop();
       } catch (e) {
@@ -532,6 +539,11 @@ export default class AudioManager {
   }
 
   // Mute all audio
+  setPaused(paused) {
+    this.isPaused = paused;
+    if (this.masterGain) this.masterGain.gain.value = paused || this.isMuted ? 0 : 1;
+  }
+
   mute() {
     if (!this.initialized) return;
     this.masterGain.gain.value = 0;
@@ -541,7 +553,7 @@ export default class AudioManager {
   // Unmute audio
   unmute() {
     if (!this.initialized) return;
-    this.masterGain.gain.value = 1;
+    this.masterGain.gain.value = this.isPaused ? 0 : 1;
     this.isMuted = false;
   }
 

@@ -1,5 +1,7 @@
 # M1 checkpoint: startup foundation
 
+**Historical checkpoint:** Subsequent session/reset/timer work and current verification are documented in [M1 session lifecycle](M1_SESSION_LIFECYCLE.md). The remaining-work list below describes the state at this earlier checkpoint.
+
 Date: October 14, 2026. Started from documentation baseline `91602aa`; game audit baseline remains `7e70489`. This checkpoint begins [M1 in the roadmap](../ROADMAP.md). It does **not** complete M1 or establish a reliably completable game.
 
 ## Delivered

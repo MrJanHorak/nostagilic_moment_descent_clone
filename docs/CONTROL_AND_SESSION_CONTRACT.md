@@ -1,6 +1,6 @@
 # Control and session contract for M1
 
-Agreed implementation direction for the first playable mission, October 14, 2026. The startup checkpoint implements the audio, pointer-lock error handling, and startup checks below. **The player-root migration and session state machine described here are the next work, not completed features.** See [current progress](progress/M1_STARTUP.md).
+Implementation direction for the first playable mission, October 14, 2026. Startup and the session state machine are now implemented; **the player-root migration, fixed-step motion, and actual arena remain pending.** See [current progress](progress/M1_SESSION_LIFECYCLE.md).
 
 ## Player and world ownership
 
@@ -42,11 +42,11 @@ Use quaternion increments for yaw/pitch/roll in a documented consistent order (y
 
 Clear held keys when a session starts, focus is lost, or pointer lock is released. Paused/menu/dead states do not fire, switch weapons, or update flight. A click used to acquire pointer lock does not also fire an accidental shot.
 
-Pointer-lock acquisition must happen from a user gesture and may return a promise, throw, reject, or be unsupported. These cases must not produce an uncaught exception or hide a required recovery action. The startup checkpoint reports a retry message and leaves the simulation available. The next lifecycle change should pause on lock/focus loss and resume through an explicit gesture without erasing session state.
+Pointer-lock acquisition happens from a user gesture and may return a promise, throw, reject, or be unsupported. Refused initial capture reports a retry message and leaves keyboard simulation available. Releasing an acquired lock, window blur, or document hiding pauses once; Continue requests capture again without erasing session state. A stale rejected request cannot notify a newer session.
 
 ## Session ownership and transitions
 
-The target owner is `Game` coordinating a session controller. UI callbacks request transitions; they do not independently change simulation flags. Keep the current boolean flags only as a temporary compatibility boundary while callers are migrated.
+`Game` coordinates a `GameSession` owned by `GameState`. UI callbacks request transitions and never independently change simulation flags. The old boolean flags are read-only compatibility views of the session phase.
 
 | From | To | Trigger / invariant |
 | --- | --- | --- |
@@ -61,11 +61,11 @@ The target owner is `Game` coordinating a session controller. UI callbacks reque
 | playing / paused / dead / completed | loading | Restart or switch mission only after teardown |
 | loading | menu | Cancel loading and invalidate its callbacks |
 
-`startSession(levelId)` must reset health, velocity/orientation, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, pause flags, and the simulation accumulator. Restart routes use this same operation. `endSession(reason)` removes entities without awarding kills, cancels or invalidates callbacks, stops session audio, clears input, and releases pointer lock.
+`startSession({ endless, levelIndex })` resets health, legacy velocity/pitch/camera pose, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, phase, and simulation time. Restart routes use this same operation. `endSession()` removes entities without awarding kills, invalidates callbacks, stops session audio, clears input, and releases pointer lock. Death/completion freeze the scene until an explicit Reboot/Replay/Next/Selection action ends it. A full player-root transform reset follows the movement migration.
 
 Keep level definitions immutable. Per-session sets track stable spawned/killed/collected IDs. A monotonically increasing session token invalidates asynchronous work belonging to an old session. A next-level transition updates the same authoritative selected-level identity used by restart.
 
-Use a bounded fixed-step accumulator for gameplay. Cooldowns, projectile lifetimes, buffs, and objective timers advance on simulation time and freeze during pause. Rendering and menu decoration can use wall time. Legacy independent pickup RAF loops and gameplay `setTimeout` calls are migration work, not accepted session-clock behavior.
+Cooldowns, projectile lifetimes, buffs, and managed effects advance on session simulation time and freeze during pause. Independent pickup RAF loops and gameplay `setTimeout` calls have been removed; presentation-only UI/audio timers are cleaned up on teardown. A bounded fixed-step accumulator remains the target for the movement checkpoint; the current loop still uses a clamped variable frame delta.
 
 ## Startup and failure contract implemented in the first checkpoint
 
@@ -78,8 +78,8 @@ Use a bounded fixed-step accumulator for gameplay. Cooldowns, projectile lifetim
 
 ## Verification boundary
 
-`npm test` covers startup/audio failure contracts, pickup translation/type/collection, input rejection/pause guards, game-over source fading, and both mode update pipelines. The Node fixtures use real Three.js/game managers with deterministic presentation callbacks; they do not validate WebGL, flight feel, native mouse capture, or mission completion.
+`npm test` covers startup/audio failure contracts, pickup behavior, both mode pipelines, session transitions/reset, pause-frozen timers, callback cancellation, cleanup, terminal latches, and mission selection. The Node fixtures use real Three.js/game managers; they do not validate WebGL, flight feel, native mouse capture, or a level's actual winnability.
 
-`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, completed simulation updates, phase, and caught-error count. A rising frame count alone is insufficient: updates must rise during play, stop while paused, and resume after Continue. This diagnostic overlay is absent from production.
+`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
 The next controller/session implementation should convert these target contracts into behavior tests: rotated/inverted thrust, roll, equivalent 30/60/120 Hz simulations, wall sliding, clean repeated restarts, pause-frozen timers, and one completion event.

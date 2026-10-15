@@ -69,12 +69,27 @@ function startupFixture(t, AudioContext) {
     hideStartScreen: () => events.push('hide-start'),
     hideLevelSelect: () => events.push('hide-levels'),
     updateWeaponUI() {}, updateHUD() {}, updateEnemyCount() {}, showMessage() {},
+    resetSessionUI() {}, showPauseMenu() {}, hidePauseMenu() {}, showGameOver() {},
+    showCompletion() {}, showSessionError(error) { throw error; },
   };
   game.inputManager = {
     clearKeys: () => events.push('clear-keys'),
     requestPointerLock: () => { events.push('request-lock'); return Promise.resolve(true); },
+    updateMovement() {},
   };
-  game.gameState.uiManager = game.uiManager;
+  game.camera = new THREE.PerspectiveCamera();
+  game.scene.add(game.camera);
+  game.spaceship = new Spaceship();
+  game.spaceship.attachToCamera(game.camera);
+  game.levelManager = new LevelManager(game.scene, game.camera);
+  game.levelManager.segmentCount = 2;
+  game.levelManager.buffer = 1;
+  game.levelManager.wallMaterial = new THREE.MeshBasicMaterial();
+  game.levelManager.floorMaterial = new THREE.MeshBasicMaterial();
+  game.projectileManager = new ProjectileManager(game.scene, game.camera, game.audioManager, game.session);
+  game.enemyManager = new EnemyManager(game.scene, game.camera, game.gameState, game.audioManager, game.levelManager);
+  game.powerUpManager = new PowerUpManager(game.scene, game.camera, game.gameState, null, game.uiManager, game.levelManager);
+  game.gameState.setReferences(game.camera, game.audioManager, game.uiManager, game.activeAnimations, game);
   return { game, events };
 }
 
@@ -192,6 +207,8 @@ test('authored pickups preserve their type through spawning and collection', (t)
   const camera = new THREE.PerspectiveCamera();
   const state = new GameState();
   state.playerHealth = 50;
+  state.session.begin();
+  state.session.transition('playing');
   const blueprint = new LevelBlueprint(1, 'Pickup fixture');
   blueprint.addPowerupSpawn(new THREE.Vector3(), 'health');
   const ui = { updateHUD() {}, showMessage() {} };
@@ -217,22 +234,16 @@ test('enemy projectiles receive the real camera and audio dependencies', () => {
   assert.equal(enemies.projectileManager.audioManager, audio);
 });
 
-test('game over fades playing sources and still releases pointer lock', (t) => {
-  presentationClock(t);
-  const state = new GameState();
-  const fades = [];
-  const audio = new AudioManager();
-  audio.initialized = true;
-  audio.sounds.engine = { playing: new Set([{ fadeOut: (seconds) => fades.push(seconds) }]) };
-  audio.playSound = () => {};
-  state.audioManager = audio;
-  state.uiManager = { updateHUD() {}, showGameOver() {} };
+test('game over stops session loops once and releases pointer lock', (t) => {
+  const { game } = startupFixture(t);
+  game.startGame();
   let released = false;
   globalForTest(t, 'document', { pointerLockElement: {}, exitPointerLock: () => { released = true; } });
-  state.gameOver();
-  state.gameOver();
-  assert.equal(state.isGameOver, true);
-  assert.deepEqual(fades, [1]);
+  game.gameState.gameOver();
+  game.gameState.gameOver();
+  assert.equal(game.gameState.isGameOver, true);
+  assert.equal(game.audioManager.sounds.engine.playing.size, 0);
+  assert.equal(game.audioManager.sounds.gameOver.playing.size, 1);
   assert.equal(released, true);
 });
 
@@ -262,12 +273,13 @@ test('paused and menu clicks do not capture the mouse or fire', (t) => {
   const input = new InputManager(new THREE.PerspectiveCamera(), { fireProjectile: () => shots++ }, state);
   input.canvas = canvas;
   input.onClick();
-  state.isGameStarted = true;
-  state.isPaused = true;
+  state.session.begin();
+  state.session.transition('playing');
+  state.session.transition('paused');
   input.onClick();
   assert.equal(requests, 0);
   assert.equal(shots, 0);
-  state.isPaused = false;
+  state.session.transition('playing');
   input.onClick();
   assert.equal(shots, 1);
 });
@@ -309,10 +321,10 @@ for (const mode of ['endless', 'authored']) {
     game.enemyManager.lastRandomSpawnTime = Date.now();
     game.lastEnemySpawnTime = Date.now();
     game.powerUpManager = new PowerUpManager(game.scene, game.camera, game.gameState, null, game.uiManager, game.levelManager);
-    game.powerUpManager.spawnPowerup(new THREE.Vector3(0, 0, -10), 'health');
     game.gameState.setReferences(game.camera, game.audioManager, game.uiManager, game.activeAnimations, game);
     game.inputManager.updateMovement = () => {};
     game.startGame();
+    game.powerUpManager.spawnPowerup(new THREE.Vector3(0, 0, -10), 'health');
     game.diagnostics = new RuntimeDiagnostics(true);
     const shot = game.projectileManager.createProjectile(new THREE.Vector3(0, 0, -10), new THREE.Quaternion());
     for (let i = 0; i < 20; i++) game.animate();

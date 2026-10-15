@@ -18,12 +18,12 @@ export default class LevelBlueprint {
   }
 
   addEnemySpawn(position, enemyType) {
-    this.enemySpawns.push({ position, enemyType });
+    this.enemySpawns.push({ id: `enemy:${this.enemySpawns.length}`, position: position.clone(), enemyType });
     return this;
   }
 
   addPowerupSpawn(position, powerupType) {
-    this.powerupSpawns.push({ position, powerupType });
+    this.powerupSpawns.push({ id: `pickup:${this.powerupSpawns.length}`, position: position.clone(), powerupType });
     return this;
   }
 }

@@ -1,9 +1,12 @@
 import * as THREE from 'three';
 import ObjectPool from '../utils/ObjectPool.js';
+import disposeObject from '../utils/disposeObject.js';
 
 class EffectsManager {
-  constructor(scene) {
+  constructor(scene, session = null) {
     this.scene = scene;
+    this.session = session;
+    this.elapsedMs = 0;
     this.objectPool = new ObjectPool();
 
     // Track effects for processing in animation loop
@@ -30,7 +33,7 @@ class EffectsManager {
     this.scene.add(flash);
 
     // Store timestamp for cleanup in animation loop
-    flash.userData.removeTime = Date.now() + 100;
+    flash.userData.removeTime = this.now() + 100;
     flash.userData.isActive = true;
 
     // Track light in active lights array
@@ -46,7 +49,7 @@ class EffectsManager {
     if (this.scene) {
       this.hitEffects.push({
         position: position.clone(),
-        createdAt: Date.now(),
+        createdAt: this.now(),
         duration: 300,
       });
     }
@@ -71,7 +74,7 @@ class EffectsManager {
     this.scene.add(explosionLight);
 
     // Track for cleanup in animation loop
-    explosionLight.userData.removeTime = Date.now() + 200;
+    explosionLight.userData.removeTime = this.now() + 200;
     explosionLight.userData.isActive = true;
 
     // Track in active lights array
@@ -116,7 +119,7 @@ class EffectsManager {
       // Track this explosion for animation
       this.explosionEffects.push({
         mesh: explosion,
-        createdAt: Date.now(),
+        createdAt: this.now(),
         duration: 500,
       });
     }
@@ -151,9 +154,9 @@ class EffectsManager {
   // Process hit effects during the animation loop
   processHitEffects() {
     // Return early if no hit effects or scene is not available
-    if (!this.scene || !this.hitEffects || this.hitEffects.length === 0) return;
+    if (!this.scene) return;
 
-    const currentTime = Date.now();
+    const currentTime = this.now();
 
     // Process active lights
     if (!this.activeHitLights) {
@@ -239,14 +242,9 @@ class EffectsManager {
   // Process explosion effects in animation loop
   processExplosionEffects() {
     // Return early if no explosion effects or scene
-    if (
-      !this.scene ||
-      !this.explosionEffects ||
-      this.explosionEffects.length === 0
-    )
-      return;
+    if (!this.scene) return;
 
-    const currentTime = Date.now();
+    const currentTime = this.now();
 
     // Process explosion lights
     if (!this.activeExplosionLights) {
@@ -320,7 +318,27 @@ class EffectsManager {
     }
   }
 
-  update() {
+  now() { return this.session?.timeMs ?? this.elapsedMs; }
+
+  clear() {
+    const objects = new Set([
+      ...this.activeHitLights, ...this.activeExplosionLights,
+      ...this.hitEffects.map((effect) => effect.particleSystem),
+      ...this.explosionEffects.map((effect) => effect.mesh),
+      ...Object.values(this.objectPool.pools).flat(),
+    ]);
+    for (const object of objects) disposeObject(object);
+    this.hitEffects = [];
+    this.explosionEffects = [];
+    this.activeHitLights = [];
+    this.activeExplosionLights = [];
+    this.objectPool.clearAllPools();
+    this.elapsedMs = 0;
+  }
+
+  update(delta = 0) {
+    if (this.session && this.session.phase !== 'playing') return;
+    if (!this.session) this.elapsedMs += delta * 1000;
     this.processHitEffects();
     this.processExplosionEffects();
   }

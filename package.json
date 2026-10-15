@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/startup.test.mjs",
+    "test": "node --test tests/startup.test.mjs tests/session.test.mjs",
     "smoke": "node scripts/smoke-server.mjs",
     "dev": "vite",
     "build": "vite build",

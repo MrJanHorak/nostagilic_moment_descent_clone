@@ -43,10 +43,8 @@ function animateRotatingComponent(child, delta) {
 }
 
 // Animate enemy based on type
-export function animateEnemy(enemy, delta) {
+export function animateEnemy(enemy, delta, currentTime = 0) {
   if (!enemy || !enemy.mesh) return;
-
-  const currentTime = performance.now() * 0.001; // Time in seconds
 
   // Apply generic animations to all enemies
   enemy.mesh.traverse((child) => {

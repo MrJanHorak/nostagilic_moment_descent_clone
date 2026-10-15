@@ -5,6 +5,8 @@ class UIManager {
     this.audioManager = audioManager;
 
     this.startScreen = null;
+    this.transientElements = new Set();
+    this.presentationTimers = new Set();
     this.hudElements = {
       healthBar: null,
       scoreDisplay: null,
@@ -635,8 +637,7 @@ class UIManager {
 
       const startButton = document.getElementById('start-game-btn');
       startButton.addEventListener('click', () => {
-        this.game.selectEndlessMode();
-        this.game.startGame();
+        this.game.startSession({ endless: true });
       });
       return startButton;
     } catch (error) {
@@ -693,6 +694,7 @@ class UIManager {
 
   // Create level selection screen
   createLevelSelect(game) {
+    this.levelSelectMenu?.remove();
     this.game = game;
 
     const menuContainer = document.createElement('div');
@@ -817,12 +819,10 @@ class UIManager {
           transform: scale(0.98);
         }
       `;
-      document.head.appendChild(style);
+      menuContainer.appendChild(style);
 
       levelBtn.addEventListener('click', () => {
-        this.game.selectLevel(index);
-        menuContainer.remove();
-        this.game.startGame();
+        this.game.startSession({ endless: false, levelIndex: index });
       });
 
       levelBtnContainer.appendChild(levelBtn);
@@ -880,7 +880,7 @@ class UIManager {
         transform: scale(0.98);
       }
     `;
-    document.head.appendChild(pulseStyle);
+    menuContainer.appendChild(pulseStyle);
 
     // Add shine effect
     const endlessShine = document.createElement('div');
@@ -903,12 +903,10 @@ class UIManager {
         100% { top: 110%; left: 110%; }
       }
     `;
-    document.head.appendChild(endlessShineStyle);
+    menuContainer.appendChild(endlessShineStyle);
 
     endlessBtn.addEventListener('click', () => {
-      this.game.selectEndlessMode();
-      menuContainer.remove();
-      this.game.startGame();
+      this.game.startSession({ endless: true });
     });
 
     endlessContainer.appendChild(endlessBtn);
@@ -931,8 +929,7 @@ class UIManager {
     backButton.style.textTransform = 'uppercase';
     backButton.style.transition = 'all 0.2s ease';
     backButton.addEventListener('click', () => {
-      menuContainer.remove();
-      this.createStartScreen();
+      this.game.showMainMenu();
     });
 
     backButton.onmouseover = () => {
@@ -966,8 +963,7 @@ class UIManager {
   // Create pause menu
   createPauseMenu() {
     if (this.pauseMenu) {
-      this.togglePauseMenu();
-      return;
+      return this.pauseMenu;
     }
 
     const pauseMenu = document.createElement('div');
@@ -1062,7 +1058,7 @@ class UIManager {
     continueShine.style.animation = 'continueShine 3s infinite';
     continueBtn.appendChild(continueShine);
 
-    continueBtn.onclick = () => this.togglePauseMenu();
+    continueBtn.onclick = () => this.game.resumeGame();
     buttonContainer.appendChild(continueBtn);
 
     // Select level button
@@ -1101,7 +1097,6 @@ class UIManager {
     selectLevelBtn.appendChild(levelShine);
 
     selectLevelBtn.onclick = () => {
-      this.togglePauseMenu();
       if (this.game) {
         this.game.showLevelSelection();
       }
@@ -1144,7 +1139,6 @@ class UIManager {
     restartBtn.appendChild(restartShine);
 
     restartBtn.onclick = () => {
-      this.togglePauseMenu();
       if (this.game) {
         this.game.restartLevel();
       }
@@ -1186,7 +1180,7 @@ class UIManager {
     quitBtn.appendChild(quitShine);
 
     quitBtn.onclick = () => {
-      window.location.reload();
+      this.game.showMainMenu();
     };
     buttonContainer.appendChild(quitBtn);
 
@@ -1242,45 +1236,100 @@ class UIManager {
         box-shadow: 0 0 20px #cc0033, inset 0 0 15px rgba(255,255,255,0.5);
       }
     `;
-    document.head.appendChild(styleSheet);
+    pauseMenu.appendChild(styleSheet);
 
     contentContainer.appendChild(buttonContainer);
     pauseMenu.appendChild(contentContainer);
     document.body.appendChild(pauseMenu);
     this.pauseMenu = pauseMenu;
 
-    // Pause the game
-    if (this.game) {
-      this.game.gameState.isPaused = true;
-    }
-
     return pauseMenu;
   }
 
   // Toggle pause menu visibility
   togglePauseMenu() {
-    if (!this.pauseMenu) {
-      this.createPauseMenu();
-      return;
-    }
+    this.game.togglePause();
+  }
 
-    if (this.pauseMenu.style.display === 'none') {
-      this.pauseMenu.style.display = 'block';
-      if (this.game) {
-        this.game.gameState.isPaused = true;
-      }
-    } else {
-      this.pauseMenu.style.display = 'none';
-      if (this.game) {
-        this.game.gameState.isPaused = false;
-      }
+  showPauseMenu() {
+    this.createPauseMenu().style.display = 'flex';
+  }
+
+  hidePauseMenu() {
+    if (this.pauseMenu) this.pauseMenu.style.display = 'none';
+  }
+
+  resetSessionUI() {
+    for (const timer of this.presentationTimers) clearTimeout(timer);
+    this.presentationTimers.clear();
+    for (const element of this.transientElements) element.remove();
+    this.transientElements.clear();
+    this.hidePauseMenu();
+    this.resultScreen?.remove();
+    this.resultScreen = null;
+    this.levelSelectMenu?.remove();
+    this.levelSelectMenu = null;
+    if (this.hudElements.gameOverDisplay) this.hudElements.gameOverDisplay.style.display = 'none';
+  }
+
+  presentationSchedule(callback, delay) {
+    const timer = setTimeout(() => { this.presentationTimers.delete(timer); callback(); }, delay);
+    this.presentationTimers.add(timer);
+  }
+
+  flash(color) {
+    const element = document.createElement('div');
+    Object.assign(element.style, { position: 'fixed', inset: '0', background: color,
+      pointerEvents: 'none', zIndex: '900' });
+    document.body.appendChild(element);
+    this.transientElements.add(element);
+    element.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 600, fill: 'forwards' });
+    this.presentationSchedule(() => { element.remove(); this.transientElements.delete(element); }, 600);
+  }
+
+  showResult(title, message, actions) {
+    this.resultScreen?.remove();
+    const overlay = document.createElement('div');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-label', title);
+    Object.assign(overlay.style, { position: 'fixed', inset: '0', zIndex: '1000',
+      background: 'rgba(0, 8, 20, 0.94)', display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center', gap: '18px', color: '#b9efff' });
+    const heading = document.createElement('h1');
+    heading.textContent = title;
+    const description = document.createElement('p');
+    description.textContent = message;
+    overlay.append(heading, description);
+    for (const [label, action] of actions) {
+      const button = document.createElement('button');
+      button.textContent = label;
+      Object.assign(button.style, { padding: '12px 28px', fontSize: '18px', cursor: 'pointer' });
+      button.addEventListener('click', action);
+      overlay.appendChild(button);
     }
+    this.resultScreen = overlay;
+    document.body.appendChild(overlay);
+  }
+
+  showCompletion(hasNext) {
+    const actions = [];
+    if (hasNext) actions.push(['NEXT MISSION', () => this.game.nextMission()]);
+    actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
+      ['SELECT MISSION', () => this.game.showLevelSelection()]);
+    this.showResult('MISSION COMPLETE', `Score: ${this.gameState.score} (includes 1,000 completion bonus)`, actions);
+  }
+
+  showSessionError(error) {
+    this.showResult('UNABLE TO CONTINUE', error.message || String(error), [
+      ['RETRY MISSION', () => this.game.restartLevel()], ['MAIN MENU', () => this.game.showMainMenu()],
+    ]);
   }
 
   updateHUD() {
     // Update health bar
     const healthPercent =
       (this.gameState.playerHealth / this.gameState.maxPlayerHealth) * 100;
+    if (healthPercent > 30) this.hudElements.healthBar.style.animation = '';
     this.hudElements.healthBar.style.width = `${healthPercent}%`;
     this.hudElements.healthPercentage.textContent = `${Math.floor(
       healthPercent
@@ -1375,10 +1424,12 @@ class UIManager {
 
     document.body.appendChild(messageElement);
 
-    setTimeout(() => {
+    this.transientElements.add(messageElement);
+    this.presentationSchedule(() => {
       messageElement.style.opacity = '0';
-      setTimeout(() => {
-        document.body.removeChild(messageElement);
+      this.presentationSchedule(() => {
+        messageElement.remove();
+        this.transientElements.delete(messageElement);
       }, 500);
     }, duration);
   }

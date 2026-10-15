@@ -1,6 +1,5 @@
 // Input Manager for handling keyboard and mouse inputs
 import * as THREE from 'three';
-import { checkPlayerObstacleCollision } from '../utils/collisionUtils.js';
 import { shakeCamera } from '../utils/effectsUtils.js';
 
 class InputManager {
@@ -27,6 +26,8 @@ class InputManager {
     this.onPointerlockChange = this.onPointerlockChange.bind(this);
     this.onPointerlockError = this.onPointerlockError.bind(this);
     this.clearKeys = this.clearKeys.bind(this);
+    this.onBlur = this.onBlur.bind(this);
+    this.onVisibilityChange = this.onVisibilityChange.bind(this);
   }
 
   // Initialize with canvas
@@ -38,7 +39,8 @@ class InputManager {
     document.addEventListener('keyup', this.onKeyUp);
     document.addEventListener('pointerlockchange', this.onPointerlockChange);
     document.addEventListener('pointerlockerror', this.onPointerlockError);
-    window.addEventListener('blur', this.clearKeys);
+    window.addEventListener('blur', this.onBlur);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
     this.canvas.addEventListener('click', this.onClick);
 
     return this;
@@ -48,7 +50,7 @@ class InputManager {
   onMouseMove(event) {
     if (
       document.pointerLockElement !== this.canvas ||
-      !this.gameState.isGameStarted || this.gameState.isPaused || this.gameState.isGameOver
+      this.gameState.session.phase !== 'playing'
     ) {
       return;
     }
@@ -80,7 +82,7 @@ class InputManager {
     ) {
       // Toggle pause state
       if (this.uiManager) {
-        this.uiManager.togglePauseMenu();
+        this.game.togglePause();
       }
     }
 
@@ -110,7 +112,7 @@ class InputManager {
 
   // Handle click - request pointer lock and fire projectile if appropriate
   onClick() {
-    if (!this.gameState.isGameStarted || this.gameState.isGameOver || this.gameState.isPaused) return;
+    if (this.gameState.session.phase !== 'playing') return;
     if (document.pointerLockElement !== this.canvas) {
       this.requestPointerLock();
       return;
@@ -129,12 +131,16 @@ class InputManager {
   }
 
   requestPointerLock() {
+    const generation = this.game?.session.id;
     if (document.pointerLockElement === this.canvas) return Promise.resolve(true);
     try {
       if (!this.canvas?.requestPointerLock) throw new Error('Pointer lock is unavailable');
       return Promise.resolve(this.canvas.requestPointerLock()).then(
         () => true,
-        () => { this.onPointerlockError(); return false; }
+        () => {
+          if (generation === this.game?.session.id) this.onPointerlockError();
+          return false;
+        }
       );
     } catch {
       this.onPointerlockError();
@@ -143,6 +149,9 @@ class InputManager {
   }
 
   onPointerlockError() {
+    if (this.game && this.game.session.phase !== 'playing') return;
+    if (performance.now() - (this.lastLockMessage ?? -Infinity) < 500) return;
+    this.lastLockMessage = performance.now();
     this.uiManager?.showMessage('Click the game view to capture mouse controls.', 2500, '#ffcc66');
   }
 
@@ -153,18 +162,33 @@ class InputManager {
   // Handle pointer lock change
   onPointerlockChange() {
     if (document.pointerLockElement === this.canvas) {
+      if (this.game && this.game.session.phase !== 'playing') {
+        this.game.releasePointerLock();
+        return;
+      }
+      this.wasPointerLocked = true;
       console.log('Pointer Lock active');
       document.addEventListener('mousemove', this.onMouseMove, false);
     } else {
+      const wasLocked = this.wasPointerLocked;
+      this.wasPointerLocked = false;
       this.clearKeys();
       console.log('Pointer Lock inactive');
       document.removeEventListener('mousemove', this.onMouseMove, false);
+      if (wasLocked) this.game?.pauseGame();
     }
   }
+
+  onBlur() {
+    this.clearKeys();
+    this.game?.pauseGame();
+  }
+
+  onVisibilityChange() { if (document.hidden) this.onBlur(); }
   // Update player movement based on key states
   updateMovement(delta) {
     // Skip if game not started or is over
-    if (!this.gameState.isGameStarted || this.gameState.isGameOver || this.gameState.isPaused) {
+    if (this.gameState.session.phase !== 'playing') {
       return;
     }
 
@@ -191,6 +215,7 @@ class InputManager {
     // (e.g., this.game.spaceship.group.rotation.z += ...)
   } // Provide feedback when player collides with an obstacle
   activateCollisionFeedback() {
+    if (this.gameState.session.phase !== 'playing') return;
     // Small screen shake for collision
     if (this.camera) {
       const shakeAnim = shakeCamera(this.camera, 0.3);
@@ -199,26 +224,7 @@ class InputManager {
       }
     }
 
-    // Visual feedback - slight flash
-    const flashEffect = document.createElement('div');
-    flashEffect.style.position = 'absolute';
-    flashEffect.style.top = '0';
-    flashEffect.style.left = '0';
-    flashEffect.style.width = '100%';
-    flashEffect.style.height = '100%';
-    flashEffect.style.backgroundColor = 'rgba(255, 255, 255, 0.15)';
-    flashEffect.style.pointerEvents = 'none';
-    flashEffect.style.zIndex = '999';
-    flashEffect.style.transition = 'opacity 0.2s ease-out';
-    document.body.appendChild(flashEffect);
-
-    // Fade out and remove
-    setTimeout(() => {
-      flashEffect.style.opacity = '0';
-      setTimeout(() => {
-        document.body.removeChild(flashEffect);
-      }, 200);
-    }, 50);
+    this.uiManager?.flash('rgba(255, 255, 255, 0.15)');
   }
 
   // Cleanup resources
@@ -227,7 +233,8 @@ class InputManager {
     document.removeEventListener('keyup', this.onKeyUp);
     document.removeEventListener('pointerlockchange', this.onPointerlockChange);
     document.removeEventListener('pointerlockerror', this.onPointerlockError);
-    window.removeEventListener('blur', this.clearKeys);
+    window.removeEventListener('blur', this.onBlur);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
     document.removeEventListener('mousemove', this.onMouseMove);
     if (this.canvas) {
       this.canvas.removeEventListener('click', this.onClick);

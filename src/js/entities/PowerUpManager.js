@@ -27,14 +27,9 @@ export const powerupTypes = [
     duration: 10000,
     effect: function (gameState, uiManager) {
       // Boost player speed
-      gameState.speedMultiplier = 1.5;
+      gameState.applyTimedModifier('speedMultiplier', 1.5, 10000, 'Speed Boost Ended');
       uiManager.showMessage('Speed Boost!', 2000, '#00ffff');
 
-      // Reset after duration
-      setTimeout(() => {
-        gameState.speedMultiplier = 1.0;
-        uiManager.showMessage('Speed Boost Ended', 1500, '#00ffff');
-      }, 10000);
     },
     message: 'Speed Boost!',
   },
@@ -45,14 +40,9 @@ export const powerupTypes = [
     duration: 15000,
     effect: function (gameState, uiManager) {
       // Upgrade weapon power
-      gameState.weaponPower = 2;
+      gameState.applyTimedModifier('weaponPower', 2, 15000, 'Weapon Upgrade Ended');
       uiManager.showMessage('Weapons Upgraded!', 2000, '#ffff00');
 
-      // Reset after duration
-      setTimeout(() => {
-        gameState.weaponPower = 1;
-        uiManager.showMessage('Weapon Upgrade Ended', 1500, '#ffff00');
-      }, 15000);
     },
     message: 'Weapons Upgraded!',
   },
@@ -200,6 +190,8 @@ class PowerUpManager {
     this.uiManager = uiManager;
     this.levelManager = levelManager; // Add this
     this.powerups = [];
+    this.spawnedIds = new Set();
+    this.nextId = 0;
   }
 
   // Create a power-up mesh
@@ -251,7 +243,7 @@ class PowerUpManager {
   }
 
   // Spawn a power-up at a position
-  spawnPowerup(position, typeName = null) {
+  spawnPowerup(position, typeName = null, { persistent = false } = {}) {
     // If no specific type requested, choose randomly
     const powerupType = typeName
       ? powerupTypes.find((t) => t.name === typeName)
@@ -265,73 +257,45 @@ class PowerUpManager {
     powerupMesh.position.copy(position);
 
     // Add unique identifier to mesh
-    powerupMesh.userData.powerupId = Date.now() + Math.random();
+    powerupMesh.userData.powerupId = `${this.gameState?.session.id ?? 0}:pickup:${++this.nextId}`;
 
     const powerup = {
       mesh: powerupMesh,
       type: powerupType,
       id: powerupMesh.userData.powerupId,
       collisionRadius: powerupType.size * 0.7,
+      age: 0,
+      lifetime: persistent ? Infinity : 20,
+      baseY: position.y,
+      rotationSpeed: 0.5 + Math.random() * 0.5,
+      floatFrequency: 0.5 + Math.random() * 0.5,
+      floatAmplitude: 0.1 + Math.random() * 0.1,
     };
 
     this.powerups.push(powerup);
     this.scene.add(powerupMesh);
 
-    // Animate the power-up
-    this.animatePowerup(powerup);
-
-    // Remove automatically after 20 seconds
-    setTimeout(() => {
-      this.removePowerup(powerup.id);
-    }, 20000);
-
     return powerup;
   }
 
-  // Animate power-up floating and rotating
-  animatePowerup(powerup) {
-    // Create unique animation values for this powerup
-    const rotationSpeed = 0.5 + Math.random() * 0.5;
-    const floatFrequency = 0.5 + Math.random() * 0.5;
-    const floatAmplitude = 0.1 + Math.random() * 0.1;
-    const startTime = performance.now();
-    const initialY = powerup.mesh.position.y;
-
-    // Create animation function
-    function animate(time) {
-      if (!powerup.mesh) return; // Stop if power-up was removed
-
-      const elapsedSeconds = (time - startTime) / 1000;
-
-      // Rotate the mesh
-      powerup.mesh.rotation.y += rotationSpeed * 0.01;
-
-      // Float up and down
-      const yOffset =
-        Math.sin(elapsedSeconds * floatFrequency) * floatAmplitude;
-      powerup.mesh.position.y = initialY + yOffset;
-
-      // Also rotate the ring differently
-      if (powerup.mesh.children.length > 1) {
-        powerup.mesh.children[1].rotation.x += rotationSpeed * 0.007;
-        powerup.mesh.children[1].rotation.z += rotationSpeed * 0.005;
-      }
-
-      // Schedule the next update
-      powerup.animationId = requestAnimationFrame(animate);
-    }
-
-    // Start animation
-    powerup.animationId = requestAnimationFrame(animate);
-  }
-
   // Update power-ups, check for collisions with player
-  update() {
+  update(delta = 0) {
+    if (this.gameState?.session.phase !== 'playing') return;
+    if (!this.levelManager?.isEndless) this.spawnPredefinedPowerUps();
     const playerPosition = new THREE.Vector3();
     this.camera.getWorldPosition(playerPosition);
 
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const powerup = this.powerups[i];
+      powerup.age += delta;
+      if (powerup.age >= powerup.lifetime) {
+        this.removePowerup(powerup.id);
+        continue;
+      }
+      powerup.mesh.rotation.y += powerup.rotationSpeed * delta;
+      powerup.mesh.position.y = powerup.baseY + Math.sin(powerup.age * powerup.floatFrequency) * powerup.floatAmplitude;
+      powerup.mesh.children[1].rotation.x += powerup.rotationSpeed * delta * 0.7;
+      powerup.mesh.children[1].rotation.z += powerup.rotationSpeed * delta * 0.5;
       const distance = powerup.mesh.position.distanceTo(playerPosition);
 
       // Check collision with player
@@ -356,11 +320,6 @@ class PowerUpManager {
     const index = this.powerups.findIndex((p) => p.id === id);
     if (index !== -1) {
       const powerup = this.powerups[index];
-
-      // Cancel animation
-      if (powerup.animationId) {
-        cancelAnimationFrame(powerup.animationId);
-      }
 
       // Remove from scene and dispose resources
       this.scene.remove(powerup.mesh);
@@ -407,16 +366,17 @@ class PowerUpManager {
 
     const level = this.levelManager.currentLevel;
 
-    for (const spawnPoint of level.powerupSpawns) {
+    for (const [index, spawnPoint] of level.powerupSpawns.entries()) {
+      const spawnId = spawnPoint.id ?? `pickup:${index}`;
       // Check if power-up should be visible now (based on player position)
       const distanceToPlayer = spawnPoint.position.distanceTo(
         this.camera.position
       );
 
       // Only spawn if within reasonable distance and not already spawned
-      if (distanceToPlayer < 50 && !spawnPoint.spawned) {
-        this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType);
-        spawnPoint.spawned = true;
+      if (distanceToPlayer < 50 && !this.spawnedIds.has(spawnId)) {
+        this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType, { persistent: true });
+        this.spawnedIds.add(spawnId);
       }
     }
   }
@@ -426,8 +386,14 @@ class PowerUpManager {
     for (const powerUp of this.powerups) {
       if (powerUp && powerUp.mesh && powerUp.mesh.position) {
         powerUp.mesh.position.add(offset);
+        powerUp.baseY += offset.y;
       }
     }
+  }
+
+  clear() {
+    for (const powerup of [...this.powerups]) this.removePowerup(powerup.id);
+    this.spawnedIds.clear();
   }
 }
 

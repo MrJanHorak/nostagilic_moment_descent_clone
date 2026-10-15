@@ -1,221 +1,79 @@
-// filepath: c:\Users\janny\development\2ndAIGameAttempt\src\js\main.js
-// Main game file
 import * as THREE from 'three';
-
-// Import core modules
-import AudioManager from '../js/core/AudioManager.js';
-import GameState from '../js/core/GameState.js';
-import InputManager from '../js/core/InputManager.js';
-import LevelManager from '../js/core/LevelManager.js';
-
-// Import entities
-import Spaceship from '../js/entities/Spaceship.js';
-import ProjectileManager from '../js/entities/ProjectileManager.js';
-import EnemyManager from '../js/entities/EnemyManager.js';
-import PowerUpManager from '../js/entities/PowerUpManager.js';
-
-// Import utils
-import {
-  setupRecursiveDetection,
-  detectCircularReferences,
-  validateSceneGeometries,
-  setupSceneProtection,
-} from '../js/utils/debugUtils.js';
-import {
-  createCaveParticles,
-  updateCaveParticles,
-  shakeCamera,
-} from '../js/utils/effectsUtils.js';
-import { checkPlayerObstacleCollision } from '../js/utils/collisionUtils.js';
-
-// Import UI
-import UIManager from '../js/ui/UIManager.js';
+import AudioManager from './core/AudioManager.js';
+import GameState from './core/GameState.js';
+import InputManager from './core/InputManager.js';
+import LevelManager from './core/LevelManager.js';
+import Spaceship from './entities/Spaceship.js';
+import ProjectileManager from './entities/ProjectileManager.js';
+import EnemyManager from './entities/EnemyManager.js';
+import PowerUpManager from './entities/PowerUpManager.js';
+import UIManager from './ui/UIManager.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
+import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
+import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 
-// Initialize the game
 export default class Game {
   constructor() {
-    // Core systems
     this.clock = new THREE.Clock();
     this.scene = new THREE.Scene();
-    this.camera = null;
-    this.renderer = null;
-    this.canvas = null;
-
-    // Managers
     this.audioManager = new AudioManager();
     this.gameState = new GameState();
-    this.uiManager = null;
-    this.inputManager = null;
-    this.levelManager = null;
-    this.projectileManager = null;
-    this.enemyManager = null;
-    this.powerUpManager = null;
-
-    // Game entities
-    this.spaceship = null;
-    this.caveParticles = null;
-
-    // Game state tracking
+    this.session = this.gameState.session;
     this.activeAnimations = [];
-    this.lastEnemySpawnTime = 0;
-    this.enemySpawnInterval = 5000; // ms between enemy spawns
-    this.lastPowerupSpawnTime = 0;
-
-    // Add level selection properties
     this.currentLevelIndex = 0;
     this.isEndlessMode = true;
-    this.diagnostics = new RuntimeDiagnostics(
-      !!import.meta.env?.DEV &&
-      new URLSearchParams(globalThis.window?.location?.search).has('smoke')
-    );
+    this.powerupSpawnInterval = 15000;
+    this.diagnostics = new RuntimeDiagnostics(!!import.meta.env?.DEV &&
+      new URLSearchParams(globalThis.window?.location?.search).has('smoke'));
   }
 
   async init() {
-    console.log('Starting game initialization');
     try {
-      // Set up debugging utilities
-      if (import.meta.env?.DEV) setupRecursiveDetection();
-
-      // Initialize scene
       this.initScene();
-      console.log('Scene initialized');
-
       this.initCamera();
-      console.log('Camera initialized');
-
       this.initRenderer();
-      console.log('Renderer initialized'); // Set up scene protection (prevent circular references)
-      if (import.meta.env?.DEV) setupSceneProtection(this.scene, this.camera);
-
-      // Initialize managers
       this.uiManager = new UIManager(this.gameState, this.audioManager);
       this.uiManager.game = this;
-      this.inputManager = new InputManager(
-        this.camera,
-        null,
-        this.gameState,
-        this.uiManager
-      ).init(this.canvas);
-      // Connect the input manager with the game
-      this.inputManager.game = this;
-
       this.levelManager = new LevelManager(this.scene, this.camera);
-      this.projectileManager = new ProjectileManager(
-        this.scene,
-        this.camera,
-        this.audioManager
-      );
+      this.projectileManager = new ProjectileManager(this.scene, this.camera, this.audioManager, this.session);
       this.projectileManager.setCanvas(this.canvas);
-      this.powerUpManager = new PowerUpManager(
-        this.scene,
-        this.camera,
-        this.gameState,
-        this.audioManager,
-        this.uiManager,
-        this.levelManager
-      );
-
-      this.enemyManager = new EnemyManager(
-        this.scene,
-        this.camera,
-        this.gameState,
-        this.audioManager,
-        this.levelManager
-      );
-
-      // Connect EnemyManager to PowerUpManager so it can drop weapon pickups
+      this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager).init(this.canvas);
+      this.inputManager.game = this;
+      this.powerUpManager = new PowerUpManager(this.scene, this.camera, this.gameState, this.audioManager, this.uiManager, this.levelManager);
+      this.enemyManager = new EnemyManager(this.scene, this.camera, this.gameState, this.audioManager, this.levelManager);
       this.enemyManager.powerUpManager = this.powerUpManager;
-
-      // Give the LevelManager a reference to the EnemyManager
-      if (this.levelManager) {
-        this.levelManager.enemyManager = this.enemyManager;
-      }
-
-      // Connect the input manager with the projectile manager
-      this.inputManager.projectileManager = this.projectileManager; // Set up gameState references
-      this.gameState.setReferences(
-        this.camera,
-        this.audioManager,
-        this.uiManager,
-        this.activeAnimations,
-        this
-      );
-
-      // Initialize lighting
+      this.gameState.setReferences(this.camera, this.audioManager, this.uiManager, this.activeAnimations, this);
       this.initLighting();
-
-      // Create the player's spaceship
       this.spaceship = new Spaceship();
       this.spaceship.attachToCamera(this.camera);
-
-      // Initialize cave dust particles
-      this.caveParticles = createCaveParticles(this.scene); // Initialize level manager first
+      this.caveParticles = createCaveParticles(this.scene);
       await this.levelManager.initMaterials();
-
-      // Select mode: endless or level-based
-      if (this.isEndlessMode) {
-        this.levelManager.isEndless = true;
-        this.levelManager.initLevel();
-      } else {
-        this.levelManager.isEndless = false;
-        this.levelManager.loadLevel(this.currentLevelIndex);
-      }
-
-      // Set enemy manager to use level segments
-      this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
-
-      // Every start screen owns its listeners, including screens recreated by Back.
-      if (!this.uiManager.createStartScreen()) {
-        throw new Error('Unable to create the start screen');
-      }
-      // Initialize the weapon UI if it exists
-      if (this.gameState && this.uiManager) {
-        this.gameState.resetWeaponInventory();
-        this.uiManager.updateWeaponUI();
-      }
-
-      // Start animation loop
+      this.levelManager.initLevel(); // Static background preview; no live session yet.
+      if (!this.uiManager.createStartScreen()) throw new Error('Unable to create the start screen');
       this.animate();
-
-      // Run diagnostics
-      console.log('Running initial scene diagnostics...');
-      detectCircularReferences(this.scene);
-      validateSceneGeometries(this.scene);
-      console.log('Initial scene diagnostics complete.');
     } catch (error) {
       this.diagnostics.reportError(error, 'Initialization');
-      console.error('Game initialization failed:', error);
       throw error;
     }
   }
 
   initScene() {
-    this.scene = new THREE.Scene();
-    // Add atmospheric fog to enhance cave feel
     this.scene.fog = new THREE.FogExp2(0x000511, 0.03);
-    this.scene.background = new THREE.Color(0x000511); // Dark blue background
+    this.scene.background = new THREE.Color(0x000511);
   }
 
   initCamera() {
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
+    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.z = 5;
-    this.camera.rotation.order = 'YXZ'; // To avoid gimbal lock issues with rotations
-    this.scene.add(this.camera); // Add camera to scene
+    this.camera.rotation.order = 'YXZ';
+    this.scene.add(this.camera);
   }
 
   initRenderer() {
     this.renderer = new THREE.WebGLRenderer();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(this.renderer.domElement);
     this.canvas = this.renderer.domElement;
-
-    // Handle window resizing
+    document.body.appendChild(this.canvas);
     window.addEventListener('resize', () => {
       this.camera.aspect = window.innerWidth / window.innerHeight;
       this.camera.updateProjectionMatrix();
@@ -224,75 +82,23 @@ export default class Game {
   }
 
   initLighting() {
-    // Ambient light
-    const ambientLight = new THREE.AmbientLight(0x333333, 0.3); // Dimmer ambient light for cave feel
-    this.scene.add(ambientLight);
-
-    // Main directional light (softer)
-    const directionalLight = new THREE.DirectionalLight(0xcccccc, 0.5);
-    directionalLight.position.set(5, 10, 7.5);
-    this.scene.add(directionalLight);
-
-    // Add spotlight attached to player for flashlight effect
-    const spotlight = new THREE.SpotLight(
-      0xffffff,
-      2.0,
-      30,
-      Math.PI / 5,
-      0.5,
-      1
-    );
-    spotlight.position.set(0, 0, 0); // Will be updated to follow camera
-    this.camera.add(spotlight);
-    spotlight.target.position.set(0, 0, -1);
-    this.camera.add(spotlight.target);
-
-    // Add a secondary wider light for better tunnel visibility
-    const wideLight = new THREE.SpotLight(
-      0xaaccff,
-      1.0,
-      20,
-      Math.PI / 3,
-      0.8,
-      1
-    );
-    wideLight.position.set(0, 0, 0);
-    this.camera.add(wideLight);
-    wideLight.target.position.set(0, 0, -1);
-    this.camera.add(wideLight.target);
-  }
-
-  // Create bump sound for collisions
-  createBumpSound() {
-    if (this.audioManager && this.audioManager.initialized) {
-      this.audioManager.createSound('bump', () => {
-        // Simple bump/collision sound
-        const ctx = this.audioManager.context;
-        const duration = 0.15;
-        const buffer = ctx.createBuffer(
-          1,
-          ctx.sampleRate * duration,
-          ctx.sampleRate
-        );
-        const data = buffer.getChannelData(0);
-
-        for (let i = 0; i < data.length; i++) {
-          const t = i / ctx.sampleRate;
-          data[i] =
-            Math.sin(2 * Math.PI * 150 * t) *
-            (1 - t / duration) *
-            (Math.random() * 0.2 + 0.8);
-        }
-
-        return buffer;
-      });
+    this.scene.add(new THREE.AmbientLight(0x333333, 0.3));
+    const directional = new THREE.DirectionalLight(0xcccccc, 0.5);
+    directional.position.set(5, 10, 7.5);
+    this.scene.add(directional);
+    for (const [color, intensity, distance, angle, penumbra] of [
+      [0xffffff, 2, 30, Math.PI / 5, 0.5], [0xaaccff, 1, 20, Math.PI / 3, 0.8],
+    ]) {
+      const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, 1);
+      light.target.position.set(0, 0, -1);
+      this.camera.add(light, light.target);
     }
   }
+
   initializeAudio() {
     if (!this.audioManager.init()) return;
-
     for (const [id, frequency, duration] of [
-      ['empty', 80, 0.05], ['weaponSwitch', 1000, 0.15], ['hit', 500, 0.1],
+      ['empty', 80, 0.05], ['weaponSwitch', 1000, 0.15], ['hit', 500, 0.1], ['bump', 150, 0.15],
     ]) {
       if (this.audioManager.sounds[id]?.buffer) continue;
       this.audioManager.createSound(id, (ctx) => {
@@ -305,353 +111,213 @@ export default class Game {
         return buffer;
       });
     }
-    if (!this.audioManager.sounds.bump?.buffer) this.createBumpSound();
-
-    // Stay inside the user gesture; no delayed playback can leak into a later run.
-    if (this.audioManager.context.state === 'suspended') {
-      this.audioManager.context.resume().catch((error) => {
-        console.warn('Audio could not resume; continuing without sound.', error);
-      });
-    }
-    this.audioManager.stopSound('backgroundMusic');
-    this.audioManager.stopSound('engine');
+    this.audioManager.context.resume().catch((error) => console.warn('Audio could not resume.', error));
     this.audioManager.playSound('backgroundMusic', { isMusic: true, loop: true, volume: 0.4 });
     this.audioManager.playSound('engine', { loop: true, volume: 0.2 });
   }
 
-  startGame() {
-    // Sound is optional: a device/autoplay failure must not strand the start menu.
-    try {
-      this.initializeAudio();
-    } catch (error) {
-      this.audioManager.stopAllSounds();
-      console.warn('Audio setup failed; continuing without sound.', error);
-    }
-    this.gameState.resetWeaponInventory();
-    this.gameState.isGameOver = false;
-    this.gameState.isPaused = false;
-    this.gameState.isGameStarted = true;
-    this.inputManager.clearKeys();
-    this.uiManager.hideStartScreen();
-    this.uiManager.hideLevelSelect();
-    this.inputManager.requestPointerLock();
-  }
-  animate() {
-    try {
-      requestAnimationFrame(() => this.animate());
-      if (!this.clock) {
-        console.warn('Clock is undefined in animate loop');
-        return;
-      }
-
-      const rawDelta = this.clock.getDelta();
-      this.diagnostics.recordFrame(this.gameState);
-      // Clamp delta to prevent large spikes that cause performance issues
-      const delta = Math.min(rawDelta, 0.0333); // Cap at ~30 FPS equivalent (1/30 = 0.0333)
-
-      // Performance monitoring (update every 60 frames)
-      if (!this.frameCount) this.frameCount = 0;
-      if (!this.lastFPSCheck) this.lastFPSCheck = performance.now();
-
-      this.frameCount++;
-      if (this.frameCount % 60 === 0) {
-        const now = performance.now();
-        const fps = Math.round(60000 / (now - this.lastFPSCheck));
-        this.lastFPSCheck = now;
-
-        // Log performance if FPS is low
-        if (fps < 45) {
-          console.warn(`Low FPS detected: ${fps} FPS (target: 60)`);
-        }
-      }
-
-      // Make sure activeAnimations exists
-      if (!this.activeAnimations) {
-        this.activeAnimations = [];
-        console.warn('Initialized missing activeAnimations array');
-      }
-
-      // Update active animations
-      for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
-        try {
-          // Check if the animation function exists
-          if (typeof this.activeAnimations[i] === 'function') {
-            const isComplete = this.activeAnimations[i](delta);
-            if (isComplete) {
-              this.activeAnimations.splice(i, 1);
-            }
-          } else {
-            // Remove invalid animation entries
-            console.warn(
-              'Invalid animation function found, removing from queue'
-            );
-            this.activeAnimations.splice(i, 1);
-          }
-        } catch (error) {
-          console.warn('Error in animation function:', error);
-          this.activeAnimations.splice(i, 1);
-        }
-      } // Skip most updates if game not started yet or is paused
-      if (
-        this.gameState &&
-        this.gameState.isGameStarted &&
-        !this.gameState.isGameOver &&
-        !this.gameState.isPaused
-      ) {
-        try {
-          // === Update player movement FIRST ===
-          if (this.inputManager) {
-            this.inputManager.updateMovement(delta);
-          }
-
-          // === Player movement and collision ===
-          if (this.spaceship && this.levelManager) {
-            // Calculate intended movement (velocity * delta)
-            const intendedMove = this.spaceship.velocity
-              .clone()
-              .multiplyScalar(delta);
-            // Check for collision (still use ship's group for collision)
-            const collision = checkPlayerObstacleCollision(
-              this.spaceship.group,
-              this.levelManager.obstacles,
-              intendedMove,
-              this.levelManager.tunnelWidth,
-              this.levelManager.tunnelHeight
-            );
-            if (!collision) {
-              // Instead of moving the ship, move the tunnel/obstacles/enemies in the opposite direction
-              this.levelManager.offsetLevel(intendedMove.clone().negate());
-              if (this.enemyManager)
-                this.enemyManager.offsetEnemies(intendedMove.clone().negate());
-              if (this.projectileManager)
-                this.projectileManager.offsetProjectiles(
-                  intendedMove.clone().negate()
-                );
-              if (this.powerUpManager)
-                this.powerUpManager.offsetPowerUps(
-                  intendedMove.clone().negate()
-                ); // Move cave particles using batch operation
-              if (this.caveParticles && intendedMove.z !== 0) {
-                this.caveParticles.position.z -= intendedMove.z;
-              }
-            } else {
-              // Collision: stop velocity in that direction
-              this.spaceship.velocity.set(0, 0, 0);
-              // Play bump sound if available
-              if (this.audioManager) {
-                this.audioManager.playSound('bump');
-              }
-            }
-          }
-
-          // Update level
-          if (this.levelManager) {
-            this.levelManager.updateLevel();
-          }
-
-          // Update the enemy manager's reference to level segments
-          if (this.enemyManager && this.levelManager) {
-            const segments = this.levelManager.getLevelSegments();
-            if (segments) {
-              this.enemyManager.setLevelSegments(segments);
-            }
-          }
-
-          // Update projectiles
-          if (this.projectileManager) {
-            this.projectileManager.updateProjectiles(delta);
-          }
-
-          // Update enemies
-          if (this.enemyManager && this.projectileManager) {
-            const projectiles = this.projectileManager.getProjectiles();
-            if (projectiles) {
-              this.enemyManager.updateEnemies(delta, projectiles);
-            }
-          }
-
-          // Update power-ups
-          if (this.powerUpManager) {
-            this.powerUpManager.update();
-          } // Update particles (reduced frequency for performance)
-          if (this.caveParticles) {
-            if (!this.lastParticleUpdate) this.lastParticleUpdate = 0;
-            const currentTime = performance.now();
-
-            // Update particles every 50ms instead of every frame
-            if (currentTime - this.lastParticleUpdate > 50) {
-              updateCaveParticles(this.caveParticles, delta);
-              this.lastParticleUpdate = currentTime;
-            }
-          }
-          const currentTime = Date.now();
-
-          // Use level blueprint enemy spawns or random spawns depending on mode
-          if (this.isEndlessMode) {
-            // Spawn enemies periodically in endless mode
-            if (
-              this.lastEnemySpawnTime !== undefined &&
-              this.enemySpawnInterval !== undefined &&
-              currentTime - this.lastEnemySpawnTime > this.enemySpawnInterval
-            ) {
-              if (this.enemyManager && this.levelManager) {
-                const segmentLength = this.levelManager.getSegmentLength();
-                if (segmentLength !== undefined) {
-                  this.enemyManager.spawnEnemiesInTunnel(segmentLength);
-                }
-              }
-
-              this.lastEnemySpawnTime = currentTime;
-
-              // Gradually decrease spawn interval (increase difficulty)
-              this.enemySpawnInterval = Math.max(
-                2000,
-                this.enemySpawnInterval - 50
-              );
-            }
-
-            // Spawn powerups periodically in endless mode
-            if (
-              this.lastPowerupSpawnTime !== undefined &&
-              this.powerupSpawnInterval !== undefined &&
-              currentTime - this.lastPowerupSpawnTime >
-                this.powerupSpawnInterval
-            ) {
-              if (this.powerUpManager) {
-                this.powerUpManager.spawnRandomPowerup();
-              }
-
-              this.lastPowerupSpawnTime = currentTime;
-            }
-          } else {
-            // Use predefined spawn points in level-based mode
-            if (this.enemyManager) {
-              this.enemyManager.spawnPredefinedEnemies();
-            }
-
-            if (this.powerUpManager) {
-              this.powerUpManager.spawnPredefinedPowerUps();
-            }
-          }
-
-          // Update HUD
-          if (this.uiManager) {
-            this.uiManager.updateHUD();
-          }
-          this.diagnostics.recordUpdate();
-        } catch (error) {
-          this.diagnostics.reportError(error, 'Simulation');
-          console.error('Error in game update loop:', error);
-        }
-      }
-
-      // === Camera follows ship exactly ===
-      if (this.spaceship && this.camera) {
-        // Set camera position directly relative to ship
-        const cameraOffset = new THREE.Vector3(0, 2, 6); // y=up, z=back
-        const shipPos = this.spaceship.group.position;
-        this.camera.position.copy(shipPos.clone().add(cameraOffset));
-        this.camera.lookAt(shipPos);
-      }
-
-      // Render the scene
-      if (this.renderer && this.scene && this.camera) {
-        this.renderer.render(this.scene, this.camera);
-      }
-    } catch (error) {
-      this.diagnostics.reportError(error, 'Animation');
-      console.error('Critical error in animation loop:', error);
+  releasePointerLock() {
+    if (this.inputManager) this.inputManager.wasPointerLocked = false;
+    if (globalThis.document?.pointerLockElement) {
+      try { document.exitPointerLock(); } catch { /* Already released by browser. */ }
     }
   }
 
-  // Select a specific level
-  selectLevel(levelIndex) {
+  endSession() {
+    this.session.end(); // Invalidate callbacks before touching entities or UI.
+    this.inputManager?.clearKeys();
+    this.releasePointerLock();
+    this.audioManager.stopAllSounds();
+    this.audioManager.setPaused(false);
+    this.activeAnimations.length = 0;
+    this.enemyManager?.resetLevel();
+    this.projectileManager?.clear();
+    this.powerUpManager?.clear();
+    this.levelManager?.clearLevel();
+    this.uiManager?.resetSessionUI();
+  }
+
+  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex } = {}) {
+    if (!endless && (!Number.isInteger(levelIndex) || !this.levelManager?.levels[levelIndex])) {
+      throw new RangeError(`Unknown mission index: ${levelIndex}`);
+    }
+    this.endSession();
+    this.isEndlessMode = endless;
     this.currentLevelIndex = levelIndex;
-    this.isEndlessMode = false;
-
-    if (this.levelManager) {
-      this.levelManager.isEndless = false;
-      this.levelManager.loadLevel(levelIndex);
-    }
-  }
-
-  // Select endless mode
-  selectEndlessMode() {
-    this.isEndlessMode = true;
-
-    if (this.levelManager) {
-      this.levelManager.isEndless = true;
-      this.levelManager.clearLevel();
-      this.levelManager.initEndlessLevel();
-    }
-  }
-
-  // Restart current level
-  restartLevel() {
-    if (this.isEndlessMode) {
-      if (this.levelManager) {
-        this.levelManager.clearLevel();
-        this.levelManager.initEndlessLevel();
-      }
-    } else {
-      if (this.levelManager) {
-        this.levelManager.loadLevel(this.currentLevelIndex);
-      }
-    }
-
-    // Reset player position and state
-    this.camera.position.set(0, 0, 0);
-    this.camera.rotation.set(0, 0, 0);
-    this.gameState.playerHealth = this.gameState.maxPlayerHealth;
-
-    // Update HUD
-    if (this.uiManager) {
-      this.uiManager.updateHUD();
-    }
-  }
-
-  // Method to handle game restart from game over state
-  restartGame() {
-    // Reset game state
-    this.gameState.isGameOver = false;
-    this.gameState.score = 0;
-    this.gameState.playerHealth = this.gameState.maxPlayerHealth;
-
-    // Hide game over display
-    if (this.uiManager && this.uiManager.hudElements.gameOverDisplay) {
-      this.uiManager.hudElements.gameOverDisplay.style.display = 'none';
-    }
-
-    // Reset player position
-    if (this.camera) {
-      this.camera.position.set(0, 0, 0);
+    this.session.begin();
+    try {
+      this.gameState.resetForSession();
+      this.camera.position.set(0, 0, 5);
       this.camera.rotation.set(0, 0, 0);
-    }
-
-    // Restart current level
-    this.restartLevel();
-
-    // Update the UI
-    if (this.uiManager) {
+      this.spaceship.velocity.set(0, 0, 0);
+      this.spaceship.pitch = 0;
+      this.spaceship.group.rotation.set(0, 0, 0);
+      this.spaceship.group.position.set(0, -0.2, -1.5);
+      this.caveParticles?.position.set(0, 0, 0);
+      this.lastPowerupSpawnTime = 0;
+      this.lastParticleUpdate = 0;
+      this.levelManager.isEndless = endless;
+      if (endless) {
+        this.levelManager.currentLevel = null;
+        this.levelManager.initEndlessLevel();
+      } else this.levelManager.loadLevel(levelIndex);
+      this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
+      try { this.initializeAudio(); } catch (error) {
+        this.audioManager.stopAllSounds();
+        console.warn('Audio setup failed; continuing without sound.', error);
+      }
+      this.session.transition('playing');
+      this.clock.getDelta(); // Discard time spent in menus/loading.
+      this.uiManager.hideStartScreen();
+      this.uiManager.hideLevelSelect();
       this.uiManager.updateHUD();
+      this.uiManager.updateEnemyCount(0, endless ? 0 : this.levelManager.currentLevel.enemySpawns.length);
+      this.inputManager.requestPointerLock();
+      return true;
+    } catch (error) {
+      this.endSession();
+      this.session.begin();
+      this.session.transition('error');
+      this.diagnostics.reportError(error, 'Starting session');
+      this.uiManager?.showSessionError(error);
+      console.error('Unable to start session:', error);
+      return false;
     }
-
-    // Show message
-    this.uiManager.showMessage('Game Restarted!', 2000, '#00ff00');
   }
 
-  // Method to show level selection screen
+  startGame() { return this.startSession(); }
+  selectLevel(index) { return this.startSession({ endless: false, levelIndex: index }); }
+  selectEndlessMode() { return this.startSession({ endless: true }); }
+  restartLevel() { return this.startSession(); }
+  restartGame() { return this.startSession(); }
+
+  pauseGame() {
+    if (this.session.phase !== 'playing') return false;
+    this.session.transition('paused');
+    this.inputManager.clearKeys();
+    this.audioManager.setPaused(true);
+    this.releasePointerLock();
+    this.uiManager.showPauseMenu();
+    return true;
+  }
+
+  resumeGame() {
+    if (this.session.phase !== 'paused') return false;
+    this.session.transition('playing');
+    this.inputManager.clearKeys();
+    this.clock.getDelta();
+    this.audioManager.setPaused(false);
+    this.uiManager.hidePauseMenu();
+    this.inputManager.requestPointerLock();
+    return true;
+  }
+
+  togglePause() { return this.session.phase === 'paused' ? this.resumeGame() : this.pauseGame(); }
+
+  die() {
+    if (this.session.phase !== 'playing') return false;
+    this.session.transition('dead');
+    this.session.tasks.clear();
+    this.inputManager.clearKeys();
+    this.releasePointerLock();
+    this.audioManager.stopAllSounds();
+    this.audioManager.playSound('gameOver', { volume: 0.6 });
+    this.uiManager.updateHUD();
+    this.uiManager.showGameOver();
+    return true;
+  }
+
+  completeSession() {
+    if (this.session.phase !== 'playing' || this.isEndlessMode) return false;
+    this.session.transition('completed');
+    this.session.tasks.clear();
+    this.gameState.score += 1000;
+    this.inputManager.clearKeys();
+    this.releasePointerLock();
+    this.audioManager.stopAllSounds();
+    this.audioManager.playSound('powerup', { volume: 0.7 });
+    this.uiManager.updateHUD();
+    this.uiManager.showCompletion(this.currentLevelIndex + 1 < this.levelManager.levels.length);
+    return true;
+  }
+
+  nextMission() {
+    if (this.session.phase !== 'completed') return false;
+    const next = this.currentLevelIndex + 1;
+    if (next >= this.levelManager.levels.length) return false;
+    return this.startSession({ endless: false, levelIndex: next });
+  }
+
   showLevelSelection() {
-    // Hide game over or start screen if visible
-    if (this.uiManager.startScreen) {
-      this.uiManager.hideStartScreen();
-    }
-
-    if (this.uiManager.hudElements.gameOverDisplay) {
-      this.uiManager.hudElements.gameOverDisplay.style.display = 'none';
-    }
-
-    // Show level selection screen
+    this.endSession();
+    this.uiManager.hideStartScreen();
     this.uiManager.createLevelSelect(this);
+  }
+
+  showMainMenu() {
+    this.endSession();
+    this.uiManager.createStartScreen();
+  }
+
+  updateSimulation(delta) {
+    if (this.session.phase !== 'playing') return;
+    const generation = this.session.id;
+    this.session.advance(delta);
+    if (this.session.id !== generation || this.session.phase !== 'playing') return;
+    for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
+      if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
+    }
+    this.inputManager.updateMovement(delta);
+    // Legacy movement contract remains until the next player-root checkpoint.
+    const intended = this.spaceship.velocity.clone().multiplyScalar(delta);
+    const collision = checkPlayerObstacleCollision(this.spaceship.group, this.levelManager.obstacles,
+      intended, this.levelManager.tunnelWidth, this.levelManager.tunnelHeight);
+    if (collision) this.spaceship.velocity.set(0, 0, 0);
+    else {
+      const offset = intended.negate();
+      this.levelManager.offsetLevel(offset);
+      this.enemyManager.offsetEnemies(offset);
+      this.projectileManager.offsetProjectiles(offset);
+      this.powerUpManager.offsetPowerUps(offset);
+      if (this.caveParticles) this.caveParticles.position.z += offset.z;
+    }
+    this.levelManager.updateLevel();
+    this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
+    this.projectileManager.updateProjectiles(delta);
+    this.enemyManager.updateEnemies(delta, this.projectileManager.getProjectiles());
+    if (this.session.phase !== 'playing') return;
+    this.powerUpManager.update(delta);
+    if (this.caveParticles && this.session.timeMs - this.lastParticleUpdate >= 50) {
+      updateCaveParticles(this.caveParticles, (this.session.timeMs - this.lastParticleUpdate) / 1000);
+      this.lastParticleUpdate = this.session.timeMs;
+    }
+    if (this.isEndlessMode && this.session.timeMs - this.lastPowerupSpawnTime >= this.powerupSpawnInterval) {
+      this.powerUpManager.spawnRandomPowerup();
+      this.lastPowerupSpawnTime = this.session.timeMs;
+    }
+    this.uiManager.updateHUD();
+    this.diagnostics.recordUpdate();
+  }
+
+  animate() {
+    requestAnimationFrame(() => this.animate());
+    try {
+      this.diagnostics.recordFrame(this.gameState);
+      this.updateSimulation(Math.min(this.clock.getDelta(), 0.0333));
+      // The existing camera-follow bug is intentionally isolated from lifecycle work.
+      if (this.spaceship && this.camera) {
+        const shipPosition = this.spaceship.group.position;
+        this.camera.position.copy(shipPosition).add(new THREE.Vector3(0, 2, 6));
+        this.camera.lookAt(shipPosition);
+      }
+      if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
+    } catch (error) {
+      this.diagnostics.reportError(error, 'Simulation/render');
+      console.error('Game update failed:', error);
+      this.endSession();
+      this.session.begin();
+      this.session.transition('error');
+      this.uiManager?.showSessionError(error);
+    }
   }
 }

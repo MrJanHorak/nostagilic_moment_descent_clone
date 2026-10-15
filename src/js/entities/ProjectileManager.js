@@ -1,11 +1,14 @@
 // Projectile system
 import * as THREE from 'three';
+import disposeObject from '../utils/disposeObject.js';
 
 class ProjectileManager {
-  constructor(scene, camera, audioManager) {
+  constructor(scene, camera, audioManager, session = null) {
     this.scene = scene;
     this.camera = camera;
     this.audioManager = audioManager;
+    this.session = session;
+    this.elapsedMs = 0;
     this.projectiles = [];
     this.enemyProjectiles = [];
 
@@ -109,7 +112,8 @@ class ProjectileManager {
       unstable: unstable,
       penetrating: penetrating,
       acceleration: acceleration,
-      createdAt: Date.now(),
+      createdAt: this.now(),
+      ownerManager: this,
       light: light,
     };
 
@@ -131,10 +135,6 @@ class ProjectileManager {
 
     this.projectiles.push(projectileData);
     this.scene.add(projectile);
-
-    // Set auto-cleanup timeout
-    const lifetime = type === 'missile' || type === 'bomb' ? 5000 : 3000;
-    setTimeout(() => this.removeProjectile(projectileData), lifetime);
 
     return projectileData;
   }
@@ -222,6 +222,7 @@ class ProjectileManager {
       !this.canvas ||
       document.pointerLockElement !== this.canvas ||
       gameState.isGameOver ||
+      gameState.session.phase !== 'playing' ||
       !gameState.isGameStarted
     )
       return;
@@ -460,7 +461,7 @@ class ProjectileManager {
       type: projectileType,
       power: 10,
       life: 3000,
-      timestamp: Date.now(),
+      timestamp: this.now(),
     };
 
     // Add to scene and projectiles array
@@ -475,27 +476,17 @@ class ProjectileManager {
     const index = this.projectiles.indexOf(projectileData);
     if (index === -1) return;
 
-    // Remove from scene
-    this.scene.remove(projectileData.mesh);
-    if (projectileData.trail) {
-      this.scene.remove(projectileData.trail);
-    }
-
-    // Dispose geometries and materials
-    projectileData.mesh.geometry.dispose();
-    projectileData.mesh.material.dispose();
-
-    if (projectileData.trail) {
-      projectileData.trail.geometry.dispose();
-      projectileData.trail.material.dispose();
-    }
+    disposeObject(projectileData.mesh, new Set(Object.values(this.projectileGeometries)));
+    disposeObject(projectileData.trail);
 
     // Remove from projectiles array
     this.projectiles.splice(index, 1);
   }
   // Update projectiles - now handling special behaviors like gravity, guided, etc.
   updateProjectiles(delta, camera, gameState, effectsManager) {
-    const currentTime = Date.now();
+    if (this.session && this.session.phase !== 'playing') return;
+    if (!this.session) this.elapsedMs += delta * 1000;
+    const currentTime = this.now();
 
     // Process player projectiles
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
@@ -707,26 +698,8 @@ class ProjectileManager {
     const projectile = this.enemyProjectiles[index];
     if (!projectile) return;
 
-    // Remove mesh from scene
-    if (projectile.mesh && projectile.mesh.parent) {
-      projectile.mesh.parent.remove(projectile.mesh);
-    }
-
-    // Remove trail if it exists
-    if (projectile.trail && projectile.trail.parent) {
-      projectile.trail.parent.remove(projectile.trail);
-    }
-
-    // Dispose resources
-    if (projectile.mesh) {
-      if (projectile.mesh.geometry) projectile.mesh.geometry.dispose();
-      if (projectile.mesh.material) projectile.mesh.material.dispose();
-    }
-
-    if (projectile.trail) {
-      if (projectile.trail.geometry) projectile.trail.geometry.dispose();
-      if (projectile.trail.material) projectile.trail.material.dispose();
-    }
+    disposeObject(projectile.mesh, new Set(Object.values(this.projectileGeometries)));
+    disposeObject(projectile.trail);
 
     // Remove from array
     this.enemyProjectiles.splice(index, 1);
@@ -745,6 +718,14 @@ class ProjectileManager {
   // Add getter method to expose projectiles array to other systems
   getProjectiles() {
     return this.projectiles;
+  }
+
+  now() { return this.session?.timeMs ?? this.elapsedMs; }
+
+  clear() {
+    for (const projectile of [...this.projectiles]) this.removeProjectile(projectile);
+    this.clearEnemyProjectiles();
+    this.elapsedMs = 0;
   }
 
   // Move all projectiles by offset (Vector3)
