@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** The [objective/extraction checkpoint](progress/M1_MISSION.md) turns the combat fixture into **Arena Escape**, with two required drones, a locked/ready exit, finite pulse ammo, authored repair/refill pickups and clean combat-versus-cleanup events. All 89 tests and the production build pass. A production keyboard playthrough verified completion, replay, enemy-fire death and reboot without game console errors. First-work-queue items 1-8 are implemented for the finite mission; legacy geometry remains unrepaired. M1 still needs regular-browser captured-mouse/inverted-flight acceptance and handling/readability tuning. The next engineering checkpoint is item 9: dependency/runtime baseline and CI, followed by measured resource/performance checks before M3 shared level data.
+**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission, including objective/exit, pickups and reset invariants. Its keyboard production win/loss/reboot flow passed. **M1 acceptance remains open** for captured-mouse controls, inverted return flight and handling/readability; see the [explicit acceptance checklist](M1_ACCEPTANCE.md). The first [M2 toolchain checkpoint](TOOLCHAIN.md) pins Node 24.22.0/npm 11.21.1, patches Vite and transitive dependencies to zero known audit findings, and adds Windows/Linux CI. Clean install, all 89 tests and production build pass locally with the pinned runtime; hosted CI is not yet verified. Queue items 1-8 are implemented for the finite mission; item 9 has its initial dependency/checks baseline. Next: browser smoke automation and measured resource/performance checks, then M3 shared level data. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -24,6 +24,8 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M1 — Get one mission functional
 
+**Current status:** implementation delivered for Arena Escape; acceptance open. The [acceptance record](M1_ACCEPTANCE.md) lists passed evidence and the remaining hands-on checks. Do not mark this milestone complete merely because M2 toolchain work has started.
+
 **Deliverable:** a short graybox mission, playable from menu to exit, with unrestricted orientation, solid boundaries, pulse fire, two enemy behaviors, health/ammo pickup, loss and win states, and reliable restart. Use a fixed finite environment; defer endless streaming.
 
 1. **Capture the baseline and define the control contract (4–6 hours).** Preserve current output/evidence. Write down first-person camera choice, local axes, player radius, speed/acceleration/damping, quaternion orientation, input semantics, and pause behavior. Add a minimal browser smoke fixture and a developer-only error display. Initially use a supported test runner or Node assertions for pure modules; no large framework is required.
@@ -44,6 +46,8 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 **Boundary:** do not attempt to finish all four old levels here. They are reference content; rebuilding one small reliable space exposes the architecture problems more efficiently.
 
 ## M2 — Update the project and make regression visible
+
+**Current status:** first [runtime/dependency/CI checkpoint](TOOLCHAIN.md) implemented and locally verified. Hosted CI, browser automation, profiling, usability and broader cleanup remain; M2 is not complete.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 

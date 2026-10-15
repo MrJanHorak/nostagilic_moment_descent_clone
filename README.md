@@ -1,6 +1,6 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 15, 2026):** The new [Arena Escape mission](docs/progress/M1_MISSION.md) is playable from menu to extraction: six-axis flight, solid walls, wall-aware pulse combat, two drones, finite ammo, repair/refill pickups, a visible locked exit, loss/win and reliable restart. Choose **Select Level > Arena Escape**; **Start Flight Arena** remains quiet practice. All 89 tests and the production build pass, with a production keyboard playthrough verifying victory, death and reboot. Regular-browser mouse capture, flight tuning, profiling and toolchain updates remain ahead. Older levels remain legacy content, and several features below describe intended behavior. See the [assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
+> **Project status (October 15, 2026):** [Arena Escape](docs/progress/M1_MISSION.md) is playable from menu to extraction: six-axis flight, solid walls, pulse combat, two drones, repair/refill pickups, a locked exit, loss/win and reliable restart. Choose **Select Level > Arena Escape**; **Start Flight Arena** remains quiet practice. **M1 implementation is complete for this mission, but its [hands-on acceptance](docs/M1_ACCEPTANCE.md) remains open.** The first [M2 toolchain checkpoint](docs/TOOLCHAIN.md) pins Node/npm, patches dependencies and adds Windows/Linux CI. All 89 tests and the production build pass; the dependency audit reports zero known vulnerabilities. Older levels remain legacy content, and several features below describe intended behavior. See the [assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
 
 Run `npm test` for regression checks. Run `npm run smoke` and open `http://127.0.0.1:5183/?smoke=1` for a development-only frame/update/error overlay and the startup verification workflow.
 
@@ -105,8 +105,8 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 
 ### Prerequisites
 
-- Node.js 22.12+ (this checkpoint was tested with 22.14.0)
-- npm (tested with 11.2.0)
+- Node.js **24.22.0** (pinned in `.nvmrc`; see [toolchain setup](docs/TOOLCHAIN.md))
+- npm **11.21.1** (declared in `package.json`; CI installs it explicitly)
 
 ### Installation
 
@@ -120,7 +120,7 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 2. Install dependencies:
 
    ```bash
-   npm install
+   npm ci
    ```
 
 3. Run the development server:
