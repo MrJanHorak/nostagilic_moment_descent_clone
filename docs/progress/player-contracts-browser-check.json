@@ -1,0 +1,392 @@
+{
+  "verification": "All six browser cases passed in one complete run after the player/input contract changes.",
+  "startedAt": "2026-10-15T23:35:44.591Z",
+  "durationMs": 134982.044,
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "status": "passed",
+      "durationMs": 65044,
+      "errors": []
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "status": "passed",
+      "durationMs": 36409,
+      "errors": []
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "status": "passed",
+      "durationMs": 11127,
+      "errors": []
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "status": "passed",
+      "durationMs": 4979,
+      "errors": []
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "status": "passed",
+      "durationMs": 8172,
+      "errors": []
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "status": "passed",
+      "durationMs": 4597,
+      "errors": []
+    }
+  ],
+  "mixerSamples": [
+    {
+      "label": "muted startup",
+      "master": 0,
+      "effects": 1,
+      "music": 0,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "unmute while paused",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "resume audible",
+      "master": 1,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "resume muted",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "restart muted",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 4,
+      "activeLoops": 2
+    },
+    {
+      "label": "reset while paused",
+      "master": 0,
+      "effects": 0.6000000238418579,
+      "music": 0.4000000059604645,
+      "startedLoops": 4,
+      "activeLoops": 2
+    },
+    {
+      "label": "return to menu",
+      "master": 1,
+      "effects": 0.6000000238418579,
+      "music": 0.4000000059604645,
+      "startedLoops": 4,
+      "activeLoops": 0
+    }
+  ],
+  "resources": {
+    "date": "2026-10-15T23:37:27.863Z",
+    "node": "v24.22.0",
+    "browser": "156.0.8078.4",
+    "platform": "win32",
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "renderer": "Chromium ANGLE SwiftShader (software)",
+    "warmupCycles": 1,
+    "measuredCycles": 10,
+    "samples": [
+      {
+        "cycle": 0,
+        "phase": "paused",
+        "session": 5,
+        "timeMs": 283.3333333333333,
+        "steps": 17,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 6,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 1,
+        "phase": "paused",
+        "session": 7,
+        "timeMs": 150,
+        "steps": 9,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 2,
+        "phase": "paused",
+        "session": 9,
+        "timeMs": 116.66666666666669,
+        "steps": 7,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 3,
+        "phase": "paused",
+        "session": 11,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 4,
+        "phase": "paused",
+        "session": 13,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 5,
+        "phase": "paused",
+        "session": 15,
+        "timeMs": 166.66666666666666,
+        "steps": 10,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 6,
+        "phase": "paused",
+        "session": 17,
+        "timeMs": 116.66666666666669,
+        "steps": 7,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 7,
+        "phase": "paused",
+        "session": 19,
+        "timeMs": 133.33333333333334,
+        "steps": 8,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 8,
+        "phase": "paused",
+        "session": 21,
+        "timeMs": 133.33333333333334,
+        "steps": 8,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 9,
+        "phase": "paused",
+        "session": 23,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 10,
+        "phase": "paused",
+        "session": 25,
+        "timeMs": 183.33333333333331,
+        "steps": 11,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      }
+    ]
+  }
+}

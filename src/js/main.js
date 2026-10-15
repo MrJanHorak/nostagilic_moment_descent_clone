@@ -23,7 +23,7 @@ export default class Game {
     this.scene = new THREE.Scene();
     this.audioManager = new AudioManager();
     this.gameState = new GameState();
-    this.settings = new UserSettings();
+    this.settings = new UserSettings(undefined, values => this.audioManager.applyPreferences(values));
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;

@@ -2,16 +2,28 @@
 import { shakeCamera } from '../utils/effectsUtils.js';
 
 class InputManager {
+  /** @param {import('three').Camera | null} camera
+   * @param {import('../contracts.js').PlayerFire | null} projectileManager
+   * @param {import('./GameState.js').default} gameState
+   * @param {import('../contracts.js').InputFeedback | null} [uiManager]
+   * @param {Pick<import('./UserSettings.js').default, 'values'> | null} [settings]
+   */
   constructor(camera, projectileManager, gameState, uiManager = null, settings = null) {
     this.camera = camera;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.uiManager = uiManager;
     this.settings = settings;
+    /** @type {import('../contracts.js').InputGameActions | null} */
     this.game = null; // Will be set from main.js
 
+    /** @type {Partial<Record<string, boolean>>} */
     this.keyStates = {};
+    /** @type {HTMLCanvasElement | null} */
     this.canvas = null;
+    this.wasPointerLocked = false;
+    /** @type {number | undefined} */
+    this.lastLockMessage = undefined;
     this.mouseSensitivity = 0.002;
 
     // Bind methods
@@ -27,6 +39,7 @@ class InputManager {
   }
 
   // Initialize with canvas
+  /** @param {HTMLCanvasElement} canvas */
   init(canvas) {
     this.canvas = canvas;
 
@@ -43,6 +56,7 @@ class InputManager {
   }
 
   // Mouse movement handler for camera rotation
+  /** @param {import('../contracts.js').MouseMotion} event */
   onMouseMove(event) {
     if (
       document.pointerLockElement !== this.canvas ||
@@ -60,6 +74,7 @@ class InputManager {
     const pitchSign = this.settings?.values.invertY ? 1 : -1;
     this.game?.spaceship.rotate(-movementX * sensitivity, pitchSign * movementY * sensitivity);
   } // Handle key down
+  /** @param {import('../contracts.js').KeyboardInput} event */
   onKeyDown(event) {
     if (this.uiManager?.settingsDialog?.isOpen) return;
     if (this.gameState.session.phase === 'playing' &&
@@ -71,7 +86,7 @@ class InputManager {
 
     if (event.code === 'KeyF' && !event.repeat && this.gameState.session.phase === 'playing') {
       event.preventDefault?.();
-      this.projectileManager.fireProjectile(this.gameState, { requirePointerLock: false });
+      this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false });
     }
 
     // Handle escape key for pause menu
@@ -83,7 +98,7 @@ class InputManager {
     ) {
       // Toggle pause state
       if (this.uiManager) {
-        this.game.togglePause();
+        this.game?.togglePause();
       }
     }
 
@@ -97,6 +112,7 @@ class InputManager {
       const keyIndex = weaponKeys.indexOf(event.code);
 
       if (keyIndex !== -1) {
+        /** @type {readonly import('../contracts.js').WeaponType[]} */
         const weaponTypes = ['pulse', 'laser', 'missile', 'plasma'];
         const weaponType = weaponTypes[keyIndex];
 
@@ -106,6 +122,7 @@ class InputManager {
   }
 
   // Handle key up
+  /** @param {Pick<KeyboardEvent, 'code'>} event */
   onKeyUp(event) {
     // Always unset keyStates, even if pointer lock is not active
     this.keyStates[event.code] = false;
@@ -133,7 +150,7 @@ class InputManager {
 
   requestPointerLock() {
     const generation = this.game?.session.id;
-    if (document.pointerLockElement === this.canvas) return Promise.resolve(true);
+    if (this.canvas && document.pointerLockElement === this.canvas) return Promise.resolve(true);
     try {
       if (!this.canvas?.requestPointerLock) throw new Error('Pointer lock is unavailable');
       return Promise.resolve(this.canvas.requestPointerLock()).then(
@@ -187,6 +204,7 @@ class InputManager {
 
   onVisibilityChange() { if (document.hidden) this.onBlur(); }
   // Update player movement based on key states
+  /** @param {number} delta */
   updateMovement(delta) {
     // Skip if game not started or is over
     if (this.gameState.session.phase !== 'playing') {
@@ -218,14 +236,14 @@ class InputManager {
   activateCollisionFeedback() {
     if (this.gameState.session.phase !== 'playing') return;
     // Small screen shake for collision
-    if (this.camera) {
+    if (this.camera && this.game) {
       const shakeAnim = shakeCamera(this.game.spaceship.viewEffects, 0.3, { x: 0, y: 0, z: 0 });
       if (this.game && this.game.activeAnimations) {
         this.game.activeAnimations.push(shakeAnim);
       }
     }
 
-    this.uiManager?.flash('rgba(255, 255, 255, 0.15)');
+    this.uiManager?.flash?.('rgba(255, 255, 255, 0.15)');
   }
 
   // Cleanup resources

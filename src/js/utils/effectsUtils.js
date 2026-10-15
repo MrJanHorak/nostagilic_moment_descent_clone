@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 
 // Create an explosion visual effect at the given position
+/** @param {THREE.Scene} scene @param {THREE.Vector3} position */
 export function createExplosionEffect(scene, position) {
   const particleCount = 30;
   const geometry = new THREE.BufferGeometry();
@@ -34,6 +35,7 @@ export function createExplosionEffect(scene, position) {
   let elapsed = 0;
 
   // Create an animation function
+  /** @param {number} delta */
   function animateExplosion(delta) {
     elapsed += delta;
     const progress = elapsed / duration;
@@ -72,6 +74,7 @@ export function createExplosionEffect(scene, position) {
 }
 
 // Create cave dust particle system
+/** @param {THREE.Scene} scene */
 export function createCaveParticles(scene) {
   const particleCount = 600; // Reduced from 1000 to 600 for better performance
   const particles = new THREE.BufferGeometry();
@@ -118,6 +121,7 @@ export function createCaveParticles(scene) {
 }
 
 // Update dust particle positions relative to player
+/** @param {THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>} particleSystem @param {number} delta */
 export function updateCaveParticles(particleSystem, delta) {
   const positions = particleSystem.geometry.attributes.position.array;
   const particleCount = positions.length / 3;
@@ -148,12 +152,16 @@ export function updateCaveParticles(particleSystem, delta) {
 }
 
 // Camera shake effect for damage feedback
+/** @param {THREE.Object3D} camera @param {number} [intensity]
+ * @param {THREE.Vector3Like} [restPosition] @returns {import('../contracts.js').SimulationAnimation}
+ */
 export function shakeCamera(camera, intensity = 0.5, restPosition = camera.position) {
   // An explicit resting pose keeps overlapping shakes from accumulating drift.
   const originalPosition = new THREE.Vector3().copy(restPosition);
   const shakeDuration = 0.5; // seconds
   let elapsed = 0;
 
+  /** @param {number} delta */
   function shakeAnimation(delta) {
     elapsed += delta;
     const progress = elapsed / shakeDuration;

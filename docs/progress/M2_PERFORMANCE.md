@@ -1,5 +1,7 @@
 # M2 hardware profiling and arena lighting checkpoint
 
+> Later status update (October 15, 2026): **[M1 is accepted and complete](../M1_ACCEPTANCE.md)** following the owner's Chrome playthrough. M1-pending statements below describe this earlier checkpoint.
+
 > Follow-up: [saved sensitivity and invert-Y controls](M2_SETTINGS.md) are now delivered. Hardware measurements below remain the profiling checkpoint baseline.
 
 Implemented October 15, 2026, following the [browser/resource checkpoint](M2_BROWSER.md).

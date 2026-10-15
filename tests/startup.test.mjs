@@ -162,6 +162,81 @@ test('starting again does not stack looping audio sources', (t) => {
   assert.equal(game.audioManager.sounds.backgroundMusic.playing.size, 1);
 });
 
+test('saved audio settings reach the mixer before initialization and survive pause, resume and restart', t => {
+  const { game } = startupFixture(t);
+  game.settings.update({ musicVolume: 0.23, effectsVolume: 0.67, muted: true });
+  assert.equal(game.audioManager.initialized, false, 'editing settings must not create an audio context');
+  game.startGame();
+  const audio = game.audioManager;
+  assert.equal(audio.masterGain.gain.value, 0);
+  assert.equal(audio.musicGain.gain.value, 0.23);
+  assert.equal(audio.effectsGain.gain.value, 0.67);
+  const music = audio.music, engine = [...audio.sounds.engine.playing][0];
+  assert.ok(music); assert.ok(engine, 'a muted startup must still establish the engine loop');
+  game.pauseGame();
+  game.settings.update({ muted: false, musicVolume: 0.51 });
+  assert.equal(audio.masterGain.gain.value, 0, 'unmuting a paused game must stay silent');
+  assert.equal(audio.musicGain.gain.value, 0.51);
+  game.resumeGame();
+  assert.equal(audio.masterGain.gain.value, 1);
+  assert.equal(audio.music, music); assert.equal([...audio.sounds.engine.playing][0], engine);
+  game.settings.update({ muted: true });
+  game.pauseGame(); game.resumeGame();
+  assert.equal(audio.masterGain.gain.value, 0, 'resume must preserve user mute');
+  game.startGame();
+  assert.equal(audio.masterGain.gain.value, 0);
+  assert.equal(audio.musicGain.gain.value, 0.51);
+  assert.equal(audio.sounds.engine.playing.size, 1);
+  assert.equal(audio.sounds.backgroundMusic.playing.size, 1);
+  game.endSession();
+  assert.equal(audio.sounds.engine.playing.size, 0);
+  assert.equal(audio.masterGain.gain.value, 0, 'ending a session must preserve user mute');
+});
+
+test('loaded audio preferences apply before the first sound and update existing sources without restarting them', t => {
+  audioBrowser(t);
+  window.localStorage = { getItem: () => '{"version":1,"musicVolume":0,"effectsVolume":0.12,"muted":true}' };
+  const game = new Game(), audio = game.audioManager;
+  game.initializeAudio();
+  assert.equal(audio.masterGain.gain.value, 0);
+  assert.equal(audio.musicGain.gain.value, 0);
+  assert.equal(audio.effectsGain.gain.value, 0.12);
+  const music = audio.music, engine = [...audio.sounds.engine.playing][0];
+  game.settings.update({ musicVolume: 1, effectsVolume: 0.8, muted: false });
+  assert.equal(audio.masterGain.gain.value, 1);
+  assert.equal(audio.musicGain.gain.value, 1);
+  assert.equal(audio.effectsGain.gain.value, 0.8);
+  assert.equal(audio.music, music);
+  assert.equal([...audio.sounds.engine.playing][0], engine);
+  assert.equal(music.gainNode.gain.value, 0.4, 'music source gain must not be multiplied twice');
+  assert.equal(engine.gainNode.gain.value, 0.2 * 0.7, 'effect source retains its own synthesized gain');
+  game.settings.reset();
+  assert.equal(audio.musicGain.gain.value, 0.4);
+  assert.equal(audio.effectsGain.gain.value, 0.6);
+  assert.equal(audio.masterGain.gain.value, 1);
+  audio.stopAllSounds();
+});
+
+test('mute, pause and safe finite volume setters retain state before initialization and after audio failure', t => {
+  audioBrowser(t, class extends AudioContextFixture { createGain() { throw new Error('Device unavailable'); } });
+  t.mock.method(console, 'warn', () => {});
+  const audio = new AudioManager();
+  audio.mute(); audio.setPaused(true); audio.setMusicVolume(0.2); audio.setEffectsVolume(0.8);
+  assert.equal(audio.isMuted, true); assert.equal(audio.init(), false);
+  for (const invalid of [NaN, Infinity, undefined, '0.5']) {
+    audio.setMusicVolume(invalid); audio.setEffectsVolume(invalid);
+  }
+  assert.equal(audio.musicVolume, 0.2); assert.equal(audio.effectsVolume, 0.8);
+  window.AudioContext = AudioContextFixture;
+  assert.equal(audio.init(), true);
+  assert.equal(audio.masterGain.gain.value, 0);
+  audio.unmute(); assert.equal(audio.masterGain.gain.value, 0);
+  audio.setPaused(false); assert.equal(audio.masterGain.gain.value, 1);
+  assert.equal(audio.musicGain.gain.value, 0.2); assert.equal(audio.effectsGain.gain.value, 0.8);
+  audio.setEffectsVolume(99); assert.equal(audio.effectsGain.gain.value, 1);
+  audio.setMusicVolume(-1); assert.equal(audio.musicGain.gain.value, 0);
+});
+
 test('the game starts when Web Audio is unsupported', (t) => {
   const { game, events } = startupFixture(t);
   delete window.AudioContext;
@@ -247,14 +322,14 @@ test('game over stops session loops once and releases pointer lock', (t) => {
   assert.equal(released, true);
 });
 
-for (const behavior of ['unsupported', 'throws', 'rejects']) {
+for (const behavior of ['unattached', 'unsupported', 'throws', 'rejects']) {
   test(`pointer lock ${behavior} is handled without breaking startup`, async (t) => {
     globalForTest(t, 'document', { pointerLockElement: null });
     let messages = 0;
     const input = new InputManager(new THREE.PerspectiveCamera(), null, new GameState(), {
       showMessage: () => messages++,
     });
-    input.canvas = behavior === 'unsupported' ? {} : {
+    input.canvas = behavior === 'unattached' ? null : behavior === 'unsupported' ? {} : {
       requestPointerLock() {
         if (behavior === 'throws') throw new Error('Denied');
         return Promise.reject(new Error('Denied'));
@@ -264,6 +339,17 @@ for (const behavior of ['unsupported', 'throws', 'rejects']) {
     assert.equal(messages, 1);
   });
 }
+
+test('input before collaborators are attached tolerates active keys and optional collision feedback', () => {
+  const state = new GameState(); state.session.begin(); state.session.transition('playing');
+  const input = new InputManager(new THREE.PerspectiveCamera(), null, state, { showMessage() {} });
+  input.onKeyDown({ code: 'KeyF' });
+  input.onKeyDown({ code: 'Escape' });
+  input.updateMovement(1 / 60);
+  input.activateCollisionFeedback();
+  assert.equal(state.session.phase, 'playing');
+  assert.equal(state.playerHealth, 100);
+});
 
 test('paused and menu clicks do not capture the mouse or fire', (t) => {
   let requests = 0, shots = 0;

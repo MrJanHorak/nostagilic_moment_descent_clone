@@ -16,10 +16,15 @@
     "src/js/core/SimulationStepper.js",
     "src/js/core/UserSettings.js",
     "src/js/core/MissionObjective.js",
+    "src/js/core/GameState.js",
+    "src/js/core/InputManager.js",
+    "src/js/entities/Spaceship.js",
+    "src/js/utils/effectsUtils.js",
     "src/js/utils/combatTrace.js",
     "src/js/utils/sphereMovement.js",
     "src/js/ui/SettingsDialog.js",
     "src/js/contracts.d.ts",
-    "tests/types/contracts.ts"
+    "tests/types/contracts.ts",
+    "tests/types/player-contracts.ts"
   ]
 }

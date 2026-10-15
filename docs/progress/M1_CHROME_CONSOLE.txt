@@ -1,0 +1,51 @@
+Console Ninja extension is connected to Vite, see https://tinyurl.com/2vt8jxzw for more info.
+main.js:7 Initializing game...
+main.js:10 Creating Game instance
+main.js:12 Game instance created, calling init()
+UIManager.js:22 Initializing HUD elements
+UIManager.js:44 HUD container added to DOM
+ExampleLevel.js:7 Creating Example Level...
+ExampleLevel.js:18 Adding introduction area...
+ExampleLevel.js:34 Adding basic obstacle training...
+ExampleLevel.js:59 Adding first combat encounter...
+ExampleLevel.js:76 Adding curved path section...
+ExampleLevel.js:101 Adding advanced obstacle course...
+ExampleLevel.js:128 Adding mid-boss encounter...
+ExampleLevel.js:153 Adding final stretch...
+ExampleLevel.js:180 Adding end segment...
+ExampleLevel.js:189 Example level creation complete!
+UIManager.js:428 Creating start screen
+main.js:14 Game initialization successful!
+AudioManager.js:140 Creating synthesized fallback sound for: shoot
+AudioManager.js:140 Creating synthesized fallback sound for: explosion
+AudioManager.js:140 Creating synthesized fallback sound for: powerup
+AudioManager.js:140 Creating synthesized fallback sound for: playerDamage
+AudioManager.js:140 Creating synthesized fallback sound for: gameOver
+AudioManager.js:140 Creating synthesized fallback sound for: engine
+AudioManager.js:140 Creating synthesized fallback sound for: backgroundMusic
+AudioManager.js:140 Creating synthesized fallback sound for: menuSelect
+AudioManager.js:140 Creating synthesized fallback sound for: healSound
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+2UIManager.js:428 Creating start screen
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+UIManager.js:428 Creating start screen
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177 Pointer Lock inactive
+InputManager.js:171 Pointer Lock active
+InputManager.js:177

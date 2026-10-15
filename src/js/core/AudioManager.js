@@ -31,7 +31,7 @@ export default class AudioManager {
       this.context = new AudioContext();
       this.masterGain = this.context.createGain();
       this.masterGain.connect(this.context.destination);
-      this.masterGain.gain.value = this.isMuted ? 0 : 1;
+      this.updateMasterGain();
 
       this.effectsGain = this.context.createGain();
       this.effectsGain.connect(this.masterGain);
@@ -392,7 +392,8 @@ export default class AudioManager {
   }
   // Play a sound with various options
   playSound(id, options = {}) {
-    if (!this.initialized || this.isMuted || this.isPaused) {
+    // Muting silences the mixer without losing loops or their current position.
+    if (!this.initialized || this.isPaused) {
       return null;
     }
 
@@ -538,27 +539,37 @@ export default class AudioManager {
     });
   }
 
-  // Mute all audio
+  // Pause and user mute are independent reasons to silence the same mixer.
+  updateMasterGain() {
+    if (this.masterGain) this.masterGain.gain.value = this.isPaused || this.isMuted ? 0 : 1;
+  }
+
   setPaused(paused) {
     this.isPaused = paused;
-    if (this.masterGain) this.masterGain.gain.value = paused || this.isMuted ? 0 : 1;
+    this.updateMasterGain();
   }
 
-  mute() {
-    if (!this.initialized) return;
-    this.masterGain.gain.value = 0;
-    this.isMuted = true;
+  /** @param {boolean} muted */
+  setMuted(muted) {
+    if (typeof muted !== 'boolean') return;
+    this.isMuted = muted;
+    this.updateMasterGain();
   }
 
-  // Unmute audio
-  unmute() {
-    if (!this.initialized) return;
-    this.masterGain.gain.value = this.isPaused ? 0 : 1;
-    this.isMuted = false;
+  mute() { this.setMuted(true); }
+
+  unmute() { this.setMuted(false); }
+
+  /** @param {import('../contracts.js').UserPreferences} values */
+  applyPreferences(values) {
+    this.setMusicVolume(values.musicVolume);
+    this.setEffectsVolume(values.effectsVolume);
+    this.setMuted(values.muted);
   }
 
   // Set music volume
   setMusicVolume(volume) {
+    if (typeof volume !== 'number' || !Number.isFinite(volume)) return;
     this.musicVolume = Math.max(0, Math.min(1, volume));
     if (this.initialized) {
       this.musicGain.gain.value = this.musicVolume;
@@ -567,6 +578,7 @@ export default class AudioManager {
 
   // Set effects volume
   setEffectsVolume(volume) {
+    if (typeof volume !== 'number' || !Number.isFinite(volume)) return;
     this.effectsVolume = Math.max(0, Math.min(1, volume));
     if (this.initialized) {
       this.effectsGain.gain.value = this.effectsVolume;

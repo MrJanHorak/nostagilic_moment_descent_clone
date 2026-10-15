@@ -1,5 +1,9 @@
 # M2 lint and type contracts checkpoint
 
+> Follow-up: [player/input contracts](M2_PLAYER_CONTRACTS.md) expand checking to eleven runtime modules, with 114 runtime tests and 35 negative compiler examples. The implementation and counts below record this earlier checkpoint.
+
+> Later status update (October 15, 2026): **[M1 is accepted and complete](../M1_ACCEPTANCE.md)** following the owner's Chrome playthrough. M1-pending statements below describe this earlier checkpoint.
+
 Implemented October 15, 2026, following [saved control settings](M2_SETTINGS.md).
 
 ## Delivered

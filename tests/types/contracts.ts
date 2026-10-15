@@ -28,6 +28,11 @@ const settings = new UserSettings(() => undefined);
 settings.update({ mouseSensitivity: 'bad' }); // Untrusted input is deliberately validated at runtime.
 // @ts-expect-error Settings snapshots are immutable.
 settings.values.invertY = true;
+// @ts-expect-error Audio preferences are immutable too.
+settings.values.musicVolume = 0.5;
+new UserSettings(() => undefined, values => { const volume: number = values.effectsVolume; void volume; });
+// @ts-expect-error Preference callbacks receive the validated snapshot.
+new UserSettings(() => undefined, (values: string) => { void values; });
 // @ts-expect-error Storage providers must provide both getItem and setItem.
 new UserSettings(() => ({ getItem: () => null }));
 new SettingsDialog(settings).close(false);

@@ -1,5 +1,7 @@
 # M2 saved control settings checkpoint
 
+> Later status update (October 15, 2026): **[M1 is accepted and complete](../M1_ACCEPTANCE.md)** following the owner's Chrome playthrough. M1-pending statements below describe this earlier checkpoint.
+
 Implemented October 15, 2026, following the [hardware profiling checkpoint](M2_PERFORMANCE.md).
 
 ## Delivered and how to use it

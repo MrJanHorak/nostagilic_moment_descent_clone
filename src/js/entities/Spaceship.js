@@ -111,6 +111,7 @@ class Spaceship {
   }
 
   // Mount the first-person camera once; the root is the only gameplay pose.
+  /** @param {THREE.Camera} camera */
   attachCamera(camera) {
     const scene = camera.parent;
     this.group.position.copy(camera.position);
@@ -129,6 +130,7 @@ class Spaceship {
   }
 
   // Ordered, intrinsic yaw -> pitch -> roll. No world-up constraint.
+  /** @param {number} [yaw] @param {number} [pitch] @param {number} [roll] */
   rotate(yaw = 0, pitch = 0, roll = 0) {
     this.group.rotateY(yaw);
     this.group.rotateX(pitch);
@@ -137,6 +139,9 @@ class Spaceship {
   }
 
   // Integrate world velocity; Game resolves collision before committing position.
+  /** @param {number} delta @param {import('../contracts.js').FlightInput} [input]
+   * @param {number} [speedMultiplier]
+   */
   update(delta, input = {}, speedMultiplier = 1) {
     this.rotate(
       ((+!!input.yawLeft) - (+!!input.yawRight)) * this.rotationSpeed * delta,

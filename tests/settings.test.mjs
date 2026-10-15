@@ -15,13 +15,13 @@ function memoryStorage(initial = null) {
 test('settings start at the original flight defaults and round-trip only versioned known fields', () => {
   const storage = memoryStorage();
   const settings = new UserSettings(() => storage);
-  assert.deepEqual(settings.values, { mouseSensitivity: 1, invertY: false });
+  assert.deepEqual(settings.values, DEFAULT_SETTINGS);
   settings.update({ mouseSensitivity: 1.75, invertY: true, playerHealth: 999 });
-  assert.deepEqual(JSON.parse(storage.getItem(SETTINGS_KEY)), { version: 1, mouseSensitivity: 1.75, invertY: true });
+  assert.deepEqual(JSON.parse(storage.getItem(SETTINGS_KEY)), { version: 1, ...DEFAULT_SETTINGS, mouseSensitivity: 1.75, invertY: true });
   assert.deepEqual(new UserSettings(() => storage).values, settings.values);
   assert.equal(settings.saveStatus, 'saved');
   assert.ok(Object.isFrozen(settings.values));
-  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false });
+  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false });
 });
 
 test('invalid, malformed and future-version records fall back without rewriting stored data', () => {
@@ -41,7 +41,7 @@ test('sensitivity is finite, clamped and snapped; invalid partial updates preser
   settings.update({ mouseSensitivity: 1.333, invertY: true }); assert.equal(settings.values.mouseSensitivity, 1.35);
   for (const value of [Infinity, NaN, '2', null]) {
     settings.update({ mouseSensitivity: value, invertY: 'false' });
-    assert.deepEqual(settings.values, { mouseSensitivity: 1.35, invertY: true });
+    assert.deepEqual(settings.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 1.35, invertY: true });
   }
 });
 
@@ -52,7 +52,7 @@ test('denied storage access, read failures and write failures do not prevent liv
   for (const provider of providers) {
     const settings = new UserSettings(provider);
     settings.update({ mouseSensitivity: 2, invertY: true });
-    assert.deepEqual(settings.values, { mouseSensitivity: 2, invertY: true });
+    assert.deepEqual(settings.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 2, invertY: true });
     assert.equal(settings.saveStatus, 'unavailable');
   }
 });
@@ -67,6 +67,48 @@ test('reset persists defaults and a later successful write recovers after a temp
   settings.reset();
   assert.equal(settings.saveStatus, 'saved');
   assert.deepEqual(new UserSettings(() => storage).values, DEFAULT_SETTINGS);
+});
+
+test('old control-only records retain mouse preferences and acquire audio defaults without a storage rewrite', () => {
+  const raw = JSON.stringify({ version: 1, mouseSensitivity: 2.25, invertY: true });
+  const storage = memoryStorage(raw), applied = [];
+  const settings = new UserSettings(() => storage, values => applied.push(values));
+  assert.deepEqual(settings.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 2.25, invertY: true });
+  assert.equal(storage.getItem(SETTINGS_KEY), raw);
+  assert.deepEqual(applied, [settings.values]);
+  settings.update({ musicVolume: 0.23, effectsVolume: 0, muted: true });
+  const reloaded = new UserSettings(() => storage);
+  assert.deepEqual(reloaded.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 2.25, invertY: true,
+    musicVolume: 0.23, effectsVolume: 0, muted: true });
+  assert.ok(Object.isFrozen(applied[1]));
+});
+
+test('audio preferences clamp, snap and reject nonfinite or wrong types without changing other preferences', () => {
+  const settings = new UserSettings(() => memoryStorage());
+  settings.update({ musicVolume: -1, effectsVolume: 100, muted: true });
+  assert.equal(settings.values.musicVolume, 0); assert.equal(settings.values.effectsVolume, 1);
+  settings.update({ musicVolume: 0.234, effectsVolume: 0.676 });
+  const valid = settings.values;
+  assert.equal(valid.musicVolume, 0.23); assert.equal(valid.effectsVolume, 0.68);
+  for (const invalid of [Infinity, -Infinity, NaN, null, '0.5', {}, undefined]) {
+    settings.update({ musicVolume: invalid, effectsVolume: invalid, muted: 'false' });
+    assert.deepEqual(settings.values, valid);
+  }
+  const malformed = new UserSettings(() => memoryStorage('{"version":1,"musicVolume":"0.2","effectsVolume":null,"muted":"true"}'));
+  assert.deepEqual(malformed.values, DEFAULT_SETTINGS);
+});
+
+test('storage failure still applies live audio changes and reset restores all defaults', () => {
+  const applied = [];
+  const settings = new UserSettings(() => ({ getItem: () => null, setItem() { throw new Error('quota'); } }),
+    values => applied.push(values));
+  settings.update({ musicVolume: 0, effectsVolume: 0.17, muted: true, invertY: true });
+  assert.equal(applied.at(-1).muted, true);
+  assert.equal(applied.at(-1).effectsVolume, 0.17);
+  assert.equal(settings.saveStatus, 'unavailable');
+  settings.reset();
+  assert.deepEqual(applied.at(-1), DEFAULT_SETTINGS);
+  assert.equal(applied.length, 3, 'load, update and reset each apply one snapshot');
 });
 
 function mouseFixture(t) {
@@ -113,7 +155,7 @@ test('changed settings preserve capture/phase guards and keyboard flight control
   assert.ok(ship.group.quaternion.x > 0, 'keyboard pitch remains upward');
   const orientation = ship.group.quaternion.clone();
   state.resetForSession();
-  assert.deepEqual(settings.values, { mouseSensitivity: 3, invertY: true });
+  assert.deepEqual(settings.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 3, invertY: true });
   assert.ok(ship.group.quaternion.equals(orientation));
 });
 

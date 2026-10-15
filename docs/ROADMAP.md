@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission. **M1 acceptance remains open** for native mouse controls, inverted return flight and handling/readability; see the [acceptance checklist](M1_ACCEPTANCE.md). M2 has a pinned/patched [toolchain](TOOLCHAIN.md), CI, [hardware profiling](progress/M2_PERFORMANCE.md), [saved sensitivity/invert-Y controls](progress/M2_SETTINGS.md), and an initial [lint/type contract baseline](progress/M2_CONTRACTS.md) for seven runtime modules. Scoped lint/type checks, all 106 unit/simulation/metrics tests, four browser checks and the production build pass locally. Ten restarts return resources to baseline. Arena lighting is reduced to nine lights; Intel GPU frame p95 remains around 18 ms, above the provisional 16.7 ms target. Hosted CI and hands-on/performance acceptance remain open. Next: saved volume/mute controls and expanding source contracts/cleanup before M3 shared level data. Legacy geometry remains unrepaired.
+**Implementation progress (October 15, 2026):** **[M1 is accepted and complete](M1_ACCEPTANCE.md)** following the owner's Chrome playthrough of Flight Arena and Arena Escape, confirming pause/resume, aiming recapture and restart behavior. M2 has a pinned/patched [toolchain](TOOLCHAIN.md), CI, [hardware profiling](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved audio controls](progress/M2_AUDIO_SETTINGS.md), and expanded [player/input contracts](progress/M2_PLAYER_CONTRACTS.md) for eleven runtime modules. Scoped lint/type checks, all 114 unit/simulation/metrics tests, six browser checks and the production build pass locally. Ten restarts return resources to baseline. Arena lighting is reduced to nine lights; Intel GPU frame p95 remains around 18 ms, above the provisional 16.7 ms target. Hosted CI and M2 performance acceptance remain open. Next: expanding projectile/enemy contracts and resource ownership, then source cleanup before M3 shared level data. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -24,7 +24,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M1 — Get one mission functional
 
-**Current status:** implementation delivered for Arena Escape; acceptance open. The [acceptance record](M1_ACCEPTANCE.md) lists passed evidence and the remaining hands-on checks. Do not mark this milestone complete merely because M2 toolchain work has started.
+**Current status:** complete and accepted by the project owner on October 15, 2026, after a Chrome playthrough of the finite test slice. The [acceptance record](M1_ACCEPTANCE.md) combines that sign-off, the supplied console excerpt and existing automated evidence. The repeatable manual checklist is retained for future regressions.
 
 **Deliverable:** a short graybox mission, playable from menu to exit, with unrestricted orientation, solid boundaries, pulse fire, two enemy behaviors, health/ammo pickup, loss and win states, and reliable restart. Use a fixed finite environment; defer endless streaming.
 
@@ -47,7 +47,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M2 — Update the project and make regression visible
 
-**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), and initial [lint/type contracts](progress/M2_CONTRACTS.md) are locally verified. Hosted CI, performance acceptance, volume/mute, broader contract coverage and source cleanup remain; M2 is not complete.
+**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), and expanded [player/input contracts](progress/M2_PLAYER_CONTRACTS.md) are locally verified. Hosted CI, performance acceptance, broader contract coverage and source cleanup remain; M2 is not complete.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 

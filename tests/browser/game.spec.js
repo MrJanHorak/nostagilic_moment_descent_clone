@@ -138,7 +138,7 @@ test('development: pause freezes simulation and ten combat restarts return resou
 test('production: settings persist, reset, remain isolated while paused, and fit a small viewport', async ({ page }, testInfo) => {
   await page.goto('http://127.0.0.1:5184/');
   await button(page, 'SETTINGS').click();
-  const dialog = page.getByRole('dialog', { name: 'CONTROL SETTINGS' });
+  const dialog = page.getByRole('dialog', { name: 'GAME SETTINGS' });
   const sensitivity = dialog.getByRole('slider', { name: /Mouse sensitivity/ });
   const invert = dialog.getByRole('checkbox', { name: 'Invert mouse Y' });
   await expect(sensitivity).toHaveValue('1');
@@ -201,17 +201,120 @@ test('production: blocked saving keeps live settings usable and reports the pers
   });
   await page.goto('http://127.0.0.1:5184/');
   await button(page, 'SETTINGS').click();
-  const dialog = page.getByRole('dialog', { name: 'CONTROL SETTINGS' });
+  const dialog = page.getByRole('dialog', { name: 'GAME SETTINGS' });
   const sensitivity = dialog.getByRole('slider', { name: /Mouse sensitivity/ });
   await sensitivity.press('End');
   await expect(sensitivity).toHaveValue('3');
+  const music = dialog.getByRole('slider', { name: /Music volume/ });
+  const mute = dialog.getByRole('checkbox', { name: 'Mute all audio' });
+  await music.press('Home');
+  await mute.check();
   await expect(dialog.getByRole('status', { name: 'Settings saving status' })).toContainText('could not be saved');
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
   await page.locator('#start-game-btn').click();
   await page.keyboard.press('Escape');
   await button(page, 'SETTINGS').click();
   await expect(sensitivity).toHaveValue('3');
+  await expect(music).toHaveValue('0');
+  await expect(mute).toBeChecked();
   await page.reload();
   await button(page, 'SETTINGS').click();
   await expect(sensitivity).toHaveValue('1');
+  await expect(music).toHaveValue('40');
+  await expect(mute).not.toBeChecked();
+});
+
+test('production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence', async ({ page }, testInfo) => {
+  // Observe only the native audio boundary. No game state or production diagnostics are injected.
+  await page.addInitScript(() => {
+    const NativeContext = window.AudioContext;
+    const contexts = [];
+    window.AudioContext = class extends NativeContext {
+      constructor(...args) {
+        super(...args);
+        const gains = [], sources = [];
+        contexts.push({ gains, sources });
+        const createGain = this.createGain.bind(this);
+        this.createGain = () => { const gain = createGain(); gains.push(gain); return gain; };
+        const createSource = this.createBufferSource.bind(this);
+        this.createBufferSource = () => {
+          const source = createSource(), record = { source, started: false, ended: false };
+          sources.push(record);
+          source.addEventListener('ended', () => { record.ended = true; });
+          const start = source.start.bind(source);
+          source.start = (...parameters) => { start(...parameters); record.started = true; };
+          return source;
+        };
+      }
+    };
+    window.__audioProbe = () => contexts.map(({ gains, sources }) => ({
+      master: gains[0]?.gain.value, effects: gains[1]?.gain.value, music: gains[2]?.gain.value,
+      startedLoops: sources.filter(record => record.started && record.source.loop).length,
+      activeLoops: sources.filter(record => record.started && record.source.loop && !record.ended).length,
+    }));
+  });
+  const samples = [];
+  const probe = () => page.evaluate(() => window.__audioProbe());
+  const expectMixer = async (label, expected) => {
+    await expect.poll(probe).toEqual([expected]);
+    samples.push({ label, ...(await probe())[0] });
+  };
+  await page.goto('http://127.0.0.1:5184/');
+  await button(page, 'SETTINGS').click();
+  const dialog = page.getByRole('dialog', { name: 'GAME SETTINGS' });
+  const music = dialog.getByRole('slider', { name: /Music volume/ });
+  const effects = dialog.getByRole('slider', { name: /Effects volume/ });
+  const mute = dialog.getByRole('checkbox', { name: 'Mute all audio' });
+  await expect(music).toHaveValue('40'); await expect(effects).toHaveValue('60');
+  await music.press('Home'); await effects.press('End'); await mute.check();
+  expect(await probe()).toEqual([]);
+  await page.reload();
+  await button(page, 'SETTINGS').click();
+  await expect(music).toHaveValue('0'); await expect(effects).toHaveValue('100'); await expect(mute).toBeChecked();
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.locator('#start-game-btn').click();
+  await expectMixer('muted startup', { master: 0, effects: 1, music: 0, startedLoops: 2, activeLoops: 2 });
+  await page.keyboard.press('Escape');
+  await button(page, 'SETTINGS').click();
+  await music.press('End'); await effects.press('Home'); await mute.uncheck();
+  await expectMixer('unmute while paused', { master: 0, effects: 0, music: 1, startedLoops: 2, activeLoops: 2 });
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('heading', { name: 'PAUSED', exact: true })).toBeVisible();
+  await button(page, 'CONTINUE').click();
+  await expectMixer('resume audible', { master: 1, effects: 0, music: 1, startedLoops: 2, activeLoops: 2 });
+  await page.keyboard.press('Escape'); await button(page, 'SETTINGS').click();
+  await mute.check(); await page.keyboard.press('Escape');
+  await button(page, 'CONTINUE').click();
+  await expectMixer('resume muted', { master: 0, effects: 0, music: 1, startedLoops: 2, activeLoops: 2 });
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').click();
+  await expectMixer('restart muted', { master: 0, effects: 0, music: 1, startedLoops: 4, activeLoops: 2 });
+  await page.keyboard.press('Escape'); await button(page, 'SETTINGS').click();
+  await dialog.getByRole('button', { name: 'Reset to defaults', exact: true }).click();
+  await expect(music).toHaveValue('40'); await expect(effects).toHaveValue('60'); await expect(mute).not.toBeChecked();
+  await expectMixer('reset while paused', { master: 0, effects: expect.closeTo(0.6, 5), music: expect.closeTo(0.4, 5), startedLoops: 4, activeLoops: 2 });
+  await page.setViewportSize({ width: 390, height: 640 });
+  await mute.focus(); await page.keyboard.press('Tab');
+  await expect(dialog.getByRole('button', { name: 'Reset to defaults', exact: true })).toBeFocused();
+  await testInfo.attach('audio-settings-small-viewport', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.keyboard.press('Escape'); await button(page, 'RETURN TO BASE').click();
+  await expectMixer('return to menu', { master: 1, effects: expect.closeTo(0.6, 5), music: expect.closeTo(0.4, 5), startedLoops: 4, activeLoops: 0 });
+  await testInfo.attach('audio-mixer-samples', { body: JSON.stringify(samples, null, 2), contentType: 'application/json' });
+});
+
+test('production: audio controls remain saved and playable without Web Audio support', async ({ page }) => {
+  await page.addInitScript(() => { window.AudioContext = undefined; window.webkitAudioContext = undefined; });
+  await page.goto('http://127.0.0.1:5184/');
+  await button(page, 'SETTINGS').click();
+  const dialog = page.getByRole('dialog', { name: 'GAME SETTINGS' });
+  const effects = dialog.getByRole('slider', { name: /Effects volume/ });
+  const mute = dialog.getByRole('checkbox', { name: 'Mute all audio' });
+  await effects.press('Home'); await effects.press('ArrowRight'); await mute.check();
+  await expect(dialog.getByRole('status', { name: 'Settings saving status' })).toContainText('Saved on this browser');
+  await dialog.getByRole('button', { name: 'Done', exact: true }).click();
+  await page.locator('#start-game-btn').click();
+  await expect(page.locator('#arena-guide')).toContainText('FLIGHT TRAINING');
+  await page.keyboard.press('Escape'); await button(page, 'SETTINGS').click();
+  await expect(effects).toHaveValue('1'); await expect(mute).toBeChecked();
+  await page.reload(); await button(page, 'SETTINGS').click();
+  await expect(effects).toHaveValue('1'); await expect(mute).toBeChecked();
 });

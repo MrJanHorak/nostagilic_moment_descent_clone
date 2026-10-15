@@ -1,6 +1,6 @@
 # M1 objective and extraction checkpoint
 
-> Follow-up: the first [M2 toolchain/CI checkpoint](../TOOLCHAIN.md) is now implemented. [M1 acceptance](../M1_ACCEPTANCE.md) remains open for the hands-on checks listed below.
+> Follow-up (October 15, 2026): **[M1 is accepted and complete](../M1_ACCEPTANCE.md)** following the owner's Chrome playthrough. The implementation/checklist below records this earlier mission checkpoint; M2 stabilization continues.
 
 Implemented October 15, 2026, following the [wall-aware combat checkpoint](M1_COMBAT.md). The combat fixture is now **Arena Escape**, a small playable graybox mission. This establishes the mission loop; it does not establish a finished campaign or complete the remaining manual acceptance checks.
 

@@ -1,5 +1,7 @@
 # M2 browser regression and resource checkpoint
 
+> Later status update (October 15, 2026): **[M1 is accepted and complete](../M1_ACCEPTANCE.md)** following the owner's Chrome playthrough. M1-pending statements below describe this earlier checkpoint.
+
 > Historical measurements below precede the [hardware profiling and lighting checkpoint](M2_PERFORMANCE.md), which reduces the arena to nine lights and adds a separate steady capture.
 
 Implemented October 15, 2026, following the [runtime/dependency baseline](../TOOLCHAIN.md).
