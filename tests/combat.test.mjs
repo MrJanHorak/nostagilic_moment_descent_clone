@@ -63,6 +63,106 @@ function hostile(game, start, velocity, power = 10) {
   return projectile;
 }
 
+test('foreign, spent and reentrant player traces cannot dispatch the same hit again', t => {
+  const game = fixture(t), manager = game.projectileManager;
+  const other = new ProjectileManager(game.scene, game.spaceship.group, null, game.session);
+  t.after(() => other.dispose());
+  const enemy = game.enemyManager.enemies[0];
+  const projectile = shot(game, enemy.mesh.position.clone().add(v(0, 0, 2)), v(0, 0, -100));
+  projectile.launchOrigin = projectile.mesh.position.clone();
+  const position = projectile.mesh.position.clone(), origin = projectile.launchOrigin.clone();
+  let hits = 0;
+  const world = { getTargets: () => [enemy], onTargetHit(_enemy, spent) {
+    hits++;
+    if (hits === 1) manager.moveProjectile(spent, 0.1);
+  } };
+  const activeDuringCleanup = [];
+  projectile.mesh.material.addEventListener('dispose', () => activeDuringCleanup.push(manager.isProjectileActive(projectile)));
+  manager.setCombatWorld(world); other.setCombatWorld(world);
+  assert.equal(other.moveProjectile(projectile, 0.1), true, 'foreign work must stop without moving or hitting');
+  assert.equal(hits, 0); assert.ok(projectile.mesh.position.equals(position));
+  assert.ok(projectile.launchOrigin.equals(origin), 'foreign movement must not consume the muzzle trace');
+  assert.equal(manager.moveProjectile(projectile, 0.1), true);
+  assert.deepEqual(activeDuringCleanup, [false], 'cleanup hooks must see the shot as inactive');
+  assert.equal(hits, 1); assert.equal(manager.isProjectileActive(projectile), false);
+  manager.moveProjectile(projectile, 0.1);
+  assert.equal(hits, 1);
+});
+
+test('a spent enemy trace cannot damage the player a second time', t => {
+  const game = fixture(t), manager = game.enemyManager.projectileManager;
+  const projectile = hostile(game, game.spaceship.group.position.clone().add(v(0, 0, 2)), v(0, 0, -100));
+  const move = () => manager.moveProjectile(projectile, 0.1, game.spaceship.group, game.gameState);
+  assert.equal(move(), true); assert.equal(game.gameState.playerHealth, 90);
+  assert.equal(move(), true); assert.equal(game.gameState.playerHealth, 90);
+});
+
+test('projectile session clear preserves cached geometry; retirement disposes owned resources exactly once', () => {
+  const scene = new THREE.Scene(), root = new THREE.Group();
+  const manager = new ProjectileManager(scene, root, null);
+  const geometries = [...new Set(Object.values(manager.projectileGeometries))];
+  const disposed = new Map(geometries.map(geometry => [geometry, 0]));
+  for (const geometry of geometries) geometry.addEventListener('dispose', () => disposed.set(geometry, disposed.get(geometry) + 1));
+  const player = manager.createProjectile(v(), new THREE.Quaternion());
+  const enemy = manager.fireEnemyProjectile({ mesh: new THREE.Group(), type: { name: 'fighter', size: 0.6 } }, root);
+  let playerMaterial = 0, enemyMaterial = 0, trailGeometry = 0, trailMaterial = 0;
+  player.mesh.material.addEventListener('dispose', () => playerMaterial++);
+  enemy.mesh.material.addEventListener('dispose', () => enemyMaterial++);
+  player.trail.geometry.addEventListener('dispose', () => trailGeometry++);
+  player.trail.material.addEventListener('dispose', () => trailMaterial++);
+  manager.clear(); manager.clear();
+  assert.equal(scene.children.length, 0);
+  assert.deepEqual([playerMaterial, enemyMaterial, trailGeometry, trailMaterial], [1, 1, 1, 1]);
+  assert.ok([...disposed.values()].every(count => count === 0));
+  const replay = manager.createProjectile(v(), new THREE.Quaternion());
+  assert.equal(replay.mesh.geometry, player.mesh.geometry);
+  let retirementCallback = 0;
+  replay.mesh.material.addEventListener('dispose', () => {
+    retirementCallback++;
+    assert.throws(() => manager.createProjectile(v(), new THREE.Quaternion()), /disposed/,
+      'terminal cleanup hooks must not allocate new shots');
+  });
+  manager.dispose(); manager.dispose(); manager.clear();
+  assert.equal(retirementCallback, 1);
+  assert.equal(scene.children.length, 0);
+  assert.ok([...disposed.values()].every(count => count === 1));
+  assert.equal(manager.isProjectileActive(replay), false);
+  assert.throws(() => manager.createProjectile(v(), new THREE.Quaternion()), /disposed/);
+  assert.throws(() => manager.fireEnemyProjectile(null, root), /disposed/);
+  const state = gameStateForRetirement();
+  assert.throws(() => manager.fireProjectile(state), /disposed/);
+  assert.equal(state.weaponInventory.pulse.ammo, 7, 'retired firing must fail before spending ammo');
+  assert.equal(scene.children.length, 0);
+});
+
+function gameStateForRetirement() {
+  const game = new Game();
+  game.session.begin(); game.session.transition('playing');
+  game.gameState.weaponInventory.pulse.ammo = 7;
+  return game.gameState;
+}
+
+test('object disposal handles meshes and points, deduplicates shared resources and respects keep sets', () => {
+  const scene = new THREE.Scene(), group = new THREE.Group(); scene.add(group);
+  const geometry = new THREE.BoxGeometry(), keptGeometry = new THREE.BufferGeometry();
+  const material = new THREE.MeshBasicMaterial(), keptMaterial = new THREE.MeshBasicMaterial();
+  const pointMaterial = new THREE.PointsMaterial();
+  group.add(new THREE.Mesh(geometry, [material, keptMaterial]), new THREE.Mesh(geometry, material),
+    new THREE.Points(keptGeometry, pointMaterial));
+  let geometryCount = 0, materialCount = 0, pointsCount = 0, keptCount = 0;
+  geometry.addEventListener('dispose', () => geometryCount++);
+  material.addEventListener('dispose', () => materialCount++);
+  pointMaterial.addEventListener('dispose', () => pointsCount++);
+  keptGeometry.addEventListener('dispose', () => keptCount++);
+  keptMaterial.addEventListener('dispose', () => keptCount++);
+  const keepGeometries = new Set([keptGeometry]), keepMaterials = new Set([keptMaterial]);
+  disposeObject(group, keepGeometries, keepMaterials);
+  assert.deepEqual([geometryCount, materialCount, pointsCount, keptCount], [1, 1, 1, 0]);
+  assert.equal(scene.children.length, 0);
+  assert.equal(keepGeometries.size, 1); assert.equal(keepMaterials.size, 1);
+  keptGeometry.dispose(); keptMaterial.dispose();
+});
+
 test('finite arena keeps one light per enemy without losing emissive model geometry', t => {
   const game = fixture(t);
   assert.equal(game.enemyManager.enemies.length, 2);

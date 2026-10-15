@@ -4,20 +4,29 @@ import disposeObject from '../utils/disposeObject.js';
 import { traceShot } from '../utils/combatTrace.js';
 
 class ProjectileManager {
+  /** @param {THREE.Scene} scene @param {THREE.Object3D} playerTransform
+   * @param {import('../combatContracts.js').CombatAudio | null} audioManager
+   * @param {import('../core/GameSession.js').default | null} [session]
+   */
   constructor(scene, playerTransform, audioManager, session = null) {
     this.scene = scene;
     this.playerTransform = playerTransform;
     this.audioManager = audioManager;
     this.session = session;
     this.elapsedMs = 0;
+    /** @type {import('../combatContracts.js').PlayerProjectile[]} */
     this.projectiles = [];
+    /** @type {import('../combatContracts.js').EnemyProjectile[]} */
     this.enemyProjectiles = [];
+    /** @type {import('../combatContracts.js').CombatWorld} */
     this.combatWorld = {};
+    this.disposed = false;
 
     // Default projectile geometry
     this.projectileGeometry = new THREE.SphereGeometry(0.05, 8, 8);
 
     // Add specialized projectile geometries
+    /** @readonly @type {Readonly<Record<import('../combatContracts.js').ProjectileType, THREE.BufferGeometry>>} */
     this.projectileGeometries = {
       standard: this.projectileGeometry,
       laser: new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8),
@@ -32,21 +41,39 @@ class ProjectileManager {
     this.projectileGeometries.laser.rotateX(Math.PI / 2);
     this.projectileGeometries.heavylaser.rotateX(Math.PI / 2);
     this.projectileGeometries.missile.rotateX(Math.PI);
+    /** @private @type {ReadonlySet<THREE.BufferGeometry>} */
+    this.sharedGeometries = new Set(Object.values(this.projectileGeometries));
 
     this.projectileSpeed = 15; // Units per second
+    /** @type {HTMLCanvasElement | null} */
     this.canvas = null; // Will be set from outside
   }
 
   // Set the canvas reference for pointer lock checking
+  /** @param {HTMLCanvasElement | null} canvas */
   setCanvas(canvas) {
     this.canvas = canvas;
   }
 
+  /** @param {import('../combatContracts.js').CombatWorld} world */
   setCombatWorld(world) { this.combatWorld = world; }
 
+  /** @param {import('../combatContracts.js').Projectile} projectile */
+  isProjectileActive(projectile) {
+    if (projectile.ownerManager !== this || this.disposed) return false;
+    return projectile.faction === 'enemy' ? this.enemyProjectiles.includes(projectile) : this.projectiles.includes(projectile);
+  }
+
   // Remove before dispatch: a lethal hit can synchronously end/clear the session.
+  /** @private @param {import('../combatContracts.js').Projectile} projectile
+   * @param {THREE.Vector3} start @param {THREE.Vector3} end
+   * @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
+   * @param {import('../core/GameState.js').default | null} [gameState]
+   * @param {import('../combatContracts.js').CombatEffects | null} [effectsManager]
+   */
   sweepProjectile(projectile, start, end, playerTransform, gameState, effectsManager) {
-    const hostile = this.enemyProjectiles.includes(projectile);
+    if (!this.isProjectileActive(projectile)) return true;
+    const hostile = projectile.faction === 'enemy';
     const hit = traceShot(start, end, {
       colliders: this.combatWorld.getColliders?.() ?? [],
       targets: hostile ? [] : this.combatWorld.getTargets?.() ?? [],
@@ -55,9 +82,9 @@ class ProjectileManager {
     });
     if (!hit) { projectile.mesh.position.copy(end); return false; }
     projectile.mesh.position.copy(hit.point);
-    if (hostile) this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
+    if (projectile.faction === 'enemy') this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
     else this.removeProjectile(projectile);
-    if (hit.kind === 'enemy') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
+    if (hit.kind === 'enemy' && projectile.faction === 'player') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
     else if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
       gameState.takeDamage(projectile.power ?? 10);
       if (!this.session || this.session.phase === 'playing') effectsManager?.createExplosion(hit.point, 0xff0000, true, 1);
@@ -65,7 +92,13 @@ class ProjectileManager {
     return true;
   }
 
+  /** @param {import('../combatContracts.js').Projectile} projectile @param {number} delta
+   * @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
+   * @param {import('../core/GameState.js').default | null} [gameState]
+   * @param {import('../combatContracts.js').CombatEffects | null} [effectsManager]
+   */
   moveProjectile(projectile, delta, playerTransform, gameState, effectsManager) {
+    if (!this.isProjectileActive(projectile)) return true;
     if (projectile.launchOrigin) {
       const origin = projectile.launchOrigin;
       delete projectile.launchOrigin;
@@ -76,7 +109,12 @@ class ProjectileManager {
   }
 
   // Create different projectile types with unique behaviors
+  /** @param {THREE.Vector3} position @param {THREE.Quaternion} quaternion
+   * @param {import('../combatContracts.js').ProjectileOptions} [options]
+   * @returns {import('../combatContracts.js').PlayerProjectile}
+   */
   createProjectile(position, quaternion, options = {}) {
+    this.assertUsable();
     const {
       type = 'standard',
       color = 0x00ff00,
@@ -134,7 +172,10 @@ class ProjectileManager {
     projectile.add(light);
 
     // Create projectile data object
+    /** @type {import('../combatContracts.js').PlayerProjectile} */
     const projectileData = {
+      faction: 'player',
+      lastTrailUpdate: 0,
       mesh: projectile,
       velocity: velocity,
       power: power,
@@ -176,6 +217,9 @@ class ProjectileManager {
   }
 
   // Add different trail effects based on projectile type
+  /** @private @param {import('../combatContracts.js').Projectile} projectileData
+   * @param {THREE.ColorRepresentation} color @param {import('../combatContracts.js').TrailType} trailType
+   */
   addTrailToProjectile(projectileData, color, trailType) {
     let trailLength, trailSize, trailOpacity, trailColor;
 
@@ -238,6 +282,9 @@ class ProjectileManager {
   }
 
   // Enhanced projectile with trail (legacy method kept for compatibility)
+  /** @param {THREE.Vector3} position @param {THREE.Quaternion} quaternion
+   * @param {THREE.ColorRepresentation} [color] @param {number} [power] @param {THREE.Vector3 | null} [playerVelocity]
+   */
   createProjectileWithTrail(
     position,
     quaternion,
@@ -254,7 +301,9 @@ class ProjectileManager {
     });
   }
   // Fire a projectile from the player's viewpoint
+  /** @param {import('../core/GameState.js').default} gameState @param {{requirePointerLock?: boolean}} [options] */
   fireProjectile(gameState, { requirePointerLock = true } = {}) {
+    this.assertUsable();
     if (
       !this.canvas ||
       (requirePointerLock && document.pointerLockElement !== this.canvas) ||
@@ -312,7 +361,12 @@ class ProjectileManager {
     const weaponPower = gameState.weaponPower || 1;
 
     // Configure weapon properties based on type
-    let projectileColor, projectileType, projectileOptions;
+    /** @type {THREE.ColorRepresentation} */
+    let projectileColor;
+    /** @type {import('../combatContracts.js').ProjectileType} */
+    let projectileType;
+    /** @type {import('../combatContracts.js').ProjectileOptions & {power: number, speed: number}} */
+    let projectileOptions;
 
     switch (currentWeapon) {
       case 'pulse':
@@ -416,10 +470,15 @@ class ProjectileManager {
   }
 
   // Enemy projectile shooting method
+  /** @param {import('../combatContracts.js').EnemyShooter | null} enemy @param {Pick<THREE.Object3D, 'position'>} playerTransform
+   * @returns {import('../combatContracts.js').EnemyProjectile | undefined}
+   */
   fireEnemyProjectile(enemy, playerTransform) {
+    this.assertUsable();
     if (!enemy || !enemy.mesh) return;
 
     // Determine projectile type based on enemy type
+    /** @type {import('../combatContracts.js').ProjectileType} */
     let projectileType;
     switch (enemy.type.name) {
       case 'fighter':
@@ -431,12 +490,13 @@ class ProjectileManager {
       case 'destroyer':
         projectileType = 'plasma';
         break;
-      case 'boss':
+      case 'boss': {
         // Bosses have a chance to fire different projectile types
-        const bossProjectiles = ['heavylaser', 'plasma', 'missile'];
+        const bossProjectiles = /** @type {const} */ (['heavylaser', 'plasma', 'missile']);
         projectileType =
           bossProjectiles[Math.floor(Math.random() * bossProjectiles.length)];
         break;
+      }
       default:
         projectileType = 'standard';
     }
@@ -497,7 +557,10 @@ class ProjectileManager {
     projectileMesh.lookAt(projectileMesh.position.clone().add(velocity));
 
     // Create the projectile object
+    /** @type {import('../combatContracts.js').EnemyProjectile} */
     const projectile = {
+      faction: 'enemy',
+      lastTrailUpdate: 0,
       mesh: projectileMesh,
       velocity: velocity,
       type: projectileType,
@@ -516,18 +579,24 @@ class ProjectileManager {
   }
 
   // Remove a projectile and clean up resources
+  /** @param {import('../combatContracts.js').PlayerProjectile} projectileData */
   removeProjectile(projectileData) {
+    if (projectileData.ownerManager !== this) return;
     const index = this.projectiles.indexOf(projectileData);
     if (index === -1) return;
 
-    disposeObject(projectileData.mesh, new Set(Object.values(this.projectileGeometries)));
-    disposeObject(projectileData.trail);
-
-    // Remove from projectiles array
+    // Invalidate before disposal events can call back into movement or cleanup.
     this.projectiles.splice(index, 1);
+    disposeObject(projectileData.mesh, this.sharedGeometries);
+    disposeObject(projectileData.trail);
   }
   // Update projectiles - now handling special behaviors like gravity, guided, etc.
+  /** @param {number} delta @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
+   * @param {import('../core/GameState.js').default | null} [gameState]
+   * @param {import('../combatContracts.js').CombatEffects | null} [effectsManager]
+   */
   updateProjectiles(delta, playerTransform, gameState, effectsManager) {
+    if (this.disposed) return;
     if (this.session && this.session.phase !== 'playing') return;
     if (!this.session) this.elapsedMs += delta * 1000;
     const currentTime = this.now();
@@ -705,6 +774,7 @@ class ProjectileManager {
   }
 
   // Helper method to remove enemy projectiles
+  /** @param {number} index */
   removeEnemyProjectile(index) {
     if (
       !this.enemyProjectiles ||
@@ -714,13 +784,11 @@ class ProjectileManager {
       return;
 
     const projectile = this.enemyProjectiles[index];
-    if (!projectile) return;
+    if (!projectile || projectile.ownerManager !== this) return;
 
-    disposeObject(projectile.mesh, new Set(Object.values(this.projectileGeometries)));
-    disposeObject(projectile.trail);
-
-    // Remove from array
     this.enemyProjectiles.splice(index, 1);
+    disposeObject(projectile.mesh, this.sharedGeometries);
+    disposeObject(projectile.trail);
   }
 
   // Clean up all enemy projectiles
@@ -734,6 +802,7 @@ class ProjectileManager {
   }
 
   // Add getter method to expose projectiles array to other systems
+  /** @returns {readonly import('../combatContracts.js').PlayerProjectile[]} */
   getProjectiles() {
     return this.projectiles;
   }
@@ -746,7 +815,23 @@ class ProjectileManager {
     this.elapsedMs = 0;
   }
 
+  // clear() is for reusable sessions; dispose() permanently retires this manager.
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.clear();
+    for (const geometry of this.sharedGeometries) geometry.dispose();
+    this.combatWorld = {};
+    this.canvas = null;
+  }
+
+  /** @private */
+  assertUsable() {
+    if (this.disposed) throw new Error('ProjectileManager has been disposed');
+  }
+
   // Move all projectiles by offset (Vector3)
+  /** @param {THREE.Vector3} offset */
   offsetProjectiles(offset) {
     for (const proj of this.projectiles) {
       if (proj && proj.mesh && proj.mesh.position) {

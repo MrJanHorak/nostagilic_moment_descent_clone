@@ -1,5 +1,7 @@
 # M2 player and input contracts checkpoint
 
+> Follow-up: [projectile contracts and ownership](M2_PROJECTILE_CONTRACTS.md) expand checking to fourteen runtime modules, with 118 runtime tests and 51 negative compiler examples. Counts below record the earlier player/input checkpoint.
+
 Implemented October 15, 2026, after the owner's [M1 Chrome acceptance](../M1_ACCEPTANCE.md).
 
 ## Delivered

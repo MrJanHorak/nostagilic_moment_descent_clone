@@ -19,12 +19,17 @@
     "src/js/core/GameState.js",
     "src/js/core/InputManager.js",
     "src/js/entities/Spaceship.js",
+    "src/js/entities/ProjectileManager.js",
+    "src/js/entities/EnemyTypes.js",
+    "src/js/utils/disposeObject.js",
     "src/js/utils/effectsUtils.js",
     "src/js/utils/combatTrace.js",
     "src/js/utils/sphereMovement.js",
     "src/js/ui/SettingsDialog.js",
     "src/js/contracts.d.ts",
+    "src/js/combatContracts.d.ts",
     "tests/types/contracts.ts",
-    "tests/types/player-contracts.ts"
+    "tests/types/player-contracts.ts",
+    "tests/types/combat-contracts.ts"
   ]
 }

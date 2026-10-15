@@ -1,11 +1,24 @@
 // Entity-owned resources are disposed once; manager-owned caches survive sessions.
+import { BufferGeometry, Material } from 'three';
+
+/** @param {import('three').Object3D | null | undefined} object
+ * @param {ReadonlySet<BufferGeometry>} [keepGeometries] @param {ReadonlySet<Material>} [keepMaterials]
+ */
 export default function disposeObject(object, keepGeometries = new Set(), keepMaterials = new Set()) {
   if (!object) return;
-  const geometries = new Set(), materials = new Set();
+  /** @type {Set<BufferGeometry>} */
+  const geometries = new Set();
+  /** @type {Set<Material>} */
+  const materials = new Set();
+  /** @param {unknown} material */
+  const collectMaterial = material => {
+    if (material instanceof Material && !keepMaterials.has(material)) materials.add(material);
+  };
   object.traverse((child) => {
-    if (child.geometry && !keepGeometries.has(child.geometry)) geometries.add(child.geometry);
-    for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
-      if (material && !keepMaterials.has(material)) materials.add(material);
+    if ('geometry' in child && child.geometry instanceof BufferGeometry && !keepGeometries.has(child.geometry)) geometries.add(child.geometry);
+    if ('material' in child) {
+      if (Array.isArray(child.material)) child.material.forEach(collectMaterial);
+      else collectMaterial(child.material);
     }
   });
   object.removeFromParent();

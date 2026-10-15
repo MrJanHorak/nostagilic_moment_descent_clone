@@ -1,4 +1,5 @@
 // Enemy type definitions
+/** @type {readonly import('../combatContracts.js').EnemyDefinition[]} */
 export const enemyTypes = [
   {
     name: 'scout',
