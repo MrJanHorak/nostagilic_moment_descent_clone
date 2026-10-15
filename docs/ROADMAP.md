@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission, including objective/exit, pickups and reset invariants. Its keyboard production win/loss/reboot flow passed. **M1 acceptance remains open** for captured-mouse controls, inverted return flight and handling/readability; see the [explicit acceptance checklist](M1_ACCEPTANCE.md). The first [M2 toolchain checkpoint](TOOLCHAIN.md) pins Node 24.22.0/npm 11.21.1, patches Vite and transitive dependencies to zero known audit findings, and adds Windows/Linux CI. Clean install, all 89 tests and production build pass locally with the pinned runtime; hosted CI is not yet verified. Queue items 1-8 are implemented for the finite mission; item 9 has its initial dependency/checks baseline. Next: browser smoke automation and measured resource/performance checks, then M3 shared level data. Legacy geometry remains unrepaired.
+**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission. **M1 acceptance remains open** for captured-mouse controls, inverted return flight and handling/readability; see the [acceptance checklist](M1_ACCEPTANCE.md). M2 has a pinned/patched [toolchain](TOOLCHAIN.md), Windows/Linux CI and a [browser/resource checkpoint](progress/M2_BROWSER.md). All 92 simulation/metrics tests, two browser tests and production build pass locally; the dependency audit is clean. Production keyboard win/loss/reboot is automated, and ten combat restarts return renderer/scene counts to baseline. Hosted CI execution and hardware performance acceptance remain unverified. Queue item 9 now includes browser smoke coverage. Next: steady hardware profiling/light costs, focused source contracts and usability settings before M3 shared level data. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -47,7 +47,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M2 — Update the project and make regression visible
 
-**Current status:** first [runtime/dependency/CI checkpoint](TOOLCHAIN.md) implemented and locally verified. Hosted CI, browser automation, profiling, usability and broader cleanup remain; M2 is not complete.
+**Current status:** [runtime/dependency/CI](TOOLCHAIN.md) and [browser/resource checks](progress/M2_BROWSER.md) are implemented and locally verified. Hosted CI, steady hardware profiling, usability and broader cleanup remain; M2 is not complete.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 

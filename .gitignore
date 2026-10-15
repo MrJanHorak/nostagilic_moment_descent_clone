@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Browser test evidence is generated per run; curated checkpoint evidence lives in docs/progress.
+test-results/
+playwright-report/

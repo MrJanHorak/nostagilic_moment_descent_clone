@@ -36,5 +36,19 @@ jobs:
         run: npm ci --no-audit
       - name: Regression suite and production build
         run: npm run verify
+      - name: Install Chromium and platform dependencies
+        run: npx playwright install --with-deps chromium
+      - name: Production browser smoke and restart resources
+        run: npx playwright test
       - name: Audit all locked dependencies
         run: npm run audit:deps
+      - name: Preserve browser reports and resource measurements
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-checks-${{ matrix.os }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -346,9 +346,10 @@ export default class Game {
   animate() {
     requestAnimationFrame(() => this.animate());
     try {
-      this.diagnostics.recordFrame(this.gameState);
+      const frameStart = this.diagnostics.enabled ? performance.now() : 0;
       this.advanceFrame(this.clock.getDelta());
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
+      this.diagnostics.recordFrame(this.gameState, this.diagnostics.enabled ? performance.now() - frameStart : 0);
     } catch (error) {
       this.diagnostics.reportError(error, 'Simulation/render');
       console.error('Game update failed:', error);

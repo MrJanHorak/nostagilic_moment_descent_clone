@@ -1,5 +1,7 @@
 // Development-only status for the repeatable ?smoke=1 browser check.
 // This never changes gameplay state or exposes a game object on window.
+import { FrameMetrics, collectResources } from './runtimeMetrics.js';
+
 export default class RuntimeDiagnostics {
   constructor(enabled = false) {
     this.enabled = enabled;
@@ -9,12 +11,14 @@ export default class RuntimeDiagnostics {
     this.lastRefresh = -Infinity;
     this.panel = null;
     this.lastError = '';
+    this.metrics = new FrameMetrics();
   }
 
-  recordFrame(gameState) {
+  recordFrame(gameState, workMs = 0) {
     if (!this.enabled) return;
     this.frames++;
     const now = performance.now();
+    this.metrics.record(now, workMs);
     if (now - this.lastRefresh < 250) return;
     this.lastRefresh = now;
     this.refresh(gameState);
@@ -49,6 +53,17 @@ export default class RuntimeDiagnostics {
       this.phase = gameState.session.phase.toUpperCase();
       const game = gameState.game;
       const ship = game?.spaceship;
+      const snapshot = {
+        phase: gameState.session.phase, session: gameState.session.id, timeMs: gameState.session.timeMs,
+        frames: this.frames, steps: gameState.session.steps, tasks: gameState.session.tasks.size, errors: this.errors,
+        enemies: game?.enemyManager?.enemies.length ?? 0,
+        shots: (game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0),
+        pickups: game?.powerUpManager?.powerups.length ?? 0,
+        position: ship?.group.position.toArray(), resources: collectResources(game), timing: this.metrics.snapshot(),
+      };
+      this.panel.setAttribute('data-snapshot', JSON.stringify(snapshot));
+      const r = snapshot.resources, t = snapshot.timing;
+      this.resourceStatus = `GPU objects: ${r.geometries} geometries / ${r.textures} textures / ${r.programs} programs | Draws: ${r.calls}\nScene: ${r.objects} objects / ${r.materials} materials / ${r.lights} lights | Effect lights: ${r.effectLights} / Pooled: ${r.pooledEffects}\nLast ${t.samples} frames: p50 ${t.p50FrameMs ?? '-'}ms / p95 ${t.p95FrameMs ?? '-'}ms | Work p95: ${t.p95WorkMs ?? '-'}ms`;
       this.flightStatus = ship ? `Position: ${ship.group.position.toArray().map(n => n.toFixed(2)).join(', ')} | Speed: ${ship.velocity.length().toFixed(2)}\nQuaternion: ${ship.group.quaternion.toArray().map(n => n.toFixed(3)).join(', ')}` : '';
       this.sessionStatus = `Session: ${gameState.session.id} | Time: ${(gameState.session.timeMs / 1000).toFixed(2)}s | Steps: ${gameState.session.steps} | Tasks: ${gameState.session.tasks.size}`;
       this.entityStatus = `Enemies: ${game?.enemyManager?.enemies.length ?? 0} | Shots: ${(game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0)} | Pickups: ${game?.powerUpManager?.powerups.length ?? 0}`;
@@ -86,6 +101,7 @@ export default class RuntimeDiagnostics {
       this.entityStatus,
       this.flightStatus,
       this.arenaStatus,
+      this.resourceStatus,
       this.lastError,
     ].filter(Boolean).join('\n');
   }

@@ -4,7 +4,7 @@ Updated October 15, 2026. **Implementation complete for Arena Escape; acceptance
 
 | Gate | Evidence | Status |
 | --- | --- | --- |
-| Menu, start, pause/resume, death/reboot, exit/replay without game errors | Production keyboard playthrough and session tests | Passed for keyboard play |
+| Menu, start, pause/resume, death/reboot, exit/replay without game errors | Production keyboard playthrough, automated Chromium flow and session tests | Passed for keyboard play |
 | Local yaw/pitch/roll, inverted thrust, doorway traversal in both directions | Real controller/geometry tests, including equivalent 30/60/120 FPS | Automated checks passed; hands-on flight pending |
 | Solid boundaries, sliding, blocked shots and single damage ownership | Arena/combat regression tests | Automated checks passed |
 | Exit/death happens once; no cleanup kills; ten equivalent resets | Real manager/simulation tests, plus production win/loss/reboot | Passed |
