@@ -3,6 +3,13 @@ import * as THREE from 'three';
 class Spaceship {
   constructor() {
     this.group = new THREE.Group();
+    this.group.name = 'playerRoot';
+    this.model = new THREE.Group();
+    this.model.name = 'externalShipModel';
+    this.model.visible = false;
+    this.viewEffects = new THREE.Group();
+    this.viewEffects.name = 'viewEffects';
+    this.group.add(this.model, this.viewEffects);
     this.createModel();
 
     this.velocity = new THREE.Vector3(); // Add velocity for drift
@@ -10,9 +17,8 @@ class Spaceship {
     this.damping = 0.96; // Slightly more friction
     this.maxSpeed = 6; // Cap the max speed
 
-    this.pitch = 0; // Radians, for nose up/down
-    this.pitchSpeed = 1.5; // Radians per second
-    this.maxPitch = Math.PI / 3; // Clamp to +/- 60 degrees
+    this.rotationSpeed = 1.5; // Radians/second for keyboard rotation
+    this.radius = 0.5;
   }
 
   createModel() {
@@ -24,7 +30,7 @@ class Spaceship {
       metalness: 0.8,
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    this.group.add(body);
+    this.model.add(body);
 
     // === Cockpit Dome ===
     const cockpitGeometry = new THREE.SphereGeometry(
@@ -48,7 +54,7 @@ class Spaceship {
     const cockpit = new THREE.Mesh(cockpitGeometry, cockpitMaterial);
     cockpit.position.set(0, 0.2, -0.25);
     cockpit.rotation.x = Math.PI;
-    this.group.add(cockpit);
+    this.model.add(cockpit);
 
     // === Red Nose Cone ===
     const noseGeometry = new THREE.ConeGeometry(0.18, 0.4, 24);
@@ -60,7 +66,7 @@ class Spaceship {
     const nose = new THREE.Mesh(noseGeometry, noseMaterial);
     nose.position.z = -0.75;
     nose.rotation.x = Math.PI / 2;
-    this.group.add(nose);
+    this.model.add(nose);
 
     // === Wings (Flatter, Sleeker) ===
     const wingGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.3);
@@ -71,7 +77,7 @@ class Spaceship {
     });
     const wings = new THREE.Mesh(wingGeometry, wingMaterial);
     wings.position.set(0, -0.05, 0.25);
-    this.group.add(wings);
+    this.model.add(wings);
 
     // === Engine Glow ===
     const engineGlowGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.12, 20);
@@ -83,7 +89,7 @@ class Spaceship {
     const engine = new THREE.Mesh(engineGlowGeometry, engineMaterial);
     engine.position.z = 0.6;
     engine.rotation.x = Math.PI / 2;
-    this.group.add(engine);
+    this.model.add(engine);
 
     // === Side Thrusters (Rounder, Stylized) ===
     const thrusterGeometry = new THREE.CylinderGeometry(0.04, 0.06, 0.12, 16);
@@ -96,65 +102,57 @@ class Spaceship {
     const leftThruster = new THREE.Mesh(thrusterGeometry, thrusterMaterial);
     leftThruster.position.set(-0.35, 0, 0.3);
     leftThruster.rotation.x = Math.PI / 2;
-    this.group.add(leftThruster);
+    this.model.add(leftThruster);
 
     const rightThruster = new THREE.Mesh(thrusterGeometry, thrusterMaterial);
     rightThruster.position.set(0.35, 0, 0.3);
     rightThruster.rotation.x = Math.PI / 2;
-    this.group.add(rightThruster);
+    this.model.add(rightThruster);
   }
 
-  attachToCamera(camera) {
-    this.group.position.set(0, -0.2, -1.5);
-    camera.add(this.group);
+  // Mount the first-person camera once; the root is the only gameplay pose.
+  attachCamera(camera) {
+    const scene = camera.parent;
+    this.group.position.copy(camera.position);
+    this.group.quaternion.copy(camera.quaternion);
+    this.viewEffects.add(camera);
+    camera.position.set(0, 0, 0);
+    camera.quaternion.identity();
+    scene?.add(this.group);
   }
 
-  update(delta, input) {
-    // delta: time since last frame in seconds
-    // input: { left, right, up, down, forward, backward, pitchUp, pitchDown }
+  reset() {
+    this.group.position.set(0, 0, 5);
+    this.group.quaternion.identity();
+    this.velocity.set(0, 0, 0);
+    this.viewEffects.position.set(0, 0, 0);
+  }
 
-    // Pitch control (nose up/down)
-    if (input.pitchUp) this.pitch += this.pitchSpeed * delta;
-    if (input.pitchDown) this.pitch -= this.pitchSpeed * delta;
-    // Clamp pitch
-    this.pitch = Math.max(-this.maxPitch, Math.min(this.maxPitch, this.pitch));
-    this.group.rotation.x = this.pitch;
+  // Ordered, intrinsic yaw -> pitch -> roll. No world-up constraint.
+  rotate(yaw = 0, pitch = 0, roll = 0) {
+    this.group.rotateY(yaw);
+    this.group.rotateX(pitch);
+    this.group.rotateZ(roll);
+    this.group.quaternion.normalize();
+  }
 
-    // Apply input as acceleration (X/Y for lateral, Z for forward/back)
-    let inputApplied = false;
-    if (input.left) {
-      this.velocity.x -= this.acceleration * delta;
-      inputApplied = true;
-    }
-    if (input.right) {
-      this.velocity.x += this.acceleration * delta;
-      inputApplied = true;
-    }
-    if (input.up) {
-      this.velocity.y += this.acceleration * delta;
-      inputApplied = true;
-    }
-    if (input.down) {
-      this.velocity.y -= this.acceleration * delta;
-      inputApplied = true;
-    }
-    if (input.forward) {
-      this.velocity.z -= this.acceleration * delta;
-      inputApplied = true;
-    }
-    if (input.backward) {
-      this.velocity.z += this.acceleration * delta;
-      inputApplied = true;
-    }
-
-    // Clamp velocity to max speed
-    this.velocity.clampLength(0, this.maxSpeed);
-
-    // Only apply damping if no input is being applied
-    if (!inputApplied) {
-      this.velocity.multiplyScalar(this.damping);
-    }
-    // (Position update is now handled by main.js via tunnel offset)
+  // Integrate world velocity; Game resolves collision before committing position.
+  update(delta, input = {}, speedMultiplier = 1) {
+    this.rotate(
+      ((+!!input.yawLeft) - (+!!input.yawRight)) * this.rotationSpeed * delta,
+      ((+!!input.pitchUp) - (+!!input.pitchDown)) * this.rotationSpeed * delta,
+      ((+!!input.rollLeft) - (+!!input.rollRight)) * this.rotationSpeed * delta
+    );
+    const thrust = new THREE.Vector3(
+      (+!!input.right) - (+!!input.left),
+      (+!!input.up) - (+!!input.down),
+      (+!!input.backward) - (+!!input.forward)
+    );
+    if (thrust.lengthSq() > 0) {
+      thrust.normalize().applyQuaternion(this.group.quaternion);
+      this.velocity.addScaledVector(thrust, this.acceleration * speedMultiplier * delta);
+    } else this.velocity.multiplyScalar(Math.pow(this.damping, delta * 60));
+    this.velocity.clampLength(0, this.maxSpeed * speedMultiplier);
   }
 }
 

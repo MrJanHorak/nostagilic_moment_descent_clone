@@ -148,8 +148,9 @@ export function updateCaveParticles(particleSystem, delta) {
 }
 
 // Camera shake effect for damage feedback
-export function shakeCamera(camera, intensity = 0.5) {
-  const originalPosition = camera.position.clone();
+export function shakeCamera(camera, intensity = 0.5, restPosition = camera.position) {
+  // An explicit resting pose keeps overlapping shakes from accumulating drift.
+  const originalPosition = new THREE.Vector3().copy(restPosition);
   const shakeDuration = 0.5; // seconds
   let elapsed = 0;
 

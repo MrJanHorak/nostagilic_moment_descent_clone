@@ -10,16 +10,16 @@ import EffectsManager from '../effects/EffectsManager.js';
 import ObjectPool from '../utils/ObjectPool.js';
 
 class EnemyManager {
-  constructor(scene, camera, gameState, audioManager, levelManager = null) {
+  constructor(scene, playerTransform, gameState, audioManager, levelManager = null) {
     this.scene = scene;
-    this.camera = camera;
+    this.playerTransform = playerTransform;
     this.gameState = gameState;
     this.audioManager = audioManager;
     this.levelManager = levelManager;
 
     // Initialize supporting systems
     this.enemyFactory = new EnemyFactory(scene);
-    this.projectileManager = new ProjectileManager(scene, camera, audioManager, gameState.session);
+    this.projectileManager = new ProjectileManager(scene, playerTransform, audioManager, gameState.session);
     this.effectsManager = new EffectsManager(scene, gameState.session);
     this.objectPool = new ObjectPool();
 
@@ -53,7 +53,7 @@ class EnemyManager {
     const enemy = this.enemyFactory.createEnemy(
       enemyType,
       position,
-      this.camera
+      this.playerTransform
     );
 
     this.enemies.push(enemy);
@@ -225,7 +225,7 @@ class EnemyManager {
 
       // Check if enemy should be visible now (based on player position)
       const distanceToPlayer = spawnPoint.position.distanceTo(
-        this.camera.position
+        this.playerTransform.position
       );
 
       // Only spawn if within reasonable distance and not already spawned
@@ -323,7 +323,7 @@ class EnemyManager {
 
       // Update enemy position
       const distanceToPlayer = enemy.mesh.position.distanceTo(
-        this.camera.position
+        this.playerTransform.position
       );
 
       // Apply enemy type-specific movement
@@ -331,7 +331,7 @@ class EnemyManager {
         // Get direction to player
         const direction = new THREE.Vector3();
         direction
-          .subVectors(this.camera.position, enemy.mesh.position)
+          .subVectors(this.playerTransform.position, enemy.mesh.position)
           .normalize();
 
         // Apply movement patterns based on enemy type
@@ -393,7 +393,7 @@ class EnemyManager {
         enemy.mesh.position.add(enemy.velocity);
 
         // Make enemy face the player
-        enemy.mesh.lookAt(this.camera.position);
+        enemy.mesh.lookAt(this.playerTransform.position);
 
         // Apply animations to enemy mesh based on its type
         animateEnemy(enemy, delta, currentTime / 1000);
@@ -475,21 +475,20 @@ class EnemyManager {
         enemy.type.name !== 'scout' &&
         currentTime - enemy.lastFireTime > enemy.fireRate
       ) {
-        // Only shoot if within range and in front of the player
+        // Check the enemy's facing, independent of the player's viewing direction.
         const firingRange = getEnemyFiringRange(enemy.type.name);
 
-        // Check if player is in front of the enemy
         const inFrontOf =
-          this.camera
+          enemy.mesh
             .getWorldDirection(new THREE.Vector3())
             .dot(
               new THREE.Vector3()
-                .subVectors(enemy.mesh.position, this.camera.position)
+                .subVectors(this.playerTransform.position, enemy.mesh.position)
                 .normalize()
-            ) < 0;
+            ) > 0;
 
         if (distanceToPlayer < firingRange && inFrontOf) {
-          this.projectileManager.fireEnemyProjectile(enemy, this.camera);
+          this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform);
           enemy.lastFireTime = currentTime;
 
           // Set next fire rate based on enemy type
@@ -509,7 +508,7 @@ class EnemyManager {
                 if (enemy && enemy.mesh && enemy.mesh.parent) {
                   this.projectileManager.fireEnemyProjectile(
                     enemy,
-                    this.camera
+                    this.playerTransform
                   );
                 }
               });
@@ -519,7 +518,7 @@ class EnemyManager {
                   if (enemy && enemy.mesh && enemy.mesh.parent) {
                     this.projectileManager.fireEnemyProjectile(
                       enemy,
-                      this.camera
+                      this.playerTransform
                     );
                   }
                 });
@@ -536,7 +535,7 @@ class EnemyManager {
     // Update enemy projectiles
     this.projectileManager.updateProjectiles(
       delta,
-      this.camera,
+      this.playerTransform,
       this.gameState,
       this.effectsManager
     );
@@ -610,12 +609,12 @@ class EnemyManager {
       this.audioManager.initialized &&
       enemy.mesh &&
       enemy.mesh.position &&
-      this.camera
+      this.playerTransform
     ) {
       try {
         // Calculate volume based on distance to player
         const distanceToPlayer = enemy.mesh.position.distanceTo(
-          this.camera.position
+          this.playerTransform.position
         );
         const volume = Math.min(0.8, 10 / Math.max(1, distanceToPlayer));
         this.audioManager.playSound('explosion', { volume });

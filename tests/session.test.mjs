@@ -44,10 +44,10 @@ function fixture(t) {
   game.camera = new THREE.PerspectiveCamera();
   game.scene.add(game.camera);
   game.spaceship = new Spaceship();
-  game.spaceship.attachToCamera(game.camera);
+  game.spaceship.attachCamera(game.camera);
   game.clock = { getDelta: () => 1 / 60 };
   game.inputManager = { clearKeys() {}, requestPointerLock: () => Promise.resolve(true), updateMovement() {} };
-  game.levelManager = new LevelManager(game.scene, game.camera);
+  game.levelManager = new LevelManager(game.scene, game.spaceship.group);
   game.levelManager.segmentCount = 2;
   game.levelManager.buffer = 1;
   game.levelManager.wallMaterial = new THREE.MeshBasicMaterial();
@@ -63,9 +63,9 @@ function fixture(t) {
     Object.freeze(level.powerupSpawns);
     return Object.freeze(level);
   });
-  game.projectileManager = new ProjectileManager(game.scene, game.camera, game.audioManager, game.session);
-  game.enemyManager = new EnemyManager(game.scene, game.camera, game.gameState, game.audioManager, game.levelManager);
-  game.powerUpManager = new PowerUpManager(game.scene, game.camera, game.gameState, game.audioManager, game.uiManager, game.levelManager);
+  game.projectileManager = new ProjectileManager(game.scene, game.spaceship.group, game.audioManager, game.session);
+  game.enemyManager = new EnemyManager(game.scene, game.spaceship.group, game.gameState, game.audioManager, game.levelManager);
+  game.powerUpManager = new PowerUpManager(game.scene, game.spaceship.group, game.gameState, game.audioManager, game.uiManager, game.levelManager);
   game.enemyManager.powerUpManager = game.powerUpManager;
   game.gameState.setReferences(game.camera, game.audioManager, game.uiManager, game.activeAnimations, game);
   game.startSession({ endless: false, levelIndex: 0 });
@@ -116,7 +116,7 @@ test('restart clears combat state and callbacks without awarding cleanup kills',
   const oldEnemy = game.enemyManager.enemies[0];
   const oldPickup = game.powerUpManager.powerups[0];
   game.projectileManager.createProjectile(new THREE.Vector3(), new THREE.Quaternion());
-  game.enemyManager.projectileManager.fireEnemyProjectile(oldEnemy, game.camera);
+  game.enemyManager.projectileManager.fireEnemyProjectile(oldEnemy, game.spaceship.group);
   game.enemyManager.effectsManager.createHitEffect(new THREE.Vector3());
   game.session.schedule(100, () => assert.fail('old-session callback ran'));
   game.gameState.applyTimedModifier('weaponPower', 2, 15000, 'expired');
@@ -126,7 +126,7 @@ test('restart clears combat state and callbacks without awarding cleanup kills',
   game.gameState.addWeaponAmmo('laser', 40);
   game.gameState.playerHealth = 12;
   game.spaceship.velocity.set(2, 3, -4);
-  game.spaceship.pitch = 1;
+  game.spaceship.rotate(0, 1, 0);
   const oldId = game.session.id;
   assert.equal(game.pauseGame(), true);
   assert.equal(game.restartLevel(), true);
@@ -141,7 +141,7 @@ test('restart clears combat state and callbacks without awarding cleanup kills',
   assert.equal(game.gameState.weaponPickups.laser, 0);
   assert.equal(game.gameState.weaponInventory.laser.unlocked, false);
   assert.deepEqual(game.spaceship.velocity.toArray(), [0, 0, 0]);
-  assert.equal(game.spaceship.pitch, 0);
+  assert.ok(game.spaceship.group.quaternion.equals(new THREE.Quaternion()));
   assert.equal(oldEnemy.mesh.parent, null);
   assert.equal(oldPickup.mesh.parent, null);
   assert.equal(game.projectileManager.projectiles.length, 0);

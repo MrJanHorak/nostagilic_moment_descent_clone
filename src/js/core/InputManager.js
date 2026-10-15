@@ -1,5 +1,4 @@
 // Input Manager for handling keyboard and mouse inputs
-import * as THREE from 'three';
 import { shakeCamera } from '../utils/effectsUtils.js';
 
 class InputManager {
@@ -11,12 +10,8 @@ class InputManager {
     this.game = null; // Will be set from main.js
 
     this.keyStates = {};
-    this.euler = new THREE.Euler(0, 0, 0, 'YXZ'); // For camera rotation
-    this.PI_2 = Math.PI / 2; // For clamping pitch
-    this.canvas = null; // Will be set from outside
-
-    this.moveSpeed = 0.15; // Base movement speed
-    this.rotationSpeed = 0.05; // Rotation speed
+    this.canvas = null;
+    this.mouseSensitivity = 0.002;
 
     // Bind methods
     this.onMouseMove = this.onMouseMove.bind(this);
@@ -60,16 +55,13 @@ class InputManager {
     const movementY =
       event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-    this.euler.setFromQuaternion(this.camera.quaternion);
-
-    this.euler.y -= movementX * 0.002; // Yaw
-    this.euler.x -= movementY * 0.002; // Pitch
-
-    this.euler.x = Math.max(-this.PI_2, Math.min(this.PI_2, this.euler.x)); // Clamp pitch
-
-    this.camera.quaternion.setFromEuler(this.euler);
+    this.game?.spaceship.rotate(-movementX * this.mouseSensitivity, -movementY * this.mouseSensitivity);
   } // Handle key down
   onKeyDown(event) {
+    if (this.gameState.session.phase === 'playing' &&
+      ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
+      event.preventDefault?.();
+    }
     // Always set keyStates, even if pointer lock is not active
     this.keyStates[event.code] = true;
 
@@ -194,8 +186,10 @@ class InputManager {
 
     // Gather input for spaceship drift physics
     const input = {
-      left: !!this.keyStates['KeyA'] || !!this.keyStates['ArrowLeft'],
-      right: !!this.keyStates['KeyD'] || !!this.keyStates['ArrowRight'],
+      left: !!this.keyStates['KeyA'],
+      right: !!this.keyStates['KeyD'],
+      yawLeft: !!this.keyStates['ArrowLeft'],
+      yawRight: !!this.keyStates['ArrowRight'],
       up: !!this.keyStates['Space'],
       down: !!this.keyStates['ShiftLeft'] || !!this.keyStates['ControlLeft'],
       forward: !!this.keyStates['KeyW'],
@@ -208,17 +202,15 @@ class InputManager {
 
     // Pass input to spaceship for drift/inertia physics
     if (this.game && this.game.spaceship) {
-      this.game.spaceship.update(delta, input);
+      this.game.spaceship.update(delta, input, this.gameState.speedMultiplier);
     }
 
-    // Optionally, handle roll here if you want to rotate the ship visually
-    // (e.g., this.game.spaceship.group.rotation.z += ...)
   } // Provide feedback when player collides with an obstacle
   activateCollisionFeedback() {
     if (this.gameState.session.phase !== 'playing') return;
     // Small screen shake for collision
     if (this.camera) {
-      const shakeAnim = shakeCamera(this.camera, 0.3);
+      const shakeAnim = shakeCamera(this.game.spaceship.viewEffects, 0.3, { x: 0, y: 0, z: 0 });
       if (this.game && this.game.activeAnimations) {
         this.game.activeAnimations.push(shakeAnim);
       }

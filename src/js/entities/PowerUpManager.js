@@ -177,14 +177,14 @@ export const powerupTypes = [
 class PowerUpManager {
   constructor(
     scene,
-    camera,
+    playerTransform,
     gameState,
     audioManager,
     uiManager,
     levelManager = null
   ) {
     this.scene = scene;
-    this.camera = camera;
+    this.playerTransform = playerTransform;
     this.gameState = gameState;
     this.audioManager = audioManager;
     this.uiManager = uiManager;
@@ -283,7 +283,7 @@ class PowerUpManager {
     if (this.gameState?.session.phase !== 'playing') return;
     if (!this.levelManager?.isEndless) this.spawnPredefinedPowerUps();
     const playerPosition = new THREE.Vector3();
-    this.camera.getWorldPosition(playerPosition);
+    this.playerTransform.getWorldPosition(playerPosition);
 
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const powerup = this.powerups[i];
@@ -342,10 +342,10 @@ class PowerUpManager {
   // Spawn a power-up in a random position in front of the player
   spawnRandomPowerup() {
     const playerPosition = new THREE.Vector3();
-    this.camera.getWorldPosition(playerPosition);
+    this.playerTransform.getWorldPosition(playerPosition);
 
     const playerDirection = new THREE.Vector3(0, 0, -1);
-    playerDirection.applyQuaternion(this.camera.quaternion);
+    playerDirection.applyQuaternion(this.playerTransform.quaternion);
 
     // Position 10-20 units ahead of player
     const distance = 10 + Math.random() * 10;
@@ -370,7 +370,7 @@ class PowerUpManager {
       const spawnId = spawnPoint.id ?? `pickup:${index}`;
       // Check if power-up should be visible now (based on player position)
       const distanceToPlayer = spawnPoint.position.distanceTo(
-        this.camera.position
+        this.playerTransform.position
       );
 
       // Only spawn if within reasonable distance and not already spawned

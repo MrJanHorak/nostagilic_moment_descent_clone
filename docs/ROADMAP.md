@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress:** The [startup checkpoint](progress/M1_STARTUP.md) and [session-lifecycle checkpoint](progress/M1_SESSION_LIFECYCLE.md) deliver startup repairs, centralized start/end/pause/reset/terminal transitions, session-owned timers, cleanup, and 42 regression tests. First-work-queue items 2 and 3 are complete; item 1 has its contract and startup fixtures, with the player-root arena still pending. Movement, geometry/collision, a real objective/exit mission, and the full M1 acceptance gate remain open.
+**Implementation progress:** The [startup](progress/M1_STARTUP.md), [session lifecycle](progress/M1_SESSION_LIFECYCLE.md), and [flight](progress/M1_FLIGHT.md) checkpoints deliver reliable startup/reset/pause/cleanup and world-space first-person local thrust/yaw/pitch/roll, with a bounded 60 Hz simulation and 52 tests. First-work-queue items 2, 3, and 4 are complete. Item 1 has its contract and fixtures; the finite arena remains pending. Geometry/collision, wall-aware combat, a real objective/exit mission, and the full M1 acceptance gate remain open.
 
 ## Scope and effort
 

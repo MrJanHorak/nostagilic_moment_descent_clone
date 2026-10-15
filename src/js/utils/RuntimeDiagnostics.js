@@ -48,6 +48,8 @@ export default class RuntimeDiagnostics {
     if (gameState) {
       this.phase = gameState.session.phase.toUpperCase();
       const game = gameState.game;
+      const ship = game?.spaceship;
+      this.flightStatus = ship ? `Position: ${ship.group.position.toArray().map(n => n.toFixed(2)).join(', ')} | Speed: ${ship.velocity.length().toFixed(2)}\nQuaternion: ${ship.group.quaternion.toArray().map(n => n.toFixed(3)).join(', ')}` : '';
       this.sessionStatus = `Session: ${gameState.session.id} | Time: ${(gameState.session.timeMs / 1000).toFixed(2)}s | Steps: ${gameState.session.steps} | Tasks: ${gameState.session.tasks.size}`;
       this.entityStatus = `Enemies: ${game?.enemyManager?.enemies.length ?? 0} | Shots: ${(game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0)} | Pickups: ${game?.powerUpManager?.powerups.length ?? 0}`;
       if (game && !this.controls) {
@@ -74,6 +76,7 @@ export default class RuntimeDiagnostics {
       `Frames: ${this.frames} | Updates: ${this.updates} | Errors: ${this.errors}`,
       this.sessionStatus,
       this.entityStatus,
+      this.flightStatus,
       this.lastError,
     ].filter(Boolean).join('\n');
   }

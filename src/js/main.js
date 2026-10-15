@@ -8,6 +8,7 @@ import ProjectileManager from './entities/ProjectileManager.js';
 import EnemyManager from './entities/EnemyManager.js';
 import PowerUpManager from './entities/PowerUpManager.js';
 import UIManager from './ui/UIManager.js';
+import SimulationStepper from './core/SimulationStepper.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
@@ -15,6 +16,7 @@ import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 export default class Game {
   constructor() {
     this.clock = new THREE.Clock();
+    this.stepper = new SimulationStepper();
     this.scene = new THREE.Scene();
     this.audioManager = new AudioManager();
     this.gameState = new GameState();
@@ -34,18 +36,16 @@ export default class Game {
       this.initRenderer();
       this.uiManager = new UIManager(this.gameState, this.audioManager);
       this.uiManager.game = this;
-      this.levelManager = new LevelManager(this.scene, this.camera);
-      this.projectileManager = new ProjectileManager(this.scene, this.camera, this.audioManager, this.session);
+      this.levelManager = new LevelManager(this.scene, this.spaceship.group);
+      this.projectileManager = new ProjectileManager(this.scene, this.spaceship.group, this.audioManager, this.session);
       this.projectileManager.setCanvas(this.canvas);
       this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager).init(this.canvas);
       this.inputManager.game = this;
-      this.powerUpManager = new PowerUpManager(this.scene, this.camera, this.gameState, this.audioManager, this.uiManager, this.levelManager);
-      this.enemyManager = new EnemyManager(this.scene, this.camera, this.gameState, this.audioManager, this.levelManager);
+      this.powerUpManager = new PowerUpManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.uiManager, this.levelManager);
+      this.enemyManager = new EnemyManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.levelManager);
       this.enemyManager.powerUpManager = this.powerUpManager;
       this.gameState.setReferences(this.camera, this.audioManager, this.uiManager, this.activeAnimations, this);
       this.initLighting();
-      this.spaceship = new Spaceship();
-      this.spaceship.attachToCamera(this.camera);
       this.caveParticles = createCaveParticles(this.scene);
       await this.levelManager.initMaterials();
       this.levelManager.initLevel(); // Static background preview; no live session yet.
@@ -67,6 +67,8 @@ export default class Game {
     this.camera.position.z = 5;
     this.camera.rotation.order = 'YXZ';
     this.scene.add(this.camera);
+    this.spaceship = new Spaceship();
+    this.spaceship.attachCamera(this.camera);
   }
 
   initRenderer() {
@@ -124,6 +126,7 @@ export default class Game {
   }
 
   endSession() {
+    this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.inputManager?.clearKeys();
     this.releasePointerLock();
@@ -147,12 +150,10 @@ export default class Game {
     this.session.begin();
     try {
       this.gameState.resetForSession();
-      this.camera.position.set(0, 0, 5);
-      this.camera.rotation.set(0, 0, 0);
-      this.spaceship.velocity.set(0, 0, 0);
-      this.spaceship.pitch = 0;
-      this.spaceship.group.rotation.set(0, 0, 0);
-      this.spaceship.group.position.set(0, -0.2, -1.5);
+      this.spaceship.reset();
+      this.camera.position.set(0, 0, 0);
+      this.camera.quaternion.identity();
+      this.gameState.playerVelocity = this.spaceship.velocity;
       this.caveParticles?.position.set(0, 0, 0);
       this.lastPowerupSpawnTime = 0;
       this.lastParticleUpdate = 0;
@@ -193,6 +194,7 @@ export default class Game {
 
   pauseGame() {
     if (this.session.phase !== 'playing') return false;
+    this.stepper.reset();
     this.session.transition('paused');
     this.inputManager.clearKeys();
     this.audioManager.setPaused(true);
@@ -268,19 +270,11 @@ export default class Game {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }
     this.inputManager.updateMovement(delta);
-    // Legacy movement contract remains until the next player-root checkpoint.
     const intended = this.spaceship.velocity.clone().multiplyScalar(delta);
     const collision = checkPlayerObstacleCollision(this.spaceship.group, this.levelManager.obstacles,
       intended, this.levelManager.tunnelWidth, this.levelManager.tunnelHeight);
     if (collision) this.spaceship.velocity.set(0, 0, 0);
-    else {
-      const offset = intended.negate();
-      this.levelManager.offsetLevel(offset);
-      this.enemyManager.offsetEnemies(offset);
-      this.projectileManager.offsetProjectiles(offset);
-      this.powerUpManager.offsetPowerUps(offset);
-      if (this.caveParticles) this.caveParticles.position.z += offset.z;
-    }
+    else this.spaceship.group.position.add(intended);
     this.levelManager.updateLevel();
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.projectileManager.updateProjectiles(delta);
@@ -299,17 +293,20 @@ export default class Game {
     this.diagnostics.recordUpdate();
   }
 
+  advanceFrame(delta) {
+    if (this.session.phase !== 'playing') { this.stepper.reset(); return; }
+    const generation = this.session.id;
+    this.stepper.advance(delta, (step) => {
+      this.updateSimulation(step);
+      return this.session.phase === 'playing' && this.session.id === generation;
+    });
+  }
+
   animate() {
     requestAnimationFrame(() => this.animate());
     try {
       this.diagnostics.recordFrame(this.gameState);
-      this.updateSimulation(Math.min(this.clock.getDelta(), 0.0333));
-      // The existing camera-follow bug is intentionally isolated from lifecycle work.
-      if (this.spaceship && this.camera) {
-        const shipPosition = this.spaceship.group.position;
-        this.camera.position.copy(shipPosition).add(new THREE.Vector3(0, 2, 6));
-        this.camera.lookAt(shipPosition);
-      }
+      this.advanceFrame(this.clock.getDelta());
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
     } catch (error) {
       this.diagnostics.reportError(error, 'Simulation/render');

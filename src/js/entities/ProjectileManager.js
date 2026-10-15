@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
 
 class ProjectileManager {
-  constructor(scene, camera, audioManager, session = null) {
+  constructor(scene, playerTransform, audioManager, session = null) {
     this.scene = scene;
-    this.camera = camera;
+    this.playerTransform = playerTransform;
     this.audioManager = audioManager;
     this.session = session;
     this.elapsedMs = 0;
@@ -338,13 +338,13 @@ class ProjectileManager {
       }
     }
 
-    // Get world position and quaternion of the camera (spaceship's viewpoint)
+    // Get world position and quaternion of the playerTransform (spaceship's viewpoint)
     const startPosition = new THREE.Vector3();
     const startQuaternion = new THREE.Quaternion();
-    this.camera.getWorldPosition(startPosition);
-    this.camera.getWorldQuaternion(startQuaternion);
+    this.playerTransform.getWorldPosition(startPosition);
+    this.playerTransform.getWorldQuaternion(startQuaternion);
 
-    // Offset slightly forward from the camera to avoid immediate collision with spaceship model
+    // Offset slightly forward from the playerTransform to avoid immediate collision with spaceship model
     const offset = new THREE.Vector3(0, 0, -2); // Adjust Z offset as needed
     offset.applyQuaternion(startQuaternion);
     startPosition.add(offset);
@@ -375,7 +375,7 @@ class ProjectileManager {
   }
 
   // Enemy projectile shooting method
-  fireEnemyProjectile(enemy, camera) {
+  fireEnemyProjectile(enemy, playerTransform) {
     if (!enemy || !enemy.mesh) return;
 
     // Determine projectile type based on enemy type
@@ -442,7 +442,7 @@ class ProjectileManager {
 
     // Calculate direction to player
     const direction = new THREE.Vector3();
-    direction.subVectors(camera.position, projectileMesh.position).normalize();
+    direction.subVectors(playerTransform.position, projectileMesh.position).normalize();
 
     // Add a slight inaccuracy to make it more fair
     const inaccuracy = 0.05;
@@ -483,7 +483,7 @@ class ProjectileManager {
     this.projectiles.splice(index, 1);
   }
   // Update projectiles - now handling special behaviors like gravity, guided, etc.
-  updateProjectiles(delta, camera, gameState, effectsManager) {
+  updateProjectiles(delta, playerTransform, gameState, effectsManager) {
     if (this.session && this.session.phase !== 'playing') return;
     if (!this.session) this.elapsedMs += delta * 1000;
     const currentTime = this.now();
@@ -514,10 +514,10 @@ class ProjectileManager {
 
       // Heat-seeking behavior
       if (projectile.heatSeek) {
-        // Target is always camera (player) in this implementation
+        // Target is always playerTransform (player) in this implementation
         const direction = new THREE.Vector3();
         direction
-          .subVectors(this.camera.position, projectile.mesh.position)
+          .subVectors(this.playerTransform.position, projectile.mesh.position)
           .normalize();
 
         // Limited turn rate
@@ -532,7 +532,7 @@ class ProjectileManager {
       else if (projectile.guided) {
         const direction = new THREE.Vector3();
         direction
-          .subVectors(this.camera.position, projectile.mesh.position)
+          .subVectors(this.playerTransform.position, projectile.mesh.position)
           .normalize();
 
         // More aggressive turn rate than heat-seeking
@@ -650,9 +650,9 @@ class ProjectileManager {
         }
 
         // Check for collision with player
-        if (camera) {
+        if (playerTransform) {
           const distanceToPlayer = projectile.mesh.position.distanceTo(
-            camera.position
+            playerTransform.position
           );
           const collisionThreshold = 0.5; // Adjust based on player size
 

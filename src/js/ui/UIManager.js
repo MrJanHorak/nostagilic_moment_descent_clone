@@ -508,7 +508,7 @@ class UIManager {
                 </p>
                 <p style="margin: 5px 0; display: flex; justify-content: space-between;">
                   <span style="color: #ffffff;">Look:</span> 
-                  <span style="color: #00ddff; font-weight: bold;">Mouse</span>
+                  <span style="color: #00ddff; font-weight: bold;">Mouse / Arrows</span>
                 </p>
                 <p style="margin: 5px 0; display: flex; justify-content: space-between;">
                   <span style="color: #ffffff;">Shoot:</span> 

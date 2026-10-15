@@ -1,6 +1,6 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 14, 2026):** The [startup checkpoint](docs/progress/M1_STARTUP.md) and [session-lifecycle checkpoint](docs/progress/M1_SESSION_LIFECYCLE.md) repair startup, reset/pause/cleanup, and terminal-state handling, with 42 regression tests. This remains an unfinished prototype: flight, geometry/collision, and a completable objective/exit mission still need work. Several features below describe intended behavior. See the [baseline assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
+> **Project status (October 14, 2026):** Startup, session/reset handling, and the [first-person flight foundation](docs/progress/M1_FLIGHT.md) are implemented, with 52 regression tests. Local thrust/yaw/pitch/roll now move one player root through a stationary world at a fixed simulation rate. This remains an unfinished prototype: solid arena geometry/collision, wall-aware combat, and a completable objective/exit mission still need work. Several features below describe intended behavior. See the [baseline assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
 
 Run `npm test` for regression checks. Run `npm run smoke` and open `http://127.0.0.1:5183/?smoke=1` for a development-only frame/update/error overlay and the startup verification workflow.
 
@@ -138,6 +138,7 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 - **Shift/Ctrl**: Move Down
 - **Mouse**: Look around
 - **Q/E**: Roll left/right
+- **Arrow keys**: Local yaw/pitch (keyboard alternative to mouse look)
 - **Left Click**: Shoot
 - **ESC**: Pause game
 - **R**: Restart level (after game over)

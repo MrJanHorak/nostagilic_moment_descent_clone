@@ -1,12 +1,12 @@
 # Control and session contract for M1
 
-Implementation direction for the first playable mission, October 14, 2026. Startup and the session state machine are now implemented; **the player-root migration, fixed-step motion, and actual arena remain pending.** See [current progress](progress/M1_SESSION_LIFECYCLE.md).
+Implementation direction for the first playable mission, October 14, 2026. Startup, session ownership, the player-root migration, and fixed-step flight are implemented; **the finite arena, solid-wall collision, and objective/exit remain pending.** See [current progress](progress/M1_FLIGHT.md).
 
 ## Player and world ownership
 
 Use a right-handed world: +X right, +Y up, and local -Z forward. Distances are world units; velocity is units/second, acceleration is units/second squared, and angular rates are radians/second.
 
-The intended scene graph is:
+The implemented player scene graph is (solid arena colliders remain pending):
 
 ```text
 scene
@@ -32,6 +32,7 @@ Collision operates on solid world geometry with bounded substeps or a swept sphe
 | Vertical thrust | Space / left Shift or left Ctrl | Local +Y / -Y thrust, including while inverted |
 | Yaw / pitch | Mouse | Local rotation; no world-up lock or pitch clamp |
 | Roll | Q / E | Local +Z / -Z rotation |
+| Yaw alternative | Left / Right arrows | Local yaw; A/D retain strafe |
 | Pitch alternative | Up / Down arrows | Local pitch; same player orientation as mouse input |
 | Primary fire | Left click | Fire only during active play with mouse capture |
 | Weapon selection | 1–4 | Only select unlocked weapons during active play |
@@ -61,11 +62,11 @@ Pointer-lock acquisition happens from a user gesture and may return a promise, t
 | playing / paused / dead / completed | loading | Restart or switch mission only after teardown |
 | loading | menu | Cancel loading and invalidate its callbacks |
 
-`startSession({ endless, levelIndex })` resets health, legacy velocity/pitch/camera pose, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, phase, and simulation time. Restart routes use this same operation. `endSession()` removes entities without awarding kills, invalidates callbacks, stops session audio, clears input, and releases pointer lock. Death/completion freeze the scene until an explicit Reboot/Replay/Next/Selection action ends it. A full player-root transform reset follows the movement migration.
+`startSession({ endless, levelIndex })` resets health, player world position/quaternion/velocity and visual camera pose, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, phase, and simulation time. Restart routes use this same operation. `endSession()` removes entities without awarding kills, invalidates callbacks, stops session audio, clears input, and releases pointer lock. Death/completion freeze the scene until an explicit Reboot/Replay/Next/Selection action ends it. Restart restores the root to `(0,0,5)` with identity orientation, zero velocity, and zero view displacement.
 
 Keep level definitions immutable. Per-session sets track stable spawned/killed/collected IDs. A monotonically increasing session token invalidates asynchronous work belonging to an old session. A next-level transition updates the same authoritative selected-level identity used by restart.
 
-Cooldowns, projectile lifetimes, buffs, and managed effects advance on session simulation time and freeze during pause. Independent pickup RAF loops and gameplay `setTimeout` calls have been removed; presentation-only UI/audio timers are cleaned up on teardown. A bounded fixed-step accumulator remains the target for the movement checkpoint; the current loop still uses a clamped variable frame delta.
+Cooldowns, projectile lifetimes, buffs, and managed effects advance on session simulation time and freeze during pause. Independent pickup RAF loops and gameplay `setTimeout` calls have been removed; presentation-only UI/audio timers are cleaned up on teardown. A bounded accumulator now runs the active simulation at 60 Hz, with at most 100 ms/six steps per rendered frame. Excess wall time is discarded after a stall; pause/teardown discard partial time. There is no render interpolation yet.
 
 ## Startup and failure contract implemented in the first checkpoint
 
@@ -80,6 +81,6 @@ Cooldowns, projectile lifetimes, buffs, and managed effects advance on session s
 
 `npm test` covers startup/audio failure contracts, pickup behavior, both mode pipelines, session transitions/reset, pause-frozen timers, callback cancellation, cleanup, terminal latches, and mission selection. The Node fixtures use real Three.js/game managers; they do not validate WebGL, flight feel, native mouse capture, or a level's actual winnability.
 
-`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
+`npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
-The next controller/session implementation should convert these target contracts into behavior tests: rotated/inverted thrust, roll, equivalent 30/60/120 Hz simulations, wall sliding, clean repeated restarts, pause-frozen timers, and one completion event.
+The 52 tests now cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS simulations, view-shake isolation, repeated restarts, pause-frozen timers, and terminal latches. Solid-wall sliding, doorway traversal, wall-aware combat, and normal objective/exit completion remain the next acceptance work. See the flight checkpoint for numeric tolerances and browser limitations.

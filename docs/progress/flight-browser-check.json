@@ -1,0 +1,22 @@
+{
+  "development": {
+    "forward": "SMOKE CHECK | PAUSED\nFrames: 2554 | Updates: 57 | Errors: 0\nSession: 3 | Time: 0.95s | Steps: 57 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, 1.50 | Speed: 6.00\nQuaternion: 0.000, 0.000, 0.000, 1.000",
+    "rolled": "SMOKE CHECK | PAUSED\nFrames: 3607 | Updates: 124 | Errors: 0\nSession: 3 | Time: 2.07s | Steps: 124 | Tasks: 0\nEnemies: 1 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, -0.74 | Speed: 0.39\nQuaternion: 0.000, 0.000, -0.743, 0.669",
+    "yawedAfterRoll": "SMOKE CHECK | PAUSED\nFrames: 4441 | Updates: 176 | Errors: 0\nSession: 3 | Time: 2.93s | Steps: 176 | Tasks: 0\nEnemies: 1 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, -0.88 | Speed: 0.05\nQuaternion: -0.450, -0.405, -0.591, 0.533",
+    "finalEndlessPaused": "SMOKE CHECK | PAUSED\nFrames: 5152 | Updates: 72 | Errors: 0\nSession: 2 | Time: 1.20s | Steps: 72 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, 3.76 | Speed: 4.10\nQuaternion: 0.000, 0.000, 0.457, 0.889",
+    "reset": "SMOKE CHECK | PAUSED\nFrames: 5358 | Updates: 72 | Errors: 0\nSession: 4 | Time: 0.00s | Steps: 0 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, 5.00 | Speed: 0.00\nQuaternion: 0.000, 0.000, 0.000, 1.000",
+    "errors": []
+  },
+  "production": {
+    "paused": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: \"ENEMIES: 0/0\"\n- heading \"PAUSED\" [level=1]\n- button \"CONTINUE\": CONTINUE\n- button \"SELECT MISSION\": SELECT MISSION\n- button \"RESTART MISSION\": RESTART MISSION\n- button \"RETURN TO BASE\": RETURN TO BASE",
+    "diagnosticsCount": 0,
+    "testControlsCount": 0,
+    "restart": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: \"ENEMIES: 0/0\"\n- heading \"PAUSED\" [level=1]\n- button \"CONTINUE\": CONTINUE\n- button \"SELECT MISSION\": SELECT MISSION\n- button \"RESTART MISSION\" [active]: RESTART MISSION\n- button \"RETURN TO BASE\": RETURN TO BASE",
+    "menu": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: \"ENEMIES: 0/0\"\n- heading \"DESCENDED\" [level=1]\n- heading \"Zero Gravity Shooter\" [level=2]\n- heading \"CONTROL SYSTEMS\" [level=3]\n- paragraph:\n  - generic: \"Movement:\"\n  - generic: W A S D\n- paragraph:\n  - generic: \"Look:\"\n  - generic: Mouse / Arrows\n- paragraph:\n  - generic: \"Shoot:\"\n  - generic: Left Click\n- paragraph:\n  - generic: \"Pause:\"\n  - generic: ESC\n- paragraph:\n  - generic: \"Roll Left/Right:\"\n  - generic: Q / E\n- paragraph:\n  - generic: \"Move Up:\"\n  - generic: Space\n- paragraph:\n  - generic: \"Move Down:\"\n  - generic: Shift / Ctrl\n- paragraph:\n  - generic: \"Weapon Switch:\"\n  - generic: 1-4\n- generic: START ENDLESS MODE\n- generic: SELECT LEVEL",
+    "errors": []
+  },
+  "limitations": [
+    "Embedded browser refused pointer lock; captured mouse feel and live firing were not browser-verified.",
+    "Numeric flight tests isolate an open space; legacy level geometry and collision are still pending."
+  ]
+}

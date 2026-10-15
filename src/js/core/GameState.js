@@ -86,7 +86,11 @@ export default class GameState {
     this.uiManager?.updateHUD();
     this.uiManager?.flash?.('rgba(255, 0, 0, 0.3)');
     if (this.playerHealth === 0) this.gameOver();
-    else if (this.camera) this.activeAnimations.push(shakeCamera(this.camera, Math.min(1, amount / 20)));
+    else if (this.camera) {
+      const viewEffects = this.game?.spaceship?.viewEffects;
+      this.activeAnimations.push(shakeCamera(viewEffects ?? this.camera,
+        Math.min(1, amount / 20), viewEffects ? { x: 0, y: 0, z: 0 } : this.camera.position));
+    }
   }
 
   healPlayer(amount) {

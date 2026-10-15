@@ -1,5 +1,7 @@
 # M1 checkpoint: session lifecycle
 
+**Follow-up:** The [flight checkpoint](M1_FLIGHT.md) now implements the player root, local controls, fixed-step timing, and shake isolation described below as pending. This document records the earlier session checkpoint.
+
 October 14, 2026. Builds on startup checkpoint `b2824d9`. This completes the first work queue's session-lifecycle item; player movement, collision, and the full playable-mission gate remain open.
 
 ## Behavior now implemented

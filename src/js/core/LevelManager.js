@@ -8,9 +8,9 @@ import createExampleLevel from './levels/ExampleLevel.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 
 class LevelManager {
-  constructor(scene, camera) {
+  constructor(scene, playerTransform) {
     this.scene = scene;
-    this.camera = camera;
+    this.playerTransform = playerTransform;
 
     this.levelSegments = [];
     this.segmentLength = 20; // Length of each tunnel segment
@@ -1071,7 +1071,7 @@ class LevelManager {
   } // Update level segments based on player position
   updateLevel() {
     if (this.segmentLength === 0) return;
-    const playerZ = this.camera.position.z;
+    const playerZ = this.playerTransform.position.z;
     const currentIndex = Math.round(-playerZ / this.segmentLength);
 
     // Only update if player has moved to a different segment

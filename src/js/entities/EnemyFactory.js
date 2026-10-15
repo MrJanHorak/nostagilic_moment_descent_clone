@@ -17,7 +17,7 @@ class EnemyFactory {
     };
   }
 
-  createEnemy(enemyType, position, camera = null) {
+  createEnemy(enemyType, position, playerTransform = null) {
     const body = new THREE.Group();
     body.name = `${enemyType.name}_enemy`;
 
@@ -37,9 +37,9 @@ class EnemyFactory {
     // Position the enemy
     body.position.copy(position);
 
-    // Look at player initially if camera is provided
-    if (camera) {
-      const lookAtPosition = camera.position.clone();
+    // Look at player initially if playerTransform is provided
+    if (playerTransform) {
+      const lookAtPosition = playerTransform.position.clone();
       body.lookAt(lookAtPosition);
     }
 

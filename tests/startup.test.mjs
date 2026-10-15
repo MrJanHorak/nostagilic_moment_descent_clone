@@ -80,15 +80,15 @@ function startupFixture(t, AudioContext) {
   game.camera = new THREE.PerspectiveCamera();
   game.scene.add(game.camera);
   game.spaceship = new Spaceship();
-  game.spaceship.attachToCamera(game.camera);
-  game.levelManager = new LevelManager(game.scene, game.camera);
+  game.spaceship.attachCamera(game.camera);
+  game.levelManager = new LevelManager(game.scene, game.spaceship.group);
   game.levelManager.segmentCount = 2;
   game.levelManager.buffer = 1;
   game.levelManager.wallMaterial = new THREE.MeshBasicMaterial();
   game.levelManager.floorMaterial = new THREE.MeshBasicMaterial();
-  game.projectileManager = new ProjectileManager(game.scene, game.camera, game.audioManager, game.session);
-  game.enemyManager = new EnemyManager(game.scene, game.camera, game.gameState, game.audioManager, game.levelManager);
-  game.powerUpManager = new PowerUpManager(game.scene, game.camera, game.gameState, null, game.uiManager, game.levelManager);
+  game.projectileManager = new ProjectileManager(game.scene, game.spaceship.group, game.audioManager, game.session);
+  game.enemyManager = new EnemyManager(game.scene, game.spaceship.group, game.gameState, game.audioManager, game.levelManager);
+  game.powerUpManager = new PowerUpManager(game.scene, game.spaceship.group, game.gameState, null, game.uiManager, game.levelManager);
   game.gameState.setReferences(game.camera, game.audioManager, game.uiManager, game.activeAnimations, game);
   return { game, events };
 }
@@ -230,7 +230,7 @@ test('enemy projectiles receive the real camera and audio dependencies', () => {
   const camera = new THREE.PerspectiveCamera();
   const audio = new AudioManager();
   const enemies = new EnemyManager(new THREE.Scene(), camera, new GameState(), audio);
-  assert.equal(enemies.projectileManager.camera, camera);
+  assert.equal(enemies.projectileManager.playerTransform, camera);
   assert.equal(enemies.projectileManager.audioManager, audio);
 });
 
@@ -305,9 +305,9 @@ for (const mode of ['endless', 'authored']) {
     game.camera.position.z = 5;
     game.scene.add(game.camera);
     game.spaceship = new Spaceship();
-    game.spaceship.attachToCamera(game.camera);
+    game.spaceship.attachCamera(game.camera);
     game.clock = { getDelta: () => 1 / 60 };
-    game.levelManager = new LevelManager(game.scene, game.camera);
+    game.levelManager = new LevelManager(game.scene, game.spaceship.group);
     game.levelManager.wallMaterial = new THREE.MeshBasicMaterial();
     game.levelManager.floorMaterial = new THREE.MeshBasicMaterial();
     const blueprint = new LevelBlueprint(1, 'Startup fixture');
@@ -316,11 +316,11 @@ for (const mode of ['endless', 'authored']) {
     game.isEndlessMode = mode === 'endless';
     game.levelManager.isEndless = game.isEndlessMode;
     game.levelManager.initLevel();
-    game.projectileManager = new ProjectileManager(game.scene, game.camera, game.audioManager);
-    game.enemyManager = new EnemyManager(game.scene, game.camera, game.gameState, game.audioManager, game.levelManager);
+    game.projectileManager = new ProjectileManager(game.scene, game.spaceship.group, game.audioManager);
+    game.enemyManager = new EnemyManager(game.scene, game.spaceship.group, game.gameState, game.audioManager, game.levelManager);
     game.enemyManager.lastRandomSpawnTime = Date.now();
     game.lastEnemySpawnTime = Date.now();
-    game.powerUpManager = new PowerUpManager(game.scene, game.camera, game.gameState, null, game.uiManager, game.levelManager);
+    game.powerUpManager = new PowerUpManager(game.scene, game.spaceship.group, game.gameState, null, game.uiManager, game.levelManager);
     game.gameState.setReferences(game.camera, game.audioManager, game.uiManager, game.activeAnimations, game);
     game.inputManager.updateMovement = () => {};
     game.startGame();
