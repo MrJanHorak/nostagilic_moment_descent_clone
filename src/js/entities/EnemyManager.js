@@ -19,7 +19,7 @@ class EnemyManager {
 
     // Initialize supporting systems
     this.enemyFactory = new EnemyFactory(scene);
-    this.projectileManager = new ProjectileManager(scene, audioManager);
+    this.projectileManager = new ProjectileManager(scene, camera, audioManager);
     this.effectsManager = new EffectsManager(scene);
     this.objectPool = new ObjectPool();
 

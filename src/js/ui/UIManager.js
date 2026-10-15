@@ -420,6 +420,7 @@ class UIManager {
 
   createStartScreen() {
     try {
+      this.startScreen?.remove();
       console.log('Creating start screen');
       const startScreen = document.createElement('div');
       startScreen.style.position = 'absolute';
@@ -628,12 +629,16 @@ class UIManager {
       const selectLevelBtn = document.getElementById('select-level-btn');
       if (selectLevelBtn) {
         selectLevelBtn.addEventListener('click', () => {
-          this.hideStartScreen();
-          this.createLevelSelect(this.game);
+          this.game.showLevelSelection();
         });
       }
 
-      return document.getElementById('start-game-btn');
+      const startButton = document.getElementById('start-game-btn');
+      startButton.addEventListener('click', () => {
+        this.game.selectEndlessMode();
+        this.game.startGame();
+      });
+      return startButton;
     } catch (error) {
       console.error('Error creating start screen:', error);
       return null;

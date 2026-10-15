@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-14",
+  "browser": "Codex in-app Chromium browser",
+  "checks": {
+    "menuReturn": "Mission selection -> main menu -> endless start succeeded",
+    "endless": {
+      "status": "SMOKE CHECK | RUNNING\nFrames: 3582 | Updates: 1427 | Errors: 0",
+      "errors": []
+    },
+    "pause": "Updates held at 931 while rendered frames advanced from 2425 to 3076; Continue resumed updates",
+    "authored": {
+      "status": "SMOKE CHECK | RUNNING\nFrames: 5733 | Updates: 4995 | Errors: 0",
+      "errors": []
+    },
+    "production": {
+      "modesChecked": [
+        "endless",
+        "authored"
+      ],
+      "finalBundle": "/assets/index-BX2ZRa4d.js",
+      "errors": [],
+      "diagnosticsPanels": 0
+    }
+  },
+  "limitations": [
+    "Pointer lock refused by embedded browser; refusal was handled without an uncaught error. Native mouse capture and aiming were not validated.",
+    "Known movement, geometry, streaming, lifecycle and completion defects remain."
+  ]
+}

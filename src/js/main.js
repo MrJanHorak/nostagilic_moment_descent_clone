@@ -30,6 +30,7 @@ import { checkPlayerObstacleCollision } from '../js/utils/collisionUtils.js';
 
 // Import UI
 import UIManager from '../js/ui/UIManager.js';
+import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 
 // Initialize the game
 export default class Game {
@@ -64,14 +65,17 @@ export default class Game {
     // Add level selection properties
     this.currentLevelIndex = 0;
     this.isEndlessMode = true;
+    this.diagnostics = new RuntimeDiagnostics(
+      !!import.meta.env?.DEV &&
+      new URLSearchParams(globalThis.window?.location?.search).has('smoke')
+    );
   }
 
   async init() {
     console.log('Starting game initialization');
     try {
       // Set up debugging utilities
-      setupRecursiveDetection();
-      console.log('Recursive detection set up');
+      if (import.meta.env?.DEV) setupRecursiveDetection();
 
       // Initialize scene
       this.initScene();
@@ -82,7 +86,7 @@ export default class Game {
 
       this.initRenderer();
       console.log('Renderer initialized'); // Set up scene protection (prevent circular references)
-      setupSceneProtection(this.scene, this.camera);
+      if (import.meta.env?.DEV) setupSceneProtection(this.scene, this.camera);
 
       // Initialize managers
       this.uiManager = new UIManager(this.gameState, this.audioManager);
@@ -161,9 +165,10 @@ export default class Game {
       // Set enemy manager to use level segments
       this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
 
-      // Create start screen and set up event listener
-      const startButton = this.uiManager.createStartScreen();
-      startButton.addEventListener('click', () => this.startGame());
+      // Every start screen owns its listeners, including screens recreated by Back.
+      if (!this.uiManager.createStartScreen()) {
+        throw new Error('Unable to create the start screen');
+      }
       // Initialize the weapon UI if it exists
       if (this.gameState && this.uiManager) {
         this.gameState.resetWeaponInventory();
@@ -179,7 +184,9 @@ export default class Game {
       validateSceneGeometries(this.scene);
       console.log('Initial scene diagnostics complete.');
     } catch (error) {
+      this.diagnostics.reportError(error, 'Initialization');
       console.error('Game initialization failed:', error);
+      throw error;
     }
   }
 
@@ -281,128 +288,53 @@ export default class Game {
       });
     }
   }
-  startGame() {
-    this.gameState.isGameStarted = true;
-    this.uiManager.hideStartScreen(); // Initialize audio on first interaction
-    this.audioManager.init();
+  initializeAudio() {
+    if (!this.audioManager.init()) return;
 
-    // Reset weapon inventory to start with just the basic pulse weapon
-    this.gameState.resetWeaponInventory();
-
-    // Create empty sound for when out of ammo
-    this.audioManager.createSound('empty', () => {
-      const ctx = this.audioManager.context;
-      const duration = 0.05;
-      const buffer = ctx.createBuffer(
-        1,
-        ctx.sampleRate * duration,
-        ctx.sampleRate
-      );
-      const data = buffer.getChannelData(0);
-
-      for (let i = 0; i < data.length; i++) {
-        const t = i / ctx.sampleRate;
-        data[i] = Math.sin(2 * Math.PI * 80 * t) * (1 - t / duration) * 0.2;
-      }
-
-      return buffer;
-    });
-
-    // Create weapon switch sound
-    this.audioManager.createSound('weaponSwitch', () => {
-      const ctx = this.audioManager.context;
-      const duration = 0.15;
-      const buffer = ctx.createBuffer(
-        1,
-        ctx.sampleRate * duration,
-        ctx.sampleRate
-      );
-      const data = buffer.getChannelData(0);
-
-      for (let i = 0; i < data.length; i++) {
-        const t = i / ctx.sampleRate;
-        data[i] =
-          Math.sin(2 * Math.PI * (1000 + 500 * t) * t) *
-          (1 - t / duration) *
-          0.3;
-      }
-
-      return buffer;
-    });
-
-    // Create collision bump sound after audio initialization
-    this.createBumpSound();
-
-    // Create hit sound for projectile collisions
-    this.audioManager.createSound('hit', () => {
-      const ctx = this.audioManager.context;
-      const duration = 0.1;
-      const buffer = ctx.createBuffer(
-        1,
-        ctx.sampleRate * duration,
-        ctx.sampleRate
-      );
-      const data = buffer.getChannelData(0);
-
-      for (let i = 0; i < data.length; i++) {
-        const t = i / ctx.sampleRate;
-        data[i] =
-          Math.sin(2 * Math.PI * 500 * t) *
-          (1 - t / duration) *
-          (Math.random() * 0.1 + 0.9);
-      }
-
-      return buffer;
-    });
-
-    console.log('Starting game audio...');
-
-    // Make sure audio context is running - browsers often suspend it until user interaction
-    if (
-      this.audioManager.context &&
-      this.audioManager.context.state === 'suspended'
-    ) {
-      this.audioManager.context.resume().then(() => {
-        console.log('Audio context successfully resumed');
+    for (const [id, frequency, duration] of [
+      ['empty', 80, 0.05], ['weaponSwitch', 1000, 0.15], ['hit', 500, 0.1],
+    ]) {
+      if (this.audioManager.sounds[id]?.buffer) continue;
+      this.audioManager.createSound(id, (ctx) => {
+        const buffer = ctx.createBuffer(1, ctx.sampleRate * duration, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < data.length; i++) {
+          const t = i / ctx.sampleRate;
+          data[i] = Math.sin(2 * Math.PI * frequency * t) * (1 - t / duration) * 0.2;
+        }
+        return buffer;
       });
     }
+    if (!this.audioManager.sounds.bump?.buffer) this.createBumpSound();
 
-    // Play background music with a slight delay to ensure audio context is running
-    setTimeout(() => {
-      console.log('Trying to play background music...');
-      const musicSource = this.audioManager.playSound('backgroundMusic', {
-        isMusic: true,
-        loop: true,
-        volume: 0.4,
+    // Stay inside the user gesture; no delayed playback can leak into a later run.
+    if (this.audioManager.context.state === 'suspended') {
+      this.audioManager.context.resume().catch((error) => {
+        console.warn('Audio could not resume; continuing without sound.', error);
       });
+    }
+    this.audioManager.stopSound('backgroundMusic');
+    this.audioManager.stopSound('engine');
+    this.audioManager.playSound('backgroundMusic', { isMusic: true, loop: true, volume: 0.4 });
+    this.audioManager.playSound('engine', { loop: true, volume: 0.2 });
+  }
 
-      if (musicSource) {
-        console.log('Background music started successfully');
-      } else {
-        console.warn('Failed to start background music');
-      }
-
-      // Play engine hum sound
-      const engineSource = this.audioManager.playSound('engine', {
-        loop: true,
-        volume: 0.2,
-      });
-
-      if (engineSource) {
-        console.log('Engine sound started successfully');
-      } else {
-        console.warn('Failed to start engine sound');
-      }
-    }, 100); // Small delay to ensure audio context is properly initialized
-
-    // Run diagnostics after scene is initialized
-    console.log('Running scene diagnostics in startGame...');
-    detectCircularReferences(this.scene);
-    validateSceneGeometries(this.scene);
-    console.log('Scene diagnostics complete.');
-
-    // Request pointer lock to start the game
-    this.canvas.requestPointerLock();
+  startGame() {
+    // Sound is optional: a device/autoplay failure must not strand the start menu.
+    try {
+      this.initializeAudio();
+    } catch (error) {
+      this.audioManager.stopAllSounds();
+      console.warn('Audio setup failed; continuing without sound.', error);
+    }
+    this.gameState.resetWeaponInventory();
+    this.gameState.isGameOver = false;
+    this.gameState.isPaused = false;
+    this.gameState.isGameStarted = true;
+    this.inputManager.clearKeys();
+    this.uiManager.hideStartScreen();
+    this.uiManager.hideLevelSelect();
+    this.inputManager.requestPointerLock();
   }
   animate() {
     try {
@@ -413,6 +345,7 @@ export default class Game {
       }
 
       const rawDelta = this.clock.getDelta();
+      this.diagnostics.recordFrame(this.gameState);
       // Clamp delta to prevent large spikes that cause performance issues
       const delta = Math.min(rawDelta, 0.0333); // Cap at ~30 FPS equivalent (1/30 = 0.0333)
 
@@ -605,7 +538,9 @@ export default class Game {
           if (this.uiManager) {
             this.uiManager.updateHUD();
           }
+          this.diagnostics.recordUpdate();
         } catch (error) {
+          this.diagnostics.reportError(error, 'Simulation');
           console.error('Error in game update loop:', error);
         }
       }
@@ -624,6 +559,7 @@ export default class Game {
         this.renderer.render(this.scene, this.camera);
       }
     } catch (error) {
+      this.diagnostics.reportError(error, 'Animation');
       console.error('Critical error in animation loop:', error);
     }
   }

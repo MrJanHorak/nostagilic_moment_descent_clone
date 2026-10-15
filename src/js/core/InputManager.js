@@ -25,6 +25,8 @@ class InputManager {
     this.onKeyUp = this.onKeyUp.bind(this);
     this.onClick = this.onClick.bind(this);
     this.onPointerlockChange = this.onPointerlockChange.bind(this);
+    this.onPointerlockError = this.onPointerlockError.bind(this);
+    this.clearKeys = this.clearKeys.bind(this);
   }
 
   // Initialize with canvas
@@ -35,6 +37,8 @@ class InputManager {
     document.addEventListener('keydown', this.onKeyDown);
     document.addEventListener('keyup', this.onKeyUp);
     document.addEventListener('pointerlockchange', this.onPointerlockChange);
+    document.addEventListener('pointerlockerror', this.onPointerlockError);
+    window.addEventListener('blur', this.clearKeys);
     this.canvas.addEventListener('click', this.onClick);
 
     return this;
@@ -42,7 +46,10 @@ class InputManager {
 
   // Mouse movement handler for camera rotation
   onMouseMove(event) {
-    if (document.pointerLockElement !== this.canvas) {
+    if (
+      document.pointerLockElement !== this.canvas ||
+      !this.gameState.isGameStarted || this.gameState.isPaused || this.gameState.isGameOver
+    ) {
       return;
     }
 
@@ -67,6 +74,7 @@ class InputManager {
     // Handle escape key for pause menu
     if (
       event.code === 'Escape' &&
+      !event.repeat &&
       this.gameState &&
       this.gameState.isGameStarted
     ) {
@@ -102,17 +110,44 @@ class InputManager {
 
   // Handle click - request pointer lock and fire projectile if appropriate
   onClick() {
-    this.canvas.requestPointerLock();
+    if (!this.gameState.isGameStarted || this.gameState.isGameOver || this.gameState.isPaused) return;
+    if (document.pointerLockElement !== this.canvas) {
+      this.requestPointerLock();
+      return;
+    }
 
     // Only shoot if game has started and is in progress
     if (
       this.gameState.isGameStarted &&
       !this.gameState.isGameOver &&
+      !this.gameState.isPaused &&
       document.pointerLockElement === this.canvas &&
       this.projectileManager
     ) {
       this.projectileManager.fireProjectile(this.gameState);
     }
+  }
+
+  requestPointerLock() {
+    if (document.pointerLockElement === this.canvas) return Promise.resolve(true);
+    try {
+      if (!this.canvas?.requestPointerLock) throw new Error('Pointer lock is unavailable');
+      return Promise.resolve(this.canvas.requestPointerLock()).then(
+        () => true,
+        () => { this.onPointerlockError(); return false; }
+      );
+    } catch {
+      this.onPointerlockError();
+      return Promise.resolve(false);
+    }
+  }
+
+  onPointerlockError() {
+    this.uiManager?.showMessage('Click the game view to capture mouse controls.', 2500, '#ffcc66');
+  }
+
+  clearKeys() {
+    this.keyStates = {};
   }
 
   // Handle pointer lock change
@@ -121,6 +156,7 @@ class InputManager {
       console.log('Pointer Lock active');
       document.addEventListener('mousemove', this.onMouseMove, false);
     } else {
+      this.clearKeys();
       console.log('Pointer Lock inactive');
       document.removeEventListener('mousemove', this.onMouseMove, false);
     }
@@ -128,7 +164,7 @@ class InputManager {
   // Update player movement based on key states
   updateMovement(delta) {
     // Skip if game not started or is over
-    if (!this.gameState.isGameStarted || this.gameState.isGameOver) {
+    if (!this.gameState.isGameStarted || this.gameState.isGameOver || this.gameState.isPaused) {
       return;
     }
 
@@ -190,6 +226,8 @@ class InputManager {
     document.removeEventListener('keydown', this.onKeyDown);
     document.removeEventListener('keyup', this.onKeyUp);
     document.removeEventListener('pointerlockchange', this.onPointerlockChange);
+    document.removeEventListener('pointerlockerror', this.onPointerlockError);
+    window.removeEventListener('blur', this.clearKeys);
     document.removeEventListener('mousemove', this.onMouseMove);
     if (this.canvas) {
       this.canvas.removeEventListener('click', this.onClick);

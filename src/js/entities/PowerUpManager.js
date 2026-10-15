@@ -257,6 +257,10 @@ class PowerUpManager {
       ? powerupTypes.find((t) => t.name === typeName)
       : powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
 
+    if (!powerupType) {
+      throw new RangeError(`Unknown power-up type: ${typeName}`);
+    }
+
     const powerupMesh = this.createPowerupMesh(powerupType);
     powerupMesh.position.copy(position);
 
@@ -411,7 +415,7 @@ class PowerUpManager {
 
       // Only spawn if within reasonable distance and not already spawned
       if (distanceToPlayer < 50 && !spawnPoint.spawned) {
-        this.spawnPowerup(spawnPoint.position, spawnPoint.type);
+        this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType);
         spawnPoint.spawned = true;
       }
     }
@@ -419,7 +423,7 @@ class PowerUpManager {
 
   // Move all power-ups by offset (Vector3)
   offsetPowerUps(offset) {
-    for (const powerUp of this.powerUps) {
+    for (const powerUp of this.powerups) {
       if (powerUp && powerUp.mesh && powerUp.mesh.position) {
         powerUp.mesh.position.add(offset);
       }

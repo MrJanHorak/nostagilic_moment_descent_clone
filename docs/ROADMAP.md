@@ -2,6 +2,8 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
+**Implementation progress:** The [M1 startup checkpoint](progress/M1_STARTUP.md) delivers the control/session contract, audio and power-up startup fixes, repeatable smoke checks, and 21 regression tests. First-work-queue item 2 is complete; item 1 has its contract and startup fixtures, with the actual player-root arena still pending. Session lifecycle, movement, geometry/collision, and the full M1 acceptance gate remain open.
+
 ## Scope and effort
 
 Target a small, original single-player browser game: first-person six-degree-of-freedom flight, a compact connected mine, a few weapons/enemies, and a local prefab-based level designer. Keep the present repository and Three.js. Establish a stable game/data boundary before building editor UI.

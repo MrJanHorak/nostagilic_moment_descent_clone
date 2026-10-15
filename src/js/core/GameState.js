@@ -232,9 +232,7 @@ class GameState {
     // Sound effects for game over
     if (this.audioManager && this.audioManager.initialized) {
       // Stop engine sound
-      if (this.audioManager.sounds.engine) {
-        this.audioManager.sounds.engine.fadeOut(1.0);
-      }
+      this.audioManager.fadeOutSound('engine', 1.0);
 
       // Stop background music with fade out
       if (this.audioManager.music) {

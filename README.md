@@ -1,6 +1,8 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 14, 2026):** This is an unfinished prototype. The production build succeeds, but starting play currently hits runtime errors; several feature descriptions below describe intended behavior. See the [verified assessment](docs/PROJECT_ASSESSMENT.md), [recovery and modernization roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md) for the current state and a feasible path forward.
+> **Project status (October 14, 2026):** The [first M1 checkpoint](docs/progress/M1_STARTUP.md) fixes the confirmed startup exceptions and adds 21 regression tests. This remains an unfinished prototype: flight, session resets, geometry/collision, and progression still need work. Several features below describe intended behavior. See the [baseline assessment](docs/PROJECT_ASSESSMENT.md), [roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
+
+Run `npm test` for regression checks. Run `npm run smoke` and open `http://127.0.0.1:5183/?smoke=1` for a development-only frame/update/error overlay and the startup verification workflow.
 
 A 3D zero-gravity shooter game in the style of Descent, built with JavaScript and Three.js. Pilot your spaceship through procedurally generated cave tunnels, battle enemies, and collect power-ups.
 
@@ -103,8 +105,8 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 
 ### Prerequisites
 
-- Node.js (v14+)
-- npm (v6+) or yarn
+- Node.js 22.12+ (this checkpoint was tested with 22.14.0)
+- npm (tested with 11.2.0)
 
 ### Installation
 

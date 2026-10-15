@@ -20,41 +20,69 @@ export default class AudioManager {
   }
 
   init() {
-    if (this.initialized) return;
+    if (this.initialized) return true;
 
-    // Create audio context
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    this.context = new AudioContext();
+    const AudioContext =
+      globalThis.window?.AudioContext || globalThis.window?.webkitAudioContext;
+    if (!AudioContext) return false;
 
-    // Create master gain
-    this.masterGain = this.context.createGain();
-    this.masterGain.connect(this.context.destination);
+    try {
+      this.context = new AudioContext();
+      this.masterGain = this.context.createGain();
+      this.masterGain.connect(this.context.destination);
+      this.masterGain.gain.value = this.isMuted ? 0 : 1;
 
-    // Create separate gain nodes for music and effects
-    this.effectsGain = this.context.createGain();
-    this.effectsGain.connect(this.masterGain);
-    this.effectsGain.gain.value = this.effectsVolume;
+      this.effectsGain = this.context.createGain();
+      this.effectsGain.connect(this.masterGain);
+      this.effectsGain.gain.value = this.effectsVolume;
 
-    this.musicGain = this.context.createGain();
-    this.musicGain.connect(this.masterGain);
-    this.musicGain.gain.value = this.musicVolume;
+      this.musicGain = this.context.createGain();
+      this.musicGain.connect(this.masterGain);
+      this.musicGain.gain.value = this.musicVolume;
 
-    this.initialized = true;
-    console.log('Audio system initialized');
+      // No recorded sound files ship with this prototype. Generate the defaults
+      // synchronously so the first click works without failed fetches or a race.
+      for (const id of [
+        'shoot', 'explosion', 'powerup', 'playerDamage', 'gameOver',
+        'engine', 'backgroundMusic', 'menuSelect', 'healSound',
+      ]) {
+        this.createSynthesizedSound(id);
+      }
+      this.initialized = true;
+      return true;
+    } catch (error) {
+      console.warn('Audio unavailable; continuing without sound.', error);
+      try {
+        const closing = this.context?.close?.();
+        closing?.catch?.(() => {});
+      } catch {
+        // A failed audio device can also refuse cleanup; gameplay remains usable.
+      }
+      this.context = null;
+      this.masterGain = null;
+      this.effectsGain = null;
+      this.musicGain = null;
+      this.sounds = {};
+      this.initialized = false;
+      return false;
+    }
+  }
 
-    // Pre-load common sound effects with correct paths to placeholder sounds
-    this.loadSound('shoot', '/sounds/placeholders/laser.mp3');
-    this.loadSound('explosion', '/sounds/placeholders/explosion.mp3');
-    this.loadSound('powerup', '/sounds/placeholders/powerup.mp3');
-    this.loadSound('playerDamage', '/sounds/placeholders/player_damage.mp3');
-    this.loadSound('gameOver', '/sounds/placeholders/game_over.mp3');
-    this.loadSound('engine', '/sounds/placeholders/engine_hum.mp3');
-    this.loadSound(
-      'backgroundMusic',
-      '/sounds/placeholders/background_music.mp3'
-    );
-    this.loadSound('menuSelect', '/sounds/placeholders/menu_select.mp3');
-    this.loadSound('healSound', '/sounds/placeholders/heal.mp3');
+  // Register a synthesized buffer. Callers may safely attempt this without audio.
+  createSound(id, createBuffer) {
+    if (!this.initialized || !this.context) return null;
+    const buffer = createBuffer(this.context);
+    if (!buffer || typeof buffer.getChannelData !== 'function') {
+      throw new TypeError(`Sound ${id} did not produce an audio buffer`);
+    }
+    this.stopSound(id);
+    this.sounds[id] = {
+      buffer,
+      playing: new Set(),
+      isLoading: false,
+      isSynthesized: true,
+    };
+    return buffer;
   }
   // Load a sound file
   loadSound(id, url) {
@@ -488,6 +516,12 @@ export default class AudioManager {
     });
 
     this.sounds[id].playing.clear();
+  }
+
+  fadeOutSound(id, duration) {
+    for (const source of this.sounds[id]?.playing || []) {
+      source.fadeOut(duration);
+    }
   }
 
   // Stop all sounds
