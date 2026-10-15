@@ -18,7 +18,7 @@ See [mission evidence](progress/M1_MISSION.md) and [control contract](CONTROL_AN
 
 Use the pinned toolchain in [TOOLCHAIN.md](TOOLCHAIN.md), run `npm run dev`, and open the displayed URL in a regular Chrome, Edge or Firefox window. The embedded preview is not suitable for signing off native pointer lock.
 
-1. Start quiet Flight Arena. Click to capture the mouse; confirm that acquisition itself does not shoot. Aim with the mouse, roll until inverted, thrust vertically, turn around, and return through the doorway. Slide against a wall and move away again. Record any sticking, disorientation or uncomfortable sensitivity.
+1. Open **Settings** and choose a comfortable mouse sensitivity/invert-Y preference. Start quiet Flight Arena. Click to capture the mouse; confirm acquisition itself does not shoot. Aim with the mouse, roll until inverted, thrust vertically, turn around, and return through the doorway. Slide against a wall and move away again. Record any sticking, disorientation or sensitivity changes still needed.
 2. Release capture, change tabs, and return. Confirm one pause transition, no background flight, and Continue preserving position. Recapture and confirm mouse aim responds normally.
 3. Select Arena Escape. Confirm pulse aim/fire with captured left clicks, both drones can be shot, the exit stays locked until they are neutralized, and entering the green ring completes once. Spend ammo before visiting the orange refill, and take damage before collecting the green repair. Check that the guide and pickups are understandable during play.
 4. Replay or Reboot, then confirm health 100, ammo 40, score 0, two drones and an amber exit. Verify there are no game console errors.

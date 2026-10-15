@@ -2,11 +2,12 @@
 import { shakeCamera } from '../utils/effectsUtils.js';
 
 class InputManager {
-  constructor(camera, projectileManager, gameState, uiManager = null) {
+  constructor(camera, projectileManager, gameState, uiManager = null, settings = null) {
     this.camera = camera;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.uiManager = uiManager;
+    this.settings = settings;
     this.game = null; // Will be set from main.js
 
     this.keyStates = {};
@@ -55,9 +56,12 @@ class InputManager {
     const movementY =
       event.movementY || event.mozMovementY || event.webkitMovementY || 0;
 
-    this.game?.spaceship.rotate(-movementX * this.mouseSensitivity, -movementY * this.mouseSensitivity);
+    const sensitivity = this.mouseSensitivity * (this.settings?.values.mouseSensitivity ?? 1);
+    const pitchSign = this.settings?.values.invertY ? 1 : -1;
+    this.game?.spaceship.rotate(-movementX * sensitivity, pitchSign * movementY * sensitivity);
   } // Handle key down
   onKeyDown(event) {
+    if (this.uiManager?.settingsDialog?.isOpen) return;
     if (this.gameState.session.phase === 'playing' &&
       ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
       event.preventDefault?.();

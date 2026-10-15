@@ -1,5 +1,7 @@
 # M2 hardware profiling and arena lighting checkpoint
 
+> Follow-up: [saved sensitivity and invert-Y controls](M2_SETTINGS.md) are now delivered. Hardware measurements below remain the profiling checkpoint baseline.
+
 Implemented October 15, 2026, following the [browser/resource checkpoint](M2_BROWSER.md).
 
 ## What changed

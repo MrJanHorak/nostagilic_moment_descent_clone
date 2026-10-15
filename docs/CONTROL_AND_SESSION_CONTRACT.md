@@ -45,6 +45,12 @@ Clear held keys when a session starts, focus is lost, or pointer lock is release
 
 Pointer-lock acquisition happens from a user gesture and may return a promise, throw, reject, or be unsupported. Refused initial capture reports a retry message and leaves keyboard simulation available. Releasing an acquired lock, window blur, or document hiding pauses once; Continue requests capture again without erasing session state. A stale rejected request cannot notify a newer session.
 
+## Saved input preferences
+
+`Game.settings` owns versioned local preferences separately from session state. Default mouse sensitivity is 1x the existing 0.002 radians/pixel; supported multipliers are 0.25-3 in 0.05 increments. Invert-Y defaults off and reverses mouse pitch. The input manager reads current values on each mouse event, retaining active-play/capture guards and quaternion rotation. Arrow-key rates use the existing controller.
+
+Settings opens from the main menu or pause screen, clears held keys, and uses a modal with keyboard focus boundaries/restoration. Escape closes that modal while preserving pause. Reset restores preference defaults without resetting the mission. Restarts preserve preferences; browser reloads load validated values from localStorage. Unavailable/failed storage preserves live in-memory changes and reports that saving failed.
+
 ## Session ownership and transitions
 
 `Game` coordinates a `GameSession` owned by `GameState`. UI callbacks request transitions and never independently change simulation flags. The old boolean flags are read-only compatibility views of the session phase.
@@ -89,4 +95,4 @@ Arena Escape starts with 40 pulse rounds, capped at 80; its authored ammo refill
 
 `npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death controls exercise lifecycle/UI wiring. For Arena Escape, the neutralize-drones test button uses the normal damage path and still requires reaching the exit; legacy completion controls exercise their existing flow. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
-The 98 unit/simulation/metrics tests cover flight, sessions, collisions, damage, objectives, pickups, restart invariants, bounded diagnostic windows, capture invalidation and lighting/model preservation. Two automated Chromium tests cover production keyboard victory/death/reboot/menu flow and ten combat restarts. A separate untraced Intel GPU benchmark captures ten active seconds after eight seconds of warm-up; pause/end invalidates its finite sample. Frame p95 remains above the provisional target. Native mouse/flight-feel checks remain open. See the [performance checkpoint](progress/M2_PERFORMANCE.md) and [M1 acceptance](M1_ACCEPTANCE.md).
+The 106 unit/simulation/metrics tests cover flight, sessions, collisions, damage, objectives, pickups, restart invariants, diagnostics, light preservation and saved settings. Four browser checks cover production keyboard victory/death/reboot/menu flow, ten combat restarts, preference persistence/reset/focus/layout and blocked saving. Native mouse/flight-feel checks remain open. Hardware frame p95 remains above the provisional target. See the [settings checkpoint](progress/M2_SETTINGS.md), [performance checkpoint](progress/M2_PERFORMANCE.md) and [M1 acceptance](M1_ACCEPTANCE.md).

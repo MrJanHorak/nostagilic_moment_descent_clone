@@ -1,4 +1,6 @@
 // UI Manager for handling game interface elements
+import SettingsDialog from './SettingsDialog.js';
+
 class UIManager {
   constructor(gameState, audioManager) {
     this.gameState = gameState;
@@ -626,6 +628,11 @@ class UIManager {
       `;
       document.body.appendChild(startScreen);
       this.startScreen = startScreen;
+      const settingsButton = this.createSettingsButton();
+      Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
+      startScreen.querySelector('.title-container').appendChild(settingsButton);
+      Object.assign(startScreen.querySelector('.title-container').style, {
+        boxSizing: 'border-box', maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto' });
 
       // Add event listener for the level selection button
       const selectLevelBtn = document.getElementById('select-level-btn');
@@ -960,6 +967,23 @@ class UIManager {
     }
   }
 
+  createSettingsButton() {
+    const button = document.createElement('button');
+    button.textContent = 'SETTINGS';
+    Object.assign(button.style, { padding: '10px 20px', background: '#003048', color: '#cafaff',
+      border: '1px solid #00aaff', borderRadius: '5px', fontSize: '16px', cursor: 'pointer' });
+    button.addEventListener('click', () => this.showSettings());
+    return button;
+  }
+
+  showSettings() {
+    if (!['menu', 'paused'].includes(this.game.session.phase)) return false;
+    this.game.inputManager?.clearKeys();
+    this.settingsDialog ??= new SettingsDialog(this.game.settings);
+    this.settingsDialog.open();
+    return true;
+  }
+
   // Create pause menu
   createPauseMenu() {
     if (this.pauseMenu) {
@@ -991,6 +1015,8 @@ class UIManager {
     contentContainer.style.maxWidth = '400px';
     contentContainer.style.width = '90%';
     contentContainer.style.textAlign = 'center';
+    Object.assign(contentContainer.style, { boxSizing: 'border-box',
+      maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto' });
 
     // Title with matching style to main screen
     const title = document.createElement('h1');
@@ -1060,6 +1086,9 @@ class UIManager {
 
     continueBtn.onclick = () => this.game.resumeGame();
     buttonContainer.appendChild(continueBtn);
+    const settingsButton = this.createSettingsButton();
+    settingsButton.style.width = '100%';
+    buttonContainer.appendChild(settingsButton);
 
     // Select level button
     const selectLevelBtn = document.createElement('button');
@@ -1297,6 +1326,7 @@ class UIManager {
   }
 
   resetSessionUI() {
+    this.settingsDialog?.close(false);
     for (const timer of this.presentationTimers) clearTimeout(timer);
     this.presentationTimers.clear();
     for (const element of this.transientElements) element.remove();

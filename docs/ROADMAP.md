@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission. **M1 acceptance remains open** for captured-mouse controls, inverted return flight and handling/readability; see the [acceptance checklist](M1_ACCEPTANCE.md). M2 has a pinned/patched [toolchain](TOOLCHAIN.md), Windows/Linux CI, [browser/resource regressions](progress/M2_BROWSER.md), and a [hardware profiling checkpoint](progress/M2_PERFORMANCE.md). All 98 unit/simulation/metrics tests, two browser tests and production build pass locally. Ten restarts return resources to baseline. Arena lighting drops from 14 to 9 lights; three before/after Intel GPU runs show roughly 18 ms frame p95, without an established meaningful FPS gain. Hosted CI and the provisional <=16.7 ms hardware performance gate remain open. Next: sensitivity/invert-Y and saved settings, focused source contracts and longer headed profiling before M3 shared level data. Legacy geometry remains unrepaired.
+**Implementation progress (October 15, 2026):** [Arena Escape](progress/M1_MISSION.md) implements the finite M1 mission. **M1 acceptance remains open** for native mouse controls, inverted return flight and handling/readability; see the [acceptance checklist](M1_ACCEPTANCE.md). M2 has a pinned/patched [toolchain](TOOLCHAIN.md), CI, [hardware profiling](progress/M2_PERFORMANCE.md), and [saved sensitivity/invert-Y controls](progress/M2_SETTINGS.md). All 106 unit/simulation/metrics tests, four browser checks and production build pass locally. Ten restarts return resources to baseline. Arena lighting is reduced to nine lights; Intel GPU frame p95 remains around 18 ms, above the provisional 16.7 ms target. Hosted CI and hands-on/performance acceptance remain open. Next: focused lint/type contracts, remaining usability controls and source cleanup before M3 shared level data. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -47,7 +47,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M2 — Update the project and make regression visible
 
-**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md) and a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md) are locally verified. Hosted CI, performance acceptance, usability and broader cleanup remain; M2 is not complete.
+**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md) and [saved mouse controls](progress/M2_SETTINGS.md) are locally verified. Hosted CI, performance acceptance, volume/mute, source contracts and broader cleanup remain; M2 is not complete.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 

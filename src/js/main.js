@@ -11,6 +11,7 @@ import UIManager from './ui/UIManager.js';
 import SimulationStepper from './core/SimulationStepper.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import MissionObjective from './core/MissionObjective.js';
+import UserSettings from './core/UserSettings.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 import { moveSphere } from './utils/sphereMovement.js';
@@ -22,6 +23,7 @@ export default class Game {
     this.scene = new THREE.Scene();
     this.audioManager = new AudioManager();
     this.gameState = new GameState();
+    this.settings = new UserSettings();
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
@@ -42,7 +44,7 @@ export default class Game {
       this.levelManager = new LevelManager(this.scene, this.spaceship.group);
       this.projectileManager = new ProjectileManager(this.scene, this.spaceship.group, this.audioManager, this.session);
       this.projectileManager.setCanvas(this.canvas);
-      this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager).init(this.canvas);
+      this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager, this.settings).init(this.canvas);
       this.inputManager.game = this;
       this.powerUpManager = new PowerUpManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.uiManager, this.levelManager);
       this.enemyManager = new EnemyManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.levelManager);
