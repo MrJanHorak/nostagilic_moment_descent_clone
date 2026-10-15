@@ -6,6 +6,8 @@ import createLevel2 from './levels/Level2.js';
 import createLevel3 from './levels/Level3.js';
 import createExampleLevel from './levels/ExampleLevel.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
+import createFlightArena from './levels/FlightArena.js';
+import buildArena from './ArenaGeometry.js';
 
 class LevelManager {
   constructor(scene, playerTransform) {
@@ -37,7 +39,9 @@ class LevelManager {
 
     // Obstacles
     this.obstacles = []; // Level system properties
+    this.solidColliders = [];
     this.levels = [
+      createFlightArena(),
       createLevel1(),
       createLevel2(),
       createLevel3(),
@@ -267,6 +271,7 @@ class LevelManager {
     for (const segment of new Set([...this.levelSegments, ...this.segmentMap.values()])) this.removeSegment(segment);
     this.levelSegments = [];
     this.obstacles = [];
+    this.solidColliders = [];
 
     // Clear segmentMap for dynamic level management
     this.segmentMap.clear();
@@ -275,6 +280,14 @@ class LevelManager {
 
   // Override the existing initLevel method
   initLevel() {
+    if (!this.isEndless && !this.currentLevel) this.currentLevel = this.levels[this.currentLevelIndex];
+    if (!this.isEndless && this.currentLevel?.kind === 'arena') {
+      const { group, colliders } = buildArena(this.currentLevel);
+      this.scene.add(group);
+      this.levelSegments = [group];
+      this.solidColliders = colliders;
+      return;
+    }
     if (this.isEndless) {
       // Use the old endless tunnel generation
       this.initEndlessLevel();
@@ -1070,6 +1083,7 @@ class LevelManager {
     return segment;
   } // Update level segments based on player position
   updateLevel() {
+    if (this.currentLevel?.kind === 'arena' && !this.isEndless) return;
     if (this.segmentLength === 0) return;
     const playerZ = this.playerTransform.position.z;
     const currentIndex = Math.round(-playerZ / this.segmentLength);

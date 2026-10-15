@@ -1,5 +1,7 @@
 # M1 flight checkpoint
 
+**Follow-up:** The [finite arena checkpoint](M1_ARENA.md) now delivers matching visible solids/colliders, sliding movement, and two-way doorway traversal. The limitations below describe the earlier flight checkpoint.
+
 Implemented October 14, 2026, following the [session checkpoint](M1_SESSION_LIFECYCLE.md).
 
 ## Delivered

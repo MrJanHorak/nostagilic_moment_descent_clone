@@ -52,6 +52,8 @@ export default class RuntimeDiagnostics {
       this.flightStatus = ship ? `Position: ${ship.group.position.toArray().map(n => n.toFixed(2)).join(', ')} | Speed: ${ship.velocity.length().toFixed(2)}\nQuaternion: ${ship.group.quaternion.toArray().map(n => n.toFixed(3)).join(', ')}` : '';
       this.sessionStatus = `Session: ${gameState.session.id} | Time: ${(gameState.session.timeMs / 1000).toFixed(2)}s | Steps: ${gameState.session.steps} | Tasks: ${gameState.session.tasks.size}`;
       this.entityStatus = `Enemies: ${game?.enemyManager?.enemies.length ?? 0} | Shots: ${(game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0)} | Pickups: ${game?.powerUpManager?.powerups.length ?? 0}`;
+      this.arenaStatus = game?.levelManager?.currentLevel?.kind === 'arena' && !game.isEndlessMode
+        ? `Arena solids: ${game.levelManager.solidColliders.length} | Contact: ${!!game.lastMovement?.collided} | Limited: ${!!game.lastMovement?.limited}` : '';
       if (game && !this.controls) {
         this.controls = document.createElement('aside');
         this.controls.setAttribute('aria-label', 'Session smoke controls');
@@ -77,6 +79,7 @@ export default class RuntimeDiagnostics {
       this.sessionStatus,
       this.entityStatus,
       this.flightStatus,
+      this.arenaStatus,
       this.lastError,
     ].filter(Boolean).join('\n');
   }

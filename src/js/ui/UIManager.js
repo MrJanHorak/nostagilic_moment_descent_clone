@@ -562,7 +562,7 @@ class UIManager {
               position: relative;
               overflow: hidden;
             ">
-              <span style="position: relative; z-index: 2;">START ENDLESS MODE</span>
+              <span style="position: relative; z-index: 2;">START FLIGHT ARENA</span>
               <div style="
                 position: absolute;
                 top: -10%;
@@ -637,7 +637,7 @@ class UIManager {
 
       const startButton = document.getElementById('start-game-btn');
       startButton.addEventListener('click', () => {
-        this.game.startSession({ endless: true });
+        this.game.startSession({ endless: false, levelIndex: 0 });
       });
       return startButton;
     } catch (error) {
@@ -767,7 +767,7 @@ class UIManager {
       levelBtnContainer.style.marginBottom = '15px';
 
       const levelBtn = document.createElement('button');
-      levelBtn.textContent = `Level ${level.id}: ${level.name}`;
+      levelBtn.textContent = level.kind === 'arena' ? level.name : `Legacy level ${level.id}: ${level.name}`;
       levelBtn.className = 'level-btn';
       levelBtn.style.width = '100%';
       levelBtn.style.padding = '15px 20px';
@@ -1259,6 +1259,21 @@ class UIManager {
     if (this.pauseMenu) this.pauseMenu.style.display = 'none';
   }
 
+  showArenaGuide() {
+    this.arenaGuide?.remove();
+    const guide = document.createElement('aside');
+    guide.id = 'arena-guide';
+    guide.textContent = 'FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause';
+    Object.assign(guide.style, { position: 'fixed', left: '50%', transform: 'translateX(-50%)',
+      bottom: this.game?.diagnostics.enabled ? '150px' : '24px', width: 'min(640px, 85vw)',
+      padding: '10px 16px', background: '#001624dd', border: '1px solid #45e5ed',
+      borderRadius: '6px', color: '#cafaff', font: '14px Arial, sans-serif',
+      textAlign: 'center', pointerEvents: 'none', zIndex: '100' });
+    document.body.appendChild(guide);
+    this.transientElements.add(guide);
+    this.arenaGuide = guide;
+  }
+
   resetSessionUI() {
     for (const timer of this.presentationTimers) clearTimeout(timer);
     this.presentationTimers.clear();
@@ -1380,6 +1395,11 @@ class UIManager {
 
     // Update the display with current counts
     if (this.hudElements.enemyCountDisplay) {
+      if (this.game?.levelManager.currentLevel?.kind === 'arena' && !this.game.isEndlessMode) {
+        this.hudElements.enemyCountDisplay.textContent = 'FLIGHT PRACTICE';
+        this.hudElements.enemyCountDisplay.style.color = '#45e5ed';
+        return;
+      }
       this.hudElements.enemyCountDisplay.textContent = `ENEMIES: ${destroyedCount}/${totalCount}`;
 
       // Change color based on progress

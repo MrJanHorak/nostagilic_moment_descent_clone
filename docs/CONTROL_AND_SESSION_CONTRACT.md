@@ -1,12 +1,12 @@
 # Control and session contract for M1
 
-Implementation direction for the first playable mission, October 14, 2026. Startup, session ownership, the player-root migration, and fixed-step flight are implemented; **the finite arena, solid-wall collision, and objective/exit remain pending.** See [current progress](progress/M1_FLIGHT.md).
+Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, and a fully loaded finite training arena with matching wall colliders/sliding movement are implemented. **Projectile wall collision, enemy wall avoidance, and an actual objective/exit remain pending.** See [current progress](progress/M1_ARENA.md).
 
 ## Player and world ownership
 
 Use a right-handed world: +X right, +Y up, and local -Z forward. Distances are world units; velocity is units/second, acceleration is units/second squared, and angular rates are radians/second.
 
-The implemented player scene graph is (solid arena colliders remain pending):
+The implemented scene graph is (solid colliders currently apply to the training arena):
 
 ```text
 scene
@@ -21,7 +21,7 @@ The player root owns linear velocity and a radius-0.5 sphere collider. The camer
 
 Use the current acceleration 8 and maximum speed 6 as provisional tuning values. Normalize combined thrust so diagonal input does not increase acceleration. Initially retain the feel of 0.96-per-frame damping at 60 Hz by converting it to exponential time-scaled damping, `exp(log(0.96) * 60 * dt)`. Tune against actual flight, not just numeric tests. Apply the speed multiplier through this controller; do not maintain a disconnected pickup-only setting.
 
-Collision operates on solid world geometry with bounded substeps or a swept sphere and sliding response. The finite mission must not use fixed global tunnel-width bounds as its long-term collision implementation. Keep the whole small test environment loaded; streaming is not required for the first mission.
+The finite training arena uses static world-space axis-aligned boxes generated with its visible structural geometry. Sphere motion uses bounded radius/4 substeps and iterative contact projection/sliding. It keeps the complete environment loaded and bypasses global tunnel-width bounds. It is not an exact time-of-impact solver; the legacy tunnels still use their old collision path. See the arena checkpoint for contact skin, work limits, and supported geometry.
 
 ## Input semantics
 
@@ -62,7 +62,7 @@ Pointer-lock acquisition happens from a user gesture and may return a promise, t
 | playing / paused / dead / completed | loading | Restart or switch mission only after teardown |
 | loading | menu | Cancel loading and invalidate its callbacks |
 
-`startSession({ endless, levelIndex })` resets health, player world position/quaternion/velocity and visual camera pose, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, phase, and simulation time. Restart routes use this same operation. `endSession()` removes entities without awarding kills, invalidates callbacks, stops session audio, clears input, and releases pointer lock. Death/completion freeze the scene until an explicit Reboot/Replay/Next/Selection action ends it. Restart restores the root to `(0,0,5)` with identity orientation, zero velocity, and zero view displacement.
+`startSession({ endless, levelIndex })` resets health, player world position/quaternion/velocity and visual camera pose, inventory, buffs, score/statistics, spawn tracking, projectiles, enemies, pickups, effects, cooldowns, phase, and simulation time. Restart routes use this same operation. `endSession()` removes entities without awarding kills, invalidates callbacks, stops session audio, clears input, and releases pointer lock. Death/completion freeze the scene until an explicit Reboot/Replay/Next/Selection action ends it. Restart restores the root to the authored spawn (`(0,0,6)` in the training arena; `(0,0,5)` in legacy modes) with identity orientation, zero velocity, and zero view displacement.
 
 Keep level definitions immutable. Per-session sets track stable spawned/killed/collected IDs. A monotonically increasing session token invalidates asynchronous work belonging to an old session. A next-level transition updates the same authoritative selected-level identity used by restart.
 
@@ -83,4 +83,4 @@ Cooldowns, projectile lifetimes, buffs, and managed effects advance on session s
 
 `npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
-The 52 tests now cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS simulations, view-shake isolation, repeated restarts, pause-frozen timers, and terminal latches. Solid-wall sliding, doorway traversal, wall-aware combat, and normal objective/exit completion remain the next acceptance work. See the flight checkpoint for numeric tolerances and browser limitations.
+The 64 tests now cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS simulations, view-shake isolation, repeated restarts, pause-frozen timers, and terminal latches. Solid-wall sliding, corner contacts, high-speed wall impacts, two-way/inverted doorway traversal, and repeated arena cleanup are now tested. Wall-aware combat and normal objective/exit completion remain the next acceptance work. See the arena checkpoint for numeric tolerances, collision limits, and browser evidence.

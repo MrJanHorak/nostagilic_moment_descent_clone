@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress:** The [startup](progress/M1_STARTUP.md), [session lifecycle](progress/M1_SESSION_LIFECYCLE.md), and [flight](progress/M1_FLIGHT.md) checkpoints deliver reliable startup/reset/pause/cleanup and world-space first-person local thrust/yaw/pitch/roll, with a bounded 60 Hz simulation and 52 tests. First-work-queue items 2, 3, and 4 are complete. Item 1 has its contract and fixtures; the finite arena remains pending. Geometry/collision, wall-aware combat, a real objective/exit mission, and the full M1 acceptance gate remain open.
+**Implementation progress (October 15, 2026):** The [startup](progress/M1_STARTUP.md), [session lifecycle](progress/M1_SESSION_LIFECYCLE.md), [flight](progress/M1_FLIGHT.md), and [finite arena](progress/M1_ARENA.md) checkpoints deliver reliable startup/reset/pause/cleanup, first-person local flight, and a fully loaded training arena with matching structural geometry/colliders and sliding sphere movement. There are 64 passing tests. First-work-queue items 1–4 are complete; item 5 is delivered for the new arena, while the legacy tunnels retain their old geometry/collision. Wall-aware combat, an actual objective/exit, and the full M1 acceptance gate remain open. The next work item is projectile wall/target collision and basic enemy visibility/avoidance.
 
 ## Scope and effort
 

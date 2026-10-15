@@ -1,0 +1,24 @@
+{
+  "development": {
+    "doorway": "SMOKE CHECK | PAUSED\nFrames: 1539 | Updates: 243 | Errors: 0\nSession: 2 | Time: 4.05s | Steps: 243 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, -16.10 | Speed: 6.00\nQuaternion: 0.000, 0.000, 0.000, 1.000\nArena solids: 11 | Contact: false | Limited: false",
+    "farWall": "SMOKE CHECK | PAUSED\nFrames: 1668 | Updates: 377 | Errors: 0\nSession: 2 | Time: 6.28s | Steps: 377 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, -25.50 | Speed: 0.00\nQuaternion: 0.000, 0.000, 0.000, 1.000\nArena solids: 11 | Contact: false | Limited: false",
+    "invertedReturn": "SMOKE CHECK | PAUSED\nFrames: 3196 | Updates: 909 | Errors: 0\nSession: 2 | Time: 15.15s | Steps: 909 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, 9.50 | Speed: 0.00\nQuaternion: 0.000, 0.000, 1.000, -0.017\nArena solids: 11 | Contact: false | Limited: false",
+    "eastWall": "SMOKE CHECK | PAUSED\nFrames: 3356 | Updates: 1096 | Errors: 0\nSession: 4 | Time: 3.12s | Steps: 187 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 9.50, 0.00, 6.00 | Speed: 0.00\nQuaternion: 0.000, 0.000, 0.000, 1.000\nArena solids: 11 | Contact: false | Limited: false",
+    "slideToDivider": "SMOKE CHECK | PAUSED\nFrames: 3508 | Updates: 1287 | Errors: 0\nSession: 4 | Time: 6.30s | Steps: 378 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 9.50, 0.00, -7.00 | Speed: 0.00\nQuaternion: 0.000, 0.000, 0.000, 1.000\nArena solids: 11 | Contact: true | Limited: false",
+    "reset": "SMOKE CHECK | PLAYING\nFrames: 3547 | Updates: 1325 | Errors: 0\nSession: 6 | Time: 0.63s | Steps: 38 | Tasks: 0\nEnemies: 0 | Shots: 0 | Pickups: 0\nPosition: 0.00, 0.00, 6.00 | Speed: 0.00\nQuaternion: 0.000, 0.000, 0.162, 0.987\nArena solids: 11 | Contact: false | Limited: false",
+    "errors": []
+  },
+  "production": {
+    "diagnosticsCount": 0,
+    "guideCount": 1,
+    "paused": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: FLIGHT PRACTICE\n- complementary: FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause\n- generic: Click the game view to capture mouse controls.\n- heading \"PAUSED\" [level=1]\n- button \"CONTINUE\": CONTINUE\n- button \"SELECT MISSION\": SELECT MISSION\n- button \"RESTART MISSION\": RESTART MISSION\n- button \"RETURN TO BASE\": RETURN TO BASE",
+    "restarted": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: FLIGHT PRACTICE\n- heading \"PAUSED\" [level=1]\n- button \"CONTINUE\": CONTINUE\n- button \"SELECT MISSION\": SELECT MISSION\n- button \"RESTART MISSION\": RESTART MISSION\n- button \"RETURN TO BASE\": RETURN TO BASE\n- complementary: FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause\n- generic: Click the game view to capture mouse controls.",
+    "selection": "- generic: SHIELD INTEGRITY\n- generic: 100%\n- generic: WEAPON SYSTEM\n- generic: \"1\"\n- generic: PULSE\n- generic: \"2\"\n- generic: LASER\n- generic: \"3\"\n- generic: MISSILE\n- generic: \"4\"\n- generic: PLASMA\n- generic: COMBAT SCORE\n- generic: \"0\"\n- generic: THREAT ANALYSIS\n- generic: FLIGHT PRACTICE\n- heading \"SELECT MISSION\" [level=1]\n- button \"Flight Training Arena\": Flight Training Arena\n- 'button \"Legacy level 1: Cave Introduction\"': \"Legacy level 1: Cave Introduction\"\n- 'button \"Legacy level 2: Advanced Cave Network\"': \"Legacy level 2: Advanced Cave Network\"\n- 'button \"Legacy level 3: Descent to the Core\"': \"Legacy level 3: Descent to the Core\"\n- 'button \"Legacy level 3: Example Level - Demonstration\"': \"Legacy level 3: Example Level - Demonstration\"\n- button \"ENDLESS MODE\": ENDLESS MODE\n- button \"RETURN TO MAIN MENU\"",
+    "menuGuideCount": 0,
+    "errors": []
+  },
+  "limitations": [
+    "Embedded browser refused pointer lock; browser checks used normal keyboard controls.",
+    "Arena is a movement fixture; projectile wall collision and enemy combat are pending."
+  ]
+}

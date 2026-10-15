@@ -12,6 +12,7 @@ import SimulationStepper from './core/SimulationStepper.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
+import { moveSphere } from './utils/sphereMovement.js';
 
 export default class Game {
   constructor() {
@@ -48,7 +49,7 @@ export default class Game {
       this.initLighting();
       this.caveParticles = createCaveParticles(this.scene);
       await this.levelManager.initMaterials();
-      this.levelManager.initLevel(); // Static background preview; no live session yet.
+      this.levelManager.loadLevel(0); // Static flight arena preview; no live session yet.
       if (!this.uiManager.createStartScreen()) throw new Error('Unable to create the start screen');
       this.animate();
     } catch (error) {
@@ -151,6 +152,7 @@ export default class Game {
     try {
       this.gameState.resetForSession();
       this.spaceship.reset();
+      this.lastMovement = null;
       this.camera.position.set(0, 0, 0);
       this.camera.quaternion.identity();
       this.gameState.playerVelocity = this.spaceship.velocity;
@@ -162,6 +164,10 @@ export default class Game {
         this.levelManager.currentLevel = null;
         this.levelManager.initEndlessLevel();
       } else this.levelManager.loadLevel(levelIndex);
+      if (this.levelManager.currentLevel?.kind === 'arena' && !endless) {
+        this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
+      }
+      if (this.caveParticles) this.caveParticles.visible = this.levelManager.currentLevel?.kind !== 'arena';
       this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
       try { this.initializeAudio(); } catch (error) {
         this.audioManager.stopAllSounds();
@@ -173,6 +179,7 @@ export default class Game {
       this.uiManager.hideLevelSelect();
       this.uiManager.updateHUD();
       this.uiManager.updateEnemyCount(0, endless ? 0 : this.levelManager.currentLevel.enemySpawns.length);
+      if (!endless && this.levelManager.currentLevel?.kind === 'arena') this.uiManager.showArenaGuide?.();
       this.inputManager.requestPointerLock();
       return true;
     } catch (error) {
@@ -270,11 +277,16 @@ export default class Game {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }
     this.inputManager.updateMovement(delta);
-    const intended = this.spaceship.velocity.clone().multiplyScalar(delta);
-    const collision = checkPlayerObstacleCollision(this.spaceship.group, this.levelManager.obstacles,
-      intended, this.levelManager.tunnelWidth, this.levelManager.tunnelHeight);
-    if (collision) this.spaceship.velocity.set(0, 0, 0);
-    else this.spaceship.group.position.add(intended);
+    if (!this.isEndlessMode && this.levelManager.currentLevel?.kind === 'arena') {
+      this.lastMovement = moveSphere(this.spaceship.group.position, this.spaceship.velocity,
+        delta, this.levelManager.solidColliders, this.spaceship.radius);
+    } else {
+      const intended = this.spaceship.velocity.clone().multiplyScalar(delta);
+      const collision = checkPlayerObstacleCollision(this.spaceship.group, this.levelManager.obstacles,
+        intended, this.levelManager.tunnelWidth, this.levelManager.tunnelHeight);
+      if (collision) this.spaceship.velocity.set(0, 0, 0);
+      else this.spaceship.group.position.add(intended);
+    }
     this.levelManager.updateLevel();
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.projectileManager.updateProjectiles(delta);
