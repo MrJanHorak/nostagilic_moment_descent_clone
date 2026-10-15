@@ -1263,7 +1263,9 @@ class UIManager {
     this.arenaGuide?.remove();
     const guide = document.createElement('aside');
     guide.id = 'arena-guide';
-    guide.textContent = 'FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause';
+    guide.textContent = this.game.levelManager.currentLevel?.combat
+      ? 'COMBAT TRAINING · Clear 2 drones · Click to capture mouse/fire pulse · Walls provide cover · Esc pause'
+      : 'FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause';
     Object.assign(guide.style, { position: 'fixed', left: '50%', transform: 'translateX(-50%)',
       bottom: this.game?.diagnostics.enabled ? '150px' : '24px', width: 'min(640px, 85vw)',
       padding: '10px 16px', background: '#001624dd', border: '1px solid #45e5ed',
@@ -1395,7 +1397,7 @@ class UIManager {
 
     // Update the display with current counts
     if (this.hudElements.enemyCountDisplay) {
-      if (this.game?.levelManager.currentLevel?.kind === 'arena' && !this.game.isEndlessMode) {
+      if (this.game?.levelManager.currentLevel?.kind === 'arena' && !this.game.levelManager.currentLevel.combat && !this.game.isEndlessMode) {
         this.hudElements.enemyCountDisplay.textContent = 'FLIGHT PRACTICE';
         this.hudElements.enemyCountDisplay.style.color = '#45e5ed';
         return;

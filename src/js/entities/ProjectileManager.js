@@ -1,6 +1,7 @@
 // Projectile system
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
+import { traceShot } from '../utils/combatTrace.js';
 
 class ProjectileManager {
   constructor(scene, playerTransform, audioManager, session = null) {
@@ -11,6 +12,7 @@ class ProjectileManager {
     this.elapsedMs = 0;
     this.projectiles = [];
     this.enemyProjectiles = [];
+    this.combatWorld = {};
 
     // Default projectile geometry
     this.projectileGeometry = new THREE.SphereGeometry(0.05, 8, 8);
@@ -38,6 +40,39 @@ class ProjectileManager {
   // Set the canvas reference for pointer lock checking
   setCanvas(canvas) {
     this.canvas = canvas;
+  }
+
+  setCombatWorld(world) { this.combatWorld = world; }
+
+  // Remove before dispatch: a lethal hit can synchronously end/clear the session.
+  sweepProjectile(projectile, start, end, playerTransform, gameState, effectsManager) {
+    const hostile = this.enemyProjectiles.includes(projectile);
+    const hit = traceShot(start, end, {
+      colliders: this.combatWorld.getColliders?.() ?? [],
+      targets: hostile ? [] : this.combatWorld.getTargets?.() ?? [],
+      player: hostile && playerTransform ? { position: playerTransform.position, radius: 0.5 } : null,
+      radius: 0.05,
+    });
+    if (!hit) { projectile.mesh.position.copy(end); return false; }
+    projectile.mesh.position.copy(hit.point);
+    if (hostile) this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
+    else this.removeProjectile(projectile);
+    if (hit.kind === 'enemy') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
+    else if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
+      gameState.takeDamage(projectile.power ?? 10);
+      if (!this.session || this.session.phase === 'playing') effectsManager?.createExplosion(hit.point, 0xff0000, true, 1);
+    }
+    return true;
+  }
+
+  moveProjectile(projectile, delta, playerTransform, gameState, effectsManager) {
+    if (projectile.launchOrigin) {
+      const origin = projectile.launchOrigin;
+      delete projectile.launchOrigin;
+      if (this.sweepProjectile(projectile, origin, projectile.mesh.position.clone(), playerTransform, gameState, effectsManager)) return true;
+    }
+    const start = projectile.mesh.position.clone();
+    return this.sweepProjectile(projectile, start, start.clone().addScaledVector(projectile.velocity, delta), playerTransform, gameState, effectsManager);
   }
 
   // Create different projectile types with unique behaviors
@@ -114,6 +149,7 @@ class ProjectileManager {
       acceleration: acceleration,
       createdAt: this.now(),
       ownerManager: this,
+      launchOrigin: options.launchOrigin?.clone(),
       light: light,
     };
 
@@ -184,6 +220,7 @@ class ProjectileManager {
     });
 
     const trailPositions = new Float32Array(trailLength * 3);
+    for (let i = 0; i < trailLength; i++) projectileData.mesh.position.toArray(trailPositions, i * 3);
     trailGeometry.setAttribute(
       'position',
       new THREE.BufferAttribute(trailPositions, 3)
@@ -229,6 +266,8 @@ class ProjectileManager {
 
     // Check if we have the weapon and ammo
     const currentWeapon = gameState.currentWeapon || 'pulse';
+    const rules = this.combatWorld.getRules?.();
+    if (rules && currentWeapon !== 'pulse') return; // The finite combat slice only supports pulse.
     const weaponInventory = gameState.weaponInventory || {
       pulse: { unlocked: true, ammo: Infinity },
     };
@@ -281,7 +320,7 @@ class ProjectileManager {
         projectileType = 'standard';
         projectileOptions = {
           speed: this.projectileSpeed,
-          power: 1 * weaponPower,
+          power: (rules?.pulseDamage ?? 1) * weaponPower,
         };
         break;
 
@@ -343,6 +382,7 @@ class ProjectileManager {
     const startQuaternion = new THREE.Quaternion();
     this.playerTransform.getWorldPosition(startPosition);
     this.playerTransform.getWorldQuaternion(startQuaternion);
+    const launchOrigin = startPosition.clone();
 
     // Offset slightly forward from the playerTransform to avoid immediate collision with spaceship model
     const offset = new THREE.Vector3(0, 0, -2); // Adjust Z offset as needed
@@ -358,6 +398,7 @@ class ProjectileManager {
     // Create projectile with configured options
     const options = {
       type: projectileType,
+      launchOrigin,
       color: projectileColor,
       power: projectileOptions.power,
       playerVelocity: playerVelocity,
@@ -453,6 +494,7 @@ class ProjectileManager {
 
     // Scale by projectile speed
     const velocity = direction.multiplyScalar(10);
+    projectileMesh.lookAt(projectileMesh.position.clone().add(velocity));
 
     // Create the projectile object
     const projectile = {
@@ -462,6 +504,8 @@ class ProjectileManager {
       power: 10,
       life: 3000,
       timestamp: this.now(),
+      ownerManager: this,
+      launchOrigin: enemy.mesh.position.clone(),
     };
 
     // Add to scene and projectiles array
@@ -490,12 +534,13 @@ class ProjectileManager {
 
     // Process player projectiles
     for (let i = this.projectiles.length - 1; i >= 0; i--) {
+      if (this.session && this.session.phase !== 'playing') break;
       const projectile = this.projectiles[i];
-
-      // Apply velocity
-      projectile.mesh.position.add(
-        projectile.velocity.clone().multiplyScalar(delta)
-      );
+      if (!projectile) continue;
+      const lifetime = projectile.type === 'missile' || projectile.type === 'bomb' ? 5000 : 3000;
+      const ageAtStepStart = currentTime - projectile.createdAt - delta * 1000;
+      const travelTime = Math.min(delta, Math.max(0, (lifetime - ageAtStepStart) / 1000));
+      if (this.moveProjectile(projectile, travelTime)) continue;
 
       // Apply special behaviors
 
@@ -597,11 +642,7 @@ class ProjectileManager {
       }
 
       // Check for lifetime expiration (safety)
-      const lifetime =
-        projectile.type === 'missile' || projectile.type === 'bomb'
-          ? 5000
-          : 3000;
-      if (currentTime - projectile.createdAt > lifetime) {
+      if (currentTime - projectile.createdAt >= lifetime) {
         this.removeProjectile(projectile);
       }
     }
@@ -609,6 +650,7 @@ class ProjectileManager {
     // Process enemy projectiles
     if (this.enemyProjectiles && this.enemyProjectiles.length > 0) {
       for (let i = this.enemyProjectiles.length - 1; i >= 0; i--) {
+        if (this.session && this.session.phase !== 'playing') break;
         const projectile = this.enemyProjectiles[i];
 
         // Skip invalid projectiles
@@ -617,14 +659,14 @@ class ProjectileManager {
           continue;
         }
 
-        // Check lifetime
-        if (currentTime - projectile.timestamp > projectile.life) {
+        const ageAtStepStart = currentTime - projectile.timestamp - delta * 1000;
+        const travelTime = Math.min(delta, Math.max(0, (projectile.life - ageAtStepStart) / 1000));
+        if (this.moveProjectile(projectile, travelTime, playerTransform, gameState, effectsManager)) continue;
+        if (currentTime - projectile.timestamp >= projectile.life) {
           this.removeEnemyProjectile(i);
           continue;
         }
-
-        // Apply velocity with delta time
-        projectile.mesh.position.addScaledVector(projectile.velocity, delta); // Update trail if present (optimized frequency)
+        // Update trail if present (optimized frequency)
         if (projectile.trail && projectile.trailPositions) {
           if (currentTime - projectile.lastTrailUpdate > 60) {
             // Increased from 40ms to 60ms for better performance
@@ -649,36 +691,12 @@ class ProjectileManager {
           }
         }
 
-        // Check for collision with player
+        // Range cleanup only; damage is exclusively dispatched by the swept trace.
         if (playerTransform) {
           const distanceToPlayer = projectile.mesh.position.distanceTo(
             playerTransform.position
           );
-          const collisionThreshold = 0.5; // Adjust based on player size
-
-          if (
-            gameState &&
-            !gameState.isGameOver &&
-            distanceToPlayer < collisionThreshold
-          ) {
-            // Player takes damage
-            gameState.takeDamage(projectile.power || 10);
-
-            // Create explosion effect if we have an effects manager
-            if (effectsManager) {
-              effectsManager.createExplosion(
-                projectile.mesh.position.clone(),
-                0xff0000,
-                true,
-                1.0
-              );
-            }
-
-            // Remove projectile
-            this.removeEnemyProjectile(i);
-          }
-          // Remove if too far from player (optimization)
-          else if (distanceToPlayer > 50) {
+          if (distanceToPlayer > 50) {
             this.removeEnemyProjectile(i);
           }
         }

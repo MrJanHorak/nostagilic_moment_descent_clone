@@ -1,7 +1,8 @@
 // Enemy entity module
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
-import { checkProjectileEnemyCollision } from '../utils/collisionUtils.js';
+import { hasLineOfSight } from '../utils/combatTrace.js';
+import { moveSphere } from '../utils/sphereMovement.js';
 import { animateEnemy, getEnemyFiringRange } from './EnemyAnimations.js';
 import { enemyTypes } from './EnemyTypes.js';
 import EnemyFactory from './EnemyFactory.js';
@@ -20,6 +21,7 @@ class EnemyManager {
     // Initialize supporting systems
     this.enemyFactory = new EnemyFactory(scene);
     this.projectileManager = new ProjectileManager(scene, playerTransform, audioManager, gameState.session);
+    this.projectileManager.setCombatWorld({ getColliders: () => this.levelManager?.solidColliders ?? [] });
     this.effectsManager = new EffectsManager(scene, gameState.session);
     this.objectPool = new ObjectPool();
 
@@ -40,6 +42,42 @@ class EnemyManager {
 
   setLevelSegments(segments) {
     this.levelSegments = segments;
+  }
+
+  canSeePlayer(enemy) {
+    return hasLineOfSight(enemy.mesh.position, this.playerTransform.position, this.levelManager?.solidColliders);
+  }
+
+  updateArenaEnemy(enemy, delta, visible) {
+    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position);
+    const pursue = visible && direction.length() < 30 && (enemy.type.name === 'scout' || direction.length() > 8);
+    // Legacy type speeds are units/frame at 60 Hz. Keep stored velocity in that convention.
+    const desired = pursue ? direction.normalize().multiplyScalar(enemy.type.speed) : new THREE.Vector3();
+    if (!visible) enemy.velocity.set(0, 0, 0); // No tracking through opaque walls.
+    else enemy.velocity.lerp(desired, 1 - Math.pow(0.95, delta * 60));
+    const worldVelocity = enemy.velocity.clone().multiplyScalar(60);
+    moveSphere(enemy.mesh.position, worldVelocity, delta, this.levelManager.solidColliders, enemy.collisionRadius);
+    enemy.velocity.copy(worldVelocity).divideScalar(60);
+    animateEnemy(enemy, delta, this.gameState.session.timeMs / 1000);
+    if (visible) enemy.mesh.lookAt(this.playerTransform.position);
+  }
+
+  hitEnemy(enemy, projectile, position) {
+    const index = this.enemies.indexOf(enemy);
+    if (index === -1 || !enemy.isActive || this.gameState.session.phase !== 'playing') return;
+    const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
+    enemy.health -= projectile.power * resistance;
+    this.effectsManager.createHitEffect(position.clone());
+    if (this.audioManager?.initialized) {
+      try { this.audioManager.playSound('hit', { volume: 0.3 }); }
+      catch (error) { console.warn('Unable to play hit sound:', error); }
+    }
+    if (enemy.health > 0) return;
+    this.gameState.score += enemy.type.pointValue;
+    this.gameState.recordEnemyKill?.(enemy.type.name);
+    // Special weapons are outside the finite pulse-only encounter's contract.
+    if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
+    this.destroyEnemy(index);
   }
 
   // Spawn enemy at a position
@@ -303,7 +341,7 @@ class EnemyManager {
   }
 
   // Enemy update function
-  updateEnemies(delta, projectiles) {
+  updateEnemies(delta) {
     if (this.gameState.session?.phase !== 'playing') return;
     // Update effects first
     this.effectsManager.update(delta);
@@ -320,6 +358,8 @@ class EnemyManager {
       if (this.gameState.session.phase !== 'playing') break;
       const enemy = this.enemies[i];
       if (!enemy.isActive) continue;
+      const arena = !this.levelManager?.isEndless && this.levelManager?.currentLevel?.kind === 'arena';
+      const visible = this.canSeePlayer(enemy);
 
       // Update enemy position
       const distanceToPlayer = enemy.mesh.position.distanceTo(
@@ -327,7 +367,8 @@ class EnemyManager {
       );
 
       // Apply enemy type-specific movement
-      if (distanceToPlayer < 30) {
+      if (arena) this.updateArenaEnemy(enemy, delta, visible);
+      else if (distanceToPlayer < 30) {
         // Get direction to player
         const direction = new THREE.Vector3();
         direction
@@ -404,8 +445,8 @@ class EnemyManager {
       enemy.collider.setFromObject(enemy.mesh);
 
       // Check collision with player
-      const collisionDistance = enemy.type.size * 2;
-      if (!this.gameState.isGameOver && distanceToPlayer < collisionDistance) {
+      const collisionDistance = arena ? enemy.collisionRadius + 0.5 : enemy.type.size * 2;
+      if (!this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
         // Player takes damage
         this.gameState.takeDamage(enemy.type.damage);
 
@@ -418,55 +459,6 @@ class EnemyManager {
       if (distanceToPlayer > 50) {
         this.removeEnemy(i);
         continue;
-      }
-
-      // Check projectile collision
-      for (let j = projectiles.length - 1; j >= 0; j--) {
-        const projectile = projectiles[j];
-
-        if (checkProjectileEnemyCollision(projectile, enemy)) {
-          // Enemy takes damage - different damage resistance based on enemy type
-          let damageMultiplier = 1.0;
-          if (enemy.type.name === 'boss')
-            damageMultiplier = 0.7; // Boss takes less damage
-          else if (enemy.type.name === 'destroyer') damageMultiplier = 0.8; // Destroyers have some armor
-
-          enemy.health -= projectile.power * damageMultiplier;
-
-          // Visual hit feedback
-          this.effectsManager.createHitEffect(projectile.mesh.position.clone());
-
-          // Play hit sound
-          if (this.audioManager && this.audioManager.initialized) {
-            try {
-              this.audioManager.playSound('hit', {
-                volume: Math.min(0.7, 10 / Math.max(1, distanceToPlayer)),
-                fallback: 'explosion', // Try playing explosion sound if hit is not available
-              });
-            } catch (e) {
-              console.warn('Error playing hit sound:', e);
-            }
-          }
-
-          projectile.ownerManager.removeProjectile(projectile);
-          if (enemy.health <= 0) {
-            // Add score
-            this.gameState.score += enemy.type.pointValue;
-
-            // Record the kill in statistics
-            if (this.gameState && this.gameState.recordEnemyKill) {
-              this.gameState.recordEnemyKill(enemy.type.name);
-            }
-
-            // Create weapon pickup chance based on enemy type
-            const position = enemy.mesh.position.clone();
-            this.spawnEnemyDrop(position, enemy.type.name);
-
-            // Destroy the enemy
-            this.destroyEnemy(i);
-            break;
-          }
-        }
       }
 
       if (!enemy.isActive || this.gameState.session.phase !== 'playing') continue;
@@ -487,7 +479,7 @@ class EnemyManager {
                 .normalize()
             ) > 0;
 
-        if (distanceToPlayer < firingRange && inFrontOf) {
+        if (distanceToPlayer < firingRange && inFrontOf && this.canSeePlayer(enemy)) {
           this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform);
           enemy.lastFireTime = currentTime;
 
@@ -505,7 +497,7 @@ class EnemyManager {
             // Boss occasionally fires from multiple weapons at once
             if (Math.random() < 0.3) {
               this.gameState.session.schedule(200, () => {
-                if (enemy && enemy.mesh && enemy.mesh.parent) {
+                if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                   this.projectileManager.fireEnemyProjectile(
                     enemy,
                     this.playerTransform
@@ -515,7 +507,7 @@ class EnemyManager {
 
               if (Math.random() < 0.2) {
                 this.gameState.session.schedule(400, () => {
-                  if (enemy && enemy.mesh && enemy.mesh.parent) {
+                  if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                     this.projectileManager.fireEnemyProjectile(
                       enemy,
                       this.playerTransform

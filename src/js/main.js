@@ -164,6 +164,12 @@ export default class Game {
         this.levelManager.currentLevel = null;
         this.levelManager.initEndlessLevel();
       } else this.levelManager.loadLevel(levelIndex);
+      this.projectileManager.setCombatWorld?.({
+        getColliders: () => this.levelManager.solidColliders,
+        getTargets: () => this.enemyManager.enemies,
+        getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
+        onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
+      });
       if (this.levelManager.currentLevel?.kind === 'arena' && !endless) {
         this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
       }
@@ -289,8 +295,9 @@ export default class Game {
     }
     this.levelManager.updateLevel();
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
+    this.enemyManager.updateEnemies(delta);
+    if (this.session.phase !== 'playing') return;
     this.projectileManager.updateProjectiles(delta);
-    this.enemyManager.updateEnemies(delta, this.projectileManager.getProjectiles());
     if (this.session.phase !== 'playing') return;
     this.powerUpManager.update(delta);
     if (this.caveParticles && this.session.timeMs - this.lastParticleUpdate >= 50) {

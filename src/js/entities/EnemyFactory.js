@@ -34,6 +34,12 @@ class EnemyFactory {
       meshBuilder.buildMesh(body, enemyType);
     }
 
+    // Conservative body envelope around the origin, independent of facing.
+    // Includes wings/trails; reserve room for the small cosmetic animations.
+    const bounds = new THREE.Box3().setFromObject(body);
+    const extent = new THREE.Vector3(...['x', 'y', 'z'].map(axis => Math.max(Math.abs(bounds.min[axis]), Math.abs(bounds.max[axis]))));
+    const collisionRadius = extent.length() * 1.1;
+
     // Position the enemy
     body.position.copy(position);
 
@@ -53,6 +59,7 @@ class EnemyFactory {
       isActive: true,
       lastFireTime: 0,
       fireRate: 2000, // milliseconds between shots
+      collisionRadius,
     };
 
     // Update the enemy collider

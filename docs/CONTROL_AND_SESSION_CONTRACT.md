@@ -1,12 +1,12 @@
 # Control and session contract for M1
 
-Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, and a fully loaded finite training arena with matching wall colliders/sliding movement are implemented. **Projectile wall collision, enemy wall avoidance, and an actual objective/exit remain pending.** See [current progress](progress/M1_ARENA.md).
+Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, finite arenas, wall-aware shot traces and basic enemy visibility/collision are implemented. **An explicit objective/exit and full mission acceptance remain pending.** See [current progress](progress/M1_COMBAT.md).
 
 ## Player and world ownership
 
 Use a right-handed world: +X right, +Y up, and local -Z forward. Distances are world units; velocity is units/second, acceleration is units/second squared, and angular rates are radians/second.
 
-The implemented scene graph is (solid colliders currently apply to the training arena):
+The implemented scene graph is (solid colliders currently apply to the finite arenas):
 
 ```text
 scene
@@ -83,4 +83,4 @@ Cooldowns, projectile lifetimes, buffs, and managed effects advance on session s
 
 `npm run smoke` serves `http://127.0.0.1:5183/?smoke=1` without opening a browser. The development-only overlay shows frames, updates, phase, session identity/time/steps/tasks, entity counts, player position/speed/quaternion, and caught errors. Labeled simulated-death/completion controls exercise lifecycle/UI wiring. A rising frame count alone is insufficient: simulation must freeze during pause and menus. All these controls are absent from production, including when its URL contains the smoke query.
 
-The 64 tests now cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS simulations, view-shake isolation, repeated restarts, pause-frozen timers, and terminal latches. Solid-wall sliding, corner contacts, high-speed wall impacts, two-way/inverted doorway traversal, and repeated arena cleanup are now tested. Wall-aware combat and normal objective/exit completion remain the next acceptance work. See the arena checkpoint for numeric tolerances, collision limits, and browser evidence.
+The 78 tests cover rotated/inverted thrust, roll, equivalent 30/60/120 FPS flight simulations, view-shake isolation, restarts, paused clocks and terminal latches; solid-wall sliding, doorway traversal and arena cleanup; and earliest-hit shot traces, muzzle obstruction, single damage ownership, enemy visibility/body clearance and repeated combat completion/reset. A normal objective/exit mission playthrough remains the next acceptance work. See the combat checkpoint for collision limits, evidence and remaining manual checks.

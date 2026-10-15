@@ -2,6 +2,8 @@
 
 Implemented October 15, 2026, following the [flight checkpoint](M1_FLIGHT.md).
 
+Historical checkpoint: the subsequent [combat checkpoint](M1_COMBAT.md) adds wall-aware shots, enemy visibility/collision and a separate selectable combat encounter. The quiet flight arena described here is still available.
+
 ## Delivered
 
 The main menu's **Start Flight Arena** action now opens a quiet, finite training space. It also appears as **Flight Training Arena** in mission selection. The older authored levels are labeled **Legacy level**; endless mode remains selectable. These older modes retain their old geometry/collision path.

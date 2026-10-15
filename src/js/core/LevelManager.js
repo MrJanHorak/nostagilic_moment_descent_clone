@@ -7,6 +7,7 @@ import createLevel3 from './levels/Level3.js';
 import createExampleLevel from './levels/ExampleLevel.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 import createFlightArena from './levels/FlightArena.js';
+import createCombatArena from './levels/CombatArena.js';
 import buildArena from './ArenaGeometry.js';
 
 class LevelManager {
@@ -42,6 +43,7 @@ class LevelManager {
     this.solidColliders = [];
     this.levels = [
       createFlightArena(),
+      createCombatArena(),
       createLevel1(),
       createLevel2(),
       createLevel3(),
