@@ -1,0 +1,120 @@
+{
+  "baselineCommit": "7e70489",
+  "auditDate": "2026-10-14",
+  "node": "v22.14.0",
+  "warning": "Defect reproductions, not end-to-end gameplay tests. No game files are modified.",
+  "results": [
+    {
+      "id": "A01-audio-start-contract",
+      "outcome": "defect-reproduced",
+      "createSound": "undefined"
+    },
+    {
+      "id": "A02-powerup-offset",
+      "outcome": "defect-reproduced",
+      "error": "TypeError: this.powerUps is not iterable"
+    },
+    {
+      "id": "A03-camera-overwrites-aim",
+      "outcome": "defect-reproduced",
+      "differenceRadians": 0,
+      "cameraPosition": [
+        0,
+        1.8,
+        4.5
+      ]
+    },
+    {
+      "id": "A04-forward-ignores-orientation",
+      "outcome": "defect-reproduced",
+      "velocity": [
+        0,
+        0,
+        -0.8
+      ]
+    },
+    {
+      "id": "A05-roll-unused",
+      "outcome": "defect-reproduced",
+      "differenceRadians": 0
+    },
+    {
+      "id": "A06-frame-dependent-damping",
+      "outcome": "defect-reproduced",
+      "at60Hz": 0.5181138869106269,
+      "at120Hz": 0.04474033330160636
+    },
+    {
+      "id": "A07-enemy-projectile-constructor",
+      "outcome": "defect-reproduced",
+      "cameraIsAudioManager": true,
+      "audioManager": "undefined"
+    },
+    {
+      "id": "A08-double-obstacle-offset",
+      "outcome": "defect-reproduced",
+      "requestedX": 1,
+      "actualWorldX": 2
+    },
+    {
+      "id": "A09-endless-initial-segments-untracked",
+      "outcome": "defect-reproduced",
+      "initialSceneGroups": 15,
+      "initialMapSize": 0,
+      "afterUpdateSceneGroups": 30,
+      "afterUpdateTrackedGroups": 15
+    },
+    {
+      "id": "A10-streaming-progress-stationary",
+      "outcome": "defect-reproduced",
+      "before": 0,
+      "after": 0,
+      "cameraZ": 0
+    },
+    {
+      "id": "A11-floor-depth-and-wall-center",
+      "outcome": "defect-reproduced",
+      "intendedDepth": 20,
+      "actualFloorDepth": 12,
+      "intendedWallCenterZ": -10,
+      "actualWallCenterZ": -20
+    },
+    {
+      "id": "A12-custom-obstacle-space",
+      "outcome": "defect-reproduced",
+      "segmentZ": -200,
+      "authoredZ": -10,
+      "actualLocalZ": 190,
+      "actualWorldZ": -10
+    },
+    {
+      "id": "A13-authored-powerup-type-lost",
+      "outcome": "defect-reproduced",
+      "authoredType": "health",
+      "receivedTypes": [
+        "undefined",
+        "undefined"
+      ]
+    },
+    {
+      "id": "A14-completion-repeats",
+      "outcome": "defect-reproduced",
+      "callbacksForOneCompletedLevel": 2
+    },
+    {
+      "id": "A15-projectile-shared-geometry-disposal",
+      "outcome": "defect-reproduced",
+      "shared": true,
+      "disposalsWhileSecondActive": 1
+    },
+    {
+      "id": "A16-restart-retains-session-state",
+      "outcome": "defect-reproduced",
+      "velocityZ": -6,
+      "paused": true,
+      "oldShots": 1,
+      "weaponPower": 2,
+      "oldScoutKills": 5
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "scenario": "Local production preview: start endless mode; both errors also observed after selecting introductory level",
+  "errors": [
+    {
+      "level": "error",
+      "message": "TypeError: this.audioManager.createSound is not a function\n    at Em.startGame (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:6769)\n    at HTMLDivElement.<anonymous> (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:4890)",
+      "timestamp": "2026-10-15T00:51:53.555Z",
+      "url": "http://127.0.0.1:5175/assets/index-CAlKlhDX.js"
+    },
+    {
+      "level": "error",
+      "message": "Error in game update loop: TypeError: this.powerUps is not iterable\n    at vm.offsetPowerUps (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:3827:133999)\n    at Em.animate (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:9997)\n    at http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:8399",
+      "timestamp": "2026-10-15T00:51:53.581Z",
+      "url": "http://127.0.0.1:5175/assets/index-CAlKlhDX.js"
+    },
+    {
+      "level": "error",
+      "message": "Error in game update loop: TypeError: this.powerUps is not iterable\n    at vm.offsetPowerUps (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:3827:133999)\n    at Em.animate (http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:9997)\n    at http://127.0.0.1:5175/assets/index-CAlKlhDX.js:4116:8399",
+      "timestamp": "2026-10-15T00:51:53.586Z",
+      "url": "http://127.0.0.1:5175/assets/index-CAlKlhDX.js"
+    }
+  ]
+}

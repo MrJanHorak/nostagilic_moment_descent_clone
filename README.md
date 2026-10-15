@@ -1,5 +1,7 @@
 # DESCENDED - Zero Gravity Shooter
 
+> **Project status (October 14, 2026):** This is an unfinished prototype. The production build succeeds, but starting play currently hits runtime errors; several feature descriptions below describe intended behavior. See the [verified assessment](docs/PROJECT_ASSESSMENT.md), [recovery and modernization roadmap](docs/ROADMAP.md), and [level designer proposal](docs/LEVEL_EDITOR_DESIGN.md) for the current state and a feasible path forward.
+
 A 3D zero-gravity shooter game in the style of Descent, built with JavaScript and Three.js. Pilot your spaceship through procedurally generated cave tunnels, battle enemies, and collect power-ups.
 
 ![Game Screenshot](public/screenshot.jpg)
