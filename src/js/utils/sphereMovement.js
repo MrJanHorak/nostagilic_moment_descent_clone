@@ -5,6 +5,7 @@ const MAX_SUBSTEPS = 512;
 const MAX_CONTACT_PASSES = 12;
 
 // Sphere/axis-aligned box contact, including recovery from an overlapping spawn.
+/** @param {THREE.Vector3} position @param {number} radius @param {THREE.Box3} box */
 function contact(position, radius, box) {
   const nearest = position.clone().clamp(box.min, box.max);
   const normal = position.clone().sub(nearest);
@@ -15,7 +16,7 @@ function contact(position, radius, box) {
   // Center is inside the solid: leave through its closest face.
   let depth = Infinity;
   const faceNormal = new THREE.Vector3();
-  for (const axis of ['x', 'y', 'z']) {
+  for (const axis of /** @type {const} */ (['x', 'y', 'z'])) {
     for (const sign of [-1, 1]) {
       const gap = sign < 0 ? position[axis] - box.min[axis] : box.max[axis] - position[axis];
       if (gap < depth) { depth = gap; faceNormal.set(0, 0, 0); faceNormal[axis] = sign; }
@@ -29,6 +30,8 @@ function contact(position, radius, box) {
  * work budget discards excessive travel for pathological speeds/deltas. Gameplay
  * uses 60 Hz and capped speed, normally requiring just one or two substeps.
  * Mutates world position/velocity; preserves orientation and tangential velocity.
+ * @param {THREE.Vector3} position @param {THREE.Vector3} velocity @param {number} delta
+ * @param {readonly import('../contracts.js').SolidCollider[]} colliders @param {number} [radius]
  */
 export function moveSphere(position, velocity, delta, colliders, radius = 0.5) {
   if (!Number.isFinite(delta) || delta < 0 || !Number.isFinite(radius) || radius <= 0 ||
@@ -47,7 +50,7 @@ export function moveSphere(position, velocity, delta, colliders, radius = 0.5) {
     for (let pass = 0; pass < MAX_CONTACT_PASSES; pass++) {
       let found = false;
       for (const collider of colliders) {
-        const hit = contact(position, radius, collider.box ?? collider);
+        const hit = contact(position, radius, 'box' in collider ? collider.box : collider);
         if (!hit) continue;
         collided = found = true;
         position.addScaledVector(hit.normal, hit.depth + SKIN);
@@ -57,7 +60,7 @@ export function moveSphere(position, velocity, delta, colliders, radius = 0.5) {
       if (!found) break;
     }
     // Conflicting solids/invalid space must stop motion, never eject through a wall.
-    if (colliders.some(collider => contact(position, radius - SKIN / 2, collider.box ?? collider))) {
+    if (colliders.some(collider => contact(position, radius - SKIN / 2, 'box' in collider ? collider.box : collider))) {
       position.copy(previous); velocity.set(0, 0, 0); unresolved = true; break;
     }
   }

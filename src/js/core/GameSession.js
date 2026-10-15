@@ -1,3 +1,4 @@
+/** @type {Record<import('../contracts.js').SessionPhase, readonly import('../contracts.js').SessionPhase[]>} */
 const transitions = {
   menu: ['loading'], loading: ['playing', 'error'],
   playing: ['paused', 'dead', 'completed', 'error'], paused: ['playing', 'error'],
@@ -7,14 +8,17 @@ const transitions = {
 // Owns phase, simulation time, and callbacks. end() invalidates every old token.
 export default class GameSession {
   constructor() {
+    /** @type {import('../contracts.js').SessionPhase} */
     this.phase = 'menu';
     this.id = 0;
     this.timeMs = 0;
     this.steps = 0;
+    /** @type {Map<number, import('../contracts.js').SessionTask>} */
     this.tasks = new Map();
     this.nextTaskId = 0;
   }
 
+  /** @param {import('../contracts.js').SessionPhase} next */
   transition(next) {
     if (next === this.phase) return false;
     if (!transitions[this.phase]?.includes(next)) throw new Error(`Invalid session transition: ${this.phase} -> ${next}`);
@@ -37,6 +41,7 @@ export default class GameSession {
     this.phase = 'menu';
   }
 
+  /** @param {number} delayMs @param {() => void} callback */
   schedule(delayMs, callback) {
     if (!Number.isFinite(delayMs) || delayMs < 0 || typeof callback !== 'function') throw new TypeError('Session timer requires a nonnegative delay and callback');
     if (this.phase !== 'playing') throw new Error('Gameplay timers require an active session');
@@ -45,8 +50,10 @@ export default class GameSession {
     return taskId;
   }
 
+  /** @param {number} taskId */
   cancel(taskId) { this.tasks.delete(taskId); }
 
+  /** @param {number} deltaSeconds */
   advance(deltaSeconds) {
     if (this.phase !== 'playing') return;
     if (!Number.isFinite(deltaSeconds) || deltaSeconds < 0) throw new TypeError('Invalid simulation delta');

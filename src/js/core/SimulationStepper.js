@@ -1,7 +1,8 @@
 // Bounded 60 Hz simulation. Excess wall time is discarded after a stall.
 export default class SimulationStepper {
-  constructor() { this.step = 1 / 60; this.maxFrame = 0.1; this.reset(); }
+  constructor() { this.step = 1 / 60; this.maxFrame = 0.1; this.accumulator = 0; }
   reset() { this.accumulator = 0; }
+  /** @param {number} delta @param {(step: number) => boolean | void} update */
   advance(delta, update) {
     if (!Number.isFinite(delta) || delta < 0) return;
     this.accumulator += Math.min(delta, this.maxFrame);

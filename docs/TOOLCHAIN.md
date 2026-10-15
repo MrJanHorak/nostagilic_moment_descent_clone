@@ -5,7 +5,7 @@ Baseline established October 15, 2026.
 - Primary runtime: **Node 24.22.0**, pinned in `.nvmrc` and Netlify configuration.
 - Primary package manager: **npm 11.21.1**, declared in `package.json` and Netlify configuration. CI installs the declared version explicitly; the `packageManager` field alone does not change a local npm installation.
 - Compatibility range: Node 22.14+ within 22.x, or Node 24.x; npm 11.2+ within 11.x. These are compatibility floors, not a recommendation to keep old security patch levels. Prefer the exact primary baseline.
-- Direct dependencies: Vite **6.4.4**, Three.js **0.176.0**, and Playwright Test **1.64.1** (development only). Exact direct versions and the committed lockfile make changes reviewable. `.npmrc` preserves exact versions on future saves and rejects unsupported engine ranges.
+- Runtime/build/browser dependencies: Vite **6.4.4**, Three.js **0.176.0**, and Playwright Test **1.64.1**. Development checks use TypeScript **7.0.2**, `@types/three` **0.176.0**, ESLint **10.12.0**, `@eslint/js` **10.0.1**, and `globals` **17.13.0**. Only Three.js is a production dependency. Exact direct versions and the committed lockfile make changes reviewable. `.npmrc` preserves exact versions on future saves and rejects unsupported engine ranges.
 
 ## Local setup
 
@@ -18,7 +18,7 @@ npm run verify
 npm run audit:deps
 ```
 
-Use `npm ci` for an existing checkout. It replaces `node_modules` from the lockfile, fails on manifest/lock mismatch, and does not update locked versions. Preserve optional platform dependencies; Rollup/esbuild need the matching native binary. `npm run verify` runs all 106 unit/simulation/metrics tests followed by the production build, stopping if tests fail. The separate audit includes development dependencies and fails at moderate severity or above; network failures also fail that step. `npm run browser:install` downloads Chromium; `npm run test:browser` builds and runs the four browser checks. `npm run profile:arena` runs a separate hardware benchmark; see the [profiling checkpoint](progress/M2_PERFORMANCE.md).
+Use `npm ci` for an existing checkout. It replaces `node_modules` from the lockfile, fails on manifest/lock mismatch, and does not update locked versions. Preserve optional platform dependencies; Rollup/esbuild need the matching native binary. `npm run verify` runs scoped lint, strict JSDoc type checking, all 106 unit/simulation/metrics tests and the production build, stopping on failure. See the [contract checkpoint](progress/M2_CONTRACTS.md) for the seven checked runtime modules and limits; this does not check all legacy source. The separate audit includes development dependencies and fails at moderate severity or above; network failures also fail that step. `npm run browser:install` downloads Chromium; `npm run test:browser` builds and runs the four browser checks. `npm run profile:arena` runs a separate hardware benchmark; see the [profiling checkpoint](progress/M2_PERFORMANCE.md).
 
 Run `npm run dev` for normal play, `npm run smoke` for the development diagnostics, or `npm run preview -- --host 127.0.0.1` after building for a production preview. See [M1 acceptance](M1_ACCEPTANCE.md) for the remaining hands-on checks.
 
@@ -26,7 +26,7 @@ The implementation session verified the pinned runtime using temporary npm-exec 
 
 ## CI and hosting
 
-`.github/workflows/verify.yml` runs on pushes, pull requests and manual dispatch, on both Ubuntu and Windows. Each job selects `.nvmrc`, installs npm from `packageManager`, performs a clean lockfile install, runs tests/build, installs Chromium/platform libraries, runs browser smoke/resource checks, and audits all dependencies. It retains browser reports and measurements for seven days, has read-only repository permissions, and does not deploy. Hosted execution remains unverified until these files are pushed and GitHub runs the workflow.
+`.github/workflows/verify.yml` runs on pushes, pull requests and manual dispatch, on both Ubuntu and Windows. Each job selects `.nvmrc`, installs npm from `packageManager`, performs a clean lockfile install, runs lint/types/tests/build, installs Chromium/platform libraries, runs browser smoke/resource checks, and audits all dependencies. It retains browser reports and measurements for seven days, has read-only repository permissions, and does not deploy. Hosted execution remains unverified until these files are pushed and GitHub runs the workflow.
 
 Netlify has matching Node/npm versions declared for its next build. This checkpoint does not publish a deployment. Keep `.nvmrc`, package metadata and Netlify versions consistent when changing the baseline. Netlify's automatic dependency installation uses its own build process; CI/local `npm ci` is the explicit clean-install check.
 
@@ -46,4 +46,4 @@ Useful primary references: [Node releases](https://nodejs.org/en/about/previous-
 
 On Windows, a clean install with Node 24.22.0/npm 11.21.1 passed, all 89 tests passed, and Vite 6.4.4 built the production game. All 89 tests also passed on the existing Node 22.14.0/npm 11.2.0. The workflow parsed successfully with YAML 2.8.1; this does not prove hosted GitHub execution. The output asset retains the prior filename/hash and approximately 644 kB minified / 162 kB gzip; the existing chunk-size warning remains. The source map changes with the upgraded bundler. No gameplay source changed in this checkpoint.
 
-This records the first M2 toolchain checkpoint. Follow-ups add [browser/resource regressions](progress/M2_BROWSER.md), a [three-run Intel GPU baseline and lighting reduction](progress/M2_PERFORMANCE.md), and [saved control settings](progress/M2_SETTINGS.md), with 106 unit/simulation/metrics tests and four passing browser checks. The frame-time target, lint/type contracts, remaining usability controls and broader cleanup remain.
+This records the first M2 toolchain checkpoint. Follow-ups add [browser/resource regressions](progress/M2_BROWSER.md), a [three-run Intel GPU baseline and lighting reduction](progress/M2_PERFORMANCE.md), [saved control settings](progress/M2_SETTINGS.md), and initial [lint/type contracts](progress/M2_CONTRACTS.md). The updated clean install, scoped checks, 106 unit/simulation/metrics tests, four browser checks and build pass locally; the updated [audit](progress/contracts-dependency-audit.json) reports zero known vulnerabilities. The frame-time target, hosted CI, volume/mute and broader source contracts/cleanup remain.

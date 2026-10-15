@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Tests, build and audit (${{ matrix.os }})
+    name: Contracts, tests, build and audit (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 10
     strategy:
@@ -34,7 +34,7 @@ jobs:
         run: npm install --global "$(node -p 'JSON.parse(require("fs").readFileSync("package.json", "utf8")).packageManager')"
       - name: Clean install from lockfile
         run: npm ci --no-audit
-      - name: Regression suite and production build
+      - name: Lint, types, regression suite and production build
         run: npm run verify
       - name: Install Chromium and platform dependencies
         run: npx playwright install --with-deps chromium

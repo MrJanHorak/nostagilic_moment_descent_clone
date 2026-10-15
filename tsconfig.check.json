@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM"],
+    "types": [],
+    "skipLibCheck": true
+  },
+  "files": [
+    "src/js/core/GameSession.js",
+    "src/js/core/SimulationStepper.js",
+    "src/js/core/UserSettings.js",
+    "src/js/core/MissionObjective.js",
+    "src/js/utils/combatTrace.js",
+    "src/js/utils/sphereMovement.js",
+    "src/js/ui/SettingsDialog.js",
+    "src/js/contracts.d.ts",
+    "tests/types/contracts.ts"
+  ]
+}

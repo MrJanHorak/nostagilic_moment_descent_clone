@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 
-// Session state only. The internal level definition is never annotated.
+// Session state only. The authored level definition is never mutated.
 export default class MissionObjective {
+  /** @param {import('../contracts.js').MissionDefinition} definition */
   constructor(definition) {
     this.definition = definition;
     this.requiredIds = new Set(definition.requiredEnemyIds);
+    /** @type {Map<string, import('../contracts.js').DefeatCause>} */
     this.defeats = new Map();
     this.completed = false;
     this.exitPosition = new THREE.Vector3().fromArray(definition.exit.position);
@@ -12,17 +14,20 @@ export default class MissionObjective {
 
   get ready() { return this.defeats.size === this.requiredIds.size; }
 
+  /** @param {string} id @param {import('../contracts.js').DefeatCause} cause */
   recordDefeat(id, cause) {
     if (this.completed || !this.requiredIds.has(id) || this.defeats.has(id) || !['shot', 'ram'].includes(cause)) return false;
     this.defeats.set(id, cause);
     return true;
   }
 
+  /** @param {THREE.Vector3} position @param {number} [playerRadius] */
   canExit(position, playerRadius = 0.5) {
     const clearance = this.definition.exit.radius - playerRadius;
     return this.ready && clearance >= 0 && position.distanceToSquared(this.exitPosition) <= clearance * clearance;
   }
 
+  /** @param {THREE.Vector3} position @param {number} [playerRadius] */
   tryComplete(position, playerRadius) {
     if (this.completed || !this.canExit(position, playerRadius)) return false;
     this.completed = true;
