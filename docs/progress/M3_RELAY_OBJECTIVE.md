@@ -1,6 +1,6 @@
 # Relay objective and locked hatch checkpoint
 
-Implemented October 16, 2026, following [persistent enemy navigation](M3_ROOM_NAVIGATION.md). The pending navigation build first passed all eight browser regressions; [that evidence](room-navigation-browser-check.json) closes the overnight verification gap. [M1 remains accepted](../M1_ACCEPTANCE.md). This is another M3 checkpoint, not completion of the larger authored mission or designer.
+Implemented October 16, 2026, following [persistent enemy navigation](M3_ROOM_NAVIGATION.md). The pending navigation build first passed all eight browser regressions; [that evidence](room-navigation-browser-check.json) closes the overnight verification gap. [M1 remains accepted](../M1_ACCEPTANCE.md). **Follow-up:** the owner's hosted Ubuntu/Windows logs revealed browser timing/readiness failures; see [CI reliability repairs](M2_CI_RELIABILITY.md). The local results below are historical evidence, not hosted acceptance. This is another M3 checkpoint, not completion of the larger authored mission or designer.
 
 ## Playable result
 

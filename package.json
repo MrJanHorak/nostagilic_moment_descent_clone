@@ -9,7 +9,7 @@
     "npm": ">=11.2.0 <12"
   },
   "scripts": {
-    "test": "node --test tests/startup.test.mjs tests/session.test.mjs tests/flight.test.mjs tests/arena.test.mjs tests/combat.test.mjs tests/metrics.test.mjs tests/settings.test.mjs tests/enemy-effects.test.mjs tests/level-document.test.mjs tests/room-navigation.test.mjs tests/relay-objective.test.mjs",
+    "test": "node --test tests/startup.test.mjs tests/session.test.mjs tests/flight.test.mjs tests/arena.test.mjs tests/combat.test.mjs tests/metrics.test.mjs tests/settings.test.mjs tests/enemy-effects.test.mjs tests/level-document.test.mjs tests/room-navigation.test.mjs tests/relay-objective.test.mjs tests/browser-control.test.mjs",
     "smoke": "node scripts/smoke-server.mjs",
     "dev": "vite",
     "build": "vite build",

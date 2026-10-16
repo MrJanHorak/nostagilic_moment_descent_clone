@@ -1,0 +1,30 @@
+{
+  "source": "Owner-supplied log excerpts, October 16, 2026",
+  "run": "https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38932266372",
+  "ubuntu": {
+    "passed": 6,
+    "failed": 3,
+    "browserDurationMinutes": 7.2,
+    "failures": [
+      "mine first-axis steering timeout",
+      "relay first-axis steering timeout",
+      "GPU geometry cold baseline <=10, later 42"
+    ],
+    "artifact": "https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38932266372/artifacts/12058779299"
+  },
+  "windows": {
+    "reportedFailed": 4,
+    "didNotRun": 5,
+    "browserDurationMinutes": 11.1,
+    "canceled": true,
+    "cancellationReason": "Not identified by the supplied excerpt",
+    "failures": [
+      "production death expectation timed out",
+      "relay menu selection exceeded overall test timeout",
+      "mine first-axis steering timeout",
+      "relay steering timeout and context-close error during cancellation"
+    ],
+    "artifact": "https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38932266372/artifacts/12060083052"
+  },
+  "acceptance": "Hosted CI remains open pending a new successful run after fixes."
+}

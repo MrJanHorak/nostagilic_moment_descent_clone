@@ -8,7 +8,9 @@ export default defineConfig({
   expect: { timeout: 15000 },
   reporter: [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/browser-results.json' }]],
   use: {
-    browserName: 'chromium', viewport: { width: 1280, height: 720 },
+    // Functional software-rendered checks. Hardware profiling keeps its own
+    // explicit 1280x720 reference resolution.
+    browserName: 'chromium', viewport: { width: 960, height: 540 },
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
     trace: 'retain-on-failure', screenshot: 'only-on-failure',
   },

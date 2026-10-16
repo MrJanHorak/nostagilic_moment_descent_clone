@@ -18,12 +18,28 @@ export default class RuntimeDiagnostics {
   recordFrame(gameState, workMs = 0) {
     if (!this.enabled) return;
     this.frames++;
+    if (this.renderedSession !== gameState.session.id) {
+      this.renderedSession = gameState.session.id;
+      this.sessionFrames = 0;
+    }
+    this.sessionFrames++;
     const now = performance.now();
     this.metrics.record(now, workMs);
     this.capture.record(gameState, now, workMs, () => collectResources(gameState.game));
-    if (now - this.lastRefresh < 250) return;
-    this.lastRefresh = now;
-    this.refresh(gameState);
+    if (now - this.lastRefresh >= 250) {
+      this.lastRefresh = now;
+      this.refresh(gameState);
+    }
+    // Small, read-only per-render feedback. Wall-clock key pulses can be missed
+    // entirely between frames on a slow software renderer.
+    const ship = gameState.game?.spaceship;
+    this.panel?.setAttribute('data-flight', JSON.stringify({
+      phase: gameState.session.phase, session: gameState.session.id,
+      timeMs: gameState.session.timeMs, steps: gameState.session.steps,
+      frames: this.frames, sessionFrames: this.sessionFrames,
+      position: ship?.group.position.toArray(), velocity: ship?.velocity.toArray(),
+      speed: ship?.velocity.length() ?? 0,
+    }));
   }
 
   recordUpdate() {
@@ -62,6 +78,7 @@ export default class RuntimeDiagnostics {
       const snapshot = {
         phase: gameState.session.phase, session: gameState.session.id, timeMs: gameState.session.timeMs,
         frames: this.frames, steps: gameState.session.steps, tasks: gameState.session.tasks.size, errors: this.errors,
+        sessionFrames: this.sessionFrames,
         enemies: game?.enemyManager?.enemies.length ?? 0,
         shots: (game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0),
         pickups: game?.powerUpManager?.powerups.length ?? 0,

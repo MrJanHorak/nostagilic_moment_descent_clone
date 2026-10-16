@@ -1,0 +1,282 @@
+{
+  "note": "Initial 960x540 verification: eight passed; one resource assertion used an invalid five-program cold cap. Measurements showed the known transient sixth program and then returned to five; CPU ownership counts remained constant. The final test uses an explicit six-program arena bound and GPU geometry plateau checks.",
+  "startedAt": "2026-10-16T17:43:03.058Z",
+  "durationMs": 362407.532,
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "status": "passed",
+      "durationMs": 50418
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "status": "passed",
+      "durationMs": 16712
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "status": "passed",
+      "durationMs": 110512
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "status": "passed",
+      "durationMs": 81040
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "status": "failed",
+      "durationMs": 70898
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "status": "passed",
+      "durationMs": 10008
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "status": "passed",
+      "durationMs": 3649
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "status": "passed",
+      "durationMs": 8041
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "status": "passed",
+      "durationMs": 2797
+    }
+  ],
+  "resourceSamples": [
+    {
+      "cycle": 0,
+      "timeMs": 616.6666666666666,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 1,
+      "timeMs": 533.3333333333335,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 2,
+      "timeMs": 799.9999999999995,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 3,
+      "timeMs": 683.3333333333331,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 4,
+      "timeMs": 350.00000000000006,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 5,
+      "timeMs": 383.3333333333334,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 6,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 6,
+      "timeMs": 600,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 7,
+      "timeMs": 733.333333333333,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 8,
+      "timeMs": 699.9999999999998,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 9,
+      "timeMs": 849.9999999999994,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 10,
+      "timeMs": 383.3333333333334,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    },
+    {
+      "cycle": 11,
+      "timeMs": 749.9999999999997,
+      "resources": {
+        "geometries": 41,
+        "textures": 0,
+        "programs": 5,
+        "calls": 42,
+        "triangles": 4182,
+        "points": 0,
+        "objects": 72,
+        "lights": 9,
+        "materials": 34,
+        "sceneGeometries": 46,
+        "geometryBudget": 60,
+        "effectLights": 0,
+        "pooledEffects": 0
+      }
+    }
+  ]
+}

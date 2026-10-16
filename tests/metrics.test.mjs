@@ -21,9 +21,36 @@ test('resource snapshot counts shared materials once and does not retain or muta
   const game = { scene, renderer: { info: { memory: { geometries: 1, textures: 2 }, programs: [{}],
     render: { calls: 3, triangles: 24, points: 0 } } } };
   assert.deepEqual(collectResources(game), { geometries: 1, textures: 2, programs: 1, calls: 3, triangles: 24,
-    points: 0, objects: 4, lights: 1, materials: 1, effectLights: 0, pooledEffects: 0 });
+    points: 0, objects: 4, lights: 1, materials: 1, sceneGeometries: 1, geometryBudget: 1, effectLights: 0, pooledEffects: 0 });
   assert.equal(scene.children.length, 3);
   geometry.dispose(); material.dispose();
+});
+
+test('geometry allocation budget counts actual scene and shot cache identities once', () => {
+  const scene = new THREE.Scene(), live = new THREE.BoxGeometry(), cached = new THREE.SphereGeometry();
+  const material = new THREE.MeshBasicMaterial(); scene.add(new THREE.Mesh(live, material));
+  const resources = collectResources({ scene, projectileManager: { projectileGeometries: { live, cached } },
+    enemyManager: { projectileManager: { projectileGeometries: { cached } } } });
+  assert.equal(resources.sceneGeometries, 1); assert.equal(resources.geometryBudget, 2);
+  live.dispose(); cached.dispose(); material.dispose();
+});
+
+test('flight diagnostics publish each rendered observation while full metrics stay throttled', t => {
+  const diagnostics = new RuntimeDiagnostics(true), attributes = new Map();
+  diagnostics.panel = { setAttribute: (key, value) => attributes.set(key, value) };
+  let refreshes = 0, now = 0;
+  t.mock.method(diagnostics, 'refresh', () => refreshes++);
+  t.mock.method(performance, 'now', () => now);
+  const ship = { group: new THREE.Group(), velocity: new THREE.Vector3(0, 0, -1) };
+  const state = { session: { id: 1, phase: 'playing', timeMs: 0, steps: 0 }, game: { spaceship: ship } };
+  diagnostics.recordFrame(state);
+  now = 50; state.session.timeMs = 50; state.session.steps = 3; ship.group.position.z = -0.05;
+  diagnostics.recordFrame(state);
+  const flight = JSON.parse(attributes.get('data-flight'));
+  assert.equal(refreshes, 1); assert.equal(flight.sessionFrames, 2); assert.equal(flight.steps, 3);
+  assert.deepEqual(flight.velocity, [0, 0, -1]); assert.deepEqual(flight.position, [0, 0, -0.05]);
+  state.session.id = 2; diagnostics.recordFrame(state);
+  assert.equal(JSON.parse(attributes.get('data-flight')).sessionFrames, 1);
 });
 
 test('disabled diagnostics collect no frames, timings or resources', () => {

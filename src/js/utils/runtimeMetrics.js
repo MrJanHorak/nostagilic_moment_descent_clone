@@ -74,20 +74,29 @@ export class ProfileCapture {
 export function collectResources(game) {
   const info = game?.renderer?.info;
   const materials = new Set();
+  const geometries = new Set();
   let objects = 0, lights = 0;
   game?.scene?.traverse(object => {
     objects++;
     if (object.isLight) lights++;
+    if (object.geometry) geometries.add(object.geometry);
     for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
       if (material) materials.add(material);
     }
   });
   const effects = game?.enemyManager?.effectsManager;
+  // WebGL uploads geometry lazily after frustum culling. Bound GPU allocations
+  // by actual live scene resources plus explicitly manager-owned shot caches.
+  const geometryBudget = new Set(geometries);
+  for (const manager of [game?.projectileManager, game?.enemyManager?.projectileManager]) {
+    for (const geometry of Object.values(manager?.projectileGeometries ?? {})) if (geometry) geometryBudget.add(geometry);
+  }
   return {
     geometries: info?.memory.geometries ?? 0, textures: info?.memory.textures ?? 0,
     programs: info?.programs?.length ?? 0, calls: info?.render.calls ?? 0,
     triangles: info?.render.triangles ?? 0, points: info?.render.points ?? 0,
     objects, lights, materials: materials.size,
+    sceneGeometries: geometries.size, geometryBudget: geometryBudget.size,
     effectLights: (effects?.activeHitLights.length ?? 0) + (effects?.activeExplosionLights.length ?? 0),
     pooledEffects: Object.values(effects?.objectPool.pools ?? {}).reduce((sum, pool) => sum + pool.length, 0),
   };

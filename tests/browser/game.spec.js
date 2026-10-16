@@ -1,8 +1,19 @@
 import { test as base, expect } from '@playwright/test';
 import os from 'node:os';
+import { FlightController } from '../helpers/browser-flight.mjs';
 
 // Observe failures from the real browser, including errors caught by Game's recovery UI.
 const test = base.extend({
+  cpuStress: [async ({ page }, use, testInfo) => {
+    const rate = Number(process.env.BROWSER_CPU_SLOWDOWN ?? 1);
+    if (!Number.isFinite(rate) || rate < 1 || rate > 8) throw new Error('BROWSER_CPU_SLOWDOWN must be from 1 to 8');
+    if (rate > 1) {
+      const session = await page.context().newCDPSession(page);
+      await session.send('Emulation.setCPUThrottlingRate', { rate });
+    }
+    await use();
+    await testInfo.attach('browser-environment', { body: JSON.stringify({ viewport: page.viewportSize(), cpuSlowdown: rate }), contentType: 'application/json' });
+  }, { auto: true }],
   browserErrors: [async ({ page }, use, testInfo) => {
     const errors = [];
     page.on('pageerror', error => errors.push(`page: ${error.message}`));
@@ -46,7 +57,7 @@ async function holdUntil(page, key, assertion) {
 }
 
 test('production: keyboard mission victory, replay, enemy-fire death, reboot and menu', async ({ page }, testInfo) => {
-  test.setTimeout(180000);
+  test.setTimeout(300000);
   await page.goto('http://127.0.0.1:5184/?smoke=1');
   await expect(page.locator('#start-game-btn')).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
@@ -79,7 +90,7 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.locator('#weapon-slot-1')).toContainText('40');
   await expect(page.locator('#score-display')).toHaveText('0');
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
-  await expect(page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true })).toBeVisible({ timeout: 90000 });
+  await expect(page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true })).toBeVisible({ timeout: 150000 });
   await testInfo.attach('production-loss', { body: await page.screenshot(), contentType: 'image/png' });
   await button(page, 'REBOOT').click();
   await expect(page.locator('#health-percentage')).toHaveText('100%');
@@ -107,7 +118,22 @@ async function waitForSnapshot(page, predicate) {
   return value;
 }
 
+async function settledPausedSnapshot(page, session) {
+  let previous = null, matches = 0, value;
+  const keys = ['geometries', 'textures', 'programs', 'objects', 'materials', 'lights', 'sceneGeometries', 'geometryBudget'];
+  await expect.poll(async () => {
+    value = await snapshot(page);
+    if (!value || value.session !== session || value.phase !== 'paused' || value.sessionFrames < 3) return false;
+    if (previous?.frames === value.frames) return false;
+    matches = previous && keys.every(key => previous.resources[key] === value.resources[key]) ? matches + 1 : 0;
+    previous = value;
+    return matches >= 2;
+  }, { timeout: 30000, intervals: [100], message: 'Paused resource counts should settle across three rendered snapshots' }).toBe(true);
+  return value;
+}
+
 test('production: JSON missions are selectable and reset their encounter, inventory and relay objective', async ({ page }, testInfo) => {
+  test.setTimeout(120000);
   await page.goto('http://127.0.0.1:5184/');
   await chooseMine(page);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
@@ -130,49 +156,39 @@ test('production: JSON missions are selectable and reset their encounter, invent
 // Read diagnostics to steer real keyboard input; never inject a player position.
 async function flyMineAxis(page, axis, target) {
   const keys = [['a', 'd'], ['ShiftLeft', 'Space'], ['w', 's']][axis];
-  let previous = await snapshot(page), estimatedVelocity = 0, held = null;
+  const readFlight = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+  let previous = await readFlight(), held = null;
+  const controller = new FlightController(target);
+  const session = previous.session, started = previous.timeMs;
   try {
     await expect.poll(async () => {
-      const value = await snapshot(page);
-      if (value.phase !== 'playing') return true;
-      const fresh = value.timeMs > previous.timeMs;
-      if (fresh) {
-        estimatedVelocity = (value.position[axis] - previous.position[axis]) / ((value.timeMs - previous.timeMs) / 1000);
-        previous = value;
-      }
+      const value = await readFlight();
+      if (value.phase === 'completed') return true;
+      if (value.phase !== 'playing' || value.session !== session) throw new Error(`Flight interrupted: ${JSON.stringify(value)}`);
       const error = target - value.position[axis];
-      if (Math.abs(error) < 0.3 && value.speed < 0.4) return true;
-      if (!fresh) return false;
-      // Near a waypoint, a held correction can span several diagnostic samples
-      // and oscillate under software rendering. Use bounded real key presses,
-      // then observe a fresh sample before another correction.
-      if (Math.abs(error) < 1.5) {
-        if (held) { await page.keyboard.up(held); held = null; }
-        const correction = Math.abs(estimatedVelocity) > 0.35 ? -estimatedVelocity : error;
-        if (Math.abs(correction) > 0.1) await page.keyboard.press(correction > 0 ? keys[1] : keys[0], { delay: 75 });
-        return false;
-      }
-      // Limit cruise speed and counter-thrust before a turn. Diagnostic reads
-      // are 250 ms apart, so use their simulation timestamps to estimate drift.
-      const desiredVelocity = Math.max(-3, Math.min(3, error));
-      const correction = desiredVelocity - estimatedVelocity;
-      const deadband = Math.abs(error) < 1 ? 0.15 : 0.7;
-      const next = correction > deadband ? keys[1] : correction < -deadband ? keys[0] : null;
+      if (Math.abs(error) < 0.3 && value.speed < 0.15) return true;
+      if (value.timeMs - started > 30000) throw new Error(`Flight made no timely simulation progress: ${JSON.stringify(value)}`);
+      if (value.steps === previous.steps) return false;
+      previous = value;
+      const command = controller.update(value.position[axis], value.velocity[axis], value.timeMs);
+      const next = command > 0 ? keys[1] : command < 0 ? keys[0] : null;
       if (next !== held) {
         if (held) await page.keyboard.up(held);
         if (next) await page.keyboard.down(next);
         held = next;
       }
       return false;
-    }, { timeout: 30000, intervals: [100], message: `Keyboard axis ${axis} should settle at ${target}` }).toBe(true);
+    }, { timeout: 90000, intervals: [50], message: `Keyboard axis ${axis} should settle at ${target}` }).toBe(true);
+  } catch (error) {
+    throw new Error(`${error.message}\nLast flight observation: ${JSON.stringify(previous)}`, { cause: error });
   } finally { if (held) await page.keyboard.up(held); }
   // Drift persists while another thrust axis is held, so settle before turning.
   await expect.poll(async () => { const value = await snapshot(page); return value.phase !== 'playing' || value.speed < 0.03; },
-    { timeout: 7000, intervals: [100] }).toBe(true);
+    { timeout: 15000, intervals: [100] }).toBe(true);
 }
 
 test('development: JSON mine loop and vertical hatch fly both ways, complete and replay', async ({ page }, testInfo) => {
-  test.setTimeout(180000);
+  test.setTimeout(300000);
   await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseMine(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
   await button(page, 'Neutralize drones (test)').press('Enter');
@@ -194,7 +210,7 @@ test('development: JSON mine loop and vertical hatch fly both ways, complete and
 });
 
 test('development: relay unlocks a solid hatch, completes the objective and resets on replay', async ({ page }, testInfo) => {
-  test.setTimeout(180000);
+  test.setTimeout(300000);
   await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseRelay(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
   await button(page, 'Neutralize drones (test)').press('Enter');
@@ -234,20 +250,20 @@ test('development: pause freezes simulation and ten combat restarts return resou
   await page.goto('http://127.0.0.1:5183/?smoke=1');
   await chooseMission(page);
   const samples = [];
-  // One warm-up plus ten measured cycles, including projectile and explosion allocation.
-  for (let cycle = 0; cycle <= 10; cycle++) {
+  // Two rendered warm-ups plus ten measured cycles, including combat allocation.
+  for (let cycle = 0; cycle < 12; cycle++) {
     const running = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
     await page.keyboard.press('f');
     await button(page, 'Neutralize drones (test)').press('Enter');
     await expect(page.locator('#arena-guide')).toContainText('EXIT READY');
     await page.keyboard.press('Escape');
     await button(page, 'RESTART MISSION').click();
-    await waitForSnapshot(page, value => value.session !== running.session && value.phase === 'playing' && value.enemies === 2);
+    const restarted = await waitForSnapshot(page, value => value.session !== running.session && value.phase === 'playing' && value.enemies === 2 && value.sessionFrames >= 3);
     await page.keyboard.press('Escape');
     const paused = await waitForSnapshot(page, value => value.phase === 'paused');
     // A second diagnostic refresh must leave simulation time and steps unchanged.
     await expect.poll(async () => (await snapshot(page))?.frames).toBeGreaterThan(paused.frames);
-    const stable = await snapshot(page);
+    const stable = await settledPausedSnapshot(page, restarted.session);
     expect(stable.timeMs).toBe(paused.timeMs);
     expect(stable.steps).toBe(paused.steps);
     expect(stable.errors).toBe(0);
@@ -257,17 +273,26 @@ test('development: pause freezes simulation and ten combat restarts return resou
     expect(stable.resources.effectLights).toBe(0);
     expect(stable.resources.pooledEffects).toBe(0);
     samples.push({ cycle, ...stable });
-    if (cycle < 10) await button(page, 'CONTINUE').click();
-  }
-  const baseline = samples[0].resources;
-  for (const sample of samples.slice(1)) {
-    for (const key of ['geometries', 'textures', 'programs']) expect(sample.resources[key], key).toBeLessThanOrEqual(baseline[key]);
-    for (const key of ['objects', 'materials', 'lights']) expect(sample.resources[key], key).toBe(baseline[key]);
+    if (cycle < 11) await button(page, 'CONTINUE').click();
   }
   const report = { date: new Date().toISOString(), node: process.version, browser: browser.version(),
-    platform: os.platform(), cpu: os.cpus()[0]?.model, viewport: { width: 1280, height: 720 },
-    renderer: 'Chromium ANGLE SwiftShader (software)', warmupCycles: 1, measuredCycles: 10, samples };
+    platform: os.platform(), cpu: os.cpus()[0]?.model, viewport: page.viewportSize(),
+    renderer: 'Chromium ANGLE SwiftShader (software)', warmupCycles: 2, measuredCycles: 10, samples };
+  // Preserve measurements even when an assertion fails on a hosted runner.
   await testInfo.attach('restart-resources', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+  const baseline = samples[1].resources;
+  for (const sample of samples.slice(2)) {
+    expect(sample.resources.geometries, 'GPU allocations must be owned by the live scene or shot caches').toBeLessThanOrEqual(sample.resources.geometryBudget);
+    expect(sample.resources.textures, 'textures').toBeLessThanOrEqual(Math.max(...samples.slice(0, 2).map(sample => sample.resources.textures)));
+    // This fixed arena has five steady programs and one legitimate transient
+    // variant (also seen in the original acceptance reports). Five is not a cap.
+    expect(sample.resources.programs, 'fixed arena shader program bound').toBeLessThanOrEqual(6);
+    for (const key of ['objects', 'materials', 'lights', 'sceneGeometries', 'geometryBudget']) expect(sample.resources[key], key).toBe(baseline[key]);
+  }
+  const earlyPeak = Math.max(...samples.slice(0, 7).map(sample => sample.resources.geometries));
+  const latePeak = Math.max(...samples.slice(7).map(sample => sample.resources.geometries));
+  // Permit one view-dependent upload; reject a continuing allocation trend.
+  expect(latePeak, 'GPU geometry count must plateau after warm-up').toBeLessThanOrEqual(earlyPeak + 1);
 });
 
 test('production: settings persist, reset, remain isolated while paused, and fit a small viewport', async ({ page }, testInfo) => {
