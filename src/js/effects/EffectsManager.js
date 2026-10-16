@@ -2,342 +2,210 @@ import * as THREE from 'three';
 import ObjectPool from '../utils/ObjectPool.js';
 import disposeObject from '../utils/disposeObject.js';
 
+/** @typedef {THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>} HitParticles */
+/** @typedef {THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>} ExplosionMesh */
+/** @typedef {{hitLight: THREE.PointLight, explosionLight: THREE.PointLight, hitParticles: HitParticles, explosionMesh: ExplosionMesh}} EffectPools */
+/** @typedef {{position: THREE.Vector3, createdAt: number, duration: number, particleSystem?: HitParticles}} HitEffect */
+/** @typedef {{mesh: ExplosionMesh, createdAt: number, duration: number, baseSize: number}} ExplosionEffect */
+
 class EffectsManager {
+  /** @param {THREE.Scene} scene
+   * @param {import('../core/GameSession.js').default | null} [session] */
   constructor(scene, session = null) {
     this.scene = scene;
     this.session = session;
     this.elapsedMs = 0;
-    this.objectPool = new ObjectPool();
-
-    // Track effects for processing in animation loop
+    this.disposed = false;
+    /** @private */
+    this.clearing = false;
+    /** @private */
+    this.generation = 0;
+    /** @type {ObjectPool<EffectPools>} */
+    this.objectPool = new ObjectPool({ maxPerPool: 32, onDiscard: object => disposeObject(object) });
+    /** @type {HitEffect[]} */
     this.hitEffects = [];
+    /** @type {ExplosionEffect[]} */
     this.explosionEffects = [];
+    /** @type {THREE.PointLight[]} */
     this.activeHitLights = [];
+    /** @type {THREE.PointLight[]} */
     this.activeExplosionLights = [];
+    /** @private @type {WeakMap<THREE.PointLight, number>} */
+    this.lightDeadlines = new WeakMap();
   }
 
-  // Create a visual effect when a projectile hits an enemy
+  /** @param {THREE.Vector3} position */
   createHitEffect(position) {
-    // Skip if there's no scene
-    if (!this.scene) return;
-
-    // Create a small flash at hit position - reuse an existing light if possible
-    const flash =
-      this.objectPool.getFromPool('hitLight') ||
-      new THREE.PointLight(0xffff00, 1.5, 4); // Reduced intensity and distance
+    this.assertUsable();
+    const flash = this.objectPool.getFromPool('hitLight') || new THREE.PointLight(0xffff00, 1.5, 4);
     flash.position.copy(position);
     flash.visible = true;
-    flash.intensity = 1.5; // Reduced intensity
-
-    // Add to scene
-    this.scene.add(flash);
-
-    // Store timestamp for cleanup in animation loop
-    flash.userData.removeTime = this.now() + 100;
-    flash.userData.isActive = true;
-
-    // Track light in active lights array
-    if (!this.activeHitLights) {
-      this.activeHitLights = [];
-    }
+    flash.intensity = 1.5;
+    this.lightDeadlines.set(flash, this.now() + 100);
     this.activeHitLights.push(flash);
-
-    // Add to hits array for processing during main game loop
-    if (!this.hitEffects) this.hitEffects = [];
-
-    // Only add to effects array if scene exists
-    if (this.scene) {
-      this.hitEffects.push({
-        position: position.clone(),
-        createdAt: this.now(),
-        duration: 300,
-      });
-    }
+    this.hitEffects.push({ position: position.clone(), createdAt: this.now(), duration: 300 });
+    this.scene.add(flash);
   }
 
-  // Create explosion effect for projectiles
+  /** @param {THREE.Vector3} position
+   * @param {THREE.ColorRepresentation} color
+   * @param {boolean} [isExplosive]
+   * @param {number} [explosionRadius] */
   createExplosion(position, color, isExplosive = false, explosionRadius = 1.0) {
-    if (!this.scene) return;
+    this.assertUsable();
+    const generation = this.generation;
+    const light = this.objectPool.getFromPool('explosionLight') || new THREE.PointLight();
+    light.color.set(color);
+    light.intensity = 1.5;
+    light.distance = isExplosive ? 4.0 : 1.5;
+    light.position.copy(position);
+    light.visible = true;
+    this.lightDeadlines.set(light, this.now() + 200);
+    this.activeExplosionLights.push(light);
+    this.scene.add(light);
+    if (generation !== this.generation) return;
 
-    // Get light from pool or create new one
-    const explosionLight =
-      this.objectPool.getFromPool('explosionLight') ||
-      new THREE.PointLight(color, 1.5, isExplosive ? 4.0 : 1.5); // Reduced intensity and distance
-
-    // Configure the light
-    explosionLight.color.set(color);
-    explosionLight.intensity = 1.5; // Reduced intensity
-    explosionLight.distance = isExplosive ? 4.0 : 1.5; // Reduced distance
-    explosionLight.position.copy(position);
-    explosionLight.visible = true;
-
-    this.scene.add(explosionLight);
-
-    // Track for cleanup in animation loop
-    explosionLight.userData.removeTime = this.now() + 200;
-    explosionLight.userData.isActive = true;
-
-    // Track in active lights array
-    if (!this.activeExplosionLights) {
-      this.activeExplosionLights = [];
-    }
-    this.activeExplosionLights.push(explosionLight);
-
-    // For explosive projectiles, create a larger explosion
     if (isExplosive) {
-      // Track explosion effect in dedicated array
-      if (!this.explosionEffects) this.explosionEffects = [];
-
-      // Get explosion mesh from pool or create new one
-      let explosion = this.objectPool.getFromPool('explosionMesh');
-
-      if (!explosion) {
-        const explosionGeometry = new THREE.SphereGeometry(1.0, 12, 12); // Reduced segments from 16 to 12
-        const explosionMaterial = new THREE.MeshBasicMaterial({
-          transparent: true,
-          opacity: 0.7,
-          side: THREE.DoubleSide,
-        });
-        explosion = new THREE.Mesh(explosionGeometry, explosionMaterial);
-      }
-
-      // Configure the explosion
-      if (explosion.material) {
-        explosion.material.color.set(color);
-        explosion.material.opacity = 0.7;
-      }
+      const explosion = this.objectPool.getFromPool('explosionMesh') || new THREE.Mesh(
+        new THREE.SphereGeometry(1.0, 12, 12),
+        new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.7, side: THREE.DoubleSide })
+      );
+      explosion.material.color.set(color);
+      explosion.material.opacity = 0.7;
       explosion.scale.set(1, 1, 1);
       explosion.position.copy(position);
-
-      // Set size based on explosion radius
-      const baseSize = explosionRadius || 1.0;
-      explosion.userData.baseSize = baseSize;
       explosion.visible = true;
-
+      this.explosionEffects.push({ mesh: explosion, createdAt: this.now(), duration: 500, baseSize: explosionRadius || 1.0 });
       this.scene.add(explosion);
-
-      // Track this explosion for animation
-      this.explosionEffects.push({
-        mesh: explosion,
-        createdAt: this.now(),
-        duration: 500,
-      });
     }
   }
 
-  // Create a reusable hit particle system
+  /** @private @returns {HitParticles} */
   createHitParticleSystem() {
-    const particleCount = 5; // Reduced from 10
+    this.assertUsable();
     const particles = new THREE.BufferGeometry();
-    const positions = new Float32Array(particleCount * 3);
-
-    // Initialize positions
-    for (let i = 0; i < particleCount * 3; i += 3) {
+    const positions = new Float32Array(5 * 3);
+    for (let i = 0; i < positions.length; i += 3) {
       positions[i] = (Math.random() - 0.5) * 0.3;
       positions[i + 1] = (Math.random() - 0.5) * 0.3;
       positions[i + 2] = (Math.random() - 0.5) * 0.3;
     }
-
     particles.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-    const material = new THREE.PointsMaterial({
-      color: 0xffaa00,
-      size: 0.08, // Reduced from 0.1
-      transparent: true,
-      opacity: 0.7, // Reduced from 0.8
-      blending: THREE.NormalBlending, // Changed from AdditiveBlending
-    });
-
-    return new THREE.Points(particles, material);
+    return new THREE.Points(particles, new THREE.PointsMaterial({
+      color: 0xffaa00, size: 0.08, transparent: true, opacity: 0.7, blending: THREE.NormalBlending,
+    }));
   }
 
-  // Process hit effects during the animation loop
-  processHitEffects() {
-    // Return early if no hit effects or scene is not available
-    if (!this.scene) return;
-
+  /** @private @param {THREE.PointLight[]} lights
+   * @param {'hitLight' | 'explosionLight'} poolName
+   * @param {number} dimming */
+  processLights(lights, poolName, dimming) {
+    const generation = this.generation;
     const currentTime = this.now();
-
-    // Process active lights
-    if (!this.activeHitLights) {
-      this.activeHitLights = [];
-    }
-
-    for (let i = this.activeHitLights.length - 1; i >= 0; i--) {
-      const light = this.activeHitLights[i];
-
-      // Skip invalid lights
-      if (!light || !light.userData) {
-        this.activeHitLights.splice(i, 1);
-        continue;
-      }
-      // Optimization: Reduce light intensity quickly
-      if (light.userData.isActive) {
-        light.intensity *= 0.9; // Dim light quickly
-      }
-
-      if (light.userData.removeTime && light.userData.isActive) {
-        if (currentTime > light.userData.removeTime) {
-          // Remove light from scene and return to pool
-          if (light.parent) {
-            light.parent.remove(light);
-          }
-          this.objectPool.returnToPool('hitLight', light);
-          light.userData.isActive = false;
-          this.activeHitLights.splice(i, 1);
-        }
+    for (let i = lights.length - 1; i >= 0; i--) {
+      const light = lights[i];
+      light.intensity *= dimming;
+      if (currentTime > (this.lightDeadlines.get(light) ?? Infinity)) {
+        lights.splice(i, 1);
+        this.lightDeadlines.delete(light);
+        light.removeFromParent();
+        if (generation !== this.generation) { disposeObject(light); return; }
+        this.objectPool.returnToPool(poolName, light);
+        if (generation !== this.generation) return;
       }
     }
+  }
 
-    // Process particle effects
+  processHitEffects() {
+    if (this.disposed || this.clearing) return;
+    const generation = this.generation;
+    this.processLights(this.activeHitLights, 'hitLight', 0.9);
+    if (generation !== this.generation) return;
+    const currentTime = this.now();
     for (let i = this.hitEffects.length - 1; i >= 0; i--) {
       const effect = this.hitEffects[i];
-      const elapsed = currentTime - effect.createdAt;
-
-      // If first frame for this effect, create particles
-      if (!effect.processed) {
-        effect.processed = true;
-
-        // Create particle system for this hit
-        const particleSystem =
-          this.objectPool.getFromPool('hitParticles') ||
-          this.createHitParticleSystem();
-
-        // Position the particle system
-        particleSystem.position.copy(effect.position);
-        particleSystem.visible = true;
-
-        // Store reference to particle system and start time
-        effect.particleSystem = particleSystem;
-        if (this.scene) {
-          this.scene.add(particleSystem);
-        }
+      if (!effect.particleSystem) {
+        const particles = this.objectPool.getFromPool('hitParticles') || this.createHitParticleSystem();
+        particles.position.copy(effect.position);
+        particles.visible = true;
+        effect.particleSystem = particles;
+        this.scene.add(particles);
+        if (generation !== this.generation) return;
       }
-
-      // Update particle system
-      if (effect && effect.particleSystem) {
-        const progress = Math.min(elapsed / effect.duration, 1.0);
-
-        // Fade out particles
-        if (effect.particleSystem.material) {
-          effect.particleSystem.material.opacity = 0.7 * (1 - progress);
-        }
-
-        // Remove completed effect
-        if (progress >= 1.0) {
-          if (this.scene && effect.particleSystem) {
-            this.scene.remove(effect.particleSystem);
-            this.objectPool.returnToPool('hitParticles', effect.particleSystem);
-
-            // Make sure index is valid before splicing
-            if (i >= 0 && i < this.hitEffects.length) {
-              this.hitEffects.splice(i, 1);
-            }
-          }
-        }
+      const progress = Math.min((currentTime - effect.createdAt) / effect.duration, 1.0);
+      effect.particleSystem.material.opacity = 0.7 * (1 - progress);
+      if (progress >= 1.0) {
+        this.hitEffects.splice(i, 1);
+        effect.particleSystem.removeFromParent();
+        if (generation !== this.generation) { disposeObject(effect.particleSystem); return; }
+        this.objectPool.returnToPool('hitParticles', effect.particleSystem);
+        if (generation !== this.generation) return;
       }
     }
   }
 
-  // Process explosion effects in animation loop
   processExplosionEffects() {
-    // Return early if no explosion effects or scene
-    if (!this.scene) return;
-
+    if (this.disposed || this.clearing) return;
+    const generation = this.generation;
+    this.processLights(this.activeExplosionLights, 'explosionLight', 0.85);
+    if (generation !== this.generation) return;
     const currentTime = this.now();
-
-    // Process explosion lights
-    if (!this.activeExplosionLights) {
-      this.activeExplosionLights = [];
-    }
-
-    for (let i = this.activeExplosionLights.length - 1; i >= 0; i--) {
-      const light = this.activeExplosionLights[i];
-
-      // Skip invalid lights
-      if (!light || !light.userData) {
-        this.activeExplosionLights.splice(i, 1);
-        continue;
-      }
-      // Optimization: Reduce light intensity quickly
-      if (light.userData.isActive) {
-        light.intensity *= 0.85; // Dim light quickly
-      }
-
-      if (light.userData.removeTime && light.userData.isActive) {
-        if (currentTime > light.userData.removeTime) {
-          // Remove light from scene and return to pool
-          if (light.parent) {
-            light.parent.remove(light);
-          }
-          this.objectPool.returnToPool('explosionLight', light);
-          light.userData.isActive = false;
-          this.activeExplosionLights.splice(i, 1);
-        }
-      }
-    }
-
-    // Process explosion meshes
     for (let i = this.explosionEffects.length - 1; i >= 0; i--) {
       const effect = this.explosionEffects[i];
-      const elapsed = currentTime - effect.createdAt;
-      const progress = Math.min(elapsed / effect.duration, 1.0);
-
-      if (effect.mesh) {
-        // Expand
-        const scale = 1.0 + progress * 1.5; // Reduced expansion from 2.0 to 1.5
-        const baseSize = effect.mesh.userData.baseSize || 1.0;
-        effect.mesh.scale.set(
-          scale * baseSize,
-          scale * baseSize,
-          scale * baseSize
-        );
-
-        // Fade out
-        if (effect.mesh && effect.mesh.material) {
-          effect.mesh.material.opacity = 0.7 * (1.0 - progress);
-        }
-
-        // Remove completed effects
-        if (progress >= 1.0) {
-          if (this.scene && effect.mesh) {
-            this.scene.remove(effect.mesh);
-            this.objectPool.returnToPool('explosionMesh', effect.mesh);
-
-            // Make sure index is valid before splicing
-            if (
-              this.explosionEffects &&
-              i >= 0 &&
-              i < this.explosionEffects.length
-            ) {
-              this.explosionEffects.splice(i, 1);
-            }
-          }
-        }
+      const progress = Math.min((currentTime - effect.createdAt) / effect.duration, 1.0);
+      effect.mesh.scale.setScalar((1 + progress * 1.5) * effect.baseSize);
+      effect.mesh.material.opacity = 0.7 * (1 - progress);
+      if (progress >= 1.0) {
+        this.explosionEffects.splice(i, 1);
+        effect.mesh.removeFromParent();
+        if (generation !== this.generation) { disposeObject(effect.mesh); return; }
+        this.objectPool.returnToPool('explosionMesh', effect.mesh);
+        if (generation !== this.generation) return;
       }
     }
   }
 
   now() { return this.session?.timeMs ?? this.elapsedMs; }
 
+  // Session clear is reusable. Invalidate every reference before disposal hooks.
   clear() {
+    if (this.clearing) return;
+    this.clearing = true;
+    this.generation++;
     const objects = new Set([
       ...this.activeHitLights, ...this.activeExplosionLights,
-      ...this.hitEffects.map((effect) => effect.particleSystem),
-      ...this.explosionEffects.map((effect) => effect.mesh),
-      ...Object.values(this.objectPool.pools).flat(),
+      ...this.hitEffects.map(effect => effect.particleSystem),
+      ...this.explosionEffects.map(effect => effect.mesh), ...this.objectPool.drainAll(),
     ]);
-    for (const object of objects) disposeObject(object);
-    this.hitEffects = [];
-    this.explosionEffects = [];
-    this.activeHitLights = [];
-    this.activeExplosionLights = [];
-    this.objectPool.clearAllPools();
+    this.hitEffects.length = 0;
+    this.explosionEffects.length = 0;
+    this.activeHitLights.length = 0;
+    this.activeExplosionLights.length = 0;
+    this.lightDeadlines = new WeakMap();
     this.elapsedMs = 0;
+    try {
+      for (const object of objects) disposeObject(object);
+    } finally {
+      this.clearing = false;
+    }
   }
 
+  // Permanent retirement is distinct from returning to the menu or restarting.
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.clear();
+  }
+
+  /** @private */
+  assertUsable() {
+    if (this.disposed) throw new Error('EffectsManager is disposed');
+    if (this.clearing) throw new Error('EffectsManager is clearing');
+  }
+
+  /** @param {number} [delta] */
   update(delta = 0) {
-    if (this.session && this.session.phase !== 'playing') return;
+    if (this.disposed || this.clearing || (this.session && this.session.phase !== 'playing')) return;
     if (!this.session) this.elapsedMs += delta * 1000;
     this.processHitEffects();
     this.processExplosionEffects();

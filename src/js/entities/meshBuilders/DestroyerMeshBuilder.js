@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import MeshBuilder from './MeshBuilder.js';
 
-class DestroyerMeshBuilder extends MeshBuilder {
+class DestroyerMeshBuilder {
+  /** @param {THREE.Group} body
+   * @param {import('../../combatContracts.js').EnemyDefinition} enemyType */
   buildMesh(body, enemyType) {
     // ===== BASE HULL =====
     // Create a more imposing ship with angular features

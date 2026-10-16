@@ -1,4 +1,4 @@
-import type { BufferGeometry, ColorRepresentation, Mesh, MeshStandardMaterial, Object3D, PointLight, Points, PointsMaterial, Vector3 } from 'three';
+import type { BufferGeometry, ColorRepresentation, Group, Mesh, MeshStandardMaterial, Object3D, PointLight, Points, PointsMaterial, Vector3 } from 'three';
 import type { EnemyType, ShotTarget, SolidCollider } from './contracts.js';
 import type ProjectileManager from './entities/ProjectileManager.js';
 
@@ -22,6 +22,13 @@ export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   collisionRadius: number;
   lastFireTime: number;
   fireRate: number;
+}
+export interface EnemyInstance extends EnemyCombatTarget {
+  readonly mesh: Group;
+  isActive: boolean;
+}
+export interface EnemyMeshBuilder {
+  buildMesh(body: Group, enemyType: EnemyDefinition): void;
 }
 export type ProjectileType = 'standard' | 'laser' | 'plasma' | 'bomb' | 'missile' | 'heavylaser' | 'nova';
 export type TrailType = 'standard' | 'pulse' | 'laser' | 'missile' | 'plasma' | null;

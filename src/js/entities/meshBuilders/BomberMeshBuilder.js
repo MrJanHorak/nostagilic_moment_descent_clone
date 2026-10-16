@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import MeshBuilder from './MeshBuilder.js';
 
-class BomberMeshBuilder extends MeshBuilder {
+class BomberMeshBuilder {
+  /** @param {THREE.Group} body
+   * @param {import('../../combatContracts.js').EnemyDefinition} enemyType */
   buildMesh(body, enemyType) {
     // ===== MAIN BODY =====
     // Create an oval-shaped main body

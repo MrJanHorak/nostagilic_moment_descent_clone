@@ -7,7 +7,10 @@
     "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["ES2022", "DOM"],
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
     "types": [],
     "skipLibCheck": true
   },
@@ -21,6 +24,15 @@
     "src/js/entities/Spaceship.js",
     "src/js/entities/ProjectileManager.js",
     "src/js/entities/EnemyTypes.js",
+    "src/js/entities/EnemyFactory.js",
+    "src/js/entities/EnemyLifecycle.js",
+    "src/js/entities/meshBuilders/BomberMeshBuilder.js",
+    "src/js/entities/meshBuilders/BossMeshBuilder.js",
+    "src/js/entities/meshBuilders/DestroyerMeshBuilder.js",
+    "src/js/entities/meshBuilders/FighterMeshBuilder.js",
+    "src/js/entities/meshBuilders/ScoutMeshBuilder.js",
+    "src/js/effects/EffectsManager.js",
+    "src/js/utils/ObjectPool.js",
     "src/js/utils/disposeObject.js",
     "src/js/utils/effectsUtils.js",
     "src/js/utils/combatTrace.js",
@@ -30,6 +42,7 @@
     "src/js/combatContracts.d.ts",
     "tests/types/contracts.ts",
     "tests/types/player-contracts.ts",
-    "tests/types/combat-contracts.ts"
+    "tests/types/combat-contracts.ts",
+    "tests/types/enemy-effects-contracts.ts"
   ]
 }

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import MeshBuilder from './MeshBuilder.js';
 
-class FighterMeshBuilder extends MeshBuilder {
+class FighterMeshBuilder {
+  /** @param {THREE.Group} body
+   * @param {import('../../combatContracts.js').EnemyDefinition} enemyType */
   buildMesh(body, enemyType) {
     // ===== MAIN BODY =====
     const bodyGeometry = new THREE.CylinderGeometry(

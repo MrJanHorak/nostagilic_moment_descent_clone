@@ -1,5 +1,7 @@
 # EnemyManager Refactoring Documentation
 
+> Historical refactoring notes. See the current [M2 enemy/effect checkpoint](../../../docs/progress/M2_ENEMY_EFFECTS.md): the unused base mesh builder has been removed, concrete builders are checked directly, and effect pools now have bounded retention. Some legacy definitions and claims below are not the active source of truth.
+
 ## Overview
 
 The EnemyManager class was refactored to improve maintainability, readability, and modularity. This document provides details about the changes made and how the new structure works.

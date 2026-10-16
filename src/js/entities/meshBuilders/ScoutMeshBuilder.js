@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import MeshBuilder from './MeshBuilder.js';
 
-class ScoutMeshBuilder extends MeshBuilder {
+class ScoutMeshBuilder {
+  /** @param {THREE.Group} body
+   * @param {import('../../combatContracts.js').EnemyDefinition} enemyType */
   buildMesh(body, enemyType) {
     // ========== SCOUT SHIP MESH ==========
     // The Scout is a fast, small enemy ship with a sharp triangular design.

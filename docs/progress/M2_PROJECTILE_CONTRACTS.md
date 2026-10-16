@@ -1,5 +1,7 @@
 # M2 projectile contracts and ownership checkpoint
 
+> Follow-up: [enemy construction and effect ownership](M2_ENEMY_EFFECTS.md) extends checked coverage to 23 runtime modules and updates the ownership policy below. This file records the earlier projectile checkpoint.
+
 Implemented October 15, 2026, following [player/input contracts](M2_PLAYER_CONTRACTS.md). The owner's [M1 acceptance](../M1_ACCEPTANCE.md) remains complete.
 
 ## Delivered

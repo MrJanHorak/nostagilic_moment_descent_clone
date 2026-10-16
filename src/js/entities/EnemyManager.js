@@ -1,6 +1,6 @@
 // Enemy entity module
 import * as THREE from 'three';
-import disposeObject from '../utils/disposeObject.js';
+import { clearEnemies, removeEnemyAt } from './EnemyLifecycle.js';
 import { hasLineOfSight } from '../utils/combatTrace.js';
 import { moveSphere } from '../utils/sphereMovement.js';
 import { animateEnemy, getEnemyFiringRange } from './EnemyAnimations.js';
@@ -8,7 +8,6 @@ import { enemyTypes } from './EnemyTypes.js';
 import EnemyFactory from './EnemyFactory.js';
 import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
-import ObjectPool from '../utils/ObjectPool.js';
 
 class EnemyManager {
   constructor(scene, playerTransform, gameState, audioManager, levelManager = null) {
@@ -23,7 +22,8 @@ class EnemyManager {
     this.projectileManager = new ProjectileManager(scene, playerTransform, audioManager, gameState.session);
     this.projectileManager.setCombatWorld({ getColliders: () => this.levelManager?.solidColliders ?? [] });
     this.effectsManager = new EffectsManager(scene, gameState.session);
-    this.objectPool = new ObjectPool();
+    this.clearing = false;
+    this.generation = 0;
 
     // Enemy tracking
     this.enemies = [];
@@ -64,7 +64,7 @@ class EnemyManager {
 
   hitEnemy(enemy, projectile, position) {
     const index = this.enemies.indexOf(enemy);
-    if (index === -1 || !enemy.isActive || this.gameState.session.phase !== 'playing') return;
+    if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
     const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
     enemy.health -= projectile.power * resistance;
     this.effectsManager.createHitEffect(position.clone());
@@ -72,20 +72,22 @@ class EnemyManager {
       try { this.audioManager.playSound('hit', { volume: 0.3 }); }
       catch (error) { console.warn('Unable to play hit sound:', error); }
     }
-    if (enemy.health > 0) return;
+    if (enemy.health > 0 || !enemy.isActive || !this.enemies.includes(enemy)) return;
     this.gameState.score += enemy.type.pointValue;
     this.gameState.recordEnemyKill?.(enemy.type.name);
     // Special weapons are outside the finite pulse-only encounter's contract.
     if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
-    this.destroyEnemy(index);
+    this.destroyEnemy(this.enemies.indexOf(enemy));
   }
 
   // Spawn enemy at a position
   spawnEnemy(position, typeName = null) {
+    if (this.clearing) throw new Error('EnemyManager is clearing');
     // If no specific type requested, choose randomly
     const enemyType = typeName
       ? enemyTypes.find((t) => t.name === typeName)
       : enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    if (!enemyType) throw new RangeError(`Unknown enemy type: ${typeName}`);
 
     // Use the factory to create the enemy
     const enemy = this.enemyFactory.createEnemy(
@@ -331,15 +333,22 @@ class EnemyManager {
 
   // Reset enemies for new level with defensive checks
   resetLevel() {
-    for (let i = this.enemies.length - 1; i >= 0; i--) this.removeEnemy(i);
-    this.projectileManager.clear();
-    this.effectsManager.clear();
-    this.destroyedPredefinedEnemies.clear();
-    this.totalPredefinedEnemies = 0;
-    this.levelComplete = false;
-    this.levelSegments = [];
-    this.lastRandomSpawnTime = 0;
-    this.randomSpawnInterval = 5000;
+    if (this.clearing) return;
+    this.clearing = true;
+    this.generation++;
+    try {
+      clearEnemies(this.enemies);
+      this.projectileManager.clear();
+      this.effectsManager.clear();
+      this.destroyedPredefinedEnemies.clear();
+      this.totalPredefinedEnemies = 0;
+      this.levelComplete = false;
+      this.levelSegments = [];
+      this.lastRandomSpawnTime = 0;
+      this.randomSpawnInterval = 5000;
+    } finally {
+      this.clearing = false;
+    }
   }
 
   // Enemy update function
@@ -536,29 +545,31 @@ class EnemyManager {
   }
 
   removeEnemy(index) {
-    const enemy = this.enemies[index];
-    if (!enemy) return;
-    enemy.isActive = false;
-    disposeObject(enemy.mesh);
-    this.enemies.splice(index, 1);
+    return removeEnemyAt(this.enemies, index);
   }
 
   destroyEnemy(index, cause = 'shot') {
     const enemy = this.enemies[index];
     if (!enemy?.isActive) return false;
+    const generation = this.generation;
+    const sessionId = this.gameState.session.id;
     const spawnId = enemy.mesh.userData.isPredefined ? enemy.mesh.userData.spawnPointId : null;
+    // Cleanup hooks, effects and audio must observe an already removed enemy.
+    this.removeEnemy(index);
+    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
+    if (spawnId) this.destroyedPredefinedEnemies.add(spawnId);
     this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);
+    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
     if (this.audioManager?.initialized) {
       const distance = this.playerTransform?.position.distanceTo(enemy.mesh.position) ?? 20;
       const volume = Math.min(0.8, 10 / Math.max(1, distance));
       try { this.audioManager.playSound('explosion', { volume }); }
       catch (error) { console.warn('Unable to play explosion sound:', error); }
     }
+    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
     // One disposal path for shot deaths, ramming and ordinary teardown.
     // Only combat destruction below emits objective progress; removeEnemy never does.
-    this.removeEnemy(index);
     if (spawnId) {
-      this.destroyedPredefinedEnemies.add(spawnId);
       this.onEnemyDefeated?.(spawnId, cause);
       this.gameState.uiManager?.updateEnemyCount(this.destroyedPredefinedEnemies.size, this.totalPredefinedEnemies);
       this.checkLevelCompletion();

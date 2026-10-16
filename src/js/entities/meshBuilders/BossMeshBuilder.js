@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import MeshBuilder from './MeshBuilder.js';
 
-class BossMeshBuilder extends MeshBuilder {
+class BossMeshBuilder {
+  /** @param {THREE.Group} body
+   * @param {import('../../combatContracts.js').EnemyDefinition} enemyType */
   buildMesh(body, enemyType) {
     // ===== CORE STRUCTURE =====
     // Create a massive, imposing core structure
