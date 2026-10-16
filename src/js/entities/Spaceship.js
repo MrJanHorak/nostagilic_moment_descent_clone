@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
 
 class Spaceship {
   constructor() {
@@ -18,7 +19,7 @@ class Spaceship {
     this.maxSpeed = 6; // Cap the max speed
 
     this.rotationSpeed = 1.5; // Radians/second for keyboard rotation
-    this.radius = 0.5;
+    this.radius = PLAYER_RADIUS;
   }
 
   createModel() {

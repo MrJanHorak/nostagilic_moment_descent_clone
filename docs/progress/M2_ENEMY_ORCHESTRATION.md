@@ -1,5 +1,7 @@
 # M2 enemy orchestration and source cleanup checkpoint
 
+> Follow-up: [shared level data and connected prototype](M2_LEVEL_DOCUMENTS.md) implements the next data boundary and initial M3 geometry. This file records the earlier cleanup checkpoint.
+
 Implemented October 15, 2026, following [enemy construction/effect ownership](M2_ENEMY_EFFECTS.md). [M1 remains accepted](../M1_ACCEPTANCE.md).
 
 ## Delivered

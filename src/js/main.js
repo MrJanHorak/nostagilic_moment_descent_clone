@@ -4,6 +4,8 @@ import GameState from './core/GameState.js';
 import InputManager from './core/InputManager.js';
 import LevelManager from './core/LevelManager.js';
 import Spaceship from './entities/Spaceship.js';
+import { prepareLevelDocument } from './core/levels/document/compileLevelDocument.js';
+import disposeObject from './utils/disposeObject.js';
 import ProjectileManager from './entities/ProjectileManager.js';
 import EnemyManager from './entities/EnemyManager.js';
 import PowerUpManager from './entities/PowerUpManager.js';
@@ -28,6 +30,7 @@ export default class Game {
     this.activeAnimations = [];
     this.mission = null;
     this.currentLevelIndex = 0;
+    this.importedLevelIndex = null;
     this.isEndlessMode = true;
     this.powerupSpawnInterval = 15000;
     this.diagnostics = new RuntimeDiagnostics(!!import.meta.env?.DEV &&
@@ -147,7 +150,7 @@ export default class Game {
     this.uiManager?.resetSessionUI();
   }
 
-  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex } = {}) {
+  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex, preparedWorld = null } = {}) {
     if (!endless && (!Number.isInteger(levelIndex) || !this.levelManager?.levels[levelIndex])) {
       throw new RangeError(`Unknown mission index: ${levelIndex}`);
     }
@@ -169,7 +172,7 @@ export default class Game {
       if (endless) {
         this.levelManager.currentLevel = null;
         this.levelManager.initEndlessLevel();
-      } else this.levelManager.loadLevel(levelIndex);
+      } else this.levelManager.loadLevel(levelIndex, preparedWorld);
       const level = this.levelManager.currentLevel;
       this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
@@ -187,6 +190,7 @@ export default class Game {
       });
       if (this.levelManager.currentLevel?.kind === 'arena' && !endless) {
         this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
+        if (this.levelManager.currentLevel.spawnRotation) this.spaceship.group.quaternion.fromArray(this.levelManager.currentLevel.spawnRotation);
       }
       if (this.caveParticles) this.caveParticles.visible = this.levelManager.currentLevel?.kind !== 'arena';
       this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
@@ -216,6 +220,18 @@ export default class Game {
   }
 
   startGame() { return this.startSession(); }
+  // The editor/file UI can call this after reading JSON. Invalid data or staging
+  // failures leave the active session intact. Reuse one imported catalog slot.
+  startLevelDocument(input) {
+    const prepared = prepareLevelDocument(input);
+    try {
+      this.importedLevelIndex ??= this.levelManager.levels.length;
+      this.levelManager.levels[this.importedLevelIndex] = prepared.level;
+      return this.startSession({ endless: false, levelIndex: this.importedLevelIndex, preparedWorld: prepared.world });
+    } finally {
+      if (!prepared.world.claimed) disposeObject(prepared.world.group);
+    }
+  }
   selectLevel(index) { return this.startSession({ endless: false, levelIndex: index }); }
   selectEndlessMode() { return this.startSession({ endless: true }); }
   restartLevel() { return this.startSession(); }

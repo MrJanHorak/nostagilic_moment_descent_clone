@@ -1,5 +1,7 @@
 # Developer Guide: Extending the Game
 
+> Shared level authoring now has a [version-1 JSON format](docs/LEVEL_DOCUMENT_FORMAT.md), a bundled Mine Link Prototype and a staged runtime import API. Use these contracts for new content; legacy extension examples below are not the import format.
+
 > Historical extension examples below can describe unfinished behavior. Current enemy definitions live in `src/js/entities/EnemyTypes.js`, models in `meshBuilders/`, and firing in `ProjectileManager.js`. Use `npm run smoke` for diagnostics. Old debug helpers and repair scripts are preserved in [the archive](archive/README.md); see [the current checkpoint](docs/progress/M2_ENEMY_ORCHESTRATION.md).
 
 This document provides guidance on how to extend various aspects of the game.

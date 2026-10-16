@@ -1,14 +1,13 @@
 // PowerUp Manager for handling all power-ups in the game
 import * as THREE from 'three';
 import { hasLineOfSight } from '../utils/combatTrace.js';
+import { AUTHORED_PICKUPS } from '../core/levels/document/LevelContent.js';
 
 // Power-up type definitions
 export const powerupTypes = [
   {
-    name: 'health',
+    ...AUTHORED_PICKUPS.health,
     canCollect: (state) => state.playerHealth < state.maxPlayerHealth,
-    color: 0x00ff00,
-    size: 0.5,
     duration: 0,
     effect: function (gameState, uiManager) {
       // Heal player for 25% of max health
@@ -23,7 +22,7 @@ export const powerupTypes = [
     message: 'Shield Repaired!',
   },
   {
-    name: 'pulseAmmo', color: 0xffa64d, size: 0.5, duration: 0,
+    ...AUTHORED_PICKUPS.pulseAmmo, duration: 0,
     canCollect: (state) => Number.isFinite(state.weaponInventory.pulse.ammo) &&
       state.weaponInventory.pulse.ammo < state.pulseAmmoCapacity,
     effect(state, ui) {

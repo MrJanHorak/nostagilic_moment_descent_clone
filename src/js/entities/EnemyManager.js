@@ -8,6 +8,7 @@ import { enemyTypes } from './EnemyTypes.js';
 import EnemyFactory from './EnemyFactory.js';
 import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
+import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
 
 class EnemyManager {
   /** @param {THREE.Scene} scene
@@ -487,7 +488,7 @@ class EnemyManager {
       enemy.collider.setFromObject(enemy.mesh);
 
       // Check collision with player
-      const collisionDistance = arena ? enemy.collisionRadius + 0.5 : enemy.type.size * 2;
+      const collisionDistance = arena ? enemy.collisionRadius + PLAYER_RADIUS : enemy.type.size * 2;
       if (!this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
         // Player takes damage
         this.gameState.takeDamage(enemy.type.damage);

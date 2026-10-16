@@ -8,6 +8,7 @@ import createExampleLevel from './levels/ExampleLevel.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 import createFlightArena from './levels/FlightArena.js';
 import createCombatArena from './levels/CombatArena.js';
+import createMineLinkLevel from './levels/MineLink.js';
 import buildArena from './ArenaGeometry.js';
 
 class LevelManager {
@@ -48,6 +49,7 @@ class LevelManager {
       createLevel2(),
       createLevel3(),
       createExampleLevel(),
+      createMineLinkLevel(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
@@ -251,7 +253,7 @@ class LevelManager {
     }
   }
   // Load a specific level by index
-  loadLevel(levelIndex) {
+  loadLevel(levelIndex, preparedWorld = null) {
     // Clear existing level
     this.clearLevel();
 
@@ -264,7 +266,7 @@ class LevelManager {
     this.isEndless = this.currentLevel.endless || false;
 
     // Initialize the new level
-    this.initLevel();
+    this.initLevel(preparedWorld);
 
     return this.currentLevel;
   }
@@ -281,13 +283,14 @@ class LevelManager {
   }
 
   // Override the existing initLevel method
-  initLevel() {
+  initLevel(preparedWorld = null) {
     if (!this.isEndless && !this.currentLevel) this.currentLevel = this.levels[this.currentLevelIndex];
     if (!this.isEndless && this.currentLevel?.kind === 'arena') {
-      const { group, colliders } = buildArena(this.currentLevel);
-      this.scene.add(group);
+      const { group, colliders } = preparedWorld ?? buildArena(this.currentLevel);
+      if (preparedWorld) preparedWorld.claimed = true;
       this.levelSegments = [group];
       this.solidColliders = colliders;
+      this.scene.add(group);
       return;
     }
     if (this.isEndless) {

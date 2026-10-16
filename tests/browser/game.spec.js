@@ -20,6 +20,13 @@ const test = base.extend({
 });
 
 const button = (page, name) => page.getByRole('button', { name, exact: true });
+async function chooseMine(page) {
+  await page.locator('#select-level-btn').click();
+  await button(page, 'Mine Link Prototype').click();
+  await expect(page.locator('#arena-guide')).toContainText('MINE LINK PROTOTYPE');
+  await expect(page.locator('#arena-guide')).toContainText('ceiling hatch');
+  await expect(page.locator('#weapon-slot-1')).toContainText('60');
+}
 async function chooseMission(page) {
   await page.locator('#select-level-btn').click();
   await page.getByRole('button', { name: /arena escape/i }).click();
@@ -93,6 +100,75 @@ async function waitForSnapshot(page, predicate) {
   await expect.poll(async () => { value = await snapshot(page); return !!value && predicate(value); }).toBe(true);
   return value;
 }
+
+test('production: JSON mine is selectable and resets its initial encounter and inventory', async ({ page }, testInfo) => {
+  await page.goto('http://127.0.0.1:5184/');
+  await chooseMine(page);
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+  await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
+  await testInfo.attach('mine-start', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.keyboard.press('f'); await expect(page.locator('#weapon-slot-1')).toContainText('59');
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').click();
+  await expect(page.locator('#weapon-slot-1')).toContainText('60');
+  await expect(page.locator('#health-percentage')).toHaveText('100%');
+  await expect(page.locator('#score-display')).toHaveText('0');
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+});
+
+// Read diagnostics to steer real keyboard input; never inject a player position.
+async function flyMineAxis(page, axis, target) {
+  const keys = [['a', 'd'], ['ShiftLeft', 'Space'], ['w', 's']][axis];
+  let previous = await snapshot(page), estimatedVelocity = 0, held = null;
+  try {
+    await expect.poll(async () => {
+      const value = await snapshot(page);
+      if (value.phase !== 'playing') return true;
+      if (value.timeMs > previous.timeMs) {
+        estimatedVelocity = (value.position[axis] - previous.position[axis]) / ((value.timeMs - previous.timeMs) / 1000);
+        previous = value;
+      }
+      const error = target - value.position[axis];
+      if (Math.abs(error) < 0.3 && value.speed < 0.4) return true;
+      // Limit cruise speed and counter-thrust before a turn. Diagnostic reads
+      // are 250 ms apart, so use their simulation timestamps to estimate drift.
+      const desiredVelocity = Math.max(-3, Math.min(3, error));
+      const correction = desiredVelocity - estimatedVelocity;
+      const deadband = Math.abs(error) < 1 ? 0.15 : 0.7;
+      const next = correction > deadband ? keys[1] : correction < -deadband ? keys[0] : null;
+      if (next !== held) {
+        if (held) await page.keyboard.up(held);
+        if (next) await page.keyboard.down(next);
+        held = next;
+      }
+      return false;
+    }, { timeout: 30000, intervals: [100] }).toBe(true);
+  } finally { if (held) await page.keyboard.up(held); }
+  // Drift persists while another thrust axis is held, so settle before turning.
+  await expect.poll(async () => { const value = await snapshot(page); return value.phase !== 'playing' || value.speed < 0.03; },
+    { timeout: 7000, intervals: [100] }).toBe(true);
+}
+
+test('development: JSON mine loop and vertical hatch fly both ways, complete and replay', async ({ page }, testInfo) => {
+  test.setTimeout(180000);
+  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseMine(page);
+  const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
+  await button(page, 'Neutralize drones (test)').press('Enter');
+  await expect(page.locator('#arena-guide')).toContainText('EXIT READY');
+  const samples = [];
+  for (const [axis, target] of [[2, 0], [2, -16], [0, 16], [2, 0], [0, 0], [0, 16], [1, 12], [1, 0], [1, 12], [2, -4]]) {
+    await flyMineAxis(page, axis, target); const value = await snapshot(page);
+    samples.push({ axis, target, position: value.position, phase: value.phase, errors: value.errors });
+  }
+  await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
+  await expect(page.locator('#score-display')).toHaveText('1150');
+  await testInfo.attach('mine-traversal', { body: JSON.stringify(samples, null, 2), contentType: 'application/json' });
+  await testInfo.attach('mine-complete', { body: await page.screenshot(), contentType: 'image/png' });
+  await button(page, 'REPLAY MISSION').click();
+  const replay = await waitForSnapshot(page, value => value.phase === 'playing' && value.session !== initial.session && value.enemies === 2);
+  expect(replay.position).toEqual([0, 0, 4]); expect(replay.errors).toBe(0);
+  await expect(page.locator('#weapon-slot-1')).toContainText('60');
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+});
 
 test('development: pause freezes simulation and ten combat restarts return resources to baseline', async ({ page, browser }, testInfo) => {
   test.setTimeout(180000);

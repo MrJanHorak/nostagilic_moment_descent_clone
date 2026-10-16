@@ -1,0 +1,519 @@
+{
+  "verification": "All eight browser cases passed in one complete run on the final level-document build and corrected keyboard traversal controller.",
+  "productionBundle": "/assets/index-UxYmA_Qe.js",
+  "startedAt": "2026-10-16T01:32:01.196Z",
+  "durationMs": 286082.798,
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "status": "passed",
+      "durationMs": 56725,
+      "errors": []
+    },
+    {
+      "title": "production: JSON mine is selectable and resets its initial encounter and inventory",
+      "status": "passed",
+      "durationMs": 11269,
+      "errors": []
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "status": "passed",
+      "durationMs": 143646,
+      "errors": []
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "status": "passed",
+      "durationMs": 39329,
+      "errors": []
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "status": "passed",
+      "durationMs": 12551,
+      "errors": []
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "status": "passed",
+      "durationMs": 3866,
+      "errors": []
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "status": "passed",
+      "durationMs": 9453,
+      "errors": []
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "status": "passed",
+      "durationMs": 4785,
+      "errors": []
+    }
+  ],
+  "mineTraversal": [
+    {
+      "axis": 2,
+      "target": 0,
+      "position": [
+        0,
+        0,
+        -0.3015755077305414
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 2,
+      "target": -16,
+      "position": [
+        0,
+        0,
+        -16.176087956048598
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 0,
+      "target": 16,
+      "position": [
+        15.720494478317724,
+        0,
+        -16.202890052455896
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 2,
+      "target": 0,
+      "position": [
+        15.697657719360183,
+        0,
+        -0.2775537628169181
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 0,
+      "target": 0,
+      "position": [
+        0.09488875016087174,
+        0,
+        -0.3074584435620746
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 0,
+      "target": 16,
+      "position": [
+        16.00164767605863,
+        0,
+        -0.30745985180876617
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 1,
+      "target": 12,
+      "position": [
+        16.01818772243336,
+        11.196444639535923,
+        -0.3074598521198157
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 1,
+      "target": 0,
+      "position": [
+        16.01818774806398,
+        -0.23454911005776094,
+        -0.3074598521198157
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 1,
+      "target": 12,
+      "position": [
+        16.018187748066186,
+        11.756796947286677,
+        -0.3074598521198157
+      ],
+      "phase": "playing",
+      "errors": 0
+    },
+    {
+      "axis": 2,
+      "target": -4,
+      "position": [
+        16.018187748066186,
+        11.735946412190138,
+        -3.0533728101131903
+      ],
+      "phase": "completed",
+      "errors": 0
+    }
+  ],
+  "resources": {
+    "date": "2026-10-16T01:36:13.554Z",
+    "node": "v24.22.0",
+    "browser": "156.0.8078.4",
+    "platform": "win32",
+    "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "renderer": "Chromium ANGLE SwiftShader (software)",
+    "warmupCycles": 1,
+    "measuredCycles": 10,
+    "samples": [
+      {
+        "cycle": 0,
+        "phase": "paused",
+        "session": 5,
+        "timeMs": 400.0000000000001,
+        "steps": 24,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 6,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 1,
+        "phase": "paused",
+        "session": 7,
+        "timeMs": 150,
+        "steps": 9,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 2,
+        "phase": "paused",
+        "session": 9,
+        "timeMs": 366.66666666666674,
+        "steps": 22,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 3,
+        "phase": "paused",
+        "session": 11,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 4,
+        "phase": "paused",
+        "session": 13,
+        "timeMs": 216.66666666666663,
+        "steps": 13,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 5,
+        "phase": "paused",
+        "session": 15,
+        "timeMs": 150,
+        "steps": 9,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 6,
+        "phase": "paused",
+        "session": 17,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 7,
+        "phase": "paused",
+        "session": 19,
+        "timeMs": 133.33333333333334,
+        "steps": 8,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 8,
+        "phase": "paused",
+        "session": 21,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 9,
+        "phase": "paused",
+        "session": 23,
+        "timeMs": 199.99999999999997,
+        "steps": 12,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 5,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      },
+      {
+        "cycle": 10,
+        "phase": "paused",
+        "session": 25,
+        "timeMs": 216.66666666666663,
+        "steps": 13,
+        "enemies": 2,
+        "pickups": 2,
+        "shots": 0,
+        "tasks": 0,
+        "errors": 0,
+        "resources": {
+          "geometries": 41,
+          "textures": 0,
+          "programs": 6,
+          "calls": 42,
+          "triangles": 4182,
+          "points": 0,
+          "objects": 72,
+          "lights": 9,
+          "materials": 34,
+          "effectLights": 0,
+          "pooledEffects": 0
+        }
+      }
+    ],
+    "fixture": "Arena Escape (accepted M1 resource baseline)"
+  },
+  "mixerSamples": [
+    {
+      "label": "muted startup",
+      "master": 0,
+      "effects": 1,
+      "music": 0,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "unmute while paused",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "resume audible",
+      "master": 1,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "resume muted",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 2,
+      "activeLoops": 2
+    },
+    {
+      "label": "restart muted",
+      "master": 0,
+      "effects": 0,
+      "music": 1,
+      "startedLoops": 4,
+      "activeLoops": 2
+    },
+    {
+      "label": "reset while paused",
+      "master": 0,
+      "effects": 0.6000000238418579,
+      "music": 0.4000000059604645,
+      "startedLoops": 4,
+      "activeLoops": 2
+    },
+    {
+      "label": "return to menu",
+      "master": 1,
+      "effects": 0.6000000238418579,
+      "music": 0.4000000059604645,
+      "startedLoops": 4,
+      "activeLoops": 0
+    }
+  ],
+  "limits": "Software rendering only. New mine traversal uses real keyboard input plus the labeled development neutralize control; the original accepted mission separately runs its production combat flow. No hardware performance, native mouse or manual M3 acceptance claim."
+}

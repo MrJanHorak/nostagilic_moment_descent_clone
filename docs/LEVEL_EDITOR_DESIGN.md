@@ -1,5 +1,7 @@
 # DESCENDED: level designer proposal
 
+> Implementation follow-up: [the version-1 format](LEVEL_DOCUMENT_FORMAT.md) and [connected prototype checkpoint](progress/M2_LEVEL_DOCUMENTS.md) now supply a constrained validator/loader. The general document example below remains a proposal; it is not a compatible v1 file. No designer UI is implemented yet.
+
 Date: October 14, 2026. **Proposed design; no editor or new level loader is implemented by this audit.** Dependencies and effort are in [ROADMAP.md](ROADMAP.md).
 
 ## Product boundary

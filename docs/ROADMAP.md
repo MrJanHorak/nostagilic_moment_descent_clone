@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 15, 2026):** **[M1 is accepted and complete](M1_ACCEPTANCE.md)** following the owner's Chrome playthrough of Flight Arena and Arena Escape, confirming pause/resume, aiming recapture and restart behavior. M2 has a pinned/patched [toolchain](TOOLCHAIN.md), CI, [hardware profiling](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved audio controls](progress/M2_AUDIO_SETTINGS.md), and [enemy orchestration/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) for 25 checked runtime modules. Scoped lint/type checks, all 147 unit/simulation/metrics tests, six browser checks and the production build pass locally. Ten restarts return resources to baseline. Arena lighting is reduced to nine lights; Intel GPU frame p95 remains around 18 ms, above the provisional 16.7 ms target. Hosted CI and M2 performance acceptance remain open. Effect retention is bounded to 32 per category. The unused source inventory is archived with hashes. Next: versioned shared level data and validation before the connected mine and designer. Legacy geometry remains unrepaired.
+**Implementation progress (October 15, 2026):** **[M1 is accepted and complete](M1_ACCEPTANCE.md)** following the owner's Chrome playthrough of Flight Arena and Arena Escape, confirming pause/resume, aiming recapture and restart behavior. M2 has a pinned/patched [toolchain](TOOLCHAIN.md), CI, [hardware profiling](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved audio controls](progress/M2_AUDIO_SETTINGS.md), and [shared level data/connected prototype](progress/M2_LEVEL_DOCUMENTS.md) for 32 checked runtime modules. Scoped lint/type checks, all 197 unit/simulation/metrics tests, eight browser checks and the production build pass locally. Ten restarts return resources to baseline. Arena lighting is reduced to nine lights; Intel GPU frame p95 remains around 18 ms, above the provisional 16.7 ms target. Hosted CI and M2 performance acceptance remain open. Effect retention is bounded to 32 per category. The unused source inventory is archived with hashes. Mine Link Prototype now loads a validated v1 JSON document with a five-room loop and vertical hatch. Next: persistent enemy activation/room routing, a small door/objective interaction and an authored mission before the designer. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -47,7 +47,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M2 — Update the project and make regression visible
 
-**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), and [enemy orchestration/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) are locally verified. Hosted CI, performance acceptance, shared level-data contracts and broader source coverage remain; M2 is not complete.
+**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), and [enemy/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) and [shared level data](progress/M2_LEVEL_DOCUMENTS.md) are locally verified. Hosted CI, performance acceptance, broader source coverage and final gates remain; M2 is not complete.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 
@@ -60,6 +60,8 @@ M2 can begin with an isolated dependency security patch during M1. Broader upgra
 **Acceptance gate:** clean install + CI pass; dependency findings resolved or specifically documented; one production preview completes the M1 flow; resource counts settle near a steady baseline after repeated restarts. On a named reference machine/browser/resolution, define a frame-time target, provisionally p95 at or below 16.7 ms for the agreed test scene with no growing memory trend. Adjust quality settings or scope if measurement shows that target is unrealistic; no universal hardware guarantee is implied.
 
 ## M3 — Make a connected mine, with data the editor can use
+
+**Current status:** [Version-1 level data, validation and a five-room prototype](progress/M2_LEVEL_DOCUMENTS.md) are implemented. The runtime loads the shared JSON, and tests cover its loop and vertical hatch. Persistent enemy activation/routing, door/objective interaction, a larger authored mission and human acceptance remain. M3 is not complete.
 
 **Deliverable:** one compact exploratory mission using the future editor's document format, loaded by the game without executable level scripts.
 

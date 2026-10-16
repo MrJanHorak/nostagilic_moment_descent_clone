@@ -1318,9 +1318,11 @@ class UIManager {
   updateMissionUI() {
     const mission = this.game?.mission;
     if (!mission || !this.arenaGuide) return;
-    const status = mission.ready ? 'EXIT READY · Fly into the green ring at the far end'
-      : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring at far end)`;
-    const text = `ARENA ESCAPE · ${status} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const level = this.game.levelManager.currentLevel;
+    const destination = level.sourceDocument ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : 'at the far end';
+    const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
+      : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring ${destination})`;
+    const text = `${level.name.toUpperCase()} · ${status} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.arenaGuide.textContent !== text) this.arenaGuide.textContent = text;
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
   }

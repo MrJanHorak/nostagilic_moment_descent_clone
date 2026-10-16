@@ -65,7 +65,8 @@ export default class RuntimeDiagnostics {
         enemies: game?.enemyManager?.enemies.length ?? 0,
         shots: (game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0),
         pickups: game?.powerUpManager?.powerups.length ?? 0,
-        position: ship?.group.position.toArray(), resources: collectResources(game), timing: this.metrics.snapshot(),
+        position: ship?.group.position.toArray(), speed: ship?.velocity.length() ?? 0,
+        resources: collectResources(game), timing: this.metrics.snapshot(),
         profile: this.capture.result,
       };
       this.panel.setAttribute('data-snapshot', JSON.stringify(snapshot));
