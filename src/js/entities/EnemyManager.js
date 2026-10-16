@@ -1,7 +1,7 @@
 // Enemy entity module
 import * as THREE from 'three';
 import { clearEnemies, removeEnemyAt } from './EnemyLifecycle.js';
-import { hasLineOfSight } from '../utils/combatTrace.js';
+import { hasLineOfSight, traceShot } from '../utils/combatTrace.js';
 import { moveSphere } from '../utils/sphereMovement.js';
 import { animateEnemy, getEnemyFiringRange } from './EnemyAnimations.js';
 import { enemyTypes } from './EnemyTypes.js';
@@ -9,6 +9,10 @@ import EnemyFactory from './EnemyFactory.js';
 import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
 import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
+import RoomNavigation from '../core/levels/document/RoomNavigation.js';
+
+/** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
+ * route: THREE.Vector3[] | null, waypoint: number, revision: number}} MinePursuit */
 
 class EnemyManager {
   /** @param {THREE.Scene} scene
@@ -38,6 +42,13 @@ class EnemyManager {
     this.levelSegments = [];
     /** @type {Set<string>} */
     this.destroyedPredefinedEnemies = new Set();
+    // Small authored mines stay resident. Cleanup never recreates a wounded body.
+    /** @type {Set<string>} */
+    this.instantiatedMineEnemies = new Set();
+    /** @type {RoomNavigation | null} */
+    this.mineNavigation = null;
+    /** @type {Map<import('../combatContracts.js').EnemyInstance, MinePursuit>} */
+    this.minePursuits = new Map();
     this.totalPredefinedEnemies = 0;
     this.levelComplete = false;
     /** @type {import('../combatContracts.js').EnemyDropSink | null} */
@@ -80,6 +91,63 @@ class EnemyManager {
     if (visible) enemy.mesh.lookAt(this.playerTransform.position);
   }
 
+  /** @private @param {import('../combatContracts.js').EnemyInstance} enemy */
+  minePursuit(enemy) {
+    let pursuit = this.minePursuits.get(enemy);
+    if (!pursuit) {
+      pursuit = { lastSeen: null, goalRoom: undefined, route: null, waypoint: 0, revision: -1 };
+      this.minePursuits.set(enemy, pursuit);
+    }
+    return pursuit;
+  }
+
+  /** Sight and incoming damage provide memory; hidden player movement does not.
+   * @param {import('../combatContracts.js').EnemyInstance} enemy
+   * @param {number} delta @param {boolean} visible */
+  updateMineEnemy(enemy, delta, visible) {
+    const navigation = this.mineNavigation;
+    if (!navigation) return;
+    const pursuit = this.minePursuit(enemy);
+    const distance = enemy.mesh.position.distanceTo(this.playerTransform.position);
+    if (visible && distance < 30) {
+      if (pursuit.lastSeen) pursuit.lastSeen.copy(this.playerTransform.position);
+      else pursuit.lastSeen = this.playerTransform.position.clone();
+    }
+    if (pursuit.lastSeen) {
+      const goalRoom = navigation.roomAt(pursuit.lastSeen);
+      const revision = this.levelManager?.interaction?.revision ?? 0;
+      if (goalRoom !== pursuit.goalRoom || pursuit.revision !== revision) {
+        pursuit.route = navigation.route(enemy.mesh.position, pursuit.lastSeen, enemy.collisionRadius, this.levelManager?.interaction?.closedConnections);
+        pursuit.waypoint = 0; pursuit.goalRoom = goalRoom; pursuit.revision = revision;
+      }
+      const route = pursuit.route;
+      if (route) {
+        const destination = navigation.destination(pursuit.lastSeen, enemy.collisionRadius);
+        if (destination) route[route.length - 1].copy(destination);
+        // Only discard reached points. Both sides of a frame must be traversed.
+        while (pursuit.waypoint < route.length - 1 && enemy.mesh.position.distanceTo(route[pursuit.waypoint]) < 0.04) pursuit.waypoint++;
+        // A player can hover in an open doorway, outside the inset room box.
+        // Finish that approach only when the whole body can traverse the segment.
+        if (pursuit.waypoint === route.length - 1 && !traceShot(enemy.mesh.position, pursuit.lastSeen, {
+          colliders: this.levelManager?.solidColliders ?? [], radius: enemy.collisionRadius,
+        })) route[route.length - 1].copy(pursuit.lastSeen);
+      }
+    }
+    const target = pursuit.route?.[pursuit.waypoint];
+    enemy.velocity.set(0, 0, 0);
+    const holdRange = visible && distance < 8 && enemy.type.name !== 'scout';
+    if (target && !holdRange && delta > 0) {
+      const travel = target.clone().sub(enemy.mesh.position);
+      const speed = Math.min(enemy.type.speed * 60, travel.length() / delta);
+      const velocity = travel.normalize().multiplyScalar(speed);
+      moveSphere(enemy.mesh.position, velocity, delta, this.levelManager?.solidColliders ?? [], enemy.collisionRadius);
+      enemy.velocity.copy(velocity).divideScalar(60);
+    }
+    animateEnemy(enemy, delta, this.gameState.session.timeMs / 1000);
+    if (visible) enemy.mesh.lookAt(this.playerTransform.position);
+    else if (target && target.distanceToSquared(enemy.mesh.position) > 1e-6) enemy.mesh.lookAt(target);
+  }
+
   /** @param {import('../combatContracts.js').EnemyCombatTarget} enemy
    * @param {Pick<import('../combatContracts.js').PlayerProjectile, 'power'>} projectile
    * @param {THREE.Vector3} position */
@@ -88,6 +156,7 @@ class EnemyManager {
     if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
     const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
     enemy.health -= projectile.power * resistance;
+    if (this.mineNavigation) this.minePursuit(this.enemies[index]).lastSeen = this.playerTransform.position.clone();
     this.effectsManager.createHitEffect(position.clone());
     if (this.audioManager?.initialized) {
       try { this.audioManager.playSound('hit', { volume: 0.3 }); }
@@ -268,6 +337,9 @@ class EnemyManager {
     if (!this.levelManager || !this.levelManager.currentLevel) return;
 
     const level = this.levelManager.currentLevel;
+    const generation = this.generation, sessionId = this.gameState.session.id;
+    const persistent = level.kind === 'arena' && !!level.sourceDocument;
+    if (persistent && level.sourceDocument && !this.mineNavigation) this.mineNavigation = new RoomNavigation(level.sourceDocument);
 
     // Set total enemies count once (first time we load the level)
     if (this.totalPredefinedEnemies === 0 && level.enemySpawns) {
@@ -282,11 +354,12 @@ class EnemyManager {
     }
 
     for (const [index, spawnPoint] of level.enemySpawns.entries()) {
+      if (!this.isCurrent(generation, sessionId) || this.levelManager.currentLevel !== level) return;
       // Generate a unique ID for this spawn point
       const spawnPointId = spawnPoint.id ?? `enemy:${index}`;
 
       // Skip if this enemy was permanently destroyed
-      if (this.destroyedPredefinedEnemies.has(spawnPointId)) {
+      if (this.destroyedPredefinedEnemies.has(spawnPointId) || (persistent && this.instantiatedMineEnemies.has(spawnPointId))) {
         continue;
       }
 
@@ -296,7 +369,7 @@ class EnemyManager {
       );
 
       // Only spawn if within reasonable distance and not already spawned
-      if (distanceToPlayer < 50 && distanceToPlayer > 5) {
+      if (persistent || (distanceToPlayer < 50 && distanceToPlayer > 5)) {
         // Check if this enemy is already spawned
         const alreadySpawned = this.enemies.some((enemy) => {
           return enemy.mesh.userData.spawnPointId === spawnPointId;
@@ -314,6 +387,7 @@ class EnemyManager {
             enemy.mesh.userData.isPredefined = true;
             enemy.mesh.userData.spawnPointId = spawnPointId;
             enemy.mesh.userData.spawnPosition = spawnPoint.position.clone();
+            if (persistent) this.instantiatedMineEnemies.add(spawnPointId);
           }
         }
       }
@@ -364,6 +438,9 @@ class EnemyManager {
     this.clearing = true;
     this.generation++;
     try {
+      this.minePursuits.clear();
+      this.mineNavigation = null;
+      this.instantiatedMineEnemies.clear();
       clearEnemies(this.enemies);
       this.projectileManager.clear();
       this.effectsManager.clear();
@@ -408,7 +485,8 @@ class EnemyManager {
       );
 
       // Apply enemy type-specific movement
-      if (arena) this.updateArenaEnemy(enemy, delta, visible);
+      if (arena && this.mineNavigation) this.updateMineEnemy(enemy, delta, visible);
+      else if (arena) this.updateArenaEnemy(enemy, delta, visible);
       else if (distanceToPlayer < 30) {
         // Get direction to player
         const direction = new THREE.Vector3();
@@ -500,7 +578,7 @@ class EnemyManager {
       }
 
       // Check distance - if enemy is too far behind player, remove it
-      if (distanceToPlayer > 50) {
+      if (distanceToPlayer > 50 && !this.mineNavigation) {
         this.removeEnemy(i);
         continue;
       }
@@ -585,6 +663,8 @@ class EnemyManager {
 
   /** @param {number} index */
   removeEnemy(index) {
+    const enemy = this.enemies[index];
+    if (enemy) this.minePursuits.delete(enemy);
     return removeEnemyAt(this.enemies, index);
   }
 

@@ -1,5 +1,6 @@
 import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, WALL_THICKNESS, enemyClearance } from './LevelContent.js';
 import { distance, fitsInside, portFrame, toWorld, worldSize } from './RoomMath.js';
+import validateRelaySemantics from './validateRelaySemantics.js';
 
 /** @param {import('../../../levelDocument.js').LevelDocument} document
  * @param {(path: string, code: string, message: string) => void} issue */
@@ -78,4 +79,5 @@ export default function validateSemantics(document, issue) {
   }
   if (entities.get(document.mission.exitId)?.kind !== 'exit') issue('$.mission.exitId', 'reference', 'Mission exitId must identify an exit entity');
   if (document.entities.filter(entity => entity.kind === 'exit').length !== 1) issue('$.entities', 'exit', 'Exactly one exit is required');
+  if (document.formatVersion === 2) validateRelaySemantics(document, issue, ids, placements);
 }

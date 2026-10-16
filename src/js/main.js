@@ -13,6 +13,7 @@ import UIManager from './ui/UIManager.js';
 import SimulationStepper from './core/SimulationStepper.js';
 import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import MissionObjective from './core/MissionObjective.js';
+import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
@@ -175,6 +176,8 @@ export default class Game {
       } else this.levelManager.loadLevel(levelIndex, preparedWorld);
       const level = this.levelManager.currentLevel;
       this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
+      if (!endless && level.devices?.length) this.levelManager.interaction = new RelayController(
+        level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
         this.gameState.weaponInventory.pulse.ammo = level.combat.initialPulseAmmo;
         this.gameState.pulseAmmoCapacity = level.combat.maxPulseAmmo;
@@ -306,6 +309,16 @@ export default class Game {
   showMainMenu() {
     this.endSession();
     this.uiManager.createStartScreen();
+  }
+
+  interact() {
+    if (this.session.phase !== 'playing') return false;
+    const device = this.levelManager.interaction?.tryActivate(this.spaceship.group.position);
+    if (!device) return false;
+    this.mission?.recordDeviceActivation(device.id);
+    this.uiManager.showMessage(`${device.label} activated · linked doors unlocked`, 2500, '#45ff96');
+    this.uiManager.updateMissionUI?.();
+    return true;
   }
 
   updateMission() {

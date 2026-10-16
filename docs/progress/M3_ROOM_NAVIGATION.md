@@ -1,0 +1,37 @@
+# Persistent mine enemies and portal navigation
+
+Implemented October 15, 2026, following [shared level documents](M2_LEVEL_DOCUMENTS.md). [M1 remains accepted](../M1_ACCEPTANCE.md). This advances M3; the complete connected-mine milestone and level designer are still unfinished. **Follow-up (October 16):** [relay-controlled doors and objective progression](M3_RELAY_OBJECTIVE.md) add version-2 data and revision-based route invalidation while retaining v1.
+
+## What changed
+
+Choose **Select Level → Mine Link Prototype**. Every enemy in a JSON-authored mine now spawns once for the session, including enemies less than five or more than fifty units from the player. Travelling away no longer removes a wounded drone and creates a fresh one on return. Its identity, position, health, velocity and firing cooldown belong to that live instance. Defeat retires its authored ID, awards normal combat credit once and advances the existing extraction objective. Ordinary cleanup retires the instance without credit. Restart clears all those records and rebuilds the original encounter.
+
+The entire small mine and its enemies remain resident. This follows the roadmap's preference for a compact, fully loaded mission. There is no activation/culling or state serialization layer to maintain until profiling demonstrates a need. This does not establish that the maximum allowed document size is affordable on every GPU.
+
+New [RoomNavigation](../../src/js/core/levels/document/RoomNavigation.js) derives a graph from the same validated rooms, rotated face ports and opening sizes that generate the walls. It chooses the fewest usable portals with stable document-order ties. Actual enemy collision radius filters openings and room interiors; a narrow shortcut can cause a wider detour. If no body-clear route exists, the drone waits. This differs from document validation's player reachability and conservative enemy *placement* margins: validation does not require every enemy type to fit through every opening.
+
+Every portal crossing has a point safely inside each adjoining room. A drone reaches those points before turning, including through floor/ceiling hatches. Targets near walls are clamped to interior space that the larger enemy can occupy. Replanning while a drone is inside a doorway first brings it into the containing room. Movement uses the existing swept sphere collision; decorative animation does not own the body position. Graph search happens when the remembered target room changes, with within-room target updates reusing the route. Failed routes are retained while that target room remains unchanged, appropriate for v1's static geometry.
+
+## Perception and combat
+
+An unalerted drone stays at its authored position until it sees the player within thirty units or takes damage. Sight records the player's position; damage alerts it to the player's position at impact. After sight is lost, it follows that remembered location and stops there. Hidden movement does not continuously update its target. Renewed sight updates the remembered target and can change its route. Shooting still requires current line of sight and normal range/cooldown checks; route memory never permits firing through walls.
+
+Fighters and other ranged types keep the existing eight-unit engagement distance when they can see the player. Scouts close for a ram. Mine movement follows waypoint segments at time-scaled type speed, stopping at turns rather than carrying momentum into the frame. The accepted arenas retain their existing smoothed pursuit, proximity spawning/removal and collision behavior. The two original M1 level definitions and flight tuning are unchanged.
+
+Pursuit state is owned by EnemyManager, outside the immutable exported document. Pause freezes it along with simulation time. Removal invalidates pursuit ownership before disposal callbacks, and reset clears graph, remembered positions and instantiated IDs before releasing old bodies. A generation guard also prevents an enemy-count UI callback that resets the session from publishing stale spawns.
+
+## Verification
+
+The pinned **Node 24.22.0 / npm 11.21.1** verification passes scoped lint, strict JSDoc checks, all **215 runtime cases** and the production build. The scope now includes **33 runtime modules** and **100 negative compiler examples**. The eighteen additional runtime cases cover shortest routes and rotated ports, all room pairs at four body sizes, both hatch directions, wider detours, unusable openings, large-body clearance, near-wall targets, replanning inside a door, scouts ramming players hovering in doors/hatches, idle occluded enemies, remembered pursuit through multiple turns and a hatch, distant/near spawning, retained damage/cooldowns, cleanup versus defeat, reentrant callbacks, pause and restart. They use actual Three.js geometry, the real enemy factory/manager and swept collision. Lint/type checks and all 215 cases also pass on Node 22.14.0 / npm 11.2.0. They do not prove combat balance or flight feel.
+
+All eight browser regressions passed on the first navigation build. Final review then found that inset target clamping could strand a scout just outside ram range when the player hovered in a portal. Two regression tests reproduced this in both a doorway and a hatch; the final leg now reaches the observed position only after a body-sized segment trace confirms clearance. All 215 runtime cases and the build pass with that correction. The browser rerun was interrupted for the overnight stop, then completed on October 16: **all eight cases passed on the final navigation build**. See [browser evidence](room-navigation-browser-check.json). The existing browser suite checks production M1 combat/menus, JSON-mine selection/reset, development keyboard traversal of the loop/hatch with completion/replay, repeated arena resource cleanup, settings and audio. Its development traversal neutralizes drones to isolate flight. Detailed enemy routing is verified by the runtime simulations above; the browser route is not an enemy-AI playtest. Software rendering is not hardware performance acceptance.
+
+Dependencies and lockfile are unchanged. Production output is approximately **683.33 kB** minified / **174.97 kB** gzip, with the existing large-chunk warning. New functionality adds approximately 3.92 kB minified / 1.21 kB gzip over the preceding checkpoint.
+
+## Next feasible work
+
+Add one small device/door interaction through the shared document, validator and runtime, with explicit objective events and collision/navigation updates. A moving or locked door must invalidate affected routes; the current graph deliberately assumes static, unobstructed v1 portals. Do not add door data to the editor alone.
+
+Then author and playtest a six-to-ten-room mission with readable landmarks, a loop, vertical travel, a manageable objective chain and enough ammo. The present five-room fixture demonstrates the loader and navigation rather than completing that mission. Enemy-to-enemy avoidance, coordinated squads, dynamic obstacles, general scripting and designer UI are outside this checkpoint. The editor can follow once that mission proves the document/runtime boundary.
+
+M2 still needs hosted CI confirmation and hardware performance acceptance. The last Intel GPU p95 remains around 18 ms against the provisional 16.7 ms target; these software-rendered regressions do not replace it. M3 still needs the interaction, authored content and human acceptance; M4 has not started.

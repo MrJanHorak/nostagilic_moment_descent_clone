@@ -1,6 +1,6 @@
 # Shared level data and connected-world prototype checkpoint
 
-Implemented October 15, 2026, following [enemy orchestration/source cleanup](M2_ENEMY_ORCHESTRATION.md). [M1 remains accepted](../M1_ACCEPTANCE.md). This delivers the shared data boundary and an initial M3 geometry prototype; M2 and M3 are not complete.
+Implemented October 15, 2026, following [enemy orchestration/source cleanup](M2_ENEMY_ORCHESTRATION.md). [M1 remains accepted](../M1_ACCEPTANCE.md). This delivers the shared data boundary and an initial M3 geometry prototype; M2 and M3 are not complete. **Follow-up:** [persistent mine enemies and portal navigation](M3_ROOM_NAVIGATION.md) resolve the proximity-respawn and routing limitations described in this historical checkpoint.
 
 ## Playable result
 

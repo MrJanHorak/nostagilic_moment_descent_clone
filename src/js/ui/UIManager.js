@@ -1319,10 +1319,14 @@ class UIManager {
     const mission = this.game?.mission;
     if (!mission || !this.arenaGuide) return;
     const level = this.game.levelManager.currentLevel;
-    const destination = level.sourceDocument ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : 'at the far end';
+    const destination = ['mine-link', 'relay-gate'].includes(level.id) ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : level.sourceDocument ? 'at the marked exit' : 'at the far end';
     const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
       : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring ${destination})`;
-    const text = `${level.name.toUpperCase()} · ${status} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const device = this.game.levelManager.interaction?.nearest(this.game.spaceship.group.position);
+    const relay = mission.requiredDeviceIds.size ? ` · Relays ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
+      (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
+        level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
+    const text = `${level.name.toUpperCase()} · ${status}${relay} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.arenaGuide.textContent !== text) this.arenaGuide.textContent = text;
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
   }

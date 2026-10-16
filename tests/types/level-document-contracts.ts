@@ -4,12 +4,52 @@ import { parseLevelDocument, serializeLevelDocument, validateLevelDocument } fro
 import compileLevelDocument, { prepareLevelDocument } from '../../src/js/core/levels/document/compileLevelDocument.js';
 import { portFrame, toWorld } from '../../src/js/core/levels/document/RoomMath.js';
 import buildArena from '../../src/js/core/ArenaGeometry.js';
+import RoomNavigation from '../../src/js/core/levels/document/RoomNavigation.js';
+import RelayController from '../../src/js/core/RelayController.js';
+import GameSession from '../../src/js/core/GameSession.js';
+import MissionObjective from '../../src/js/core/MissionObjective.js';
 
 const result = validateLevelDocument({ untrusted: 'data' });
 if (result.valid) {
   const document: LevelDocument = result.document;
   const text: string = serializeLevelDocument(document); parseLevelDocument(text);
   const runtime = compileLevelDocument(document); buildArena(runtime);
+  const navigation = new RoomNavigation(document);
+  navigation.route(new Vector3(), new Vector3(), 1)?.[0].clone();
+  navigation.roomAt(new Vector3())?.toUpperCase();
+  // @ts-expect-error Navigation accepts a validated document, not an arbitrary import value.
+  new RoomNavigation({ formatVersion: 999 });
+  // @ts-expect-error Route queries use runtime vectors.
+  navigation.route([0, 0, 0], new Vector3(), 1);
+  // @ts-expect-error Body clearance must be numeric.
+  navigation.destination(new Vector3(), 'fighter');
+  // @ts-expect-error A route can be unavailable for this enemy body.
+  navigation.route(new Vector3(), new Vector3(), 1).map(point => point.clone());
+  const controller = new RelayController(runtime, buildArena(runtime).group, [], new GameSession());
+  controller.tryActivate(new Vector3());
+  // @ts-expect-error Interactions use runtime vectors, not JSON positions.
+  controller.tryActivate([0, 0, 0]);
+  // @ts-expect-error Closed connections are identified by a set, not an array.
+  navigation.route(new Vector3(), new Vector3(), 1, ['door']);
+  if (document.formatVersion === 2) {
+    document.devices[0].label.toUpperCase();
+    // @ts-expect-error Validated relay positions are immutable.
+    document.devices[0].position[0] = 10;
+    // @ts-expect-error Validated door definitions cannot acquire live session state.
+    document.doors[0].open = true;
+    // @ts-expect-error Version 2 requires the relay objective, not the v1 objective.
+    const wrongMission: LevelDocument = { ...document, mission: { ...document.mission, type: 'clear-and-exit' } };
+    // @ts-expect-error Version 2 requires an explicit devices list.
+    const missingDevices: LevelDocument = { formatVersion: 2, id: document.id, name: document.name, rooms: document.rooms, connections: document.connections, entities: document.entities, playerSpawn: document.playerSpawn, mission: document.mission, combat: document.combat, doors: document.doors };
+    void [wrongMission, missingDevices];
+  } else {
+    // @ts-expect-error Old version-1 snapshots do not contain door fields.
+    document.doors;
+  }
+  if (runtime.mission) {
+    // @ts-expect-error Activation events require stable string IDs.
+    new MissionObjective(runtime.mission).recordDeviceActivation(42);
+  }
   prepareLevelDocument(document).world.claimed = true; // Explicit runtime ownership handoff.
   // @ts-expect-error Authored room lists cannot be changed through validated snapshots.
   document.rooms.push(document.rooms[0]);
@@ -46,7 +86,7 @@ const badExit: EntityDocument = { id: 'exit', kind: 'exit', radius: 'large', roo
 // @ts-expect-error Only the implemented completion objective belongs in version 1.
 const badMission: LevelDocument['mission'] = { type: 'activate-switch', requiredEnemyIds: [], exitId: 'exit' };
 // @ts-expect-error Authored version is a literal compatibility boundary.
-const badVersion: LevelDocument['formatVersion'] = 2;
+const badVersion: LevelDocument['formatVersion'] = 3;
 // @ts-expect-error JSON parsing accepts text, not a runtime world.
 parseLevelDocument(compileLevelDocument({}));
 void [badYaw, badPrefab, badMaterial, badPosition, badOpening, badEntity, badPickup, badExit, badMission, badVersion];

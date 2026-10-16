@@ -1,0 +1,270 @@
+{
+  "formatVersion": 2,
+  "id": "relay-gate",
+  "name": "Relay Gate Prototype",
+  "rooms": [
+    {
+      "id": "bay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "core",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -16
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "gallery",
+      "prefab": "box-room",
+      "position": [
+        16,
+        0,
+        -16
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "return",
+      "prefab": "box-room",
+      "position": [
+        16,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "upper",
+      "prefab": "box-room",
+      "position": [
+        16,
+        12,
+        0
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    }
+  ],
+  "connections": [
+    {
+      "id": "bay-core",
+      "a": {
+        "roomId": "bay",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "core",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "core-gallery",
+      "a": {
+        "roomId": "core",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "gallery",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "gallery-return",
+      "a": {
+        "roomId": "gallery",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "return",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "return-bay",
+      "a": {
+        "roomId": "return",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "bay",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "return-upper",
+      "a": {
+        "roomId": "return",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "upper",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "bay",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "entities": [
+    {
+      "id": "mine:fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "core",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "mine:scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "gallery",
+      "position": [
+        0,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "mine:ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "bay",
+      "position": [
+        -3,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "mine:health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "return",
+      "position": [
+        3,
+        -2,
+        3
+      ]
+    },
+    {
+      "id": "mine:exit",
+      "kind": "exit",
+      "radius": 1.5,
+      "roomId": "upper",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    }
+  ],
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "mine:fighter",
+      "mine:scout"
+    ],
+    "exitId": "mine:exit",
+    "requiredDeviceIds": [
+      "relay:ceiling"
+    ]
+  },
+  "combat": {
+    "pulseDamage": 5,
+    "initialPulseAmmo": 60,
+    "maxPulseAmmo": 100
+  },
+  "devices": [
+    {
+      "id": "relay:ceiling",
+      "label": "Ceiling hatch relay",
+      "roomId": "return",
+      "position": [
+        3,
+        0,
+        3
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "door:ceiling",
+      "connectionId": "return-upper",
+      "deviceId": "relay:ceiling"
+    }
+  ]
+}

@@ -9,6 +9,7 @@ import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 import createFlightArena from './levels/FlightArena.js';
 import createCombatArena from './levels/CombatArena.js';
 import createMineLinkLevel from './levels/MineLink.js';
+import createRelayGateLevel from './levels/RelayGate.js';
 import buildArena from './ArenaGeometry.js';
 
 class LevelManager {
@@ -42,6 +43,7 @@ class LevelManager {
     // Obstacles
     this.obstacles = []; // Level system properties
     this.solidColliders = [];
+    this.interaction = null;
     this.levels = [
       createFlightArena(),
       createCombatArena(),
@@ -50,6 +52,7 @@ class LevelManager {
       createLevel3(),
       createExampleLevel(),
       createMineLinkLevel(),
+      createRelayGateLevel(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
@@ -271,6 +274,8 @@ class LevelManager {
     return this.currentLevel;
   }
   clearLevel() {
+    this.interaction?.retire();
+    this.interaction = null;
     // Remove all segments and obstacles
     for (const segment of new Set([...this.levelSegments, ...this.segmentMap.values()])) this.removeSegment(segment);
     this.levelSegments = [];

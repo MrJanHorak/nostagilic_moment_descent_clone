@@ -167,6 +167,24 @@ function readEntity(value, path, reader) {
   return type ? { id, roomId, position, kind, type } : null;
 }
 
+/** @param {unknown} value @param {string} path @param {Reader} reader
+ * @returns {import('../../../levelDocument.js').DeviceDocument | null} */
+function readDevice(value, path, reader) {
+  const object = reader.object(value, path, ['id', 'label', 'roomId', 'position']); if (!object) return null;
+  const id = reader.text(object.id, `${path}.id`, 64, true), label = reader.text(object.label, `${path}.label`, 40);
+  const roomId = reader.text(object.roomId, `${path}.roomId`, 64, true), position = reader.vector(object.position, `${path}.position`);
+  return id && label && roomId && position ? { id, label, roomId, position } : null;
+}
+
+/** @param {unknown} value @param {string} path @param {Reader} reader
+ * @returns {import('../../../levelDocument.js').DoorDocument | null} */
+function readDoor(value, path, reader) {
+  const object = reader.object(value, path, ['id', 'connectionId', 'deviceId']); if (!object) return null;
+  const id = reader.text(object.id, `${path}.id`, 64, true), connectionId = reader.text(object.connectionId, `${path}.connectionId`, 64, true);
+  const deviceId = reader.text(object.deviceId, `${path}.deviceId`, 64, true);
+  return id && connectionId && deviceId ? { id, connectionId, deviceId } : null;
+}
+
 /** @template T @param {T} value @returns {T} */
 function freezeTree(value) {
   if (value !== null && typeof value === 'object') { for (const child of Object.values(value)) freezeTree(child); Object.freeze(value); }
@@ -179,27 +197,36 @@ function freezeTree(value) {
 export function validateLevelDocument(input) {
   const reader = new Reader(); inspectJSON(input, reader);
   if (reader.errors.length) return { valid: false, errors: reader.errors };
-  const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat']);
+  const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (root.formatVersion !== 1) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1 is supported');
+  if (root.formatVersion !== 1 && root.formatVersion !== 2) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1 or 2 is supported');
+  const relay = root.formatVersion === 2;
+  if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
   const id = reader.text(root.id, '$.id', 64, true), name = reader.text(root.name, '$.name', 80);
   const rooms = (reader.array(root.rooms, '$.rooms', LIMITS.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader)).filter(value => value !== null);
   const connections = (reader.array(root.connections, '$.connections', LIMITS.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader)).filter(value => value !== null);
   const entities = (reader.array(root.entities, '$.entities', LIMITS.entities) ?? []).map((value, i) => readEntity(value, `$.entities[${i}]`, reader)).filter(value => value !== null);
+  const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader)).filter(value => value !== null) : [];
+  const doors = relay ? (reader.array(root.doors, '$.doors', 16) ?? []).map((value, i) => readDoor(value, `$.doors[${i}]`, reader)).filter(value => value !== null) : [];
+  if (relay && (!devices.length || !doors.length)) reader.issue('$', 'relay', 'Version 2 requires at least one device and door');
   if (!rooms.length) reader.issue('$.rooms', 'rooms', 'At least one room is required');
   const spawn = reader.object(root.playerSpawn, '$.playerSpawn', ['roomId', 'position', 'rotation']);
   const roomId = reader.text(spawn?.roomId, '$.playerSpawn.roomId', 64, true), position = reader.vector(spawn?.position, '$.playerSpawn.position'), rotation = reader.rotation(spawn?.rotation, '$.playerSpawn.rotation');
-  const mission = reader.object(root.mission, '$.mission', ['type', 'requiredEnemyIds', 'exitId']);
-  const missionType = reader.choice(mission?.type, /** @type {const} */ (['clear-and-exit']), '$.mission.type');
+  const mission = reader.object(root.mission, '$.mission', relay ? ['type', 'requiredEnemyIds', 'requiredDeviceIds', 'exitId'] : ['type', 'requiredEnemyIds', 'exitId']);
+  const missionType = reader.choice(mission?.type, relay ? /** @type {const} */ (['relay-clear-and-exit']) : /** @type {const} */ (['clear-and-exit']), '$.mission.type');
   const exitId = reader.text(mission?.exitId, '$.mission.exitId', 64, true);
   const requiredEnemyIds = (reader.array(mission?.requiredEnemyIds, '$.mission.requiredEnemyIds', LIMITS.entities) ?? []).map((value, i) => reader.text(value, `$.mission.requiredEnemyIds[${i}]`, 64, true)).filter(value => value !== null);
+  const requiredDeviceIds = relay ? (reader.array(mission?.requiredDeviceIds, '$.mission.requiredDeviceIds', 16) ?? []).map((value, i) => reader.text(value, `$.mission.requiredDeviceIds[${i}]`, 64, true)).filter(value => value !== null) : [];
   const combat = reader.object(root.combat, '$.combat', ['pulseDamage', 'initialPulseAmmo', 'maxPulseAmmo']);
   const pulseDamage = reader.number(combat?.pulseDamage, '$.combat.pulseDamage', 1, 100);
   const initialPulseAmmo = reader.number(combat?.initialPulseAmmo, '$.combat.initialPulseAmmo', 0, 2000, true), maxPulseAmmo = reader.number(combat?.maxPulseAmmo, '$.combat.maxPulseAmmo', 1, 2000, true);
   if (initialPulseAmmo !== null && maxPulseAmmo !== null && initialPulseAmmo > maxPulseAmmo) reader.issue('$.combat.initialPulseAmmo', 'ammo', 'Initial ammo exceeds capacity');
   if (!id || !name || !roomId || !position || !rotation || !missionType || !exitId || pulseDamage === null || initialPulseAmmo === null || maxPulseAmmo === null || reader.errors.length) return { valid: false, errors: reader.errors };
+  const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
-  const document = { formatVersion: 1, id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, mission: { type: missionType, requiredEnemyIds, exitId }, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
+  const document = relay
+    ? { ...base, formatVersion: 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
+    : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };
 }

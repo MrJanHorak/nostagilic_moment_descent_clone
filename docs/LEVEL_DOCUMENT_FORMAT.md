@@ -1,6 +1,6 @@
-# Shared level document — format version 1
+# Shared level document — format versions 1 and 2
 
-Implemented October 15, 2026. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Both versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game now loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Select Level → Mine Link Prototype**. It uses five rooms, a horizontal loop, a vertical hatch, two drones, health/ammo and a clear-and-exit objective. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All fields below are required. Unknown fields are errors, including runtime heal
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1`; unsupported versions are rejected without migration |
+| `formatVersion` | Literal `1` for the base format below, or `2` with the relay extension; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Pairs of centered named face ports and an opening size |
@@ -19,7 +19,7 @@ All fields below are required. Unknown fields are errors, including runtime heal
 | `mission` | `{type: "clear-and-exit", requiredEnemyIds: [...], exitId: "..."}` |
 | `combat` | Numeric `pulseDamage`, integer `initialPulseAmmo`, integer `maxPulseAmmo` |
 
-The document ID, room IDs, connection IDs and entity IDs share one unique namespace. IDs contain 1–64 ASCII letters/digits/colon/underscore/hyphen and begin with a letter. Names contain 1–80 trimmed UTF-16 code units. Array order is preserved by export; IDs do not depend on array indices.
+The document ID, room IDs, connection IDs entity IDs, device IDs and door IDs share one unique namespace. IDs contain 1–64 ASCII letters/digits/colon/underscore/hyphen and begin with a letter. Names contain 1–80 trimmed UTF-16 code units. Array order is preserved by export; IDs do not depend on array indices.
 
 ## Rooms, coordinates and ports
 
@@ -50,9 +50,38 @@ Openings are 2–62 units on the half-unit grid and must fit **both** faces with
 
 All placement clearance spheres must fit inside their room's clear interior and must not overlap one another or the player spawn. Player clearance uses the actual shared radius 0.5. Room volumes cannot overlap, though faces can touch. All rooms must be graph-reachable from the spawn through valid connections. Required IDs must uniquely reference enemies; empty required lists support an extraction-only fixture.
 
-The geometric guarantee is deliberately bounded: v1 consists of empty convex room shells connected by unobstructed openings. It has no authored obstacles, doors, keys or arbitrary scripts. Graph reachability is not a combat-fairness or ammo-budget proof. Enemy navigation still uses existing visibility/local pursuit and the legacy 5–50-unit spawn/removal window; revisiting a distant undefeated enemy can restore its initial health. Persistent activation, room-graph routing and richer objectives remain M3 work before expanding the mine.
+The geometric guarantee is deliberately bounded: v1 consists of empty convex room shells connected by unobstructed openings. It has no authored obstacles, doors, keys or arbitrary scripts. Graph reachability is not a combat-fairness or ammo-budget proof. JSON mine enemies now remain resident for the session and preserve health, position and firing cooldowns across revisits. They route through the shared room/portal graph, filtering passages by actual body clearance, and pursue remembered sightings or damage alerts without tracking hidden movement. An enemy with no body-clear route waits; player reachability does not imply every enemy fits every passage. See the [navigation checkpoint](progress/M3_ROOM_NAVIGATION.md). Version 2 adds the bounded relay/door extension below; the larger authored mission and human acceptance remain M3 work.
 
 Pulse damage is 1–100; ammo values are integers up to 2,000, capacity is positive, and initial ammo cannot exceed capacity. Pulse-only encounter rules, session-owned cooldowns/objectives and restart behavior are reused.
+
+## Version 2: relay-controlled doors
+
+Version 2 keeps the same rooms, ports, entities, spawn and combat fields. It requires two additional root arrays, each with **1–16** entries:
+
+```json
+{
+  "devices": [
+    { "id": "relay:ceiling", "label": "Ceiling hatch relay", "roomId": "return", "position": [3, 0, 3] }
+  ],
+  "doors": [
+    { "id": "door:ceiling", "connectionId": "return-upper", "deviceId": "relay:ceiling" }
+  ],
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": ["mine:fighter", "mine:scout"],
+    "requiredDeviceIds": ["relay:ceiling"],
+    "exitId": "mine:exit"
+  }
+}
+```
+
+This is an extension fragment; see [the complete v2 sample](../src/js/core/levels/documents/relay-gate.v2.json). Labels are 1–40 trimmed UTF-16 code units. Device positions reserve a 0.75-unit clearance radius inside their room, with no initial overlaps. Every device must appear exactly once in `requiredDeviceIds`; IDs must reference devices. Doors require valid connection/device references, unique IDs and at most one door per connection. One relay can open multiple doors. All doors begin closed and open permanently on activation until restart.
+
+The validator repeatedly finds rooms reachable through currently open connections and activates accessible relays in its abstract progression model. A self-locked relay, an unbootstrappable lock cycle or any room still inaccessible is an error with code `locked-route`. This is geometric progression validation, not a combat or ammo-budget proof.
+
+Closed doors fill the complete portal thickness and block bodies, shots, visibility and interaction. Press **R** within 2.5 units of a visible inactive cyan relay to activate it. Pause, settings and terminal/session guards apply. Activating a relay hides linked doors and removes their colliders, updates enemy routing and records one objective event; all required drones and devices must be handled before extraction. Beacons turn green. Runtime activated/open flags and navigation revisions are excluded from JSON.
+
+V1 remains strict: `devices`, `doors` and relay mission fields are rejected on a version-1 file. Loading/export does not silently upgrade it. To author a relay level, deliberately create a version-2 copy with the required lists and mission. Future incompatible behavior requires another version or explicit migration.
 
 ## Validation, snapshots and loading
 

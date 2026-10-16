@@ -27,17 +27,23 @@ export type EntityDocument = Placement & (
   | { readonly id: string; readonly kind: 'pickup'; readonly type: PickupType }
   | { readonly id: string; readonly kind: 'exit'; readonly radius: number }
 );
-export interface LevelDocument {
-  readonly formatVersion: 1;
+export interface DeviceDocument extends Placement { readonly id: string; readonly label: string }
+export interface DoorDocument { readonly id: string; readonly connectionId: string; readonly deviceId: string }
+interface LevelDocumentBase {
   readonly id: string;
   readonly name: string;
   readonly rooms: readonly RoomDocument[];
   readonly connections: readonly ConnectionDocument[];
   readonly playerSpawn: Placement & { readonly rotation: Rotation };
   readonly entities: readonly EntityDocument[];
-  readonly mission: { readonly type: 'clear-and-exit'; readonly requiredEnemyIds: readonly string[]; readonly exitId: string };
   readonly combat: { readonly pulseDamage: number; readonly initialPulseAmmo: number; readonly maxPulseAmmo: number };
 }
+interface DocumentMission { readonly requiredEnemyIds: readonly string[]; readonly exitId: string }
+export type LevelDocument = LevelDocumentBase & (
+  | { readonly formatVersion: 1; readonly mission: DocumentMission & { readonly type: 'clear-and-exit' } }
+  | { readonly formatVersion: 2; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+);
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }
   | { readonly valid: false; readonly errors: readonly ValidationIssue[] };
@@ -55,4 +61,6 @@ export interface ArenaLevel {
   readonly mission?: MissionDefinition;
   readonly combat?: LevelDocument['combat'];
   readonly sourceDocument?: LevelDocument;
+  readonly devices?: readonly { readonly id: string; readonly label: string; readonly position: Vec3 }[];
+  readonly doors?: readonly { readonly id: string; readonly connectionId: string; readonly deviceId: string; readonly solid: SolidDefinition }[];
 }

@@ -42,7 +42,7 @@ test('canonical level validation owns a deeply frozen JSON snapshot and export/i
 });
 
 const structuralCases = [
-  ['future versions', input => { input.formatVersion = 2; }, 'version'],
+  ['future versions', input => { input.formatVersion = 99; }, 'version'],
   ['unknown fields', input => { input.script = 'alert(1)'; }, 'field'],
   ['session state', input => { input.entities[0].health = 10; }, 'field'],
   ['invalid IDs', input => { input.rooms[0].id = '<room>'; }, 'id'],

@@ -53,6 +53,7 @@ export interface InputGameActions {
   togglePause(): boolean;
   pauseGame(): boolean;
   releasePointerLock(): void;
+  interact?(): boolean;
 }
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;
@@ -67,8 +68,9 @@ export interface MouseMotion {
 
 export type DefeatCause = 'shot' | 'ram';
 export interface MissionDefinition {
-  readonly type: 'clear-and-exit';
+  readonly type: 'clear-and-exit' | 'relay-clear-and-exit';
   readonly requiredEnemyIds: readonly string[];
+  readonly requiredDeviceIds?: readonly string[];
   readonly exit: { readonly id?: string; readonly position: readonly [number, number, number]; readonly radius: number };
 }
 

@@ -88,6 +88,9 @@ class InputManager {
       event.preventDefault?.();
       this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false });
     }
+    if (event.code === 'KeyR' && !event.repeat && this.gameState.session.phase === 'playing') {
+      event.preventDefault?.(); this.game?.interact?.();
+    }
 
     // Handle escape key for pause menu
     if (

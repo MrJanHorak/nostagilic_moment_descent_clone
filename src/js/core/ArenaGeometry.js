@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
+import { DEVICE_RADIUS } from './levels/document/LevelContent.js';
 
 // Geometry stays at identity world transform. Keep the complete small arena loaded.
 /** @param {import('../levelDocument.js').ArenaLevel} level */
@@ -9,7 +10,7 @@ export default function buildArena(level) {
   /** @type {{id: string, box: THREE.Box3}[]} */
   const colliders = [];
   try {
-    for (const definition of level.solids) {
+    for (const definition of [...level.solids, ...(level.doors ?? []).map(door => door.solid)]) {
       const center = new THREE.Vector3().fromArray(definition.center);
       const size = new THREE.Vector3().fromArray(definition.size);
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(...definition.size),
@@ -20,6 +21,10 @@ export default function buildArena(level) {
       colliders.push({ id: definition.id, box: new THREE.Box3().setFromCenterAndSize(center, size) });
     }
     group.add(new THREE.HemisphereLight(0xe4f4ff, 0x394455, 2));
+    for (const device of level.devices ?? []) {
+      const marker = new THREE.Mesh(new THREE.OctahedronGeometry(DEVICE_RADIUS - 0.1), new THREE.MeshBasicMaterial({ color: 0x45e5ed }));
+      marker.name = device.id; marker.position.fromArray(device.position); group.add(marker);
+    }
     if (level.rendering?.trainingDecorations !== false) {
       const grid = new THREE.GridHelper(36, 36, 0x5b99af, 0x4e6475);
       grid.scale.x = 20 / 36;

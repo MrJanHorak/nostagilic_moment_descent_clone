@@ -8,11 +8,20 @@ export default class MissionObjective {
     this.requiredIds = new Set(definition.requiredEnemyIds);
     /** @type {Map<string, import('../contracts.js').DefeatCause>} */
     this.defeats = new Map();
+    this.requiredDeviceIds = new Set(definition.requiredDeviceIds ?? []);
+    /** @type {Set<string>} */
+    this.activatedDevices = new Set();
     this.completed = false;
     this.exitPosition = new THREE.Vector3().fromArray(definition.exit.position);
   }
 
-  get ready() { return this.defeats.size === this.requiredIds.size; }
+  get ready() { return this.defeats.size === this.requiredIds.size && this.activatedDevices.size === this.requiredDeviceIds.size; }
+
+  /** @param {string} id */
+  recordDeviceActivation(id) {
+    if (this.completed || !this.requiredDeviceIds.has(id) || this.activatedDevices.has(id)) return false;
+    this.activatedDevices.add(id); return true;
+  }
 
   /** @param {string} id @param {import('../contracts.js').DefeatCause} cause */
   recordDefeat(id, cause) {

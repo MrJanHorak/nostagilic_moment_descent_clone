@@ -27,6 +27,12 @@ async function chooseMine(page) {
   await expect(page.locator('#arena-guide')).toContainText('ceiling hatch');
   await expect(page.locator('#weapon-slot-1')).toContainText('60');
 }
+async function chooseRelay(page) {
+  await page.locator('#select-level-btn').click();
+  await button(page, 'Relay Gate Prototype').click();
+  await expect(page.locator('#arena-guide')).toContainText('RELAYS 0/1', { ignoreCase: true });
+  await expect(page.locator('#arena-guide')).toContainText('R activates nearby');
+}
 async function chooseMission(page) {
   await page.locator('#select-level-btn').click();
   await page.getByRole('button', { name: /arena escape/i }).click();
@@ -101,7 +107,7 @@ async function waitForSnapshot(page, predicate) {
   return value;
 }
 
-test('production: JSON mine is selectable and resets its initial encounter and inventory', async ({ page }, testInfo) => {
+test('production: JSON missions are selectable and reset their encounter, inventory and relay objective', async ({ page }, testInfo) => {
   await page.goto('http://127.0.0.1:5184/');
   await chooseMine(page);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
@@ -113,6 +119,12 @@ test('production: JSON mine is selectable and resets its initial encounter and i
   await expect(page.locator('#health-percentage')).toHaveText('100%');
   await expect(page.locator('#score-display')).toHaveText('0');
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+  await page.keyboard.press('Escape'); await button(page, 'RETURN TO BASE').click();
+  await chooseRelay(page); await page.keyboard.press('r');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/1');
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').click();
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/1');
+  await expect(page.locator('#weapon-slot-1')).toContainText('60');
 });
 
 // Read diagnostics to steer real keyboard input; never inject a player position.
@@ -123,12 +135,23 @@ async function flyMineAxis(page, axis, target) {
     await expect.poll(async () => {
       const value = await snapshot(page);
       if (value.phase !== 'playing') return true;
-      if (value.timeMs > previous.timeMs) {
+      const fresh = value.timeMs > previous.timeMs;
+      if (fresh) {
         estimatedVelocity = (value.position[axis] - previous.position[axis]) / ((value.timeMs - previous.timeMs) / 1000);
         previous = value;
       }
       const error = target - value.position[axis];
       if (Math.abs(error) < 0.3 && value.speed < 0.4) return true;
+      if (!fresh) return false;
+      // Near a waypoint, a held correction can span several diagnostic samples
+      // and oscillate under software rendering. Use bounded real key presses,
+      // then observe a fresh sample before another correction.
+      if (Math.abs(error) < 1.5) {
+        if (held) { await page.keyboard.up(held); held = null; }
+        const correction = Math.abs(estimatedVelocity) > 0.35 ? -estimatedVelocity : error;
+        if (Math.abs(correction) > 0.1) await page.keyboard.press(correction > 0 ? keys[1] : keys[0], { delay: 75 });
+        return false;
+      }
       // Limit cruise speed and counter-thrust before a turn. Diagnostic reads
       // are 250 ms apart, so use their simulation timestamps to estimate drift.
       const desiredVelocity = Math.max(-3, Math.min(3, error));
@@ -141,7 +164,7 @@ async function flyMineAxis(page, axis, target) {
         held = next;
       }
       return false;
-    }, { timeout: 30000, intervals: [100] }).toBe(true);
+    }, { timeout: 30000, intervals: [100], message: `Keyboard axis ${axis} should settle at ${target}` }).toBe(true);
   } finally { if (held) await page.keyboard.up(held); }
   // Drift persists while another thrust axis is held, so settle before turning.
   await expect.poll(async () => { const value = await snapshot(page); return value.phase !== 'playing' || value.speed < 0.03; },
@@ -168,6 +191,42 @@ test('development: JSON mine loop and vertical hatch fly both ways, complete and
   expect(replay.position).toEqual([0, 0, 4]); expect(replay.errors).toBe(0);
   await expect(page.locator('#weapon-slot-1')).toContainText('60');
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+});
+
+test('development: relay unlocks a solid hatch, completes the objective and resets on replay', async ({ page }, testInfo) => {
+  test.setTimeout(180000);
+  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseRelay(page);
+  const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
+  await button(page, 'Neutralize drones (test)').press('Enter');
+  await expect(page.locator('#arena-guide')).toContainText('Exit locked');
+  const samples = [];
+  const record = async label => { const value = await snapshot(page); samples.push({ label, position: value.position, phase: value.phase, errors: value.errors, guide: await page.locator('#arena-guide').textContent() }); };
+  await flyMineAxis(page, 2, 0); await flyMineAxis(page, 0, 16);
+  await holdUntil(page, 'Space', async () => {
+    await expect.poll(async () => (await snapshot(page))?.position[1]).toBeGreaterThan(4.8);
+    await expect.poll(async () => (await snapshot(page))?.speed).toBeLessThan(0.03);
+    expect((await snapshot(page)).position[1]).toBeLessThan(5.01);
+  });
+  await record('blocked-hatch');
+  await flyMineAxis(page, 1, 0); await flyMineAxis(page, 0, 19); await flyMineAxis(page, 2, 5);
+  await expect(page.locator('#arena-guide')).toContainText('R: activate Ceiling hatch relay');
+  await page.keyboard.press('Escape'); await page.keyboard.press('r');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/1');
+  await button(page, 'CONTINUE').click();
+  const resumed = await waitForSnapshot(page, value => value.phase === 'playing');
+  await page.keyboard.press('r');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 1/1');
+  await expect(page.locator('#arena-guide')).toContainText('EXIT READY');
+  await expect.poll(async () => (await snapshot(page))?.frames).toBeGreaterThan(resumed.frames);
+  await record('activated'); await testInfo.attach('relay-activated', { body: await page.screenshot(), contentType: 'image/png' });
+  await flyMineAxis(page, 2, 0); await flyMineAxis(page, 0, 16); await flyMineAxis(page, 1, 12); await flyMineAxis(page, 2, -4);
+  await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
+  await expect(page.locator('#score-display')).toHaveText('1150'); await record('completed');
+  await button(page, 'REPLAY MISSION').click();
+  const replay = await waitForSnapshot(page, value => value.phase === 'playing' && value.session !== initial.session && value.enemies === 2);
+  expect(replay.position).toEqual([0, 0, 4]); await expect(page.locator('#arena-guide')).toContainText('Relays 0/1');
+  await record('replay');
+  await testInfo.attach('relay-traversal', { body: JSON.stringify(samples, null, 2), contentType: 'application/json' });
 });
 
 test('development: pause freezes simulation and ten combat restarts return resources to baseline', async ({ page, browser }, testInfo) => {

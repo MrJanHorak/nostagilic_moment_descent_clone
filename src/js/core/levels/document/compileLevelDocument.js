@@ -52,19 +52,32 @@ export default function compileLevelDocument(input) {
     .multiply(new THREE.Quaternion().fromArray(document.playerSpawn.rotation)).normalize();
   const exit = document.entities.find(entity => entity.id === document.mission.exitId);
   if (exit?.kind !== 'exit') throw new Error('Validated exit disappeared');
+  const doors = document.formatVersion === 2 ? document.doors.map(door => {
+    const connection = document.connections.find(connection => connection.id === door.connectionId);
+    const room = connection && rooms.get(connection.a.roomId);
+    if (!connection || !room) throw new Error('Validated door connection disappeared');
+    const frame = portFrame(room, connection.a.port);
+    /** @type {[number, number, number]} */ const size = [0, 0, 0];
+    size[frame.axis] = WALL_THICKNESS * 2;
+    size[frame.u] = connection.openingSize[0]; size[frame.v] = connection.openingSize[1];
+    return Object.freeze({ ...door, solid: Object.freeze({ id: door.id, center: Object.freeze(frame.center), size: Object.freeze(size), color: 0xb66f20 }) });
+  }) : [];
   return Object.freeze({
     id: document.id, name: document.name, kind: 'arena', sourceDocument: document,
     spawn: Object.freeze(world(document.playerSpawn)),
     spawnRotation: Object.freeze(/** @type {const} */ ([orientation.x, orientation.y, orientation.z, orientation.w])),
     rendering: Object.freeze({ enemyAccentLights: false, trainingDecorations: false }),
     solids: Object.freeze(solids), combat: document.combat,
+    ...(document.formatVersion === 2 ? { doors: Object.freeze(doors),
+      devices: Object.freeze(document.devices.map(device => Object.freeze({ id: device.id, label: device.label, position: Object.freeze(world(device)) }))) } : {}),
     enemySpawns: Object.freeze(document.entities.filter(entity => entity.kind === 'enemy').map(entity => Object.freeze({
       id: entity.id, enemyType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),
     powerupSpawns: Object.freeze(document.entities.filter(entity => entity.kind === 'pickup').map(entity => Object.freeze({
       id: entity.id, powerupType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),
-    mission: Object.freeze({ type: 'clear-and-exit', requiredEnemyIds: document.mission.requiredEnemyIds,
+    mission: Object.freeze({ type: document.mission.type, requiredEnemyIds: document.mission.requiredEnemyIds,
+      ...(document.formatVersion === 2 ? { requiredDeviceIds: document.mission.requiredDeviceIds } : {}),
       exit: Object.freeze({ id: exit.id, position: Object.freeze(world(exit)), radius: exit.radius }) }),
   });
 }

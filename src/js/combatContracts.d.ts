@@ -37,6 +37,7 @@ export interface EnemySpawn {
   readonly enemyType: EnemyType;
 }
 export interface EnemyLevelView {
+  readonly interaction?: { readonly closedConnections: ReadonlySet<string>; readonly revision: number } | null;
   readonly tunnelWidth: number;
   readonly tunnelHeight: number;
   readonly isEndless: boolean;
@@ -44,6 +45,7 @@ export interface EnemyLevelView {
   readonly currentLevel: {
     readonly kind?: 'arena';
     readonly mission?: MissionDefinition;
+    readonly sourceDocument?: import('./levelDocument.js').LevelDocument;
     readonly enemySpawns: readonly EnemySpawn[];
     readonly rendering?: { readonly enemyAccentLights?: boolean };
   } | null;
