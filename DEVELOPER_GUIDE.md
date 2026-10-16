@@ -1,5 +1,7 @@
 # Developer Guide: Extending the Game
 
+> Historical extension examples below can describe unfinished behavior. Current enemy definitions live in `src/js/entities/EnemyTypes.js`, models in `meshBuilders/`, and firing in `ProjectileManager.js`. Use `npm run smoke` for diagnostics. Old debug helpers and repair scripts are preserved in [the archive](archive/README.md); see [the current checkpoint](docs/progress/M2_ENEMY_ORCHESTRATION.md).
+
 This document provides guidance on how to extend various aspects of the game.
 
 ## Table of Contents
@@ -28,7 +30,7 @@ The game currently implements five enemy types: scout, fighter, bomber, destroye
 
 To add a new enemy type:
 
-1. Open `src/js/entities/EnemyManager.js`
+1. Open `src/js/entities/EnemyTypes.js`
 2. Add a new object to the `enemyTypes` array:
 
 ```javascript
@@ -240,7 +242,7 @@ updateWeaponUI() {
 If you encounter issues:
 
 1. Check the browser console for errors
-2. Use the debugging utilities in `src/js/utils/debugUtils.js`
+2. Run `npm run smoke` and use the development diagnostics; archived debug utilities are historical only
 3. Add console logs to track the flow of your new functionality
 4. Make sure all imports use absolute paths with the `/src/js/` prefix
 

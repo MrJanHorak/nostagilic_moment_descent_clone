@@ -36,6 +36,7 @@ export interface PlayerFeedback {
   showMessage(message: string, duration?: number, color?: string): void;
   flash?(color: string): void;
   updateKillCounter?(counts: Record<EnemyType, number>): void;
+  updateEnemyCount?(defeated: number, total: number): void;
 }
 export interface PlayerAudio {
   playSound(id: string, options?: { volume?: number }): unknown;

@@ -1,5 +1,5 @@
 import type { BufferGeometry, ColorRepresentation, Group, Mesh, MeshStandardMaterial, Object3D, PointLight, Points, PointsMaterial, Vector3 } from 'three';
-import type { EnemyType, ShotTarget, SolidCollider } from './contracts.js';
+import type { EnemyType, MissionDefinition, ShotTarget, SolidCollider } from './contracts.js';
 import type ProjectileManager from './entities/ProjectileManager.js';
 
 export interface EnemyDefinition {
@@ -29,6 +29,28 @@ export interface EnemyInstance extends EnemyCombatTarget {
 }
 export interface EnemyMeshBuilder {
   buildMesh(body: Group, enemyType: EnemyDefinition): void;
+}
+// Runtime collaborators consumed by enemy orchestration, not a JSON level schema.
+export interface EnemySpawn {
+  readonly id?: string;
+  readonly position: Vector3;
+  readonly enemyType: EnemyType;
+}
+export interface EnemyLevelView {
+  readonly tunnelWidth: number;
+  readonly tunnelHeight: number;
+  readonly isEndless: boolean;
+  readonly solidColliders: readonly SolidCollider[];
+  readonly currentLevel: {
+    readonly kind?: 'arena';
+    readonly mission?: MissionDefinition;
+    readonly enemySpawns: readonly EnemySpawn[];
+    readonly rendering?: { readonly enemyAccentLights?: boolean };
+  } | null;
+}
+export type EnemyDropType = 'health' | 'speedBoost' | 'weaponUpgrade' | 'ammoPickup' | 'weaponPickup';
+export interface EnemyDropSink {
+  spawnPowerup(position: Vector3, type: EnemyDropType): unknown;
 }
 export type ProjectileType = 'standard' | 'laser' | 'plasma' | 'bomb' | 'missile' | 'heavylaser' | 'nova';
 export type TrailType = 'standard' | 'pulse' | 'laser' | 'missile' | 'plasma' | null;

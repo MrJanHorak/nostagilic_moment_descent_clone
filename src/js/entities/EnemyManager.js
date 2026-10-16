@@ -10,6 +10,11 @@ import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
 
 class EnemyManager {
+  /** @param {THREE.Scene} scene
+   * @param {THREE.Object3D} playerTransform
+   * @param {import('../core/GameState.js').default} gameState
+   * @param {import('../combatContracts.js').CombatAudio | null} audioManager
+   * @param {import('../combatContracts.js').EnemyLevelView | null} [levelManager] */
   constructor(scene, playerTransform, gameState, audioManager, levelManager = null) {
     this.scene = scene;
     this.playerTransform = playerTransform;
@@ -26,10 +31,18 @@ class EnemyManager {
     this.generation = 0;
 
     // Enemy tracking
+    /** @type {import('../combatContracts.js').EnemyInstance[]} */
     this.enemies = [];
+    /** @type {readonly THREE.Object3D[]} */
     this.levelSegments = [];
+    /** @type {Set<string>} */
     this.destroyedPredefinedEnemies = new Set();
     this.totalPredefinedEnemies = 0;
+    this.levelComplete = false;
+    /** @type {import('../combatContracts.js').EnemyDropSink | null} */
+    this.powerUpManager = null;
+    /** @type {((id: string, cause: import('../contracts.js').DefeatCause) => void) | null} */
+    this.onEnemyDefeated = null;
 
     // Tunnel properties (used for spawning calculations)
     this.tunnelWidth = levelManager ? levelManager.tunnelWidth : 15;
@@ -40,14 +53,18 @@ class EnemyManager {
     this.randomSpawnInterval = 5000; // 5 seconds between spawns in endless mode
   }
 
+  /** @param {readonly THREE.Object3D[]} segments */
   setLevelSegments(segments) {
     this.levelSegments = segments;
   }
 
+  /** @param {import('../combatContracts.js').EnemyShooter} enemy */
   canSeePlayer(enemy) {
     return hasLineOfSight(enemy.mesh.position, this.playerTransform.position, this.levelManager?.solidColliders);
   }
 
+  /** @param {import('../combatContracts.js').EnemyInstance} enemy
+   * @param {number} delta @param {boolean} visible */
   updateArenaEnemy(enemy, delta, visible) {
     const direction = this.playerTransform.position.clone().sub(enemy.mesh.position);
     const pursue = visible && direction.length() < 30 && (enemy.type.name === 'scout' || direction.length() > 8);
@@ -56,14 +73,17 @@ class EnemyManager {
     if (!visible) enemy.velocity.set(0, 0, 0); // No tracking through opaque walls.
     else enemy.velocity.lerp(desired, 1 - Math.pow(0.95, delta * 60));
     const worldVelocity = enemy.velocity.clone().multiplyScalar(60);
-    moveSphere(enemy.mesh.position, worldVelocity, delta, this.levelManager.solidColliders, enemy.collisionRadius);
+    moveSphere(enemy.mesh.position, worldVelocity, delta, this.levelManager?.solidColliders ?? [], enemy.collisionRadius);
     enemy.velocity.copy(worldVelocity).divideScalar(60);
     animateEnemy(enemy, delta, this.gameState.session.timeMs / 1000);
     if (visible) enemy.mesh.lookAt(this.playerTransform.position);
   }
 
+  /** @param {import('../combatContracts.js').EnemyCombatTarget} enemy
+   * @param {Pick<import('../combatContracts.js').PlayerProjectile, 'power'>} projectile
+   * @param {THREE.Vector3} position */
   hitEnemy(enemy, projectile, position) {
-    const index = this.enemies.indexOf(enemy);
+    const index = this.enemies.findIndex(candidate => candidate === enemy);
     if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
     const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
     enemy.health -= projectile.power * resistance;
@@ -72,17 +92,19 @@ class EnemyManager {
       try { this.audioManager.playSound('hit', { volume: 0.3 }); }
       catch (error) { console.warn('Unable to play hit sound:', error); }
     }
-    if (enemy.health > 0 || !enemy.isActive || !this.enemies.includes(enemy)) return;
+    if (enemy.health > 0 || !enemy.isActive || !this.enemies.some(candidate => candidate === enemy)) return;
     this.gameState.score += enemy.type.pointValue;
     this.gameState.recordEnemyKill?.(enemy.type.name);
     // Special weapons are outside the finite pulse-only encounter's contract.
     if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
-    this.destroyEnemy(this.enemies.indexOf(enemy));
+    this.destroyEnemy(this.enemies.findIndex(candidate => candidate === enemy));
   }
 
   // Spawn enemy at a position
+  /** @param {THREE.Vector3} position @param {import('../contracts.js').EnemyType | null} [typeName] */
   spawnEnemy(position, typeName = null) {
     if (this.clearing) throw new Error('EnemyManager is clearing');
+    const generation = this.generation, sessionId = this.gameState.session.id;
     // If no specific type requested, choose randomly
     const enemyType = typeName
       ? enemyTypes.find((t) => t.name === typeName)
@@ -96,6 +118,10 @@ class EnemyManager {
       this.playerTransform,
       { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true }
     );
+    if (!this.isCurrent(generation, sessionId)) {
+      removeEnemyAt([enemy], 0);
+      throw new Error('Enemy spawn was cancelled by a reset');
+    }
 
     this.enemies.push(enemy);
     enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
@@ -103,6 +129,7 @@ class EnemyManager {
   }
 
   // Spawn enemies in the tunnel segments
+  /** @param {number} segmentLength */
   spawnEnemiesInTunnel(segmentLength) {
     // Only consider segments beyond the first one to avoid enemies too close to player start
     const validSegments = this.levelSegments.slice(1);
@@ -144,9 +171,6 @@ class EnemyManager {
       }
     }
 
-    // Calculate a position somewhere in the segment
-    const segmentPosition = segment.position.clone();
-
     // Get segment dimensions from children more reliably
     let segmentWidth = 8; // More conservative default width
     let segmentHeight = 8; // More conservative default height
@@ -156,18 +180,18 @@ class EnemyManager {
       (child) =>
         child.position.y < 0 &&
         child.rotation.x < 0 && // Floor typically has negative x rotation
-        child.geometry
+        child instanceof THREE.Mesh
     );
 
     const ceiling = segment.children.find(
       (child) =>
         child.position.y > 0 &&
         child.rotation.x > 0 && // Ceiling typically has positive x rotation
-        child.geometry
+        child instanceof THREE.Mesh
     );
 
     // Get actual dimensions from geometry if possible
-    if (floor && floor.geometry && floor.geometry.parameters) {
+    if (floor instanceof THREE.Mesh && (floor.geometry instanceof THREE.PlaneGeometry || floor.geometry instanceof THREE.BoxGeometry)) {
       segmentWidth = floor.geometry.parameters.width * 0.7; // More conservative width (70%)
     }
 
@@ -220,6 +244,7 @@ class EnemyManager {
   }
 
   // Helper method to check if a position is too close to walls
+  /** @param {THREE.Vector3} position @param {THREE.Object3D} segment */
   isPositionTooCloseToWalls(position, segment) {
     // Simple distance check from segment center
     const horizontalDistance = Math.sqrt(
@@ -248,7 +273,7 @@ class EnemyManager {
       this.totalPredefinedEnemies = level.enemySpawns.length;
       // Update UI with enemy count
       if (this.gameState && this.gameState.uiManager) {
-        this.gameState.uiManager.updateEnemyCount(
+        this.gameState.uiManager.updateEnemyCount?.(
           this.destroyedPredefinedEnemies.size,
           this.totalPredefinedEnemies
         );
@@ -319,6 +344,7 @@ class EnemyManager {
   }
 
   // Add method to handle enemy spawning for endless mode
+  /** @param {number} currentTime */
   updateEndlessMode(currentTime) {
     // Check if it's time to spawn a new enemy
     if (currentTime - this.lastRandomSpawnTime > this.randomSpawnInterval) {
@@ -352,10 +378,13 @@ class EnemyManager {
   }
 
   // Enemy update function
+  /** @param {number} delta */
   updateEnemies(delta) {
     if (this.gameState.session?.phase !== 'playing') return;
+    const generation = this.generation, sessionId = this.gameState.session.id;
     // Update effects first
     this.effectsManager.update(delta);
+    if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
 
     // Check if level has predefined enemies or if we should use endless mode
     const currentTime = this.gameState.session.timeMs;
@@ -366,7 +395,7 @@ class EnemyManager {
     }
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
-      if (this.gameState.session.phase !== 'playing') break;
+      if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
       const enemy = this.enemies[i];
       if (!enemy.isActive) continue;
       const arena = !this.levelManager?.isEndless && this.levelManager?.currentLevel?.kind === 'arena';
@@ -391,7 +420,7 @@ class EnemyManager {
 
         // Apply behavior modifications based on enemy type
         switch (enemy.type.name) {
-          case 'boss':
+          case 'boss': {
             // Boss moves more deliberately with minimal randomness
             direction.x += (Math.random() - 0.5) * 0.05;
             direction.y += (Math.random() - 0.5) * 0.05;
@@ -403,6 +432,7 @@ class EnemyManager {
               (distanceToPlayer - optimalDistance) * 0.02;
             movementSpeed *= Math.max(0, Math.min(1.5, distanceAdjustment));
             break;
+          }
 
           case 'bomber':
             // Bombers tend to move to positions above the player to drop bombs
@@ -411,7 +441,7 @@ class EnemyManager {
             direction.z += (Math.random() - 0.5) * 0.1;
             break;
 
-          case 'destroyer':
+          case 'destroyer': {
             // Destroyers move more deliberately with less randomness
             direction.x += (Math.random() - 0.5) * 0.1;
             direction.y += (Math.random() - 0.5) * 0.1;
@@ -423,6 +453,7 @@ class EnemyManager {
               (distanceToPlayer - destroyerOptimalDistance) * 0.01;
             movementSpeed *= Math.max(0, Math.min(1.2, destroyerDistAdj));
             break;
+          }
 
           default:
             // Default for scouts and fighters - more erratic movement
@@ -460,9 +491,10 @@ class EnemyManager {
       if (!this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
         // Player takes damage
         this.gameState.takeDamage(enemy.type.damage);
+        if (!this.isCurrent(generation, sessionId)) return;
 
         // Destroy the enemy
-        this.destroyEnemy(i, 'ram');
+        this.destroyEnemy(this.enemies.indexOf(enemy), 'ram');
         continue;
       }
 
@@ -536,6 +568,7 @@ class EnemyManager {
     }
 
     // Update enemy projectiles
+    if (!this.isCurrent(generation, sessionId)) return;
     this.projectileManager.updateProjectiles(
       delta,
       this.playerTransform,
@@ -544,10 +577,17 @@ class EnemyManager {
     );
   }
 
+  /** @private @param {number} generation @param {number} sessionId */
+  isCurrent(generation, sessionId) {
+    return this.generation === generation && this.gameState.session.id === sessionId;
+  }
+
+  /** @param {number} index */
   removeEnemy(index) {
     return removeEnemyAt(this.enemies, index);
   }
 
+  /** @param {number} index @param {import('../contracts.js').DefeatCause} [cause] */
   destroyEnemy(index, cause = 'shot') {
     const enemy = this.enemies[index];
     if (!enemy?.isActive) return false;
@@ -556,35 +596,37 @@ class EnemyManager {
     const spawnId = enemy.mesh.userData.isPredefined ? enemy.mesh.userData.spawnPointId : null;
     // Cleanup hooks, effects and audio must observe an already removed enemy.
     this.removeEnemy(index);
-    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
+    if (!this.isCurrent(generation, sessionId)) return true;
     if (spawnId) this.destroyedPredefinedEnemies.add(spawnId);
     this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);
-    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
+    if (!this.isCurrent(generation, sessionId)) return true;
     if (this.audioManager?.initialized) {
       const distance = this.playerTransform?.position.distanceTo(enemy.mesh.position) ?? 20;
       const volume = Math.min(0.8, 10 / Math.max(1, distance));
       try { this.audioManager.playSound('explosion', { volume }); }
       catch (error) { console.warn('Unable to play explosion sound:', error); }
     }
-    if (this.generation !== generation || this.gameState.session.id !== sessionId) return true;
+    if (!this.isCurrent(generation, sessionId)) return true;
     // One disposal path for shot deaths, ramming and ordinary teardown.
     // Only combat destruction below emits objective progress; removeEnemy never does.
     if (spawnId) {
       this.onEnemyDefeated?.(spawnId, cause);
-      this.gameState.uiManager?.updateEnemyCount(this.destroyedPredefinedEnemies.size, this.totalPredefinedEnemies);
+      if (!this.isCurrent(generation, sessionId)) return true;
+      this.gameState.uiManager?.updateEnemyCount?.(this.destroyedPredefinedEnemies.size, this.totalPredefinedEnemies);
       this.checkLevelCompletion();
     }
     return true;
   }
 
   // Spawn item drops when enemies are destroyed
+  /** @param {THREE.Vector3} position @param {import('../contracts.js').EnemyType} enemyType */
   spawnEnemyDrop(position, enemyType) {
     // Check if PowerUpManager exists
     if (!this.powerUpManager) return;
 
     // Different drop chances based on enemy type
-    let dropChance = 0;
-    let weaponDropChance = 0;
+    let dropChance;
+    let weaponDropChance;
 
     switch (enemyType) {
       case 'scout':
@@ -632,6 +674,7 @@ class EnemyManager {
       }
     } else {
       // Other powerups - distribute randomly
+      /** @type {readonly import('../combatContracts.js').EnemyDropType[]} */
       const powerupTypes = [
         'health',
         'speedBoost',
@@ -642,7 +685,7 @@ class EnemyManager {
 
       // Weighted random selection
       const rand = Math.random();
-      let powerup;
+      let powerup = powerupTypes[powerupTypes.length - 1];
       let cumulativeWeight = 0;
 
       for (let i = 0; i < powerupTypes.length; i++) {
@@ -658,11 +701,13 @@ class EnemyManager {
   }
 
   // Set reference to PowerUpManager
+  /** @param {import('../combatContracts.js').EnemyDropSink | null} manager */
   setPowerUpManager(manager) {
     this.powerUpManager = manager;
   }
 
   // Move all enemies by offset (Vector3)
+  /** @param {THREE.Vector3} offset */
   offsetEnemies(offset) {
     for (const enemy of this.enemies) {
       if (enemy && enemy.mesh && enemy.mesh.position) {

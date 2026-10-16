@@ -1,5 +1,7 @@
 # M2 enemy construction and effect ownership checkpoint
 
+> Follow-up: [enemy orchestration and source cleanup](M2_ENEMY_ORCHESTRATION.md) checks the remaining enemy implementation and archives confirmed unused sources. This file records the earlier ownership checkpoint.
+
 Implemented October 15, 2026, following [projectile ownership](M2_PROJECTILE_CONTRACTS.md). The owner's [M1 acceptance](../M1_ACCEPTANCE.md) remains complete.
 
 ## Delivered

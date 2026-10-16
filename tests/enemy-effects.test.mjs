@@ -8,6 +8,8 @@ import { clearEnemies, removeEnemyAt } from '../src/js/entities/EnemyLifecycle.j
 import { enemyTypes } from '../src/js/entities/EnemyTypes.js';
 import EffectsManager from '../src/js/effects/EffectsManager.js';
 import ObjectPool from '../src/js/utils/ObjectPool.js';
+import disposeObject from '../src/js/utils/disposeObject.js';
+import { animateEnemy } from '../src/js/entities/EnemyAnimations.js';
 
 const v = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 
@@ -287,4 +289,138 @@ test('a scene-removal callback that clears effects does not return the departing
   effects.update(0.4);
   assert.equal(disposals, 1); assert.equal(scene.children.length, 0);
   assert.equal(Object.keys(effects.objectPool.pools).length, 0); effects.dispose(); assert.equal(disposals, 1);
+});
+
+test('all five shipped enemy rigs remain finite through their animation paths', t => {
+  t.mock.method(Math, 'random', () => 0.5);
+  const scene = new THREE.Scene(), factory = new EnemyFactory(scene);
+  const enemies = enemyTypes.map(type => factory.createEnemy(type, v()));
+  for (let frame = 0; frame < 120; frame++) for (const enemy of enemies) animateEnemy(enemy, 1 / 60, frame / 60);
+  for (const enemy of enemies) enemy.mesh.traverse(child => {
+    assert.ok([...child.position, ...child.quaternion, ...child.scale].every(Number.isFinite), child.name);
+    if (child instanceof THREE.Mesh) {
+      const positions = child.geometry.getAttribute('position');
+      assert.ok([...positions.array].every(Number.isFinite), child.name);
+      for (const material of Array.isArray(child.material) ? child.material : [child.material]) {
+        assert.ok(Number.isFinite(material.opacity));
+        if (material instanceof THREE.MeshStandardMaterial) assert.ok(Number.isFinite(material.emissiveIntensity));
+      }
+    }
+  });
+  clearEnemies(enemies); assert.equal(scene.children.length, 0);
+});
+
+test('boss shield deformation is repeatable at a fixed time and bounded by the original surface', () => {
+  const enemy = new EnemyFactory(new THREE.Scene()).createEnemy(enemyTypes.find(type => type.name === 'boss'), v());
+  const shield = enemy.mesh.getObjectByName('boss_shield'), positions = shield.geometry.getAttribute('position');
+  const rest = positions.array.slice();
+  animateEnemy(enemy, 1 / 60, 10); const firstFrame = positions.array.slice();
+  for (let i = 0; i < 100; i++) animateEnemy(enemy, 1 / 60, 10);
+  assert.deepEqual(positions.array, firstFrame, 'repeated frames must not accumulate deformation');
+  for (let frame = 0; frame < 180; frame++) {
+    animateEnemy(enemy, 1 / 60, frame / 10);
+    for (let i = 0; i < positions.count; i++) {
+      const baseRadius = Math.hypot(...rest.slice(i * 3, i * 3 + 3));
+      const radius = Math.hypot(positions.getX(i), positions.getY(i), positions.getZ(i));
+      assert.ok(Math.abs(radius - baseRadius) <= 0.050001);
+    }
+  }
+  clearEnemies([enemy]);
+});
+
+test('a shield vertex at the origin and malformed animation metadata do not poison scene transforms', () => {
+  const body = new THREE.Group(), geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 1, 0, 0], 3));
+  const shield = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial()); shield.name = 'boss_shield'; body.add(shield);
+  animateEnemy({ mesh: body, type: { name: 'boss', size: 1 } }, 1 / 60, 1);
+  assert.deepEqual([...geometry.attributes.position.array].slice(0, 3), [0, 0, 0]);
+  assert.ok([...geometry.attributes.position.array].every(Number.isFinite));
+  const glowMaterials = [new THREE.MeshStandardMaterial(), new THREE.MeshStandardMaterial(), new THREE.MeshBasicMaterial()];
+  const engine = new THREE.Mesh(new THREE.BoxGeometry(), glowMaterials); engine.name = 'bomber_engine_glow_invalid';
+  engine.userData = { pulsate: true, pulseSpeed: NaN, pulseMin: 'bad', pulseMax: Infinity, rotate: true, rotationAxis: 'invalid' };
+  body.add(engine);
+  const tube = new THREE.Group(); tube.name = 'bomber_tube_invalid'; body.add(tube);
+  animateEnemy({ mesh: body, type: { name: 'bomber', size: 1 } }, 1 / 60, 1);
+  assert.ok([...engine.scale, ...engine.quaternion, ...tube.position].every(Number.isFinite));
+  for (const material of glowMaterials) assert.ok(Number.isFinite(material.opacity));
+  assert.ok(glowMaterials.slice(0, 2).every(material => Number.isFinite(material.emissiveIntensity)));
+  assert.equal('emissiveIntensity' in glowMaterials[2], false); disposeObject(body);
+});
+
+test('invalid animation times are ignored before modifying a rig', () => {
+  const enemy = new EnemyFactory(new THREE.Scene()).createEnemy(enemyTypes.find(type => type.name === 'fighter'), v());
+  const before = enemy.mesh.toJSON();
+  for (const delta of [NaN, Infinity, -1]) animateEnemy(enemy, delta, 1);
+  animateEnemy(enemy, 1 / 60, NaN); animateEnemy(enemy, 1 / 60, Infinity);
+  assert.deepEqual(enemy.mesh.toJSON(), before); clearEnemies([enemy]);
+});
+
+test('a reset during scene publication cancels the pending spawn and releases its completed body', t => {
+  const { manager, scene } = managerFixture(t), disposals = new Map();
+  scene.addEventListener('childadded', event => {
+    event.child.traverse(child => {
+      if (!(child instanceof THREE.Mesh)) return;
+      for (const resource of [child.geometry, child.material]) if (!disposals.has(resource)) {
+        disposals.set(resource, 0); resource.addEventListener('dispose', () => disposals.set(resource, disposals.get(resource) + 1));
+      }
+    });
+    manager.resetLevel();
+  });
+  assert.throws(() => manager.spawnEnemy(v(), 'fighter'), /cancelled by a reset/);
+  assert.equal(manager.enemies.length, 0); assert.equal(scene.children.length, 0);
+  assert.ok(disposals.size > 0); assert.ok([...disposals.values()].every(count => count === 1));
+});
+
+test('ram damage that starts a replacement run cannot destroy or advance that run using the old frame', t => {
+  const { manager, state } = managerFixture(t);
+  const oldEnemy = manager.spawnEnemy(v(0, 0, 0.1), 'scout'); let replacement;
+  t.mock.method(state, 'takeDamage', () => {
+    manager.resetLevel(); state.session.end(); state.session.begin(); state.session.transition('playing');
+    replacement = manager.spawnEnemy(v(0, 0, 15), 'fighter');
+  });
+  const projectiles = t.mock.method(manager.projectileManager, 'updateProjectiles', () => assert.fail('advanced replacement run'));
+  manager.updateEnemies(1 / 60);
+  assert.equal(oldEnemy.isActive, false); assert.equal(replacement.isActive, true);
+  assert.deepEqual(manager.enemies, [replacement]); assert.ok(replacement.mesh.position.equals(v(0, 0, 15)));
+  assert.equal(projectiles.mock.callCount(), 0);
+});
+
+test('effect update that resets enemy ownership stops the old orchestration frame', t => {
+  const { manager } = managerFixture(t); let replacement;
+  t.mock.method(manager.effectsManager, 'update', () => {
+    manager.resetLevel(); replacement = manager.spawnEnemy(v(0, 0, 15), 'fighter');
+  });
+  t.mock.method(manager.projectileManager, 'updateProjectiles', () => assert.fail('continued after reset'));
+  manager.updateEnemies(1 / 60);
+  assert.ok(replacement.mesh.position.equals(v(0, 0, 15))); assert.equal(replacement.lastFireTime, 0);
+});
+
+test('defeat callback that resets the level cannot overwrite replacement enemy counters', t => {
+  const { manager, state } = managerFixture(t), enemy = manager.spawnEnemy(v(), 'scout');
+  enemy.mesh.userData.isPredefined = true; enemy.mesh.userData.spawnPointId = 'old-guard';
+  state.uiManager = { updateEnemyCount() { assert.fail('stale counter update'); } };
+  manager.onEnemyDefeated = () => { manager.resetLevel(); manager.spawnEnemy(v(0, 0, 15), 'fighter'); };
+  assert.equal(manager.destroyEnemy(0), true);
+  assert.equal(manager.enemies.length, 1); assert.equal(manager.enemies[0].type.name, 'fighter');
+  assert.equal(manager.destroyedPredefinedEnemies.size, 0);
+});
+
+test('boss burst callbacks remain paused with the session and cannot fire after their enemy is removed', t => {
+  const { manager, state } = managerFixture(t);
+  t.mock.method(Math, 'random', () => 0.1);
+  const boss = manager.spawnEnemy(v(0, 0, 20), 'boss');
+  state.session.advance(3); manager.updateEnemies(1 / 60);
+  assert.equal(state.session.tasks.size, 2); assert.equal(manager.projectileManager.enemyProjectiles.length, 1);
+  state.session.transition('paused'); state.session.advance(1); manager.updateEnemies(1);
+  assert.equal(state.session.tasks.size, 2); assert.equal(manager.projectileManager.enemyProjectiles.length, 1);
+  manager.removeEnemy(manager.enemies.indexOf(boss)); state.session.transition('playing'); state.session.advance(0.5);
+  assert.equal(state.session.tasks.size, 0); assert.equal(manager.projectileManager.enemyProjectiles.length, 1);
+});
+
+test('optional enemy-count feedback is not required to spawn and defeat authored enemies', t => {
+  const { manager, state } = managerFixture(t);
+  manager.levelManager = { currentLevel: { kind: 'arena', enemySpawns: [{ id: 'guard', enemyType: 'scout', position: v(0, 0, 10) }] } };
+  state.uiManager = {};
+  manager.spawnPredefinedEnemies(); assert.equal(manager.enemies.length, 1);
+  assert.equal(manager.destroyEnemy(0), true); assert.deepEqual([...manager.destroyedPredefinedEnemies], ['guard']);
 });

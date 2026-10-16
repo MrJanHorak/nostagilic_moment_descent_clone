@@ -1,8 +1,8 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 15, 2026):** **[M1 is accepted and complete](docs/M1_ACCEPTANCE.md)** following the owner's Chrome playthrough of the finite Flight Arena / Arena Escape slice. Choose **Select Level > Arena Escape** for combat; **Start Flight Arena** remains quiet practice. M2 has a pinned/patched [toolchain](docs/TOOLCHAIN.md), CI, [hardware profiling](docs/progress/M2_PERFORMANCE.md), [saved mouse controls](docs/progress/M2_SETTINGS.md), [saved audio controls](docs/progress/M2_AUDIO_SETTINGS.md), and [enemy construction/effect ownership](docs/progress/M2_ENEMY_EFFECTS.md) with 23 checked runtime modules. Open **Settings** on the main menu or pause screen to adjust sensitivity, invert-Y, music/effects volume and mute. Scoped lint/type checks, all 137 unit/simulation/metrics tests and six browser checks pass; the production build passes. M2's provisional frame-time target remains unmet. Older levels remain legacy content; several features below describe intended behavior. See the [roadmap](docs/ROADMAP.md), [assessment](docs/PROJECT_ASSESSMENT.md), and [designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
+> **Project status (October 15, 2026):** **[M1 is accepted and complete](docs/M1_ACCEPTANCE.md)** following the owner's Chrome playthrough of the finite Flight Arena / Arena Escape slice. Choose **Select Level > Arena Escape** for combat; **Start Flight Arena** remains quiet practice. M2 has a pinned/patched [toolchain](docs/TOOLCHAIN.md), CI, [hardware profiling](docs/progress/M2_PERFORMANCE.md), [saved mouse controls](docs/progress/M2_SETTINGS.md), [saved audio controls](docs/progress/M2_AUDIO_SETTINGS.md), and [enemy orchestration/source cleanup](docs/progress/M2_ENEMY_ORCHESTRATION.md) with 25 checked runtime modules. Open **Settings** on the main menu or pause screen to adjust sensitivity, invert-Y, music/effects volume and mute. Scoped lint/type checks, all 147 unit/simulation/metrics tests and six browser checks pass; the production build passes. M2's provisional frame-time target remains unmet. Older levels remain legacy content; several features below describe intended behavior. See the [roadmap](docs/ROADMAP.md), [assessment](docs/PROJECT_ASSESSMENT.md), and [designer proposal](docs/LEVEL_EDITOR_DESIGN.md).
 
-Run `npm run verify` for scoped lint/type checks, unit/simulation/metrics regressions and the production build. Use `npm run lint` or `npm run typecheck` separately while editing the [checked modules](docs/progress/M2_ENEMY_EFFECTS.md). Run `npm run browser:install` once, then `npm run test:browser` for production and restart browser checks. Run `npm run smoke` for development diagnostics, or `npm run profile:arena` for three warmed hardware captures with renderer verification. See the [browser checkpoint](docs/progress/M2_BROWSER.md) and [profiling checkpoint](docs/progress/M2_PERFORMANCE.md) for coverage, commands and limits.
+Run `npm run verify` for scoped lint/type checks, unit/simulation/metrics regressions and the production build. Use `npm run lint` or `npm run typecheck` separately while editing the [checked modules](docs/progress/M2_ENEMY_ORCHESTRATION.md). Run `npm run browser:install` once, then `npm run test:browser` for production and restart browser checks. Run `npm run smoke` for development diagnostics, or `npm run profile:arena` for three warmed hardware captures with renderer verification. See the [browser checkpoint](docs/progress/M2_BROWSER.md) and [profiling checkpoint](docs/progress/M2_PERFORMANCE.md) for coverage, commands and limits.
 
 A 3D zero-gravity shooter game in the style of Descent, built with JavaScript and Three.js. Pilot your spaceship through procedurally generated cave tunnels, battle enemies, and collect power-ups.
 
@@ -147,34 +147,21 @@ DESCENDED is a first-person 3D shooter with zero-gravity movement inspired by th
 
 The project is organized into several modules for better maintainability:
 
-```
-src/
-├── js/
-│   ├── core/           # Core game systems
-│   │   ├── AudioManager.js
-│   │   ├── GameState.js
-│   │   ├── InputManager.js
-│   │   ├── LevelManager.js
-│   │   └── levels/     # Level blueprints
-│   │       ├── LevelBlueprint.js
-│   │       ├── SegmentTypes.js
-│   │       ├── Level1.js
-│   │       ├── Level2.js
-│   │       └── ExampleLevel.js
-│   ├── entities/       # Game objects
-│   │   ├── EnemyManager.js
-│   │   ├── PowerUpManager.js
-│   │   ├── ProjectileManager.js
-│   │   └── Spaceship.js
-│   ├── ui/             # User interface components
-│   │   └── UIManager.js
-│   ├── utils/          # Utility functions
-│   │   ├── debugUtils.js
-│   │   ├── effectsUtils.js
-│   │   └── collisionUtils.js
-│   └── main.js         # Main game initialization
-├── style.css
-└── index.html
+```text
+index.html -> main.js -> src/js/main.js  # Live game entry
+src/js/
+  core/             # Session, input, audio, settings, level runtime
+    levels/         # Finite arenas and legacy executable blueprints
+  entities/         # Player, enemies, projectiles, pickups
+    meshBuilders/   # Five concrete enemy models
+  effects/          # Managed hit/explosion visuals
+  ui/               # HUD, menus and settings dialog
+  utils/            # Collision, disposal, diagnostics and effect helpers
+  contracts.d.ts    # Shared runtime interfaces
+  combatContracts.d.ts
+tests/              # Runtime, compiler and browser regressions
+scripts/            # Supported lint, smoke and profiling tools
+archive/            # Preserved historical sources and hash manifest
 ```
 
 ## Extending the Game

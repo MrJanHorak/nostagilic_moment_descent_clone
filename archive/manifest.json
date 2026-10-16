@@ -1,0 +1,175 @@
+{
+  "date": "2026-10-15",
+  "entry": "index.html -> main.js -> src/js/main.js",
+  "basis": "Static and literal dynamic import traversal from main.js; repository-wide references, scripts and entry HTML reviewed. Historic tools are preserved as reference and are not a supported alternate entry.",
+  "files": [
+    {
+      "original": "audio.js",
+      "archived": "archive/legacy/audio.js",
+      "bytes": 4285,
+      "sha256": "cddc97f9902a6c40b6734c9b54259e83c1e2c4a423b401df7c540d606b1904ec",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "debug.js",
+      "archived": "archive/legacy/debug.js",
+      "bytes": 528,
+      "sha256": "ff671953bac68e108be3d36ced5496cb7e9124402e864634e164561d224db273",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "debug-tool.js",
+      "archived": "archive/legacy/debug-tool.js",
+      "bytes": 10283,
+      "sha256": "8ab413800ddcdbecd43a587235eebaa17e0a0a8ede279e1538a1487afb17b8f8",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "debug.html",
+      "archived": "archive/legacy/debug.html",
+      "bytes": 1026,
+      "sha256": "701113d652b93b10598ac27891f171529910a434cfee82b071b40cc1163be420",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "fix-game.js",
+      "archived": "archive/legacy/fix-game.js",
+      "bytes": 6252,
+      "sha256": "fe28d36f60f8f622ea5c33c86a9f8a00e1b7846d2268a6ecaa933439eb7fea30",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "fix-exports.js",
+      "archived": "archive/legacy/fix-exports.js",
+      "bytes": 2609,
+      "sha256": "9b450c39d81555f1a5633237b1039c2741b108af85623b31e119b92825bd6420",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "fix-imports.js",
+      "archived": "archive/legacy/fix-imports.js",
+      "bytes": 2095,
+      "sha256": "d43effce9636348ead4b97d6412e65b41069078b758bab6d11762a9796faee41",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "main.js.bak",
+      "archived": "archive/legacy/main.js.bak",
+      "bytes": 81081,
+      "sha256": "d971ec701ceb8bdb9a0acdca3fff3c3e625ee1c1eb89d5b75a851e7f09748122",
+      "reason": "historical entry/debug/repair code"
+    },
+    {
+      "original": "src/main.js",
+      "archived": "archive/legacy/src/main.js",
+      "bytes": 746,
+      "sha256": "886588fb0734b27e5fb42b5706d88ba9e1632e1145ad0fccae57854c0d440ba9",
+      "reason": "unused Vite starter"
+    },
+    {
+      "original": "src/counter.js",
+      "archived": "archive/legacy/src/counter.js",
+      "bytes": 247,
+      "sha256": "54889d2272060b1af76601561c91a76a7a025b27fdbcc1ad05aadce17f1ed43e",
+      "reason": "unused Vite starter"
+    },
+    {
+      "original": "src/style.css",
+      "archived": "archive/legacy/src/style.css",
+      "bytes": 1523,
+      "sha256": "0500bfd3c82e7d4bdb6bbed5c92e3c6776da36ea9a351e110781f98d3c5ed754",
+      "reason": "unused Vite starter"
+    },
+    {
+      "original": "src/javascript.svg",
+      "archived": "archive/legacy/src/javascript.svg",
+      "bytes": 995,
+      "sha256": "8dac53799104214c30769aa44c25a16b3c8c86f7c6c6e46fb1996e63ab5d828e",
+      "reason": "unused Vite starter"
+    },
+    {
+      "original": "src/js/test.js",
+      "archived": "archive/legacy/src/js/test.js",
+      "bytes": 13,
+      "sha256": "5d336d188eb7dc9ea2a4e9bcbcdd4d032f382437e83dfd6d1c9eb72d235d53ba",
+      "reason": "unused demonstration/backup"
+    },
+    {
+      "original": "src/js/entities/EnemyManagerTest.js",
+      "archived": "archive/legacy/src/js/entities/EnemyManagerTest.js",
+      "bytes": 1571,
+      "sha256": "d87fbf413e426b0415920f3275a1a66f797332effbe69ce5269cfc75ed1e26e7",
+      "reason": "unused demonstration/backup"
+    },
+    {
+      "original": "src/js/entities/EnemyManager.js.new",
+      "archived": "archive/legacy/src/js/entities/EnemyManager.js.new",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "reason": "unused demonstration/backup"
+    },
+    {
+      "original": "src/js/entities/ProjectileTypes.js",
+      "archived": "archive/legacy/src/js/entities/ProjectileTypes.js",
+      "bytes": 1315,
+      "sha256": "e5b7ee0cb12c021a288fc8e2222a471742fddcfdc0337b4b1776e4fafa29f04b",
+      "reason": "unused projectile definitions"
+    },
+    {
+      "original": "src/js/entities/json/testShip.json",
+      "archived": "archive/legacy/src/js/entities/json/testShip.json",
+      "bytes": 3119,
+      "sha256": "d121a95f4a53793598adb08b401bb746855f52696ff038cc7472bae54c986a8a",
+      "reason": "unloaded ship design references"
+    },
+    {
+      "original": "src/js/entities/json/scoutShip.json",
+      "archived": "archive/legacy/src/js/entities/json/scoutShip.json",
+      "bytes": 1093,
+      "sha256": "f6ed61463c1b4253cafbc9fd632e461fe8b4ba5b25d96571a26b8c2f07010a06",
+      "reason": "unloaded ship design references"
+    },
+    {
+      "original": "src/js/entities/json/reconShip.json",
+      "archived": "archive/legacy/src/js/entities/json/reconShip.json",
+      "bytes": 1020,
+      "sha256": "d890897d4d9fd3ec90a73de7433ee22b6d6ad0b0c8bec3e9657a6f4890dc49bc",
+      "reason": "unloaded ship design references"
+    },
+    {
+      "original": "src/js/entities/json/boomberShip.json",
+      "archived": "archive/legacy/src/js/entities/json/boomberShip.json",
+      "bytes": 1341,
+      "sha256": "3ea8715dae412916264a61b9415e82d1aac1abe1fe503ea9816b9c519e345b52",
+      "reason": "unloaded ship design references"
+    },
+    {
+      "original": "src/js/core/LightingManager.js",
+      "archived": "archive/legacy/src/js/core/LightingManager.js",
+      "bytes": 1053,
+      "sha256": "8a14f6e9466d76c5751dba229ba7bfb971fce0be59cc30809d2f5f158c5b4244",
+      "reason": "unintegrated duplicate helpers"
+    },
+    {
+      "original": "src/js/core/ObstacleFactory.js",
+      "archived": "archive/legacy/src/js/core/ObstacleFactory.js",
+      "bytes": 1469,
+      "sha256": "ea16edaa14291f9abb0ab1ef1bc0fa3354ee7a41b9e988f178f3abcb13241529",
+      "reason": "unintegrated duplicate helpers"
+    },
+    {
+      "original": "src/js/core/TunnelGeometryManager.js",
+      "archived": "archive/legacy/src/js/core/TunnelGeometryManager.js",
+      "bytes": 1335,
+      "sha256": "cdf1199e840c49f2c46c0c28633bc45e31328dc35280a21642111712095d103c",
+      "reason": "unintegrated duplicate helpers"
+    },
+    {
+      "original": "src/js/utils/debugUtils.js",
+      "archived": "archive/legacy/src/js/utils/debugUtils.js",
+      "bytes": 6193,
+      "sha256": "b3d2151d052548732dd27f28b1f36a8ebedb6e0934750856fb20228dc6eab7c7",
+      "reason": "unintegrated duplicate helpers"
+    }
+  ]
+}
