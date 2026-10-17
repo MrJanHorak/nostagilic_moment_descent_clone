@@ -31,6 +31,8 @@
     "src/js/core/ArenaGeometry.js",
     "src/js/core/levels/MineLink.js",
     "src/js/core/levels/RelayGate.js",
+    "src/js/core/levels/DeepRelay.js",
+    "src/js/core/levels/document/MineGuide.js",
     "src/js/core/GameState.js",
     "src/js/core/InputManager.js",
     "src/js/entities/Spaceship.js",

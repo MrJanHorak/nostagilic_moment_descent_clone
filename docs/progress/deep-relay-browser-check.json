@@ -1,0 +1,1063 @@
+{
+  "verification": "All eleven cases passed in one complete local Windows run with fourfold Chromium CPU throttling and zero browser errors. Hosted Ubuntu/Windows confirmation and human M3 playtesting remain pending.",
+  "productionBundle": "/assets/index-DiRlekEi.js",
+  "startedAt": "2026-10-16T23:20:27.317Z",
+  "durationMs": 619146.2520000001,
+  "functionalViewport": {
+    "width": 960,
+    "height": 540
+  },
+  "cpuSlowdown": 4,
+  "runtimeVerification": {
+    "node": "24.22.0",
+    "npm": "11.21.1",
+    "lint": "passed",
+    "typecheck": "passed",
+    "tests": 260,
+    "build": "passed",
+    "checkedRuntimeModules": 38,
+    "negativeCompilerExamples": 108
+  },
+  "scope": "SwiftShader functional proof, not hardware frame-time acceptance. Development navigation uses labeled drone neutralization and real keyboard thrust. Combat at fixed encounter locations is covered separately by runtime simulations; human combat and pacing acceptance remain open.",
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 52783,
+          "errors": [],
+          "attachments": {
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 15480,
+          "errors": [],
+          "attachments": {
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 14660,
+          "errors": [],
+          "attachments": {
+            "deep-relay-start": "deep-relay-start.png",
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 116709,
+          "errors": [],
+          "attachments": {
+            "mine-traversal": [
+              {
+                "axis": 2,
+                "target": 0,
+                "position": [
+                  0,
+                  0,
+                  0.2577335113439159
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 2,
+                "target": -16,
+                "position": [
+                  0,
+                  0,
+                  -15.854282645864664
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 0,
+                "target": 16,
+                "position": [
+                  15.730461800305703,
+                  0,
+                  -15.835924763680334
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 2,
+                "target": 0,
+                "position": [
+                  15.743061756768503,
+                  0,
+                  0.06533323043907678
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 0,
+                "target": 0,
+                "position": [
+                  0.16089031172668977,
+                  0,
+                  0.04896536046886445
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 0,
+                "target": 16,
+                "position": [
+                  16.33228291313789,
+                  0,
+                  0.04896536037628298
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 1,
+                "target": 12,
+                "position": [
+                  16.3423285756582,
+                  11.97454828483184,
+                  0.04896536037628298
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 1,
+                "target": 0,
+                "position": [
+                  16.342328578154685,
+                  0.18139901672005387,
+                  0.04896536037628298
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 1,
+                "target": 12,
+                "position": [
+                  16.342328578154685,
+                  12.052072242912548,
+                  0.04896536037628298
+                ],
+                "phase": "playing",
+                "errors": 0
+              },
+              {
+                "axis": 2,
+                "target": -4,
+                "position": [
+                  16.342328578154685,
+                  12.066882213182362,
+                  -3.065352493782022
+                ],
+                "phase": "completed",
+                "errors": 0
+              }
+            ],
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 83580,
+          "errors": [],
+          "attachments": {
+            "relay-traversal": [
+              {
+                "label": "blocked-hatch",
+                "position": [
+                  16.266632231158958,
+                  4.99999,
+                  0.03973484908064293
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "RELAY GATE PROTOTYPE · Neutralize drones 2/2 · Exit locked (amber ring in the upper green chamber (ceiling hatch · Space up / Shift down)) · Relays 0/1 · Cyan relay: lower blue return chamber · R activates nearby · Location: Blue Return · Ceiling hatch relay in Blue Return · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "activated",
+                "position": [
+                  18.784046101276722,
+                  -0.21719277525370145,
+                  4.831376516138996
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "RELAY GATE PROTOTYPE · EXIT READY · Fly into the green ring in the upper green chamber (ceiling hatch · Space up / Shift down) · Relays 1/1 · Linked doors unlocked · Location: Blue Return · Exit in Green Upper · Next: ceiling hatch to Green Upper · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "completed",
+                "position": [
+                  15.78074309585623,
+                  12.259544609422862,
+                  -3.09137219086088
+                ],
+                "phase": "completed",
+                "errors": 0,
+                "guide": "RELAY GATE PROTOTYPE · EXIT READY · Fly into the green ring in the upper green chamber (ceiling hatch · Space up / Shift down) · Relays 1/1 · Linked doors unlocked · Location: Green Upper · Exit in Green Upper · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "replay",
+                "position": [
+                  0,
+                  0,
+                  4
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "RELAY GATE PROTOTYPE · Neutralize drones 0/2 · Exit locked (amber ring in the upper green chamber (ceiling hatch · Space up / Shift down)) · Relays 0/1 · Cyan relay: lower blue return chamber · R activates nearby · Location: Blue Bay · Ceiling hatch relay in Blue Return · Next: passage to Blue Return · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              }
+            ],
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 226498,
+          "errors": [],
+          "attachments": {
+            "deep-relay-upper-lift": "deep-relay-upper-lift.png",
+            "deep-relay-traversal": [
+              {
+                "label": "supply-cache",
+                "position": [
+                  32.316568458706406,
+                  0,
+                  0.3566351709472421
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "DEEP RELAY · Neutralize drones 5/5 · Exit locked (amber ring at the marked exit) · Relays 0/2 · Find a cyan relay · R activates nearby · Location: Amber Supply Cache · Lift power relay in Blue Lift Junction · Next: passage to Blue Lift Junction · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "lift-open",
+                "position": [
+                  12.917254892675125,
+                  0,
+                  3.2123284268824897
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "DEEP RELAY · Neutralize drones 5/5 · Exit locked (amber ring at the marked exit) · Relays 1/2 · Find a cyan relay · R activates nearby · Location: Blue Lift Junction · Extraction relay in Blue Relay Control · Next: ceiling hatch to Green Upper Lift · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "extraction-open",
+                "position": [
+                  12.011451783400998,
+                  15.998090324030873,
+                  -12.74200519080595
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "DEEP RELAY · EXIT READY · Fly into the green ring at the marked exit · Relays 2/2 · Linked doors unlocked · Location: Blue Relay Control · Exit in Green Extraction · Next: passage to Green Extraction · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "completed",
+                "position": [
+                  31.969185945106958,
+                  15.998090324030873,
+                  -19.00216203739544
+                ],
+                "phase": "completed",
+                "errors": 0,
+                "guide": "DEEP RELAY · EXIT READY · Fly into the green ring at the marked exit · Relays 2/2 · Linked doors unlocked · Location: Green Extraction · Exit in Green Extraction · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              },
+              {
+                "label": "replay",
+                "position": [
+                  4,
+                  0,
+                  4
+                ],
+                "phase": "playing",
+                "errors": 0,
+                "guide": "DEEP RELAY · Neutralize drones 0/5 · Exit locked (amber ring at the marked exit) · Relays 0/2 · Find a cyan relay · R activates nearby · Location: Blue Docking Bay · Lift power relay in Blue Lift Junction · Next: passage to Blue Lift Junction · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause"
+              }
+            ],
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 65772,
+          "errors": [],
+          "attachments": {
+            "restart-resources": {
+              "date": "2026-10-16T23:30:04.764Z",
+              "node": "v24.22.0",
+              "browser": "156.0.8078.4",
+              "platform": "win32",
+              "cpu": "11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz",
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "renderer": "Chromium ANGLE SwiftShader (software)",
+              "warmupCycles": 2,
+              "measuredCycles": 10,
+              "samples": [
+                {
+                  "cycle": 0,
+                  "phase": "paused",
+                  "session": 5,
+                  "timeMs": 616.6666666666666,
+                  "frames": 84,
+                  "steps": 37,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 22,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 83,
+                    "p50FrameMs": 37.9,
+                    "p95FrameMs": 264.1,
+                    "p95WorkMs": 163.3
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 1,
+                  "phase": "paused",
+                  "session": 7,
+                  "timeMs": 466.66666666666686,
+                  "frames": 124,
+                  "steps": 28,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 17,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 123,
+                    "p50FrameMs": 44.7,
+                    "p95FrameMs": 287.4,
+                    "p95WorkMs": 178.2
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 2,
+                  "phase": "paused",
+                  "session": 9,
+                  "timeMs": 583.3333333333334,
+                  "frames": 170,
+                  "steps": 35,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 22,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 169,
+                    "p50FrameMs": 50,
+                    "p95FrameMs": 313.3,
+                    "p95WorkMs": 220.3
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 3,
+                  "phase": "paused",
+                  "session": 11,
+                  "timeMs": 350.00000000000006,
+                  "frames": 213,
+                  "steps": 21,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 16,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 6,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 212,
+                    "p50FrameMs": 56.9,
+                    "p95FrameMs": 388.7,
+                    "p95WorkMs": 220.3
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 4,
+                  "phase": "paused",
+                  "session": 13,
+                  "timeMs": 683.3333333333331,
+                  "frames": 261,
+                  "steps": 41,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 22,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 63.5,
+                    "p95FrameMs": 441.4,
+                    "p95WorkMs": 245.1
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 5,
+                  "phase": "paused",
+                  "session": 15,
+                  "timeMs": 450.00000000000017,
+                  "frames": 302,
+                  "steps": 27,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 18,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 77.3,
+                    "p95FrameMs": 444.4,
+                    "p95WorkMs": 273.1
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 6,
+                  "phase": "paused",
+                  "session": 17,
+                  "timeMs": 583.3333333333334,
+                  "frames": 343,
+                  "steps": 35,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 15,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 79.9,
+                    "p95FrameMs": 441.4,
+                    "p95WorkMs": 286.2
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 7,
+                  "phase": "paused",
+                  "session": 19,
+                  "timeMs": 450.00000000000017,
+                  "frames": 383,
+                  "steps": 27,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 17,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 81.5,
+                    "p95FrameMs": 421.7,
+                    "p95WorkMs": 287
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 8,
+                  "phase": "paused",
+                  "session": 21,
+                  "timeMs": 483.33333333333354,
+                  "frames": 421,
+                  "steps": 29,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 18,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 76,
+                    "p95FrameMs": 453.3,
+                    "p95WorkMs": 359.9
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 9,
+                  "phase": "paused",
+                  "session": 23,
+                  "timeMs": 483.33333333333354,
+                  "frames": 459,
+                  "steps": 29,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 17,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 82,
+                    "p95FrameMs": 451.6,
+                    "p95WorkMs": 361
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 10,
+                  "phase": "paused",
+                  "session": 25,
+                  "timeMs": 749.9999999999997,
+                  "frames": 504,
+                  "steps": 45,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 21,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 86.3,
+                    "p95FrameMs": 425.8,
+                    "p95WorkMs": 353.6
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                },
+                {
+                  "cycle": 11,
+                  "phase": "paused",
+                  "session": 27,
+                  "timeMs": 316.6666666666667,
+                  "frames": 538,
+                  "steps": 19,
+                  "tasks": 0,
+                  "errors": 0,
+                  "sessionFrames": 15,
+                  "enemies": 2,
+                  "shots": 0,
+                  "pickups": 2,
+                  "position": [
+                    0,
+                    0,
+                    6
+                  ],
+                  "speed": 0,
+                  "resources": {
+                    "geometries": 41,
+                    "textures": 0,
+                    "programs": 5,
+                    "calls": 42,
+                    "triangles": 4182,
+                    "points": 0,
+                    "objects": 72,
+                    "lights": 9,
+                    "materials": 34,
+                    "sceneGeometries": 46,
+                    "geometryBudget": 60,
+                    "effectLights": 0,
+                    "pooledEffects": 0
+                  },
+                  "timing": {
+                    "samples": 240,
+                    "p50FrameMs": 86.3,
+                    "p95FrameMs": 425.8,
+                    "p95WorkMs": 353.6
+                  },
+                  "profile": {
+                    "status": "idle"
+                  }
+                }
+              ]
+            },
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 16146,
+          "errors": [],
+          "attachments": {
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 390,
+                "height": 640
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 6948,
+          "errors": [],
+          "attachments": {
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 10898,
+          "errors": [],
+          "attachments": {
+            "audio-mixer-samples": [
+              {
+                "label": "muted startup",
+                "master": 0,
+                "effects": 1,
+                "music": 0,
+                "startedLoops": 2,
+                "activeLoops": 2
+              },
+              {
+                "label": "unmute while paused",
+                "master": 0,
+                "effects": 0,
+                "music": 1,
+                "startedLoops": 2,
+                "activeLoops": 2
+              },
+              {
+                "label": "resume audible",
+                "master": 1,
+                "effects": 0,
+                "music": 1,
+                "startedLoops": 2,
+                "activeLoops": 2
+              },
+              {
+                "label": "resume muted",
+                "master": 0,
+                "effects": 0,
+                "music": 1,
+                "startedLoops": 2,
+                "activeLoops": 2
+              },
+              {
+                "label": "restart muted",
+                "master": 0,
+                "effects": 0,
+                "music": 1,
+                "startedLoops": 4,
+                "activeLoops": 2
+              },
+              {
+                "label": "reset while paused",
+                "master": 0,
+                "effects": 0.6000000238418579,
+                "music": 0.4000000059604645,
+                "startedLoops": 4,
+                "activeLoops": 2
+              },
+              {
+                "label": "return to menu",
+                "master": 1,
+                "effects": 0.6000000238418579,
+                "music": 0.4000000059604645,
+                "startedLoops": 4,
+                "activeLoops": 0
+              }
+            ],
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 390,
+                "height": 640
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 4738,
+          "errors": [],
+          "attachments": {
+            "browser-errors": [],
+            "browser-environment": {
+              "viewport": {
+                "width": 960,
+                "height": 540
+              },
+              "cpuSlowdown": 4
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

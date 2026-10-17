@@ -2,7 +2,7 @@
 
 Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Both versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
-The game now loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Select Level → Mine Link Prototype**. It uses five rooms, a horizontal loop, a vertical hatch, two drones, health/ammo and a clear-and-exit objective. The accepted Flight Arena and Arena Escape definitions remain available.
+The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
 ## Document contents
 

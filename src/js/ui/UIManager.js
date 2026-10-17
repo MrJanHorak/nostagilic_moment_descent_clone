@@ -1,5 +1,6 @@
 // UI Manager for handling game interface elements
 import SettingsDialog from './SettingsDialog.js';
+import MineGuide from '../core/levels/document/MineGuide.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -1319,6 +1320,9 @@ class UIManager {
     const mission = this.game?.mission;
     if (!mission || !this.arenaGuide) return;
     const level = this.game.levelManager.currentLevel;
+    if (level.sourceDocument !== this.mineGuide?.document) this.mineGuide = level.sourceDocument ? new MineGuide(level.sourceDocument) : null;
+    const interaction = this.game.levelManager.interaction;
+    const navigation = this.mineGuide?.describe(this.game.spaceship.group.position, mission.activatedDevices, interaction?.closedConnections ?? new Set());
     const destination = ['mine-link', 'relay-gate'].includes(level.id) ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : level.sourceDocument ? 'at the marked exit' : 'at the far end';
     const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
       : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring ${destination})`;
@@ -1326,7 +1330,7 @@ class UIManager {
     const relay = mission.requiredDeviceIds.size ? ` · Relays ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
         level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
-    const text = `${level.name.toUpperCase()} · ${status}${relay} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const text = `${level.name.toUpperCase()} · ${status}${relay}${navigation ? ` · ${navigation}` : ''} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.arenaGuide.textContent !== text) this.arenaGuide.textContent = text;
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
   }
@@ -1338,6 +1342,7 @@ class UIManager {
     for (const element of this.transientElements) element.remove();
     this.transientElements.clear();
     this.arenaGuide = null;
+    this.mineGuide = null;
     this.hidePauseMenu();
     this.resultScreen?.remove();
     this.resultScreen = null;

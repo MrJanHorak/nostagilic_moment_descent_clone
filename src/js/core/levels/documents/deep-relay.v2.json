@@ -1,0 +1,437 @@
+{
+  "formatVersion": 2,
+  "id": "deep-relay",
+  "name": "Deep Relay",
+  "rooms": [
+    {
+      "id": "docking-bay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "ore-works",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -16
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "coolant-loop",
+      "prefab": "box-room",
+      "position": [
+        16,
+        0,
+        -16
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "lift-junction",
+      "prefab": "box-room",
+      "position": [
+        16,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "supply-cache",
+      "prefab": "straight-corridor",
+      "position": [
+        32,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "upper-lift",
+      "prefab": "box-room",
+      "position": [
+        16,
+        16,
+        0
+      ],
+      "size": [
+        16,
+        20,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "relay-control",
+      "prefab": "box-room",
+      "position": [
+        16,
+        16,
+        -16
+      ],
+      "size": [
+        16,
+        20,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "extraction",
+      "prefab": "box-room",
+      "position": [
+        32,
+        16,
+        -16
+      ],
+      "size": [
+        16,
+        20,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    }
+  ],
+  "connections": [
+    {
+      "id": "dock-ore",
+      "a": {
+        "roomId": "docking-bay",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "ore-works",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "ore-coolant",
+      "a": {
+        "roomId": "ore-works",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "coolant-loop",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "coolant-junction",
+      "a": {
+        "roomId": "coolant-loop",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "lift-junction",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "junction-dock",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "docking-bay",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "junction-cache",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "supply-cache",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "junction-lift",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "upper-lift",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "lift-control",
+      "a": {
+        "roomId": "upper-lift",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "relay-control",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "control-extraction",
+      "a": {
+        "roomId": "relay-control",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "extraction",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "docking-bay",
+    "position": [
+      4,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "entities": [
+    {
+      "id": "drone:ore",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "ore-works",
+      "position": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "drone:coolant",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "coolant-loop",
+      "position": [
+        0,
+        0,
+        -2
+      ]
+    },
+    {
+      "id": "drone:lift",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "upper-lift",
+      "position": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "drone:control",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "relay-control",
+      "position": [
+        0,
+        0,
+        -2
+      ]
+    },
+    {
+      "id": "drone:extraction",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "extraction",
+      "position": [
+        3,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "supply:ore-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "ore-works",
+      "position": [
+        -4,
+        -2,
+        3
+      ]
+    },
+    {
+      "id": "supply:cache-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "supply-cache",
+      "position": [
+        0,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "supply:cache-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "supply-cache",
+      "position": [
+        0,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "supply:lift-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "upper-lift",
+      "position": [
+        -4,
+        -2,
+        3
+      ]
+    },
+    {
+      "id": "exit:mine",
+      "kind": "exit",
+      "radius": 1.5,
+      "roomId": "extraction",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    }
+  ],
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "drone:ore",
+      "drone:coolant",
+      "drone:lift",
+      "drone:control",
+      "drone:extraction"
+    ],
+    "requiredDeviceIds": [
+      "relay:lift",
+      "relay:extraction"
+    ],
+    "exitId": "exit:mine"
+  },
+  "combat": {
+    "pulseDamage": 5,
+    "initialPulseAmmo": 70,
+    "maxPulseAmmo": 100
+  },
+  "devices": [
+    {
+      "id": "relay:lift",
+      "label": "Lift power relay",
+      "roomId": "lift-junction",
+      "position": [
+        -3,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "relay:extraction",
+      "label": "Extraction relay",
+      "roomId": "relay-control",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "door:lift",
+      "connectionId": "junction-lift",
+      "deviceId": "relay:lift"
+    },
+    {
+      "id": "door:extraction",
+      "connectionId": "control-extraction",
+      "deviceId": "relay:extraction"
+    }
+  ]
+}

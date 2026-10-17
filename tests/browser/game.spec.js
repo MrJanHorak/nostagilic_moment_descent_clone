@@ -44,6 +44,14 @@ async function chooseRelay(page) {
   await expect(page.locator('#arena-guide')).toContainText('RELAYS 0/1', { ignoreCase: true });
   await expect(page.locator('#arena-guide')).toContainText('R activates nearby');
 }
+async function chooseDeepRelay(page) {
+  await page.locator('#select-level-btn').click();
+  await button(page, 'Deep Relay').click();
+  await expect(page.locator('#arena-guide')).toContainText('DEEP RELAY');
+  await expect(page.locator('#arena-guide')).toContainText('Location: Blue Docking Bay');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/2');
+  await expect(page.locator('#weapon-slot-1')).toContainText('70');
+}
 async function chooseMission(page) {
   await page.locator('#select-level-btn').click();
   await page.getByRole('button', { name: /arena escape/i }).click();
@@ -153,6 +161,20 @@ test('production: JSON missions are selectable and reset their encounter, invent
   await expect(page.locator('#weapon-slot-1')).toContainText('60');
 });
 
+test('production: Deep Relay starts with cover, room guidance and clean inventory on restart', async ({ page }, testInfo) => {
+  await page.goto('http://127.0.0.1:5184/'); await chooseDeepRelay(page);
+  await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/5');
+  await expect(page.locator('#arena-guide')).toContainText('Lift power relay in Blue Lift Junction');
+  await testInfo.attach('deep-relay-start', { body: await page.screenshot(), contentType: 'image/png' });
+  await page.keyboard.press('f'); await expect(page.locator('#weapon-slot-1')).toContainText('69');
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').click();
+  await expect(page.locator('#weapon-slot-1')).toContainText('70');
+  await expect(page.locator('#health-percentage')).toHaveText('100%');
+  await expect(page.locator('#score-display')).toHaveText('0');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/2');
+});
+
 // Read diagnostics to steer real keyboard input; never inject a player position.
 async function flyMineAxis(page, axis, target) {
   const keys = [['a', 'd'], ['ShiftLeft', 'Space'], ['w', 's']][axis];
@@ -243,6 +265,44 @@ test('development: relay unlocks a solid hatch, completes the objective and rese
   expect(replay.position).toEqual([0, 0, 4]); await expect(page.locator('#arena-guide')).toContainText('Relays 0/1');
   await record('replay');
   await testInfo.attach('relay-traversal', { body: JSON.stringify(samples, null, 2), contentType: 'application/json' });
+});
+
+test('development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight', async ({ page }, testInfo) => {
+  test.setTimeout(480000);
+  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseDeepRelay(page);
+  const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 5);
+  await button(page, 'Neutralize drones (test)').press('Enter');
+  const samples = [];
+  const record = async label => {
+    const value = await snapshot(page);
+    samples.push({ label, position: value.position, phase: value.phase, errors: value.errors, guide: await page.locator('#arena-guide').textContent() });
+  };
+  const fly = async points => { for (const [axis, target] of points) await flyMineAxis(page, axis, target); };
+  // Complete the lower loop, visit the narrow rotated cache, then approach the first relay.
+  await fly([[0, 0], [2, -16], [0, 16], [2, 0], [0, 0], [0, 16], [0, 32]]);
+  await expect(page.locator('#arena-guide')).toContainText('Location: Amber Supply Cache'); await record('supply-cache');
+  await fly([[0, 16], [0, 13], [2, 3]]);
+  await expect(page.locator('#arena-guide')).toContainText('R: activate Lift power relay');
+  await page.keyboard.press('r');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 1/2');
+  await expect(page.locator('#arena-guide')).toContainText('ceiling hatch to Green Upper Lift'); await record('lift-open');
+  await fly([[2, 0], [0, 16], [1, 16]]);
+  await expect(page.locator('#arena-guide')).toContainText('Location: Green Upper Lift');
+  await testInfo.attach('deep-relay-upper-lift', { body: await page.screenshot(), contentType: 'image/png' });
+  await fly([[2, -16], [0, 12], [2, -13]]);
+  await expect(page.locator('#arena-guide')).toContainText('R: activate Extraction relay');
+  await page.keyboard.press('r');
+  await expect(page.locator('#arena-guide')).toContainText('Relays 2/2');
+  await expect(page.locator('#arena-guide')).toContainText('EXIT READY'); await record('extraction-open');
+  await fly([[2, -16], [0, 32], [2, -20]]);
+  await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
+  await expect(page.locator('#score-display')).toHaveText('1400'); await record('completed');
+  await button(page, 'REPLAY MISSION').click();
+  const replay = await waitForSnapshot(page, value => value.phase === 'playing' && value.session !== initial.session && value.enemies === 5);
+  expect(replay.position).toEqual([4, 0, 4]); expect(replay.errors).toBe(0);
+  await expect(page.locator('#arena-guide')).toContainText('Relays 0/2');
+  await expect(page.locator('#weapon-slot-1')).toContainText('70'); await record('replay');
+  await testInfo.attach('deep-relay-traversal', { body: JSON.stringify(samples, null, 2), contentType: 'application/json' });
 });
 
 test('development: pause freezes simulation and ten combat restarts return resources to baseline', async ({ page, browser }, testInfo) => {

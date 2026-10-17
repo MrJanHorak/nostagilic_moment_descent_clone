@@ -10,6 +10,7 @@ import createFlightArena from './levels/FlightArena.js';
 import createCombatArena from './levels/CombatArena.js';
 import createMineLinkLevel from './levels/MineLink.js';
 import createRelayGateLevel from './levels/RelayGate.js';
+import createDeepRelayLevel from './levels/DeepRelay.js';
 import buildArena from './ArenaGeometry.js';
 
 class LevelManager {
@@ -53,6 +54,7 @@ class LevelManager {
       createExampleLevel(),
       createMineLinkLevel(),
       createRelayGateLevel(),
+      createDeepRelayLevel(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
