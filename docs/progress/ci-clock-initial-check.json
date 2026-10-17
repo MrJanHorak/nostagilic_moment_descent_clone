@@ -1,0 +1,376 @@
+{
+  "verification": "Historical first controlled-clock run: ten passed, one stale mission-guide assertion failed because the test had not rendered after neutralizing drones. The failure was corrected before the final run.",
+  "startedAt": "2026-10-17T01:49:01.297Z",
+  "durationMs": 409928.92799999996,
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 22270,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 6726,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 3461,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "runs": [
+        {
+          "status": "failed",
+          "durationMs": 17964,
+          "errors": [
+            {
+              "location": {
+                "file": "D:\\development\\nostagilic_moment_descent_clone\\tests\\browser\\game.spec.js",
+                "column": 46,
+                "line": 222
+              },
+              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('#arena-guide')\nExpected substring: \u001b[32m\"EXIT READY\"\u001b[39m\nReceived string:    \u001b[31m\"MINE LINK PROTOTYPE · Neutralize drones 0/2 · Exit locked (amber ring in the upper green chamber (ceiling hatch · Space up / Shift down)) · Location: Blue Bay · Exit in Green Upper · Next: passage to Blue Return · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" locator('#arena-guide') with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('#arena-guide')\u001b[22m\n\u001b[2m    33 × locator resolved to <aside id=\"arena-guide\">MINE LINK PROTOTYPE · Neutralize drones 0/2 · Exi…</aside>\u001b[22m\n\u001b[2m       - unexpected value \"MINE LINK PROTOTYPE · Neutralize drones 0/2 · Exit locked (amber ring in the upper green chamber (ceiling hatch · Space up / Shift down)) · Location: Blue Bay · Exit in Green Upper · Next: passage to Blue Return · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause\"\u001b[22m\n\n\n  220 |   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);\n  221 |   await button(page, 'Neutralize drones (test)').press('Enter');\n> 222 |   await expect(page.locator('#arena-guide')).toContainText('EXIT READY');\n      |                                              ^\n  223 |   const samples = [];\n  224 |   for (const [axis, target] of [[2, 0], [2, -16], [0, 16], [2, 0], [0, 0], [0, 16], [1, 12], [1, 0], [1, 12], [2, -4]]) {\n  225 |     await flyMineAxis(page, axis, target); const value = await snapshot(page);\n    at D:\\development\\nostagilic_moment_descent_clone\\tests\\browser\\game.spec.js:222:46"
+            }
+          ],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 65310,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "command-latency-probe",
+              "value": {
+                "wallDelayMs": 14137,
+                "before": {
+                  "phase": "playing",
+                  "session": 3,
+                  "timeMs": 300,
+                  "steps": 18,
+                  "frames": 14,
+                  "sessionFrames": 3,
+                  "position": [
+                    0,
+                    0,
+                    4
+                  ],
+                  "velocity": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "speed": 0
+                },
+                "delayed": {
+                  "phase": "playing",
+                  "session": 3,
+                  "timeMs": 300,
+                  "steps": 18,
+                  "frames": 14,
+                  "sessionFrames": 3,
+                  "position": [
+                    0,
+                    0,
+                    4
+                  ],
+                  "velocity": [
+                    0,
+                    0,
+                    0
+                  ],
+                  "speed": 0
+                },
+                "advanced": {
+                  "phase": "playing",
+                  "session": 3,
+                  "timeMs": 400.0000000000001,
+                  "steps": 24,
+                  "frames": 15,
+                  "sessionFrames": 4,
+                  "position": [
+                    0,
+                    0,
+                    3.9533333333333336
+                  ],
+                  "velocity": [
+                    0,
+                    0,
+                    -0.7999999999999998
+                  ],
+                  "speed": 0.7999999999999998
+                }
+              }
+            },
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 185764,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "controlled: 100ms per rendered tick"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 53161,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "real time"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 18795,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 390,
+                  "height": 640
+                },
+                "cpuSlowdown": 4,
+                "clock": "real time"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 8240,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "real time"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 16525,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 390,
+                  "height": 640
+                },
+                "cpuSlowdown": 4,
+                "clock": "real time"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 6794,
+          "errors": [],
+          "attachments": [
+            {
+              "name": "browser-errors",
+              "value": []
+            },
+            {
+              "name": "browser-environment",
+              "value": {
+                "viewport": {
+                  "width": 960,
+                  "height": 540
+                },
+                "cpuSlowdown": 4,
+                "clock": "real time"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -12,7 +12,9 @@ export default defineConfig({
     // explicit 1280x720 reference resolution.
     browserName: 'chromium', viewport: { width: 960, height: 540 },
     launchOptions: { args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] },
-    trace: 'retain-on-failure', screenshot: 'only-on-failure',
+    // WebGL screencasting adds GPU readbacks during every polling operation.
+    // Keep DOM/action traces and explicit checkpoint/failure screenshots.
+    trace: { mode: 'retain-on-failure', screenshots: false, snapshots: true, sources: true }, screenshot: 'only-on-failure',
   },
   webServer: [
     { command: 'node node_modules/vite/bin/vite.js preview --host 127.0.0.1 --port 5184 --strictPort',

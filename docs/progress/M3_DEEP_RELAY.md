@@ -1,6 +1,6 @@
 # M3 authored mission: Deep Relay
 
-Implemented October 16, 2026, after the [relay prototype](M3_RELAY_OBJECTIVE.md) and [CI reliability repairs](M2_CI_RELIABILITY.md). The owner has pushed the reliability checkpoint and started a fresh GitHub run; its result is still pending. M1 remains accepted. This checkpoint supplies the larger M3 mission, not final M3 acceptance.
+Implemented October 16, 2026, after the [relay prototype](M3_RELAY_OBJECTIVE.md) and [CI reliability repairs](M2_CI_RELIABILITY.md). **Follow-up: [M3 is accepted](../M3_ACCEPTANCE.md)** after the owner confirmed both relays, mission completion and successful replay reset. The later [hosted CI run still failed](M2_CI_CONTROLLED_CLOCK.md); M2 hosted/hardware gates remain open.
 
 ## Playable content
 
@@ -44,6 +44,6 @@ Both saved screenshots were visually inspected: [production spawn](deep-relay-st
 
 No hardware benchmark or dependency audit was repeated for this content-only change. The Intel GPU p95 gate remains open, as does hosted Ubuntu/Windows confirmation. Software-rendered browser timings are functional evidence, not hardware performance acceptance.
 
-## Next acceptance step
+## Acceptance and next milestone
 
-Use the [Deep Relay playtest checklist](../DEEP_RELAY_PLAYTEST.md) to judge navigation, combat fairness and pacing. Record trouble spots and tune this mission before calling M3 complete. M4 should then build a minimal room/connection/entity editor using the existing validated document, with playtest/export/reload as its first end-to-end workflow.
+The owner completed the [Deep Relay playtest](../DEEP_RELAY_PLAYTEST.md), confirmed both relays and replay reset, and closed [M3 acceptance](../M3_ACCEPTANCE.md). Next repair hosted CI, then begin M4's minimal room/connection/entity designer with playtest/export/reload using these same documents. Further art and combat tuning can continue without reopening the completed M3 gate.

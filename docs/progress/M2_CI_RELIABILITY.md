@@ -41,3 +41,8 @@ Remove-Item Env:BROWSER_CPU_SLOWDOWN
 This uses Chromium's CPU-throttling emulation; the unit simulations separately cover very slow frame rates. Neither substitutes for the actual GitHub machines or the named hardware performance acceptance. Push the fixes and rerun the workflow before closing hosted-CI acceptance. If a hosted failure remains, inspect its uploaded trace/error context and the now-preserved measurements instead of adding retries or removing coverage.
 
 The authored M3 mission is the next content step after this reliability checkpoint. The M2 hardware p95 target remains a separate open item; these software-rendered functional checks do not establish it.
+
+
+## Follow-up after the next hosted run
+
+The owner supplied [run 38979088436](https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38979088436): Ubuntu passed eight of nine, while Windows was stopped at the twenty-minute job limit. Simulation-time observations alone still allowed keys to remain held during long browser-command delays. See [controlled-clock repairs](M2_CI_CONTROLLED_CLOCK.md) for the new diagnosis, timing strategy and verification. The local pass above remains historical evidence; hosted acceptance is still open. [M3 has since been accepted](../M3_ACCEPTANCE.md) by the owner after full mission completion and replay.

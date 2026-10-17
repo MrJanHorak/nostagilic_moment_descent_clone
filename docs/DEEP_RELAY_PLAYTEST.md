@@ -1,6 +1,6 @@
 # Deep Relay human playtest
 
-Choose **Select Level → Deep Relay** in a normal Chrome session. M1 does not need another acceptance run. M3 remains open until this larger mission has been played and any material issues fixed. The automated checks separate traversal from combat, so this combined playthrough matters.
+Choose **Select Level → Deep Relay** in a normal browser session. **[M3 is accepted](M3_ACCEPTANCE.md):** the owner reports the level is playable and explicitly confirms both relays, mission completion and a successful replay reset. This checklist remains a regression route; repeating M1 acceptance is unnecessary.
 
 ## Route
 
@@ -22,4 +22,4 @@ W/S thrust forward/back, A/D strafe, Space/Shift move vertically, Q/E roll, mous
 - Whether pickups were visible and useful, and whether the quiet spawn allowed enough preparation.
 - Any stuck collision, enemy crossing a closed gate, incomplete objective, repeated reward, broken replay or pause/capture problem.
 
-Acceptance is **pending**. A successful automated run does not fill in this checklist. Hosted CI and M2 hardware performance remain separate gates.
+Acceptance was confirmed by the owner on October 16, 2026: both relays activated, MISSION COMPLETE reached, and replay reset enemies, ammo and gates. Detailed timing/balance measurements were not supplied. Hosted CI and M2 hardware performance remain separate open gates.

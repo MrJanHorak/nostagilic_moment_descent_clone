@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 import os from 'node:os';
 import { FlightController } from '../helpers/browser-flight.mjs';
+import { openClockedGame, advanceUntil, hasControlledClock } from '../helpers/browser-clock.mjs';
 
 // Observe failures from the real browser, including errors caught by Game's recovery UI.
 const test = base.extend({
@@ -12,7 +13,8 @@ const test = base.extend({
       await session.send('Emulation.setCPUThrottlingRate', { rate });
     }
     await use();
-    await testInfo.attach('browser-environment', { body: JSON.stringify({ viewport: page.viewportSize(), cpuSlowdown: rate }), contentType: 'application/json' });
+    await testInfo.attach('browser-environment', { body: JSON.stringify({ viewport: page.viewportSize(), cpuSlowdown: rate,
+      clock: hasControlledClock(page) ? 'controlled: 100ms per rendered tick' : 'real time' }), contentType: 'application/json' });
   }, { auto: true }],
   browserErrors: [async ({ page }, use, testInfo) => {
     const errors = [];
@@ -66,7 +68,7 @@ async function holdUntil(page, key, assertion) {
 
 test('production: keyboard mission victory, replay, enemy-fire death, reboot and menu', async ({ page }, testInfo) => {
   test.setTimeout(300000);
-  await page.goto('http://127.0.0.1:5184/?smoke=1');
+  await openClockedGame(page, 'http://127.0.0.1:5184/?smoke=1');
   await expect(page.locator('#start-game-btn')).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
@@ -81,15 +83,16 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.locator('#weapon-slot-1')).toContainText('39');
   await button(page, 'CONTINUE').click();
   for (let shot = 0; shot < 4; shot++) await page.keyboard.press('f');
+  await advanceUntil(page, async () => await page.locator('#score-display').textContent() === '100');
   await expect(page.locator('#score-display')).toHaveText('100');
   await expect(page.locator('#weapon-slot-1')).toContainText('35');
 
   // Fly toward the exit; the scout pursues and rams. No state injection or test controls.
-  await holdUntil(page, 'w', () => expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 2/2', { timeout: 45000 }));
+  await holdUntil(page, 'w', () => advanceUntil(page, async () => await page.locator('#enemy-count-display').textContent() === 'ENEMIES: 2/2'));
   const victory = page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true });
   if (!await victory.isVisible()) {
     // At the far wall the player can be beyond the trigger; backing up crosses it.
-    await holdUntil(page, 's', () => expect(victory).toBeVisible({ timeout: 10000 }));
+    await holdUntil(page, 's', () => advanceUntil(page, () => victory.isVisible()));
   }
   await expect(page.locator('#score-display')).toHaveText('1100');
   await testInfo.attach('production-victory', { body: await page.screenshot(), contentType: 'image/png' });
@@ -98,7 +101,7 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.locator('#weapon-slot-1')).toContainText('40');
   await expect(page.locator('#score-display')).toHaveText('0');
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
-  await expect(page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true })).toBeVisible({ timeout: 150000 });
+  await advanceUntil(page, () => page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true }).isVisible());
   await testInfo.attach('production-loss', { body: await page.screenshot(), contentType: 'image/png' });
   await button(page, 'REBOOT').click();
   await expect(page.locator('#health-percentage')).toHaveText('100%');
@@ -122,6 +125,10 @@ async function snapshot(page) {
 }
 async function waitForSnapshot(page, predicate) {
   let value;
+  if (hasControlledClock(page)) {
+    await advanceUntil(page, async () => { value = await snapshot(page); return !!value && predicate(value); });
+    return value;
+  }
   await expect.poll(async () => { value = await snapshot(page); return !!value && predicate(value); }).toBe(true);
   return value;
 }
@@ -142,7 +149,7 @@ async function settledPausedSnapshot(page, session) {
 
 test('production: JSON missions are selectable and reset their encounter, inventory and relay objective', async ({ page }, testInfo) => {
   test.setTimeout(120000);
-  await page.goto('http://127.0.0.1:5184/');
+  await openClockedGame(page, 'http://127.0.0.1:5184/');
   await chooseMine(page);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
   await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
@@ -162,7 +169,7 @@ test('production: JSON missions are selectable and reset their encounter, invent
 });
 
 test('production: Deep Relay starts with cover, room guidance and clean inventory on restart', async ({ page }, testInfo) => {
-  await page.goto('http://127.0.0.1:5184/'); await chooseDeepRelay(page);
+  await openClockedGame(page, 'http://127.0.0.1:5184/'); await chooseDeepRelay(page);
   await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/5');
   await expect(page.locator('#arena-guide')).toContainText('Lift power relay in Blue Lift Junction');
@@ -183,14 +190,13 @@ async function flyMineAxis(page, axis, target) {
   const controller = new FlightController(target);
   const session = previous.session, started = previous.timeMs;
   try {
-    await expect.poll(async () => {
+    await advanceUntil(page, async () => {
       const value = await readFlight();
       if (value.phase === 'completed') return true;
       if (value.phase !== 'playing' || value.session !== session) throw new Error(`Flight interrupted: ${JSON.stringify(value)}`);
       const error = target - value.position[axis];
       if (Math.abs(error) < 0.3 && value.speed < 0.15) return true;
-      if (value.timeMs - started > 30000) throw new Error(`Flight made no timely simulation progress: ${JSON.stringify(value)}`);
-      if (value.steps === previous.steps) return false;
+      if (value.timeMs - started > 30000) throw new Error(`Keyboard flight did not converge within 30 simulation seconds: ${JSON.stringify(value)}`);
       previous = value;
       const command = controller.update(value.position[axis], value.velocity[axis], value.timeMs);
       const next = command > 0 ? keys[1] : command < 0 ? keys[0] : null;
@@ -200,20 +206,21 @@ async function flyMineAxis(page, axis, target) {
         held = next;
       }
       return false;
-    }, { timeout: 90000, intervals: [50], message: `Keyboard axis ${axis} should settle at ${target}` }).toBe(true);
+    }, { ticks: 350, message: `Keyboard axis ${axis} should settle at ${target}` });
   } catch (error) {
     throw new Error(`${error.message}\nLast flight observation: ${JSON.stringify(previous)}`, { cause: error });
   } finally { if (held) await page.keyboard.up(held); }
   // Drift persists while another thrust axis is held, so settle before turning.
-  await expect.poll(async () => { const value = await snapshot(page); return value.phase !== 'playing' || value.speed < 0.03; },
-    { timeout: 15000, intervals: [100] }).toBe(true);
+  await waitForSnapshot(page, value => value.phase !== 'playing' || value.speed < 0.03);
 }
 
 test('development: JSON mine loop and vertical hatch fly both ways, complete and replay', async ({ page }, testInfo) => {
   test.setTimeout(300000);
-  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseMine(page);
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1'); await chooseMine(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
   await button(page, 'Neutralize drones (test)').press('Enter');
+  await advanceUntil(page, async () => (await page.locator('#arena-guide').textContent()).includes('EXIT READY'),
+    { ticks: 20, message: 'The mission guide must reflect both neutralized drones after rendering' });
   await expect(page.locator('#arena-guide')).toContainText('EXIT READY');
   const samples = [];
   for (const [axis, target] of [[2, 0], [2, -16], [0, 16], [2, 0], [0, 0], [0, 16], [1, 12], [1, 0], [1, 12], [2, -4]]) {
@@ -233,16 +240,33 @@ test('development: JSON mine loop and vertical hatch fly both ways, complete and
 
 test('development: relay unlocks a solid hatch, completes the objective and resets on replay', async ({ page }, testInfo) => {
   test.setTimeout(300000);
-  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseRelay(page);
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1'); await chooseRelay(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 2);
+  // Reproduce a hosted command/observation stall longer than the supplied
+  // Windows trace's ~13 simulation-second observation gap. Real held input
+  // must advance only when the test explicitly renders the next clock tick.
+  const readFlight = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+  const before = await readFlight(), wallStart = Date.now();
+  let delayed, advanced;
+  await page.keyboard.down('w');
+  try {
+    await page.waitForTimeout(14000); // Intentional protocol-latency regression, not an application readiness wait.
+    delayed = await readFlight();
+    expect(delayed.steps).toBe(before.steps); expect(delayed.timeMs).toBe(before.timeMs);
+    expect(delayed.position).toEqual(before.position);
+    await page.clock.fastForward(100); advanced = await readFlight();
+    expect(advanced.steps - delayed.steps).toBe(6);
+    expect(advanced.position[2]).toBeLessThan(delayed.position[2]);
+  } finally { await page.keyboard.up('w'); }
+  await testInfo.attach('command-latency-probe', { body: JSON.stringify({ wallDelayMs: Date.now() - wallStart, before, delayed, advanced }), contentType: 'application/json' });
   await button(page, 'Neutralize drones (test)').press('Enter');
   await expect(page.locator('#arena-guide')).toContainText('Exit locked');
   const samples = [];
   const record = async label => { const value = await snapshot(page); samples.push({ label, position: value.position, phase: value.phase, errors: value.errors, guide: await page.locator('#arena-guide').textContent() }); };
   await flyMineAxis(page, 2, 0); await flyMineAxis(page, 0, 16);
   await holdUntil(page, 'Space', async () => {
-    await expect.poll(async () => (await snapshot(page))?.position[1]).toBeGreaterThan(4.8);
-    await expect.poll(async () => (await snapshot(page))?.speed).toBeLessThan(0.03);
+    await waitForSnapshot(page, value => value.position[1] > 4.8);
+    await waitForSnapshot(page, value => value.speed < 0.03);
     expect((await snapshot(page)).position[1]).toBeLessThan(5.01);
   });
   await record('blocked-hatch');
@@ -255,7 +279,7 @@ test('development: relay unlocks a solid hatch, completes the objective and rese
   await page.keyboard.press('r');
   await expect(page.locator('#arena-guide')).toContainText('Relays 1/1');
   await expect(page.locator('#arena-guide')).toContainText('EXIT READY');
-  await expect.poll(async () => (await snapshot(page))?.frames).toBeGreaterThan(resumed.frames);
+  await waitForSnapshot(page, value => value.frames > resumed.frames);
   await record('activated'); await testInfo.attach('relay-activated', { body: await page.screenshot(), contentType: 'image/png' });
   await flyMineAxis(page, 2, 0); await flyMineAxis(page, 0, 16); await flyMineAxis(page, 1, 12); await flyMineAxis(page, 2, -4);
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
@@ -269,7 +293,7 @@ test('development: relay unlocks a solid hatch, completes the objective and rese
 
 test('development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight', async ({ page }, testInfo) => {
   test.setTimeout(480000);
-  await page.goto('http://127.0.0.1:5183/?smoke=1'); await chooseDeepRelay(page);
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1'); await chooseDeepRelay(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 5);
   await button(page, 'Neutralize drones (test)').press('Enter');
   const samples = [];
