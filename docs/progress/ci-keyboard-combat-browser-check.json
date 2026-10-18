@@ -1,0 +1,68 @@
+{
+  "verification": "The production combat flow passed three consecutive local Windows runs under fourfold CPU throttling, with no browser errors or observed opening mouse-aim motion. Hosted Ubuntu confirmation remains open; pointer-capture interference is not a proven original cause.",
+  "sourceCommit": "5bb8004 plus local CI isolation, keyboard activation and early-death reporting changes",
+  "stats": {
+    "startTime": "2026-10-18T01:39:53.446Z",
+    "duration": 90880.459,
+    "expected": 3,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "runs": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "status": "passed",
+      "durationMs": 23324,
+      "retry": 0,
+      "errors": [],
+      "opening-aim-input": [],
+      "browser-errors": [],
+      "browser-environment": {
+        "viewport": {
+          "width": 960,
+          "height": 540
+        },
+        "cpuSlowdown": 4,
+        "clock": "controlled: 100ms per rendered tick"
+      }
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "status": "passed",
+      "durationMs": 26742,
+      "retry": 0,
+      "errors": [],
+      "opening-aim-input": [],
+      "browser-errors": [],
+      "browser-environment": {
+        "viewport": {
+          "width": 960,
+          "height": 540
+        },
+        "cpuSlowdown": 4,
+        "clock": "controlled: 100ms per rendered tick"
+      }
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "status": "passed",
+      "durationMs": 28469,
+      "retry": 0,
+      "errors": [],
+      "opening-aim-input": [],
+      "browser-errors": [],
+      "browser-environment": {
+        "viewport": {
+          "width": 960,
+          "height": 540
+        },
+        "cpuSlowdown": 4,
+        "clock": "controlled: 100ms per rendered tick"
+      }
+    }
+  ]
+}

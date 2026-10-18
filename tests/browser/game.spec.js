@@ -32,6 +32,25 @@ const test = base.extend({
   }, { auto: true }],
 });
 
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+  // Capture read-only DOM evidence immediately, before another test or a job
+  // cancellation can prevent the final HTML/JSON reporters from finishing.
+  const state = await page.locator('body').evaluate(() => ({
+    flight: document.querySelector('#runtime-diagnostics')?.getAttribute('data-flight'),
+    diagnostics: document.querySelector('#runtime-diagnostics')?.getAttribute('data-snapshot'),
+    headings: [...document.querySelectorAll('h1, h2, h3')].map(node => node.textContent),
+    health: document.querySelector('#health-percentage')?.textContent,
+    score: document.querySelector('#score-display')?.textContent,
+    enemies: document.querySelector('#enemy-count-display')?.textContent,
+    guide: document.querySelector('#arena-guide')?.textContent,
+    aimInput: window.__missionAimInput ?? null,
+  }), undefined, { timeout: 5000 }).catch(error => ({ unavailable: error.message }));
+  const body = JSON.stringify(state, null, 2);
+  console.error(`Failure state for ${testInfo.title}:\n${body}`);
+  await testInfo.attach('failure-state', { body, contentType: 'application/json' });
+});
+
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 async function chooseMine(page) {
   await page.locator('#select-level-btn').click();
@@ -54,9 +73,12 @@ async function chooseDeepRelay(page) {
   await expect(page.locator('#arena-guide')).toContainText('Relays 0/2');
   await expect(page.locator('#weapon-slot-1')).toContainText('70');
 }
-async function chooseMission(page) {
+async function chooseMission(page, { keyboard = false } = {}) {
+  // This main-menu control is a legacy div; click it before pointer capture.
   await page.locator('#select-level-btn').click();
-  await page.getByRole('button', { name: /arena escape/i }).click();
+  const mission = page.getByRole('button', { name: /arena escape/i });
+  if (keyboard) await mission.press('Enter');
+  else await mission.click();
   await expect(page.locator('#arena-guide')).toContainText('Neutralize drones 0/2');
   await expect(page.locator('#weapon-slot-1')).toContainText('40');
 }
@@ -66,14 +88,41 @@ async function holdUntil(page, key, assertion) {
   finally { await page.keyboard.up(key); }
 }
 
+async function advanceAliveUntil(page, predicate, message) {
+  await advanceUntil(page, async () => {
+    const hud = await page.evaluate(() => ({
+      health: document.querySelector('#health-percentage')?.textContent,
+      score: document.querySelector('#score-display')?.textContent,
+      enemies: document.querySelector('#enemy-count-display')?.textContent,
+      weapon: document.querySelector('#weapon-slot-1')?.textContent,
+      result: document.querySelector('[role="dialog"]')?.getAttribute('aria-label'),
+    }));
+    if (predicate(hud)) return true;
+    if (hud.health === '0%') throw new Error(`${message}: ship destroyed before the expected state; ${JSON.stringify(hud)}`);
+    return false;
+  }, { message });
+}
+
 test('production: keyboard mission victory, replay, enemy-fire death, reboot and menu', async ({ page }, testInfo) => {
   test.setTimeout(300000);
+  // Observe the native input boundary: this keyboard scenario must not aim
+  // through cursor repositioning while a menu action acquires pointer lock.
+  await page.addInitScript(() => {
+    window.__missionAimInput = [];
+    document.addEventListener('mousemove', event => {
+      if (document.pointerLockElement && (event.movementX || event.movementY) && window.__missionAimInput.length < 20) {
+        window.__missionAimInput.push({ x: event.movementX, y: event.movementY });
+      }
+    });
+  });
   await openClockedGame(page, 'http://127.0.0.1:5184/?smoke=1');
   await expect(page.locator('#start-game-btn')).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.locator('#runtime-diagnostics')).toHaveCount(0);
   await expect(page.getByRole('complementary', { name: 'Session smoke controls' })).toHaveCount(0);
-  await chooseMission(page);
+  // Avoid cursor repositioning during pointer capture and recapture. The
+  // legacy main-menu div is clicked before this mission captures the pointer.
+  await chooseMission(page, { keyboard: true });
 
   await page.keyboard.press('f');
   await expect(page.locator('#weapon-slot-1')).toContainText('39');
@@ -81,40 +130,46 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.getByRole('heading', { name: 'PAUSED', exact: true })).toBeVisible();
   await page.keyboard.press('f');
   await expect(page.locator('#weapon-slot-1')).toContainText('39');
-  await button(page, 'CONTINUE').click();
+  await button(page, 'CONTINUE').press('Enter');
+  const aimInput = await page.evaluate(() => window.__missionAimInput);
+  await testInfo.attach('opening-aim-input', { body: JSON.stringify(aimInput), contentType: 'application/json' });
   for (let shot = 0; shot < 4; shot++) await page.keyboard.press('f');
-  await advanceUntil(page, async () => await page.locator('#score-display').textContent() === '100');
+  await advanceAliveUntil(page, hud => hud.score === '100',
+    'The opening five keyboard shots must defeat the fighter and award 100 points');
   await expect(page.locator('#score-display')).toHaveText('100');
   await expect(page.locator('#weapon-slot-1')).toContainText('35');
 
   // Fly toward the exit; the scout pursues and rams. No state injection or test controls.
-  await holdUntil(page, 'w', () => advanceUntil(page, async () => await page.locator('#enemy-count-display').textContent() === 'ENEMIES: 2/2'));
+  await holdUntil(page, 'w', () => advanceAliveUntil(page, hud => hud.enemies === 'ENEMIES: 2/2',
+    'Forward flight must let the pursuing scout ram and finish the encounter'));
   const victory = page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true });
   if (!await victory.isVisible()) {
     // At the far wall the player can be beyond the trigger; backing up crosses it.
-    await holdUntil(page, 's', () => advanceUntil(page, () => victory.isVisible()));
+    await holdUntil(page, 's', () => advanceAliveUntil(page, hud => hud.result === 'MISSION COMPLETE',
+      'Backing through the cleared exit must complete the mission'));
   }
   await expect(page.locator('#score-display')).toHaveText('1100');
   await testInfo.attach('production-victory', { body: await page.screenshot(), contentType: 'image/png' });
-  await button(page, 'REPLAY MISSION').click();
+  await button(page, 'REPLAY MISSION').press('Enter');
   await expect(page.locator('#health-percentage')).toHaveText('100%');
   await expect(page.locator('#weapon-slot-1')).toContainText('40');
   await expect(page.locator('#score-display')).toHaveText('0');
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
-  await advanceUntil(page, () => page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true }).isVisible());
+  await advanceUntil(page, () => page.getByRole('heading', { name: 'SYSTEM FAILURE', exact: true }).isVisible(),
+    { message: 'Enemy fire must destroy the stationary ship after replay' });
   await testInfo.attach('production-loss', { body: await page.screenshot(), contentType: 'image/png' });
-  await button(page, 'REBOOT').click();
+  await button(page, 'REBOOT').press('Enter');
   await expect(page.locator('#health-percentage')).toHaveText('100%');
   await expect(page.locator('#weapon-slot-1')).toContainText('40');
   await expect(page.locator('#score-display')).toHaveText('0');
   await page.keyboard.press('Escape');
-  await button(page, 'RETURN TO BASE').click();
+  await button(page, 'RETURN TO BASE').press('Enter');
   await page.locator('#start-game-btn').click();
   await expect(page.locator('#arena-guide')).toContainText('FLIGHT TRAINING');
   await page.keyboard.press('f');
   await expect(page.locator('#weapon-slot-1')).toContainText('∞');
   await page.keyboard.press('Escape');
-  await button(page, 'SELECT MISSION').click();
+  await button(page, 'SELECT MISSION').press('Enter');
   await expect(page.getByRole('heading', { name: 'SELECT MISSION', exact: true })).toBeVisible();
   await expect(page.locator('#arena-guide')).toHaveCount(0);
 });
@@ -184,6 +239,10 @@ test('production: Deep Relay starts with cover, room guidance and clean inventor
 
 // Read diagnostics to steer real keyboard input; never inject a player position.
 async function flyMineAxis(page, axis, target) {
+  await test.step(`Fly ${['X', 'Y', 'Z'][axis]} to ${target}`, () => steerMineAxis(page, axis, target));
+}
+
+async function steerMineAxis(page, axis, target) {
   const keys = [['a', 'd'], ['ShiftLeft', 'Space'], ['w', 's']][axis];
   const readFlight = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
   let previous = await readFlight(), held = null;
@@ -292,7 +351,9 @@ test('development: relay unlocks a solid hatch, completes the objective and rese
 });
 
 test('development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight', async ({ page }, testInfo) => {
-  test.setTimeout(480000);
+  // Ubuntu's software-rendered route reached the previous eight-minute limit.
+  // Its own CI job and a 15-minute suite deadline now leave report-upload time.
+  test.setTimeout(720000);
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1'); await chooseDeepRelay(page);
   const initial = await waitForSnapshot(page, value => value.phase === 'playing' && value.enemies === 5);
   await button(page, 'Neutralize drones (test)').press('Enter');

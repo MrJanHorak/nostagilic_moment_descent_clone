@@ -1,0 +1,316 @@
+{
+  "verification": "All eleven cases passed locally on Windows under fourfold Chromium CPU throttling, with zero browser errors, skips or retries, before the subsequent focused production keyboard-activation follow-up. Both hosted failure stages are now identified; Ubuntu confirmation remains open.",
+  "sourceCommit": "5bb8004 plus local browser diagnostics and CI job-isolation changes",
+  "hostedRunUnderInvestigation": "38993829244",
+  "startedAt": "2026-10-18T01:22:45.834Z",
+  "durationMs": 362016.03,
+  "runtimeVerification": {
+    "node": "v22.14.0",
+    "npm": "11.2.0",
+    "lint": "passed",
+    "typecheck": "passed",
+    "runtimeTests": 260,
+    "build": "passed"
+  },
+  "stats": {
+    "startTime": "2026-10-18T01:22:45.834Z",
+    "duration": 362016.03,
+    "expected": 11,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "tests": [
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 25960,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 6890,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 4465,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 42590,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "real time"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 12967,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 390,
+              "height": 640
+            },
+            "cpuSlowdown": 4,
+            "clock": "real time"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 5971,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "real time"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 11017,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 390,
+              "height": 640
+            },
+            "cpuSlowdown": 4,
+            "clock": "real time"
+          }
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "project": "production",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 4739,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "real time"
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "project": "prototypes",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 60579,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "project": "prototypes",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 53899,
+          "retry": 0,
+          "errors": [],
+          "command-latency-probe": {
+            "wallDelayMs": 14104,
+            "before": {
+              "phase": "playing",
+              "session": 3,
+              "timeMs": 300,
+              "steps": 18,
+              "frames": 14,
+              "sessionFrames": 3,
+              "position": [
+                0,
+                0,
+                4
+              ],
+              "velocity": [
+                0,
+                0,
+                0
+              ],
+              "speed": 0
+            },
+            "delayed": {
+              "phase": "playing",
+              "session": 3,
+              "timeMs": 300,
+              "steps": 18,
+              "frames": 14,
+              "sessionFrames": 3,
+              "position": [
+                0,
+                0,
+                4
+              ],
+              "velocity": [
+                0,
+                0,
+                0
+              ],
+              "speed": 0
+            },
+            "advanced": {
+              "phase": "playing",
+              "session": 3,
+              "timeMs": 400.0000000000001,
+              "steps": 24,
+              "frames": 15,
+              "sessionFrames": 4,
+              "position": [
+                0,
+                0,
+                3.9533333333333336
+              ],
+              "velocity": [
+                0,
+                0,
+                -0.7999999999999998
+              ],
+              "speed": 0.7999999999999998
+            }
+          },
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "project": "deep-relay",
+      "runs": [
+        {
+          "status": "passed",
+          "durationMs": 127738,
+          "retry": 0,
+          "errors": [],
+          "browser-errors": [],
+          "browser-environment": {
+            "viewport": {
+              "width": 960,
+              "height": 540
+            },
+            "cpuSlowdown": 4,
+            "clock": "controlled: 100ms per rendered tick"
+          }
+        }
+      ]
+    }
+  ]
+}

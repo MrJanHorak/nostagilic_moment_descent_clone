@@ -6,7 +6,15 @@ export default defineConfig({
   retries: 0,
   timeout: 60000,
   expect: { timeout: 15000 },
-  reporter: [['list'], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/browser-results.json' }]],
+  // Print the error when its test ends, even if a later test/job is cancelled.
+  reporter: [['list', { printFailuresInline: true }], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/browser-results.json' }]],
+  // CI runs these groups in separate jobs; local runs still cover every case.
+  projects: [
+    // Catch everything outside the two flight groups, including future tests.
+    { name: 'production', grepInvert: /development: (JSON mine loop|relay unlocks|Deep Relay lower loop)/ },
+    { name: 'prototypes', grep: /development: (JSON mine loop|relay unlocks)/ },
+    { name: 'deep-relay', grep: /development: Deep Relay lower loop/ },
+  ],
   use: {
     // Functional software-rendered checks. Hardware profiling keeps its own
     // explicit 1280x720 reference resolution.

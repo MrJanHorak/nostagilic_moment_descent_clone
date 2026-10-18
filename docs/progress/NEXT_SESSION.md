@@ -1,4 +1,4 @@
-# Current handoff — October 16, 2026
+# Current handoff — October 17, 2026
 
 ## Accepted milestones and next feature
 
@@ -7,6 +7,14 @@
 The next feature milestone is **M4: a minimal local designer** using the existing validated v1/v2 JSON and compiler. Begin with snapped room/corridor assembly, compatible port connections and a document save/reload round trip; then add entity/relay/door placement and playtest/return-to-edit. Prefer a working author/play/export loop over arbitrary geometry or a broad asset library. No editor UI exists yet. Primitive art and the development-only diagnostics/guide-footer overlap are optional follow-ups.
 
 ## Hosted CI is still open
+
+**Latest evidence:** the owner's [run 38993829244](https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38993829244) tested `5bb8004`. Windows passed in 13m19s. Ubuntu passed the original three problem cases, but failed production combat and the Deep Relay route before the twenty-minute job limit stopped the suite. Its log omits both assertion errors. See [the job-isolation follow-up](M2_CI_JOB_ISOLATION.md) for current changes, verification and the authenticated artifact needed for diagnosis. The older run and local evidence below remain historical context.
+
+The owner then supplied both error contexts. Deep Relay explicitly reports the 480,000ms test timeout during active keyboard flight, with speed 1.679, one relay activated and zero reported runtime errors. Production shows death before the opening fighter defeat: health 0%, score 0, ammo 35, enemies 0/2, followed by a generic exhausted clock wait. The production test now avoids mouse activation around pointer capture and reports premature death immediately; native mouse interference is a hypothesis, not a proven original cause. See the follow-up for focused verification.
+
+The current job/diagnostic changes pass all eleven local browser cases under fourfold CPU throttling in 6.0 minutes, with zero browser errors, skips or retries; [fresh evidence](ci-job-isolation-browser-check.json) is preserved. Runtime verification still passes all 260 cases plus lint, strict types and build. No fresh hosted run has been triggered.
+
+Following the production context, its native mission/resume/result buttons now use Enter, and combat waits fail immediately if the ship dies before the expected kill/exit. Three consecutive focused fourfold-throttled runs pass in 1.5 minutes, with zero browser errors and no observed opening mouse-aim motion; [focused evidence](ci-keyboard-combat-browser-check.json) is preserved. The previous eleven-case run predates this final production test follow-up. No runtime source or other test behavior changed.
 
 The owner supplied both full logs for [run 38979088436](https://github.com/MrJanHorak/nostagilic_moment_descent_clone/actions/runs/38979088436). Ubuntu passed eight of nine but failed relay steering at room boundaries. Windows passed one, reported three failures and left five unrun when the twenty-minute job stopped. Its restart-health assertion observed 90% after live enemy fire; flight observations skipped roughly ten to thirteen simulation seconds while keys remained held. This run predates the two Deep Relay cases; it does not establish a bug in the new mission.
 
@@ -24,6 +32,8 @@ The earlier [Deep Relay browser report](deep-relay-browser-check.json) remains h
 
 ## Workspace and next action
 
-The owner committed the Deep Relay implementation as `c16f92d` before this turn. This turn changes test timing/trace configuration and acceptance/progress documents. No commit or push was made. A fresh hosted Ubuntu/Windows workflow run is still required after these repair changes are pushed.
+The current follow-up separates contracts/audit from three independent browser groups per OS, prints errors and read-only state immediately, names flight steps, and gives Deep Relay twelve minutes within a fifteen-minute Playwright suite deadline. The job guard stays twenty minutes, with report upload time reserved. The production route uses keyboard activation around pointer capture and aborts combat waits on an unexpected death. No gameplay, dependency or mission changes are made. Both original failure stages are identified; fresh Ubuntu verification is still required before claiming hosted success.
+
+The earlier controlled-clock repairs were committed as `5bb8004` and tested in the latest hosted run. This follow-up changes only browser tests, CI configuration and progress documents. No commit or push was made. A fresh hosted workflow run is still required after these changes are pushed.
 
 Do not edit runtime JS or rebuild while Playwright owns its servers. Browser functional resolution is 960x540 with ANGLE SwiftShader; hardware profiling stays at 1280x720. Controlled-clock timing is not performance evidence. The completed run released its owned servers; the temporary `.ci-cpu-stress.local` was removed. Preserve untouched bytes in older mixed-encoding docs.
