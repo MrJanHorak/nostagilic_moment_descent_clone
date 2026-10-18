@@ -1,5 +1,7 @@
 # M4 authoring, openings and preview checkpoint
 
+> Follow-up: [direct viewport editing, room commands and recovery](M4_DESIGNER_UX.md) implements the next checkpoint and records the UX assessment. The scope/counts below describe this earlier authoring checkpoint.
+
 October 18, 2026. This follows [the first designer shell](M4_DESIGNER_SHELL.md) and the owner's visual feedback about ambiguous overlaps, centered openings, preview and surface choices. [M3 remains accepted](../M3_ACCEPTANCE.md). M2 hardware performance acceptance remains open; this change makes no new performance claim.
 
 ## What changed

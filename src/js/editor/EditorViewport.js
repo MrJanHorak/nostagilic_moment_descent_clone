@@ -5,22 +5,26 @@ import compileLevelDocument from '../core/levels/document/compileLevelDocument.j
 import buildArena from '../core/ArenaGeometry.js';
 import { openingFrame, portFrame, roomsOverlap, toWorld } from '../core/levels/document/RoomMath.js';
 import disposeObject from '../utils/disposeObject.js';
+import { toLocal } from './EditorPicking.js';
 
 export default class EditorViewport {
   /** @param {HTMLElement} host @param {(id: string) => void} select
-   * @param {(id: string, values: {position: number[], yaw: number}) => void} commit */
-  constructor(host, select, commit) {
+   * @param {(id: string, values: {position: number[], yaw: number}) => void} commit
+   * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void}} [interaction] */
+  constructor(host, select, commit, interaction = {}) {
     this.host = host; this.select = select; this.commit = commit;
+    this.interaction = interaction;
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.domElement.setAttribute('aria-label', '3D level viewport');
+    this.renderer.domElement.tabIndex = 0;
     host.append(this.renderer.domElement);
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x101923);
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 3000);
     this.camera.position.set(32, 28, 32);
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.maxDistance = 1500; this.controls.minDistance = 3;
-    this.controls.addEventListener('change', () => this.render());
+    this.controls.addEventListener('change', () => { this.interaction.dismiss?.(); this.render(); });
     this.transform = new TransformControls(this.camera, this.renderer.domElement);
     this.transform.setTranslationSnap(0.5); this.transform.setRotationSnap(Math.PI / 2);
     this.transform.showY = true;
@@ -36,6 +40,12 @@ export default class EditorViewport {
     });
     this.world = new THREE.Group(); this.scene.add(this.world);
     /** @type {THREE.Mesh[]} */ this.rooms = [];
+    /** @type {THREE.Mesh[]} */ this.walls = [];
+    /** @type {THREE.Mesh[]} */ this.markers = [];
+    /** @type {import('../levelDocument.js').Face | null} */ this.selectedFace = null;
+    this.selectedContent = '';
+    this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
+    this.placementOverlay = new THREE.Group(); this.scene.add(this.placementOverlay);
     this.selected = '';
     this.mode = 'select';
     /** @type {'xray' | 'cutaway' | 'solid'} */ this.view = 'xray';
@@ -44,15 +54,30 @@ export default class EditorViewport {
     this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(host);
     this.events = new AbortController();
     /** @type {{x: number, y: number} | null} */ let down = null;
-    this.renderer.domElement.addEventListener('pointerdown', event => { down = { x: event.clientX, y: event.clientY }; }, { signal: this.events.signal });
+    let dragged = false;
+    this.renderer.domElement.addEventListener('pointerdown', event => { this.interaction.dismiss?.(); down = { x: event.clientX, y: event.clientY }; dragged = false; }, { signal: this.events.signal });
+    this.renderer.domElement.addEventListener('pointermove', event => { if (down && event.buttons && Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4) dragged = true; }, { signal: this.events.signal });
     this.renderer.domElement.addEventListener('pointerup', event => {
+      if (event.button === 2) {
+        if (!dragged) { const target = this.pick(event.clientX, event.clientY); if (target) this.interaction.context?.(target); }
+        down = null; return;
+      }
       if (event.button !== 0 || !down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4 || this.transform.axis) return;
-      const bounds = this.renderer.domElement.getBoundingClientRect();
-      const ray = new THREE.Raycaster();
-      ray.setFromCamera(new THREE.Vector2((event.clientX - bounds.left) / bounds.width * 2 - 1, -(event.clientY - bounds.top) / bounds.height * 2 + 1), this.camera);
-      const hit = ray.intersectObjects(this.rooms, false)[0];
-      if (hit) this.select(String(hit.object.userData.roomId));
+      const target = this.pick(event.clientX, event.clientY);
+      if (target) {
+        if (this.interaction.selectTarget) this.interaction.selectTarget(target);
+        else this.select(target.roomId);
+      }
       down = null;
+    }, { signal: this.events.signal });
+    this.renderer.domElement.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      // Native contextmenu may fire on mouse-down. Only pointer-up opens the
+      // mouse menu, leaving the complete right-drag gesture available to pan.
+      if (!event.clientX && !event.clientY) { const target = this.keyboardTarget(); if (target) this.interaction.context?.(target); }
+    }, { signal: this.events.signal });
+    this.renderer.domElement.addEventListener('keydown', event => {
+      if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.preventDefault(); const target = this.keyboardTarget(); if (target) this.interaction.context?.(target); }
     }, { signal: this.events.signal });
     this.resize();
   }
@@ -66,13 +91,19 @@ export default class EditorViewport {
   show(document) {
     this.document = document;
     this.transform.detach(); disposeObject(this.world); this.scene.remove(this.world);
-    this.world = new THREE.Group(); this.scene.add(this.world); this.rooms = [];
+    this.world = new THREE.Group(); this.scene.add(this.world); this.rooms = []; this.walls = []; this.markers = [];
     // Only the shared compiler generates walls/openings. Invalid drafts use
     // outlines until corrected; they never display stale valid-world geometry.
     try {
-      const arena = buildArena(compileLevelDocument(document));
+      const level = compileLevelDocument(document), arena = buildArena(level);
       arena.group.traverse(object => {
         if (object instanceof THREE.Mesh) {
+          if (object.name.startsWith('@solid/')) {
+            const [, roomId, face] = object.name.split('/'); object.userData.roomId = roomId; object.userData.face = face; this.walls.push(object);
+          } else {
+            const door = level.doors?.find(door => door.id === object.name), connection = door && document.connections.find(connection => connection.id === door.connectionId);
+            if (connection) { object.userData.roomId = connection.a.roomId; object.userData.face = connection.a.port; this.walls.push(object); }
+          }
           for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
             material.transparent = this.view === 'xray'; material.opacity = this.view === 'xray' ? 0.22 : 1; material.depthWrite = this.view !== 'xray';
           }
@@ -104,24 +135,80 @@ export default class EditorViewport {
       geometry.dispose(); edges.position.fromArray(frame.center); this.world.add(edges);
     }
     for (const placement of [
-      { ...document.playerSpawn, kind: 'spawn' }, ...document.entities,
+      { ...document.playerSpawn, id: '@spawn', kind: 'spawn' }, ...document.entities,
       ...(document.formatVersion !== 1 ? document.devices.map(device => ({ ...device, kind: 'relay' })) : []),
     ]) {
       const room = rooms.get(placement.roomId); if (!room) continue;
       const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff };
       const marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.65), new THREE.MeshBasicMaterial({ color: colors[/** @type {keyof typeof colors} */ (placement.kind)] }));
-      marker.position.fromArray(toWorld(room, placement.position)); this.world.add(marker);
+      marker.position.fromArray(toWorld(room, placement.position)); marker.userData.roomId = room.id; marker.userData.contentId = placement.id;
+      this.world.add(marker); this.markers.push(marker);
     }
     this.setSelection(this.selected); this.render();
   }
   /** @param {string} id */
   setSelection(id) {
+    if (this.selected !== id) this.selectedFace = null;
     this.selected = id;
     this.transform.detach();
     for (const proxy of this.rooms) {
       const edges = /** @type {THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial>} */ (proxy.children[0]);
       edges.material.color.setHex(proxy.userData.overlaps ? 0xff5f69 : proxy.userData.roomId === id ? 0xffc16e : 0x7d9aaf);
       if (proxy.userData.roomId === id && this.mode !== 'select') this.transform.attach(proxy);
+    }
+    this.drawSelection();
+    this.render();
+  }
+  /** @param {import('../levelDocument.js').Face | null} face @param {string} [contentId] */
+  setDetailSelection(face, contentId = '') {
+    this.selectedFace = face; this.selectedContent = contentId; this.drawSelection(); this.render();
+  }
+  drawSelection() {
+    disposeObject(this.selectionOverlay); this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
+    for (const marker of this.markers) marker.scale.setScalar(marker.userData.contentId === this.selectedContent ? 1.5 : 1);
+    const room = this.document?.rooms.find(room => room.id === this.selected);
+    if (!room || !this.selectedFace) return;
+    const frame = portFrame(room, this.selectedFace), geometry = new THREE.PlaneGeometry(frame.width - 1, frame.height - 1);
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x72e8f0, transparent: true, opacity: 0.16, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...frame.normal));
+    // PlaneGeometry's first axis follows the canonical opening U direction.
+    if (frame.axis === 1) mesh.rotation.z += Math.PI;
+    mesh.position.fromArray(frame.center).addScaledVector(new THREE.Vector3(...frame.normal), -0.51);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x72e8f0, depthTest: false })));
+    this.selectionOverlay.add(mesh);
+  }
+  /** @param {number} clientX @param {number} clientY */
+  pick(clientX, clientY) {
+    if (!this.document) return null;
+    const bounds = this.renderer.domElement.getBoundingClientRect(), ray = new THREE.Raycaster(); this.scene.updateMatrixWorld(true);
+    ray.setFromCamera(new THREE.Vector2((clientX - bounds.left) / bounds.width * 2 - 1, -(clientY - bounds.top) / bounds.height * 2 + 1), this.camera);
+    /** @param {THREE.Object3D} object */
+    const visible = object => { for (let node = /** @type {THREE.Object3D | null} */ (object); node; node = node.parent) if (!node.visible) return false; return true; };
+    const hits = ray.intersectObjects([...this.walls.filter(visible), ...this.markers], false);
+    const hit = (this.view === 'xray' ? hits.find(hit => hit.object.userData.contentId) : null) ?? hits[0];
+    const fallback = hit ?? ray.intersectObjects(this.rooms, false)[0]; if (!fallback) return null;
+    const roomId = String(fallback.object.userData.roomId), room = this.document.rooms.find(room => room.id === roomId); if (!room) return null;
+    let point = fallback.point;
+    if (!hit) {
+      const centerPlane = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -room.position[1]), new THREE.Vector3());
+      if (centerPlane && toLocal(room, centerPlane.toArray()).every((value, axis) => Math.abs(value) < room.size[axis] / 2)) point = centerPlane;
+    }
+    return { roomId, localPoint: toLocal(room, point.toArray()), clientX, clientY,
+      ...(hit?.object.userData.face ? { face: /** @type {import('../levelDocument.js').Face} */ (hit.object.userData.face) } : {}),
+      ...(hit?.object.userData.contentId ? { contentId: String(hit.object.userData.contentId) } : {}) };
+  }
+  keyboardTarget() {
+    if (!this.selected) return null;
+    const bounds = this.renderer.domElement.getBoundingClientRect();
+    return { roomId: this.selected, localPoint: [0, 0, 0], clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2, ...(this.selectedFace ? { face: this.selectedFace } : {}) };
+  }
+  /** @param {string} roomId @param {number[] | null} point @param {boolean} [valid] */
+  showPlacement(roomId, point, valid = true) {
+    disposeObject(this.placementOverlay); this.placementOverlay = new THREE.Group(); this.scene.add(this.placementOverlay);
+    const room = this.document?.rooms.find(room => room.id === roomId);
+    if (room && point) {
+      const marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.45), new THREE.MeshBasicMaterial({ color: valid ? 0xffffff : 0xff4d66, depthTest: false, depthWrite: false }));
+      marker.position.fromArray(toWorld(room, /** @type {[number, number, number]} */ (point))); this.placementOverlay.add(marker);
     }
     this.render();
   }
@@ -149,6 +236,6 @@ export default class EditorViewport {
   }
   dispose() {
     this.events.abort(); this.observer.disconnect(); this.transform.dispose(); this.controls.dispose();
-    disposeObject(this.world); disposeObject(this.grid); this.renderer.dispose(); this.renderer.domElement.remove();
+    disposeObject(this.world); disposeObject(this.grid); disposeObject(this.selectionOverlay); disposeObject(this.placementOverlay); this.renderer.dispose(); this.renderer.domElement.remove();
   }
 }

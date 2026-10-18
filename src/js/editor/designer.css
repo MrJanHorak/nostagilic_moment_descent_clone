@@ -20,6 +20,26 @@ nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 aside { background: #17222f; overflow-y: auto; }
 .left-panel { border-right: 1px solid #344657; }
 .right-panel { border-left: 1px solid #344657; }
+.inspector-header { position: sticky; top: 0; z-index: 5; background: #1b2937; padding: 12px; border-bottom: 1px solid #41576b; }
+#inspector-selection { display: block; font-size: 12px; overflow-wrap: anywhere; margin-bottom: 8px; color: #9ce4e9; }
+#inspector-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+#inspector-tabs button { font-size: 12px; padding: 6px; }
+#inspector-tabs [aria-selected="true"] { border-color: #79d7df; background: #28434e; color: #bdf6f8; }
+#all-properties { font-size: 11px; margin-top: 7px; padding: 3px 7px; }
+.room-actions { margin-top: 10px; }
+.room-actions button { font-size: 11px; padding: 7px 5px; }
+#draft-status { color: #8bd4c1; }
+#recovery-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 18px; background: #3a3020; border-bottom: 1px solid #b28b4e; }
+#recovery-description { flex: 1; min-width: 180px; font-size: 13px; }
+.viewport-popover { position: fixed; z-index: 12000; width: 285px; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; border: 1px solid #7097a8; background: #1b2a39; border-radius: 8px; padding: 12px; box-shadow: 0 10px 36px #0009; }
+.viewport-popover > strong { color: #adf0f1; font-size: 13px; display: block; }
+.viewport-popover p { font-size: 11px; line-height: 1.4; }
+.viewport-popover > button { display: block; width: 100%; text-align: left; font-size: 12px; padding: 7px 9px; margin-top: 4px; }
+.viewport-popover input[type="color"] { height: 38px; padding: 3px; }
+.viewport-popover .popover-error { color: #ffb9bc; white-space: pre-wrap; background: #422a34; padding: 7px; border-radius: 4px; }
+.popover-error:empty { display: none; }
+.menu-reason { margin: 4px 2px 9px; color: #b6c3cf; }
+.popover-buttons { display: flex; gap: 8px; margin-top: 14px; }
 section { padding: 17px; border-bottom: 1px solid #344657; }
 p { margin: 8px 0; font-size: 12px; color: #a7bdcd; overflow-wrap: anywhere; }
 label { display: flex; flex-direction: column; gap: 4px; margin: 9px 0; color: #a7bdcd; font-size: 12px; }

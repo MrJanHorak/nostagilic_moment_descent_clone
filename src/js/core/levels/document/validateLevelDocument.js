@@ -216,7 +216,17 @@ function freezeTree(value) {
 /** Validate unknown data without allocating Three.js scene resources. Returns an
  * owned, deeply frozen JSON snapshot on success; never edits the caller's data.
  * @param {unknown} input @returns {import('../../../levelDocument.js').ValidationResult} */
-export function validateLevelDocument(input) {
+export function validateLevelDocument(input) { return readLevelDocument(input, true); }
+
+/** Editor recovery accepts structurally safe, bounded JSON drafts, including
+ * temporarily misaligned/overlapping layouts. Runtime compilation and file
+ * import ALWAYS use validateLevelDocument and its full semantic checks.
+ * @param {unknown} input @returns {import('../../../levelDocument.js').ValidationResult} */
+export function validateLevelDraft(input) { return readLevelDocument(input, false); }
+
+/** @param {unknown} input @param {boolean} semantics
+ * @returns {import('../../../levelDocument.js').ValidationResult} */
+function readLevelDocument(input, semantics) {
   const reader = new Reader(); inspectJSON(input, reader);
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
@@ -249,7 +259,7 @@ export function validateLevelDocument(input) {
   const document = relay
     ? { ...base, formatVersion: modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
-  validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
+  if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };
 }
 

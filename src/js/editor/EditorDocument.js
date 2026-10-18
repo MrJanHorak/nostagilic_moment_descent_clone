@@ -1,7 +1,9 @@
 import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import { distance, portFrame } from '../core/levels/document/RoomMath.js';
-import { parseLevelDocument, serializeLevelDocument, validateLevelDocument } from '../core/levels/document/validateLevelDocument.js';
+import { parseLevelDocument, serializeLevelDocument, validateLevelDocument, validateLevelDraft } from '../core/levels/document/validateLevelDocument.js';
+import { placementPosition } from './EditorPicking.js';
+import { toWorld } from '../core/levels/document/RoomMath.js';
 
 /** @typedef {import('./DraftTypes.js').EditorLevelDocument} LevelDocument */
 /** @typedef {import('./DraftTypes.js').EditorRoom} Room */
@@ -91,6 +93,98 @@ export default class EditorDocument {
   }
   export() { return serializeLevelDocument(this.document); }
   markSaved() { this.saved = JSON.stringify(this.document); }
+  /** Recovery does not turn a draft into a validated export or a saved file.
+   * @param {unknown} input */
+  restoreDraft(input) {
+    const result = validateLevelDraft(input); if (!result.valid) throw new Error('Saved draft is malformed or unsupported. Import a JSON backup instead.');
+    this.document = copy(/** @type {LevelDocument} */ (result.document)); this.past = []; this.future = []; this.saved = '';
+  }
+  /** Compose a direct manipulation as one atomic, validated undo command.
+   * @param {(candidate: EditorDocument) => void} action */
+  checked(action) {
+    const candidate = new EditorDocument(); candidate.document = copy(this.document);
+    action(candidate);
+    const result = candidate.validation;
+    if (!result.valid) throw new Error(result.errors.slice(0, 3).map(issue => issue.message).join('\n'));
+    this.change(draft => Object.assign(draft, candidate.document));
+  }
+  /** @param {string} roomId @param {number[]} point @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
+  placeAt(roomId, point, kind, type = 'scout') {
+    const exit = this.document.entities.find(entity => entity.kind === 'exit');
+    const position = placementPosition(this.room(roomId), point, kind, type, exit?.kind === 'exit' ? exit.radius : 1.5);
+    let id = '';
+    this.checked(candidate => {
+      if (kind === 'spawn' || kind === 'exit') {
+        id = kind === 'spawn' ? '@spawn' : candidate.document.mission.exitId;
+        const rotation = candidate.document.playerSpawn.rotation;
+        const yaw = (Math.round(2 * Math.atan2(rotation[1], rotation[3]) * 180 / Math.PI / 90) * 90 + 360) % 360;
+        candidate.updateContent(id, roomId, position, false, yaw);
+      } else id = candidate.addContent(roomId, kind === 'enemy' ? 'enemy' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? type : kind, position);
+    });
+    return id;
+  }
+  /** @param {string} roomId @param {Face} face @param {number[]} point @param {'box-room' | 'straight-corridor'} prefab */
+  attachAt(roomId, face, point, prefab) {
+    let id = '';
+    this.checked(candidate => {
+      id = candidate.attachRoom(roomId, face, prefab);
+      const connection = candidate.document.connections[candidate.document.connections.length - 1];
+      const source = portFrame(candidate.room(roomId), face), world = toWorld(candidate.room(roomId), /** @type {[number, number, number]} */ (point));
+      const offsets = [source.u, source.v].map((axis, index) => {
+        const half = (index === 0 ? source.width : source.height) / 2 - WALL_THICKNESS - 0.25 - connection.openingSize[index] / 2;
+        const bound = Math.floor(half / GRID) * GRID;
+        return Math.max(-bound, Math.min(bound, Math.round((world[axis] - source.center[axis]) / GRID) * GRID));
+      });
+      const room = candidate.room(id), position = [...room.position]; position[source.u] += offsets[0]; position[source.v] += offsets[1];
+      candidate.updateRoom(id, { position });
+      candidate.updateOpening(connection.id, ...connection.openingSize, offsets);
+    });
+    return id;
+  }
+  /** Duplicates the room's geometry, styles and ordinary content. Unique spawn/
+   * exit and external door links stay in the original room.
+   * @param {string} roomId @param {Face} face */
+  duplicateRoom(roomId, face) {
+    const source = copy(this.room(roomId)); let id = '';
+    this.checked(candidate => candidate.change(draft => {
+      if (draft.rooms.length >= LIMITS.rooms) throw new Error('Room limit reached (64).');
+      if (occupied(draft, roomId, face)) throw new Error('Choose an unused face for the duplicate.');
+      id = nextId(draft, 'room'); const room = { ...copy(source), id, position: /** @type {[number, number, number]} */ ([0, 0, 0]) };
+      const frame = portFrame(source, face), opposite = FACES.find(face => portFrame(room, face).normal.every((value, axis) => value === -frame.normal[axis]));
+      if (!opposite) throw new Error('No compatible duplicate face.');
+      const offset = portFrame(room, opposite).center;
+      room.position = /** @type {[number, number, number]} */ (frame.center.map((value, axis) => value - offset[axis]));
+      draft.rooms.push(room); draft.connections.push(connectionFor(draft, source, face, room, opposite));
+      for (const entity of [...draft.entities].filter(entity => entity.roomId === roomId && entity.kind !== 'exit')) {
+        if (draft.entities.length >= LIMITS.entities) throw new Error('Entity limit reached.');
+        const next = { ...copy(entity), id: nextId(draft, entity.kind), roomId: id }; draft.entities.push(next);
+        if (draft.mission.requiredEnemyIds.includes(entity.id)) draft.mission.requiredEnemyIds.push(next.id);
+      }
+      if (draft.formatVersion !== 1) for (const device of [...draft.devices].filter(device => device.roomId === roomId)) {
+        if (draft.devices.length >= 16) throw new Error('Relay limit reached (16).');
+        const deviceId = nextId(draft, 'relay');
+        const next = { ...copy(device), id: deviceId, label: `${device.label.slice(0, 22)} · ${deviceId}`, roomId: id }; draft.devices.push(next); draft.mission.requiredDeviceIds.push(next.id);
+      }
+    }));
+    return id;
+  }
+  /** @param {string} roomId */
+  deleteRoom(roomId) {
+    this.room(roomId);
+    if (this.document.rooms.length === 1) throw new Error('Keep at least one room.');
+    if (this.document.playerSpawn.roomId === roomId || this.document.entities.some(entity => entity.kind === 'exit' && entity.roomId === roomId)) throw new Error('Move the player spawn and exit to another room before deleting this room.');
+    this.change(draft => {
+      const removed = new Set(draft.entities.filter(entity => entity.roomId === roomId).map(entity => entity.id));
+      const connections = new Set(draft.connections.filter(connection => connection.a.roomId === roomId || connection.b.roomId === roomId).map(connection => connection.id));
+      draft.rooms = draft.rooms.filter(room => room.id !== roomId); draft.connections = draft.connections.filter(connection => !connections.has(connection.id));
+      draft.entities = draft.entities.filter(entity => !removed.has(entity.id)); draft.mission.requiredEnemyIds = draft.mission.requiredEnemyIds.filter(id => !removed.has(id));
+      if (draft.formatVersion !== 1) {
+        const modern = modernize(draft), devices = new Set(modern.devices.filter(device => device.roomId === roomId).map(device => device.id));
+        modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && !devices.has(door.deviceId));
+        modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
+      }
+    });
+  }
   /** @param {string} roomId */
   room(roomId) {
     const room = this.document.rooms.find(value => value.id === roomId);

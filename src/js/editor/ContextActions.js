@@ -1,0 +1,97 @@
+import EditorDocument from './EditorDocument.js';
+import { FACE_LABELS, placementPosition } from './EditorPicking.js';
+import { FACES, GRID, MATERIALS, SURFACE_PATTERNS } from '../core/levels/document/LevelContent.js';
+import { portFrame, toWorld } from '../core/levels/document/RoomMath.js';
+import { enemyTypes } from '../entities/EnemyTypes.js';
+
+/** @param {import('./EditorPicking.js').ViewportTarget} target
+ * @param {{model: EditorDocument, viewport: import('./EditorViewport.js').default, menu: import('./ViewportMenu.js').default,
+ * commit: (action: () => void) => void, select: (target: import('./EditorPicking.js').ViewportTarget) => void, inspect: () => void}} context */
+export default function openContextActions(target, { model, viewport, menu, commit, select, inspect }) {
+  const room = model.room(target.roomId), face = target.face;
+  const connection = face ? model.document.connections.find(connection => [connection.a, connection.b].some(end => end.roomId === room.id && end.port === face)) : undefined;
+  const used = new Set(model.document.connections.flatMap(connection => [connection.a, connection.b].filter(end => end.roomId === room.id).map(end => end.port)));
+  const duplicateFace = face && !used.has(face) ? face : FACES.find(face => !used.has(face));
+  const protectedRoom = model.document.rooms.length === 1 || model.document.playerSpawn.roomId === room.id || model.document.entities.some(entity => entity.kind === 'exit' && entity.roomId === room.id);
+  /** @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
+  const preview = (kind, type = 'scout') => {
+    try {
+      const exit = model.document.entities.find(entity => entity.kind === 'exit');
+      const position = placementPosition(room, target.localPoint, kind, type, exit?.kind === 'exit' ? exit.radius : 1.5);
+      const candidate = new EditorDocument(); candidate.document = structuredClone(model.document);
+      try { candidate.placeAt(room.id, target.localPoint, kind, type); viewport.showPlacement(room.id, position); menu.error(''); }
+      catch (error) { viewport.showPlacement(room.id, position, false); menu.error(error); }
+    } catch (error) { viewport.showPlacement(room.id, null); menu.error(error); }
+  };
+  /** @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
+  const place = (kind, type = 'scout') => commit(() => {
+    const id = model.placeAt(room.id, target.localPoint, kind, type);
+    select({ ...target, face: undefined, contentId: id });
+  });
+  const appearance = () => {
+    if (!face) return;
+    const frame = portFrame(room, face), preset = MATERIALS[room.materialPreset], style = room.surfaces?.[face];
+    const color = style?.color ?? (frame.axis === 1 ? frame.direction < 0 ? preset.floor : preset.ceiling : preset.wall);
+    menu.form('Wall appearance', `${room.id} · ${FACE_LABELS[face]}`, [
+      { id: 'color', label: 'Wall color', type: 'color', value: `#${color.toString(16).padStart(6, '0')}` },
+      { id: 'pattern', label: 'Wall pattern', value: style?.pattern ?? 'plain', options: SURFACE_PATTERNS.map(pattern => ({ value: pattern, label: pattern })) },
+    ], values => commit(() => model.setSurface(room.id, face, Number.parseInt(values.color.slice(1), 16), /** @type {import('../levelDocument.js').SurfacePattern} */ (values.pattern))));
+  };
+  const opening = () => {
+    if (!connection) return;
+    const devices = model.document.formatVersion === 1 ? [] : model.document.devices;
+    const door = model.document.formatVersion === 1 ? undefined : model.document.doors.find(door => door.connectionId === connection.id);
+    menu.form('Opening and door', `${connection.a.roomId} ↔ ${connection.b.roomId}. Offsets use the first room's face center.`, [
+      { id: 'width', label: 'Passage width', type: 'number', value: String(connection.openingSize[0]), min: '2', max: '62', step: '0.5' },
+      { id: 'height', label: 'Passage height/depth', type: 'number', value: String(connection.openingSize[1]), min: '2', max: '62', step: '0.5' },
+      { id: 'u', label: 'Across wall (U)', type: 'number', value: String(connection.a.offset?.[0] ?? 0), step: '0.5' },
+      { id: 'v', label: 'Height/depth (V)', type: 'number', value: String(connection.a.offset?.[1] ?? 0), step: '0.5' },
+      { id: 'relay', label: 'Door unlock relay', value: door?.deviceId ?? '', options: [{ value: '', label: 'Always open (no door)' }, ...devices.map(device => ({ value: device.id, label: device.label }))] },
+    ], values => commit(() => model.checked(candidate => {
+      candidate.updateOpening(connection.id, Number(values.width), Number(values.height), [Number(values.u), Number(values.v)]);
+      candidate.setDoor(connection.id, values.relay);
+    })));
+  };
+  const moveOpening = () => {
+    if (!connection) return;
+    commit(() => {
+      const source = portFrame(model.room(connection.a.roomId), connection.a.port), world = toWorld(room, /** @type {[number, number, number]} */ (target.localPoint));
+      const ranges = model.openingBounds(connection.id, ...connection.openingSize);
+      const offset = [source.u, source.v].map((axis, index) => Math.max(ranges[index].min, Math.min(ranges[index].max, Math.round((world[axis] - source.center[axis]) / GRID) * GRID)));
+      model.checked(candidate => candidate.updateOpening(connection.id, ...connection.openingSize, offset));
+    });
+  };
+  /** @type {import('./ViewportMenu.js').MenuAction[]} */ const actions = [];
+  if (target.contentId) {
+    const content = model.content(target.contentId), protectedContent = content.kind === 'spawn' || content.kind === 'exit';
+    actions.push({ label: 'Edit selected item', action: inspect }, { label: 'Delete selected item', disabled: protectedContent,
+      reason: protectedContent ? 'Move the unique spawn or exit instead of deleting it.' : undefined,
+      action: () => commit(() => model.checked(candidate => candidate.deleteContent(content.id))) });
+  }
+  if (face) actions.push(
+    { label: 'Wall color and pattern…', action: appearance },
+    { label: 'Opening and door…', action: opening, disabled: !connection, reason: !connection ? 'Attach a neighbor here, or use Connections to join existing touching rooms.' : undefined },
+    ...(connection ? [{ label: 'Move opening to this point', action: moveOpening }] : [
+      { label: 'Attach room at this point', action: () => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'box-room'); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }) },
+      { label: 'Attach corridor at this point', action: () => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'straight-corridor'); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }) },
+    ]),
+  );
+  actions.push(
+    { label: 'Place enemy…', preview: () => preview('enemy'), action: () => menu.form('Place enemy', `${room.id} · white/red marker shows the planned position`, [
+      { id: 'type', label: 'Enemy type', value: 'scout', options: enemyTypes.map(enemy => ({ value: enemy.name, label: enemy.name })) },
+    ], values => place('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type)), 'Place enemy', values => preview('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type))) },
+    { label: 'Place health here', preview: () => preview('health'), action: () => place('health') },
+    { label: 'Place ammo here', preview: () => preview('pulseAmmo'), action: () => place('pulseAmmo') },
+    { label: 'Place relay here', preview: () => preview('relay'), action: () => place('relay') },
+    { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
+    { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },
+    { label: 'Focus this room', action: () => viewport.frame(true) },
+    { label: 'Duplicate room', disabled: !duplicateFace, reason: !duplicateFace ? 'No unused face is available for an adjacent duplicate.' : undefined,
+      action: () => commit(() => { if (duplicateFace) { const id = model.duplicateRoom(room.id, duplicateFace); select({ ...target, roomId: id, face: undefined, contentId: undefined }); } }) },
+    { label: 'Delete room and contents', disabled: protectedRoom, reason: protectedRoom ? 'Keep one room, and move its spawn/exit elsewhere before deletion.' : undefined,
+      action: () => commit(() => model.deleteRoom(room.id)) },
+  );
+  menu.open(target.clientX, target.clientY, `${room.id}${face ? ` · ${FACE_LABELS[face]}` : target.contentId ? ' · item' : ' · room'}`,
+    'Right-click places just inside the selected surface, snapped to the grid. Esc closes this menu. Right-drag still pans.', actions);
+  viewport.controls.enabled = false;
+}

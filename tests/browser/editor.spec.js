@@ -8,6 +8,7 @@ test('designer: assemble three spaces, undo invalid edit, export and reload prod
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.getByRole('button', { name: 'All properties', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Level designer', exact: true })).toBeVisible();
   await expect(page.locator('#viewport canvas')).toBeVisible();
   await page.getByRole('button', { name: 'Attach corridor', exact: true }).click();

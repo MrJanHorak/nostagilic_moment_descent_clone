@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 18, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [M4's current authoring checkpoint](progress/M4_DESIGNER_AUTHORING.md) extends the separate designer with overlap warnings, offset openings, per-face colors/patterns, opaque previews, enemy/pickup/relay placement, spawn/exit properties, relay doors and first-person playtest/return from an editing snapshot. Room deletion/duplication, autosave/recovery and full authoring acceptance remain; M4 is not complete. Legacy geometry remains unrepaired.
+**Implementation progress (October 18, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [M4's current UX/recovery checkpoint](progress/M4_DESIGNER_UX.md) adds direct wall/item picking, right-click appearance/door/placement tools, a grouped inspector, duplicate/delete room commands and local draft recovery to the existing authoring/playtest/export workflow. The complete three-space workflow has automated coverage; human M4 acceptance remains. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -76,7 +76,7 @@ M2 can begin with an isolated dependency security patch during M1. Broader upgra
 
 ## M4 — Reach the level designer icebox feature
 
-**Current status:** [The current authoring checkpoint](progress/M4_DESIGNER_AUTHORING.md) at `/editor.html` includes the shell/placement workflow, compatible and offset openings, content/objective/door authoring, surface colors/patterns, solid preview and real runtime playtest/return. Undo/redo, dirty handling and explicit JSON save/reload are implemented. Room deletion/duplication, autosave/recovery and the complete human authoring acceptance scenario remain.
+**Current status:** [The current UX checkpoint](progress/M4_DESIGNER_UX.md) at `/editor.html` includes direct wall/item selection and context menus, room/content/objective/door authoring, offset openings, face styles, solid preview, real runtime playtest/return, undo/redo, room duplication/deletion and local draft recovery. The three-space author/export/reload/complete/return/undo scenario is automated. Human authoring/handling acceptance remains before declaring M4 complete.
 
 **Deliverable:** a local browser editor that creates the same M3 documents the game already loads. Its primary success test is an end-to-end authoring workflow, not the number of editing tools.
 
