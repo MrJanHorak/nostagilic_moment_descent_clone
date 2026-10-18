@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 16, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner completed and replayed [Deep Relay](progress/M3_DEEP_RELAY.md), confirming both relays, completion and reset. Its eight-room mission uses the shared v2 documents, persistent enemy routing and graph-derived room/route hints. Scoped lint/type checks cover 38 runtime modules; all 260 runtime cases and the build pass locally. All eleven browser cases pass locally under fourfold CPU throttling ([evidence](progress/ci-clock-browser-check.json)). M2 remains open: [hosted CI still fails on browser timing](progress/M2_CI_CONTROLLED_CLOCK.md), and the last Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. The next feature milestone is M4's minimal designer: room assembly, compatible connections, entity/objective placement, playtest, export and reload. Designer UI has not started; legacy geometry remains unrepaired.
+**Implementation progress (October 18, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner now reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [M4's first designer checkpoint](progress/M4_DESIGNER_SHELL.md) adds a separate editor entry with an orbit viewport, snapped room/corridor assembly, selection and transform gizmos, properties, compatible connections, validation, undo/redo and JSON export/import. Entity/objective placement, autosave and playtest/return remain; M4 is not complete. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -47,7 +47,7 @@ Optional release polish/content after M4 is a separate budget. There is not enou
 
 ## M2 — Update the project and make regression visible
 
-**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), and [enemy/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) and [shared level data](progress/M2_LEVEL_DOCUMENTS.md) are locally verified. Hosted CI, performance acceptance, broader source coverage and final gates remain; M2 is not complete.
+**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), [enemy/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) and [shared level data](progress/M2_LEVEL_DOCUMENTS.md) are implemented. The owner reports hosted CI passes on October 18. Hardware performance acceptance remains open; M2 is not complete. Broader presentation/orchestration source coverage can continue incrementally.
 
 M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
 
@@ -61,7 +61,7 @@ M2 can begin with an isolated dependency security patch during M1. Broader upgra
 
 ## M3 — Make a connected mine, with data the editor can use
 
-**Current status:** **[M3 is accepted and complete](M3_ACCEPTANCE.md)**. The owner confirmed activating both relays, reaching MISSION COMPLETE and replaying with enemies, ammo and gates reset. The [shared documents](progress/M2_LEVEL_DOCUMENTS.md), [enemy routing](progress/M3_ROOM_NAVIGATION.md) and [relay objectives](progress/M3_RELAY_OBJECTIVE.md) support [Deep Relay](progress/M3_DEEP_RELAY.md), an eight-room mission with a lower loop, supply cache, vertical travel and five drones. Combined tests cover round trips, all connections in both directions, ordinary pulse combat, chained completion and ten restarts. Further art/balance improvements are optional; hosted CI and hardware performance remain separate open M2 gates.
+**Current status:** **[M3 is accepted and complete](M3_ACCEPTANCE.md)**. The owner confirmed activating both relays, reaching MISSION COMPLETE and replaying with enemies, ammo and gates reset. The [shared documents](progress/M2_LEVEL_DOCUMENTS.md), [enemy routing](progress/M3_ROOM_NAVIGATION.md) and [relay objectives](progress/M3_RELAY_OBJECTIVE.md) support [Deep Relay](progress/M3_DEEP_RELAY.md), an eight-room mission with a lower loop, supply cache, vertical travel and five drones. Combined tests cover round trips, all connections in both directions, ordinary pulse combat, chained completion and ten restarts. Further art/balance improvements are optional. Hosted CI has since passed according to the owner; hardware performance remains a separate open M2 gate.
 
 **Deliverable:** one compact exploratory mission using the future editor's document format, loaded by the game without executable level scripts.
 
@@ -75,6 +75,8 @@ M2 can begin with an isolated dependency security patch during M1. Broader upgra
 **Checkpoint:** if the room/portal collision spike reveals disproportionate work, narrow the geometry to axis-aligned snapped rooms and explicit corridor pieces. Do not broaden to arbitrary mine geometry to solve an MVP scheduling problem.
 
 ## M4 — Reach the level designer icebox feature
+
+**Current status:** [The first shell and placement checkpoint](progress/M4_DESIGNER_SHELL.md) is implemented at `/editor.html`, including compatible connections, undo/redo and explicit JSON save/reload. Entity/objective placement and runtime playtest remain the next work; full M4 acceptance is pending.
 
 **Deliverable:** a local browser editor that creates the same M3 documents the game already loads. Its primary success test is an end-to-end authoring workflow, not the number of editing tools.
 

@@ -1,4 +1,16 @@
-# Current handoff — October 17, 2026
+# Current handoff — October 18, 2026
+
+## Current checkpoint: M4 designer shell
+
+The owner reports hosted CI now passes, closing that M2 gate. No run URL was provided. M3 remains accepted; do not request repeat sign-off. **M2 remains open for hardware performance acceptance** (last recorded Intel GPU p95 approximately 18 ms against the provisional 16.7 ms target).
+
+[M4's first checkpoint](M4_DESIGNER_SHELL.md) is implemented at `/editor.html`, also linked from the game menu. It includes an orbit viewport, grid, room/corridor attachments, selection, translate/yaw gizmos, bounded properties, compatible connections, runtime-derived walls, validation, undo/redo and JSON download/import. Temporarily invalid semantic drafts show outlines and block export. Import preserves current work on failure. Mission markers are read-only; content placement, autosave/recovery and playtest/return remain.
+
+**Next feature work:** entity/spawn/pickup/exit/relay/door placement and mission properties, then a detached runtime playtest and return. Do not treat the starter spawn/exit or file round trip as full M4 acceptance.
+
+**Verification:** lint and strict types pass for 41 source modules; all 292 unit/runtime cases and the multi-entry production build pass. All 14 browser cases pass in 4.8 minutes with no retries: three designer cases (including a native snapped gizmo drag undone as one command) and all eleven existing game cases. [Evidence](m4-designer-browser-check.json) records the local Windows Node 22.14.0 / npm 11.2.0 environment and software-rendering limits. Visual review covered 960x540 and 1280x800. The existing large-chunk build warning remains. No dependencies changed, no fresh audit/hardware capture was run, and this new change has not run on hosted CI. No commit or push was made. Browser servers have exited.
+
+The sections below retain historical CI diagnostics from October 17; their pending hosted-run statements are superseded by the owner's October 18 confirmation.
 
 ## Accepted milestones and next feature
 

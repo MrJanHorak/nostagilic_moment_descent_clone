@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-18",
+  "command": "npx playwright test",
+  "environment": {
+    "node": "22.14.0",
+    "npm": "11.2.0",
+    "os": "Windows",
+    "browser": "Chromium / ANGLE SwiftShader",
+    "viewport": "960x540; designer also checked at 1280x800",
+    "cpuSlowdown": 1
+  },
+  "stats": {
+    "startTime": "2026-10-18T19:50:40.121Z",
+    "duration": 287399.156,
+    "expected": 14,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 41,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 292,
+    "build": "passed",
+    "diffCheck": "passed",
+    "designerBrowserCases": 3,
+    "existingGameBrowserCases": 11
+  },
+  "limits": "Local functional checks. Owner reports prior hosted CI passed; this new editor change has not run on hosted CI. No new hardware performance claim. Full M4 acceptance is pending content placement, persistence recovery and runtime playtest."
+}

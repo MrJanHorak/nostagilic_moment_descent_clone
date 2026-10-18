@@ -629,6 +629,12 @@ class UIManager {
       `;
       document.body.appendChild(startScreen);
       this.startScreen = startScreen;
+      const designerLink = document.createElement('a');
+      designerLink.href = '/editor.html';
+      designerLink.textContent = 'LEVEL DESIGNER';
+      designerLink.id = 'level-designer-link';
+      Object.assign(designerLink.style, { display: 'block', color: '#8bdeef', textAlign: 'center', margin: '14px auto', position: 'relative', zIndex: '2' });
+      startScreen.firstElementChild.appendChild(designerLink);
       const settingsButton = this.createSettingsButton();
       Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
       startScreen.querySelector('.title-container').appendChild(settingsButton);

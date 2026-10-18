@@ -27,6 +27,9 @@ export default defineConfig({
 
   // Build options
   build: {
+    rollupOptions: {
+      input: { game: path.resolve(__dirname, 'index.html'), editor: path.resolve(__dirname, 'editor.html') },
+    },
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,

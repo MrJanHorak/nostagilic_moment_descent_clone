@@ -1,0 +1,82 @@
+import { test, expect } from '@playwright/test';
+import { readFile } from 'node:fs/promises';
+import { fileURLToPath } from 'node:url';
+import compileLevelDocument from '../../src/js/core/levels/document/compileLevelDocument.js';
+
+test('designer: assemble three spaces, undo invalid edit, export and reload production JSON', async ({ page }, testInfo) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  await page.goto('http://127.0.0.1:5184/editor.html');
+  await expect(page.getByRole('heading', { name: 'Level designer', exact: true })).toBeVisible();
+  await expect(page.locator('#viewport canvas')).toBeVisible();
+  await page.getByRole('button', { name: 'Attach corridor', exact: true }).click();
+  await page.getByRole('button', { name: 'Attach room', exact: true }).click();
+  await expect(page.locator('#room-count')).toHaveText('3 / 64');
+  await expect(page.locator('#validation-title')).toContainText('Valid level');
+  await page.getByLabel('position X', { exact: true }).fill('0.5');
+  await page.getByRole('button', { name: 'Apply properties' }).click();
+  await expect(page.locator('#issues')).toContainText('ports must meet');
+  await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(page.locator('#validation-title')).toContainText('Valid level');
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await page.getByRole('button', { name: 'Move', exact: true }).click();
+  await page.getByRole('button', { name: 'Rotate Y', exact: true }).click();
+  await page.getByRole('button', { name: 'Select', exact: true }).click();
+  await page.getByRole('button', { name: 'Frame all', exact: true }).click();
+  const downloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Export JSON' }).click();
+  const download = await downloadEvent;
+  const path = testInfo.outputPath('authored-mine.json'); await download.saveAs(path);
+  const exported = JSON.parse(await readFile(path, 'utf8'));
+  const compiled = compileLevelDocument(exported);
+  expect(compiled.sourceDocument.rooms).toHaveLength(3);
+  expect(compiled.sourceDocument.connections).toHaveLength(2);
+  await page.getByRole('button', { name: 'New mine', exact: true }).click();
+  await expect(page.locator('#room-count')).toHaveText('1 / 64');
+  await page.locator('#file').setInputFiles(path);
+  await expect(page.locator('#room-count')).toHaveText('3 / 64');
+  await expect(page.locator('#save-state')).toHaveText('No unsaved changes');
+  await page.screenshot({ path: testInfo.outputPath('designer-three-spaces.png'), fullPage: true });
+  await page.locator('#file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"formatVersion":999}') });
+  await expect(page.locator('#notice')).toContainText('formatVersion');
+  await expect(page.locator('#room-count')).toHaveText('3 / 64');
+  await page.locator('#file').setInputFiles(fileURLToPath(new URL('../../src/js/core/levels/documents/deep-relay.v2.json', import.meta.url)));
+  await expect(page.locator('#room-count')).toHaveText('8 / 64');
+  await expect(page.locator('#validation-title')).toContainText('Valid level');
+  await expect(page.locator('#entities')).toContainText('relay');
+  await page.screenshot({ path: testInfo.outputPath('designer-deep-relay.png'), fullPage: true });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.screenshot({ path: testInfo.outputPath('designer-desktop.png'), fullPage: true });
+  expect(errors).toEqual([]);
+});
+
+test('designer: game menu links to a separate editor entry', async ({ page }) => {
+  await page.goto('http://127.0.0.1:5184/');
+  const link = page.getByRole('link', { name: 'LEVEL DESIGNER', exact: true });
+  await expect(link).toBeVisible();
+  await link.click();
+  await expect(page.getByRole('heading', { name: 'Level designer', exact: true })).toBeVisible();
+});
+
+test('designer: native gizmo drag snaps a room and is one undo command', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.getByRole('button', { name: 'Move', exact: true }).click();
+  const canvas = await page.locator('#viewport canvas').boundingBox();
+  expect(canvas).not.toBeNull();
+  // The world Y shaft is above the frame-all target at the viewport center.
+  const x = canvas.x + canvas.width / 2, y = canvas.y + canvas.height * 0.4;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x, y - canvas.height * 0.08, { steps: 10 }); await page.mouse.up();
+  const field = page.getByLabel('position Y', { exact: true });
+  await expect(field).not.toHaveValue('0');
+  expect(Number(await field.inputValue()) * 2 % 1).toBe(0);
+  await expect(page.locator('#validation-title')).toContainText('Valid level');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  await expect(field).toHaveValue('0');
+  await expect(page.getByRole('button', { name: 'Undo', exact: true })).toBeDisabled();
+});

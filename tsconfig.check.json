@@ -16,6 +16,9 @@
     "resolveJsonModule": true
   },
   "files": [
+    "src/js/editor/EditorDocument.js",
+    "src/js/editor/EditorViewport.js",
+    "src/js/editor/Designer.js",
     "src/js/core/GameSession.js",
     "src/js/core/SimulationStepper.js",
     "src/js/core/UserSettings.js",
