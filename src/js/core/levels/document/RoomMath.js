@@ -42,6 +42,21 @@ export function portFrame(room, face) {
   return { center, normal, axis, direction, u, v, width: size[u], height: size[v] };
 }
 
+/** Offsets use the same canonical world-plane basis on both sides of a port.
+ * @param {import('../../../levelDocument.js').RoomDocument} room
+ * @param {import('../../../levelDocument.js').PortReference} endpoint */
+export function openingFrame(room, endpoint) {
+  const frame = portFrame(room, endpoint.port), offset = endpoint.offset ?? [0, 0];
+  frame.center[frame.u] += offset[0]; frame.center[frame.v] += offset[1];
+  return frame;
+}
+
+/** @param {import('../../../levelDocument.js').RoomDocument} a @param {import('../../../levelDocument.js').RoomDocument} b */
+export function roomsOverlap(a, b) {
+  const sizeA = worldSize(a), sizeB = worldSize(b);
+  return sizeA.every((dimension, axis) => Math.abs(a.position[axis] - b.position[axis]) < (dimension + sizeB[axis]) / 2 - 1e-6);
+}
+
 /** @param {import('../../../levelDocument.js').RoomDocument} room
  * @param {import('../../../levelDocument.js').Vec3} local @param {number} radius */
 export function fitsInside(room, local, radius) {

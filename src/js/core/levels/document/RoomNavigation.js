@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import { portFrame, worldSize } from './RoomMath.js';
+import { openingFrame, worldSize } from './RoomMath.js';
 import { WALL_THICKNESS } from './LevelContent.js';
 
 // Keep turns inside the convex room interior, clear of the portal's frame.
@@ -17,7 +17,7 @@ export default class RoomNavigation {
     for (const connection of document.connections) {
       const room = this.rooms.get(connection.a.roomId);
       if (!room) continue; // The document validator owns reference diagnostics.
-      const frame = portFrame(room.room, connection.a.port);
+      const frame = openingFrame(room.room, connection.a);
       const center = new Vector3(...frame.center), normal = new Vector3(...frame.normal);
       const [width, height] = connection.openingSize;
       this.edges.get(connection.a.roomId)?.push({ id: connection.id, to: connection.b.roomId, center, normal, width, height });

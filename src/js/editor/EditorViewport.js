@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import compileLevelDocument from '../core/levels/document/compileLevelDocument.js';
 import buildArena from '../core/ArenaGeometry.js';
-import { portFrame, toWorld } from '../core/levels/document/RoomMath.js';
+import { openingFrame, portFrame, roomsOverlap, toWorld } from '../core/levels/document/RoomMath.js';
 import disposeObject from '../utils/disposeObject.js';
 
 export default class EditorViewport {
@@ -38,6 +38,8 @@ export default class EditorViewport {
     /** @type {THREE.Mesh[]} */ this.rooms = [];
     this.selected = '';
     this.mode = 'select';
+    /** @type {'xray' | 'cutaway' | 'solid'} */ this.view = 'xray';
+    /** @type {import('../levelDocument.js').LevelDocument | null} */ this.document = null;
     this.grid = new THREE.GridHelper(256, 128, 0x3a5b72, 0x203347); this.scene.add(this.grid);
     this.observer = new ResizeObserver(() => this.resize()); this.observer.observe(host);
     this.events = new AbortController();
@@ -62,6 +64,7 @@ export default class EditorViewport {
   render() { this.renderer.render(this.scene, this.camera); }
   /** @param {import('../levelDocument.js').LevelDocument} document */
   show(document) {
+    this.document = document;
     this.transform.detach(); disposeObject(this.world); this.scene.remove(this.world);
     this.world = new THREE.Group(); this.scene.add(this.world); this.rooms = [];
     // Only the shared compiler generates walls/openings. Invalid drafts use
@@ -71,7 +74,11 @@ export default class EditorViewport {
       arena.group.traverse(object => {
         if (object instanceof THREE.Mesh) {
           for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
-            material.transparent = true; material.opacity = 0.22; material.depthWrite = false;
+            material.transparent = this.view === 'xray'; material.opacity = this.view === 'xray' ? 0.22 : 1; material.depthWrite = this.view !== 'xray';
+          }
+          if (this.view === 'cutaway' && object.name.startsWith('@solid/')) {
+            const [, roomId, face] = object.name.split('/'), room = document.rooms.find(room => room.id === roomId);
+            if (room && portFrame(room, /** @type {import('../levelDocument.js').Face} */ (face)).direction > 0) object.visible = false;
           }
         }
       });
@@ -80,16 +87,17 @@ export default class EditorViewport {
       if (!(error instanceof Error) || error.name !== 'LevelDocumentError') throw error;
     }
     for (const room of document.rooms) {
+      const overlaps = document.rooms.some(other => other.id !== room.id && roomsOverlap(room, other));
       const box = new THREE.BoxGeometry(...room.size);
-      const proxy = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ visible: false }));
-      proxy.position.fromArray(room.position); proxy.rotation.y = room.yaw * Math.PI / 180; proxy.userData.roomId = room.id;
-      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: room.id === this.selected ? 0xffc16e : 0x7d9aaf }));
+      const proxy = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ visible: overlaps, color: 0xff384b, transparent: true, opacity: 0.22, depthWrite: false }));
+      proxy.position.fromArray(room.position); proxy.rotation.y = room.yaw * Math.PI / 180; proxy.userData.roomId = room.id; proxy.userData.overlaps = overlaps;
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: overlaps ? 0xff5f69 : room.id === this.selected ? 0xffc16e : 0x7d9aaf }));
       proxy.add(edges); this.world.add(proxy); this.rooms.push(proxy);
     }
     const rooms = new Map(document.rooms.map(room => [room.id, room]));
     for (const connection of document.connections) {
       const room = rooms.get(connection.a.roomId); if (!room) continue;
-      const frame = portFrame(room, connection.a.port);
+      const frame = openingFrame(room, connection.a);
       const size = [0.16, 0.16, 0.16]; size[frame.u] = connection.openingSize[0]; size[frame.v] = connection.openingSize[1];
       const geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x48dbd2 }));
@@ -97,7 +105,7 @@ export default class EditorViewport {
     }
     for (const placement of [
       { ...document.playerSpawn, kind: 'spawn' }, ...document.entities,
-      ...(document.formatVersion === 2 ? document.devices.map(device => ({ ...device, kind: 'relay' })) : []),
+      ...(document.formatVersion !== 1 ? document.devices.map(device => ({ ...device, kind: 'relay' })) : []),
     ]) {
       const room = rooms.get(placement.roomId); if (!room) continue;
       const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff };
@@ -112,7 +120,7 @@ export default class EditorViewport {
     this.transform.detach();
     for (const proxy of this.rooms) {
       const edges = /** @type {THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial>} */ (proxy.children[0]);
-      edges.material.color.setHex(proxy.userData.roomId === id ? 0xffc16e : 0x7d9aaf);
+      edges.material.color.setHex(proxy.userData.overlaps ? 0xff5f69 : proxy.userData.roomId === id ? 0xffc16e : 0x7d9aaf);
       if (proxy.userData.roomId === id && this.mode !== 'select') this.transform.attach(proxy);
     }
     this.render();
@@ -123,6 +131,11 @@ export default class EditorViewport {
     if (mode !== 'select') this.transform.setMode(mode);
     this.transform.showX = mode !== 'rotate'; this.transform.showY = true; this.transform.showZ = mode !== 'rotate';
     this.setSelection(this.selected);
+  }
+  /** @param {'xray' | 'cutaway' | 'solid'} view */
+  setView(view) {
+    this.view = view; this.grid.visible = view === 'xray';
+    if (this.document) this.show(this.document);
   }
   /** @param {boolean} [selectedOnly] */
   frame(selectedOnly = false) {

@@ -37,7 +37,7 @@ export default class MineGuide {
         queue.push(edge.to);
       }
     }
-    const devices = this.document.formatVersion === 2 ? this.document.devices : [];
+    const devices = this.document.formatVersion !== 1 ? this.document.devices : [];
     // Pick the closest reachable pending relay, rather than assuming array order is progression order.
     const target = queue.flatMap(roomId => devices.filter(device => device.roomId === roomId && !activated.has(device.id)))[0];
     const exit = this.document.entities.find(entity => entity.id === this.document.mission.exitId);

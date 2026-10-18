@@ -1,5 +1,5 @@
 import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, WALL_THICKNESS, enemyClearance } from './LevelContent.js';
-import { distance, fitsInside, portFrame, toWorld, worldSize } from './RoomMath.js';
+import { distance, fitsInside, openingFrame, roomsOverlap, toWorld } from './RoomMath.js';
 import validateRelaySemantics from './validateRelaySemantics.js';
 
 /** @param {import('../../../levelDocument.js').LevelDocument} document
@@ -25,21 +25,24 @@ export default function validateSemantics(document, issue) {
     }
     if (!a || !b) continue;
     if (a.id === b.id) { issue(path, 'connection', 'A connection must join two distinct rooms'); continue; }
-    const frameA = portFrame(a, connection.a.port), frameB = portFrame(b, connection.b.port);
+    const frameA = openingFrame(a, connection.a), frameB = openingFrame(b, connection.b);
     if (distance(frameA.center, frameB.center) > 1e-6 || frameA.normal.some((value, axis) => value !== -frameB.normal[axis])) {
       issue(path, 'alignment', `Connection ${connection.id}: ports must meet at one plane with opposite normals`); continue;
     }
     const [width, height] = connection.openingSize;
-    if ([frameA, frameB].some(frame => width > frame.width - 2 * WALL_THICKNESS - 0.5 || height > frame.height - 2 * WALL_THICKNESS - 0.5)) {
+    if ([frameA, frameB].some((frame, side) => {
+      const offset = (side === 0 ? connection.a : connection.b).offset ?? [0, 0];
+      return Math.abs(offset[0]) + width / 2 > frame.width / 2 - WALL_THICKNESS - 0.25 || Math.abs(offset[1]) + height / 2 > frame.height / 2 - WALL_THICKNESS - 0.25;
+    })) {
       issue(`${path}.openingSize`, 'clearance', 'Opening must fit both faces with wall/frame clearance'); continue;
     }
     graph.get(a.id)?.add(b.id); graph.get(b.id)?.add(a.id);
   }
   for (let i = 0; i < document.rooms.length; i++) {
-    const a = document.rooms[i], sizeA = worldSize(a);
+    const a = document.rooms[i];
     for (let j = i + 1; j < document.rooms.length; j++) {
-      const b = document.rooms[j], sizeB = worldSize(b);
-      if (sizeA.every((dimension, axis) => Math.abs(a.position[axis] - b.position[axis]) < (dimension + sizeB[axis]) / 2 - 1e-6)) {
+      const b = document.rooms[j];
+      if (roomsOverlap(a, b)) {
         issue(`$.rooms[${j}].position`, 'overlap', `Rooms ${a.id} and ${b.id} overlap`);
       }
     }
@@ -79,5 +82,5 @@ export default function validateSemantics(document, issue) {
   }
   if (entities.get(document.mission.exitId)?.kind !== 'exit') issue('$.mission.exitId', 'reference', 'Mission exitId must identify an exit entity');
   if (document.entities.filter(entity => entity.kind === 'exit').length !== 1) issue('$.entities', 'exit', 'Exactly one exit is required');
-  if (document.formatVersion === 2) validateRelaySemantics(document, issue, ids, placements);
+  if (document.formatVersion !== 1) validateRelaySemantics(document, issue, ids, placements);
 }

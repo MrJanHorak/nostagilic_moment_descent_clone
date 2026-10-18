@@ -1,5 +1,5 @@
 import { Vector3 } from 'three';
-import type { EntityDocument, LevelDocument, RoomDocument, ConnectionDocument } from '../../src/js/levelDocument.js';
+import type { EntityDocument, LevelDocument, RoomDocument, ConnectionDocument, SurfaceStyle } from '../../src/js/levelDocument.js';
 import { parseLevelDocument, serializeLevelDocument, validateLevelDocument } from '../../src/js/core/levels/document/validateLevelDocument.js';
 import compileLevelDocument, { prepareLevelDocument } from '../../src/js/core/levels/document/compileLevelDocument.js';
 import { portFrame, toWorld } from '../../src/js/core/levels/document/RoomMath.js';
@@ -31,13 +31,13 @@ if (result.valid) {
   controller.tryActivate([0, 0, 0]);
   // @ts-expect-error Closed connections are identified by a set, not an array.
   navigation.route(new Vector3(), new Vector3(), 1, ['door']);
-  if (document.formatVersion === 2) {
+  if (document.formatVersion !== 1) {
     document.devices[0].label.toUpperCase();
     // @ts-expect-error Validated relay positions are immutable.
     document.devices[0].position[0] = 10;
     // @ts-expect-error Validated door definitions cannot acquire live session state.
     document.doors[0].open = true;
-    // @ts-expect-error Version 2 requires the relay objective, not the v1 objective.
+    // @ts-expect-error Relay documents require the relay objective, not the v1 objective.
     const wrongMission: LevelDocument = { ...document, mission: { ...document.mission, type: 'clear-and-exit' } };
     // @ts-expect-error Version 2 requires an explicit devices list.
     const missingDevices: LevelDocument = { formatVersion: 2, id: document.id, name: document.name, rooms: document.rooms, connections: document.connections, entities: document.entities, playerSpawn: document.playerSpawn, mission: document.mission, combat: document.combat, doors: document.doors };
@@ -86,7 +86,13 @@ const badExit: EntityDocument = { id: 'exit', kind: 'exit', radius: 'large', roo
 // @ts-expect-error Only the implemented completion objective belongs in version 1.
 const badMission: LevelDocument['mission'] = { type: 'activate-switch', requiredEnemyIds: [], exitId: 'exit' };
 // @ts-expect-error Authored version is a literal compatibility boundary.
-const badVersion: LevelDocument['formatVersion'] = 3;
+const badVersion: LevelDocument['formatVersion'] = 4;
+// @ts-expect-error Surface patterns are a bounded local registry, not executable or remote content.
+const badStyle: SurfaceStyle = { color: 0x112233, pattern: 'https://example.com/texture.png' };
+if (connection.a.offset) {
+  // @ts-expect-error Validated opening offsets are immutable.
+  connection.a.offset[0] = 1;
+}
 // @ts-expect-error JSON parsing accepts text, not a runtime world.
 parseLevelDocument(compileLevelDocument({}));
-void [badYaw, badPrefab, badMaterial, badPosition, badOpening, badEntity, badPickup, badExit, badMission, badVersion];
+void [badYaw, badPrefab, badMaterial, badPosition, badOpening, badEntity, badPickup, badExit, badMission, badVersion, badStyle];

@@ -1,6 +1,6 @@
 # DESCENDED: level designer proposal
 
-> Implementation follow-up (October 18): [M4's first designer checkpoint](progress/M4_DESIGNER_SHELL.md) now provides a separate editor shell, viewport, snapped placement, connections and JSON save/reload using [the supported v1/v2 format](LEVEL_DOCUMENT_FORMAT.md). Entity/objective editing and playtest remain. The proposal and general document example below are historical design context, not a compatible runtime file.
+> Implementation follow-up (October 18): [M4's current authoring checkpoint](progress/M4_DESIGNER_AUTHORING.md) provides the editor shell, placement, offset openings, face styles, content/relay/door authoring and first-person playtest/return using [the supported v1/v2/v3 formats](LEVEL_DOCUMENT_FORMAT.md). Persistence recovery, remaining room commands and full M4 acceptance remain. The proposal and general document example below are historical design context, not a compatible runtime file.
 
 Date: October 14, 2026. **Proposed design; no editor or new level loader is implemented by this audit.** Dependencies and effort are in [ROADMAP.md](ROADMAP.md).
 

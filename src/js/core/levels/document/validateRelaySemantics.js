@@ -1,7 +1,7 @@
 import { DEVICE_RADIUS } from './LevelContent.js';
 import { distance, fitsInside, toWorld } from './RoomMath.js';
 
-/** @param {Extract<import('../../../levelDocument.js').LevelDocument, {formatVersion: 2}>} document
+/** @param {Exclude<import('../../../levelDocument.js').LevelDocument, {formatVersion: 1}>} document
  * @param {(path: string, code: string, message: string) => void} issue
  * @param {Set<string>} ids
  * @param {{id: string, path: string, position: import('../../../levelDocument.js').Vec3, radius: number}[]} placements */

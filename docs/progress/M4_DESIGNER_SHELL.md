@@ -1,5 +1,7 @@
 # M4 first checkpoint: local designer shell
 
+> Follow-up: [authoring, offset openings, styles and first-person playtest](M4_DESIGNER_AUTHORING.md) extends this shell. The scope and counts below record the earlier checkpoint.
+
 October 18, 2026. The owner reports that hosted CI now passes. That closes the previously open hosted-CI gate based on owner confirmation; no new run URL was supplied or independently inspected. [M3 remains accepted](../M3_ACCEPTANCE.md). M2 still has an open hardware performance gate: the last recorded Intel GPU p95 was approximately 18 ms against the provisional 16.7 ms target. CI functional success does not establish hardware performance acceptance.
 
 ## Implemented workflow

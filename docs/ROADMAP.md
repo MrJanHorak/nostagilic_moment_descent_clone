@@ -2,7 +2,7 @@
 
 Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
 
-**Implementation progress (October 18, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner now reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [M4's first designer checkpoint](progress/M4_DESIGNER_SHELL.md) adds a separate editor entry with an orbit viewport, snapped room/corridor assembly, selection and transform gizmos, properties, compatible connections, validation, undo/redo and JSON export/import. Entity/objective placement, autosave and playtest/return remain; M4 is not complete. Legacy geometry remains unrepaired.
+**Implementation progress (October 18, 2026):** **[M1 is accepted](M1_ACCEPTANCE.md)** and **[M3 is accepted](M3_ACCEPTANCE.md)**. The owner reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [M4's current authoring checkpoint](progress/M4_DESIGNER_AUTHORING.md) extends the separate designer with overlap warnings, offset openings, per-face colors/patterns, opaque previews, enemy/pickup/relay placement, spawn/exit properties, relay doors and first-person playtest/return from an editing snapshot. Room deletion/duplication, autosave/recovery and full authoring acceptance remain; M4 is not complete. Legacy geometry remains unrepaired.
 
 ## Scope and effort
 
@@ -76,7 +76,7 @@ M2 can begin with an isolated dependency security patch during M1. Broader upgra
 
 ## M4 — Reach the level designer icebox feature
 
-**Current status:** [The first shell and placement checkpoint](progress/M4_DESIGNER_SHELL.md) is implemented at `/editor.html`, including compatible connections, undo/redo and explicit JSON save/reload. Entity/objective placement and runtime playtest remain the next work; full M4 acceptance is pending.
+**Current status:** [The current authoring checkpoint](progress/M4_DESIGNER_AUTHORING.md) at `/editor.html` includes the shell/placement workflow, compatible and offset openings, content/objective/door authoring, surface colors/patterns, solid preview and real runtime playtest/return. Undo/redo, dirty handling and explicit JSON save/reload are implemented. Room deletion/duplication, autosave/recovery and the complete human authoring acceptance scenario remain.
 
 **Deliverable:** a local browser editor that creates the same M3 documents the game already loads. Its primary success test is an end-to-end authoring workflow, not the number of editing tools.
 

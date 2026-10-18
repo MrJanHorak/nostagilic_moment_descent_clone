@@ -1,19 +1,19 @@
-# Shared level document — format versions 1 and 2
+# Shared level document — format versions 1, 2 and 3
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Both versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. All three versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
 ## Document contents
 
-All fields below are required. Unknown fields are errors, including runtime health, spawned flags, callbacks or asset URLs. Root and placement objects are JSON data only.
+All base fields below are required. The version-3 extension below describes its optional appearance/offset fields. Unknown fields are errors, including runtime health, spawned flags, callbacks or asset URLs. Root and placement objects are JSON data only.
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format below, or `2` with the relay extension; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for the relay extension, or `3` for the designer extension; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
-| `connections` | Pairs of centered named face ports and an opening size |
+| `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
 | `playerSpawn` | `roomId`, room-local `position`, normalized local quaternion `rotation` |
 | `entities` | Enemy, pickup and exit placements, with stable IDs and room-local positions |
 | `mission` | `{type: "clear-and-exit", requiredEnemyIds: [...], exitId: "..."}` |
@@ -82,6 +82,36 @@ The validator repeatedly finds rooms reachable through currently open connection
 Closed doors fill the complete portal thickness and block bodies, shots, visibility and interaction. Press **R** within 2.5 units of a visible inactive cyan relay to activate it. Pause, settings and terminal/session guards apply. Activating a relay hides linked doors and removes their colliders, updates enemy routing and records one objective event; all required drones and devices must be handled before extraction. Beacons turn green. Runtime activated/open flags and navigation revisions are excluded from JSON.
 
 V1 remains strict: `devices`, `doors` and relay mission fields are rejected on a version-1 file. Loading/export does not silently upgrade it. To author a relay level, deliberately create a version-2 copy with the required lists and mission. Future incompatible behavior requires another version or explicit migration.
+
+## Version 3: designer openings and surfaces
+
+V3 uses the v2 root structure and `relay-clear-and-exit` mission. `devices`, `doors` and `requiredDeviceIds` remain explicit arrays, but may be empty. This permits an extraction-only level, independent relay objectives, and removing the last relay/door while authoring. V2 retains its original 1–16 device/door requirement. All existing ID, placement, progression and count checks still apply.
+
+Each connection endpoint may have an optional `offset: [u, v]`, defaulting to `[0, 0]`. The basis is the same canonical **world-plane** basis as `openingSize`, including rotated rooms and floor/ceiling hatches. Offsets are finite half-unit values between -32 and 32. They are relative to each endpoint's face center; the two offset opening centers must coincide, with opposing normals. The centers of the full room faces may differ along the wall plane. Rooms still cannot overlap.
+
+```json
+{
+  "id": "high-passage",
+  "a": { "roomId": "bay", "port": "negativeZ", "offset": [4, 2] },
+  "b": { "roomId": "corridor", "port": "positiveZ", "offset": [0, 0] },
+  "openingSize": [6, 6]
+}
+```
+
+This is a fragment: it fits a bay at `[0,0,0]` of size `[16,12,16]` and an `[8,8,16]` corridor at `[4,2,-16]`, both yaw 0. The opening is high and right in the bay and centered in the narrower corridor. For each endpoint, `abs(offset) + openingDimension / 2` must be at most `faceDimension / 2 - 0.75` on both plane axes. The wall splits, door mesh/collider, shots, player collision and enemy navigation all use this same opening frame. Moving an opening does not create an extra centered hole.
+
+Rooms may also have a `surfaces` object keyed by local face name. Omitted faces retain `materialPreset`; each override requires an RGB integer color from 0 to 16777215 and one pattern from `plain`, `grid`, `panels`, `hazard`:
+
+```json
+{
+  "negativeZ": { "color": 11933488, "pattern": "panels" },
+  "negativeY": { "color": 4213355, "pattern": "grid" }
+}
+```
+
+This is the value of `room.surfaces`, not a complete room. Patterns are small, deterministic local textures repeating every four world units, with continuous world-plane UVs across split wall pieces. They do not change collision. The world owns and disposes its textures. Image URLs, uploaded images, shader code and extra appearance properties are not accepted in this version.
+
+Import preserves the input version. The editor upgrades an owned draft to v3 when an operation needs offsets, face styles or flexible relay content. Undo restores the previous version and data. V1/v2 reject the new fields; use a v3-capable game build for exported v3 files.
 
 ## Validation, snapshots and loading
 

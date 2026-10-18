@@ -6,6 +6,8 @@ export type Rotation = readonly [number, number, number, number];
 export type Face = 'negativeX' | 'positiveX' | 'negativeY' | 'positiveY' | 'negativeZ' | 'positiveZ';
 export type MaterialPreset = 'industrial-blue' | 'industrial-red' | 'industrial-green';
 export type PickupType = 'health' | 'pulseAmmo';
+export type SurfacePattern = 'plain' | 'grid' | 'panels' | 'hazard';
+export interface SurfaceStyle { readonly color: number; readonly pattern: SurfacePattern }
 export interface RoomDocument {
   readonly id: string;
   readonly prefab: 'box-room' | 'straight-corridor';
@@ -13,8 +15,9 @@ export interface RoomDocument {
   readonly size: Vec3;
   readonly yaw: 0 | 90 | 180 | 270;
   readonly materialPreset: MaterialPreset;
+  readonly surfaces?: Readonly<Partial<Record<Face, SurfaceStyle>>>;
 }
-export interface PortReference { readonly roomId: string; readonly port: Face }
+export interface PortReference { readonly roomId: string; readonly port: Face; readonly offset?: readonly [number, number] }
 export interface ConnectionDocument {
   readonly id: string;
   readonly a: PortReference;
@@ -43,11 +46,13 @@ export type LevelDocument = LevelDocumentBase & (
   | { readonly formatVersion: 1; readonly mission: DocumentMission & { readonly type: 'clear-and-exit' } }
   | { readonly formatVersion: 2; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 3; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }
   | { readonly valid: false; readonly errors: readonly ValidationIssue[] };
-export interface SolidDefinition { readonly id: string; readonly center: Vec3; readonly size: Vec3; readonly color: number }
+export interface SolidDefinition { readonly id: string; readonly center: Vec3; readonly size: Vec3; readonly color: number; readonly pattern?: SurfacePattern }
 export interface ArenaLevel {
   readonly id: string;
   readonly kind: 'arena';

@@ -1,0 +1,207 @@
+{
+  "date": "2026-10-18",
+  "command": "npx playwright test",
+  "environment": {
+    "node": "22.14.0",
+    "npm": "11.2.0",
+    "os": "Windows",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "resolution": "960x540; new authoring/preview checks at 1280x800"
+  },
+  "stats": {
+    "startTime": "2026-10-18T20:26:28.597Z",
+    "duration": 339769.92699999997,
+    "expected": 16,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 43,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 322,
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2247,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7426,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1824,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 889,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 853,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 16324,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4148,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1473,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 37036,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7809,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2555,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7598,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2790,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 59544,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 52871,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "project": "deep-relay",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 128229,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "globalErrors": [],
+  "limits": "Local functional evidence only. No fresh hosted CI run, dependency audit or hardware performance measurement. Full M4 acceptance remains pending persistence recovery, room commands and human authoring playtest."
+}

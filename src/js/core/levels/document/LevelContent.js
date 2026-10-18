@@ -5,6 +5,8 @@ export const WALL_THICKNESS = 0.5;
 export const DEVICE_RADIUS = 0.75;
 export const EXIT_MARKER_MARGIN = 0.6;
 export const GRID = 0.5;
+/** @type {readonly import('../../../levelDocument.js').SurfacePattern[]} */
+export const SURFACE_PATTERNS = Object.freeze(['plain', 'grid', 'panels', 'hazard']);
 export const LIMITS = Object.freeze({ rooms: 64, connections: 128, entities: 256, text: 1_000_000, errors: 100 });
 /** @type {readonly import('../../../levelDocument.js').Face[]} */
 export const FACES = Object.freeze(['negativeX', 'positiveX', 'negativeY', 'positiveY', 'negativeZ', 'positiveZ']);

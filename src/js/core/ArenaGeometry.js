@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
 import { DEVICE_RADIUS } from './levels/document/LevelContent.js';
+import surfaceMaterials from './SurfaceMaterials.js';
 
 // Geometry stays at identity world transform. Keep the complete small arena loaded.
 /** @param {import('../levelDocument.js').ArenaLevel} level */
@@ -9,12 +10,20 @@ export default function buildArena(level) {
   group.name = level.id;
   /** @type {{id: string, box: THREE.Box3}[]} */
   const colliders = [];
+  const materialFor = surfaceMaterials();
   try {
     for (const definition of [...level.solids, ...(level.doors ?? []).map(door => door.solid)]) {
       const center = new THREE.Vector3().fromArray(definition.center);
       const size = new THREE.Vector3().fromArray(definition.size);
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(...definition.size),
-        new THREE.MeshStandardMaterial({ color: definition.color, roughness: 0.9, metalness: 0.1 }));
+      const geometry = new THREE.BoxGeometry(...definition.size);
+      if (definition.pattern && definition.pattern !== 'plain') {
+        // Keep repeats in world units and continuous across split wall panels.
+        const points = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
+        const thinAxis = definition.size.indexOf(Math.min(...definition.size));
+        const u = thinAxis === 0 ? 2 : 0, v = thinAxis === 1 ? 2 : 1;
+        for (let i = 0; i < uv.count; i++) uv.setXY(i, (points.getComponent(i, u) + definition.center[u]) / 4, (points.getComponent(i, v) + definition.center[v]) / 4);
+      }
+      const mesh = new THREE.Mesh(geometry, materialFor(definition));
       mesh.name = definition.id;
       mesh.position.copy(center);
       group.add(mesh);

@@ -1,4 +1,5 @@
-import { FACES, GRID, LIMITS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
+import { enemyTypes } from '../entities/EnemyTypes.js';
 import { distance, portFrame } from '../core/levels/document/RoomMath.js';
 import { parseLevelDocument, serializeLevelDocument, validateLevelDocument } from '../core/levels/document/validateLevelDocument.js';
 
@@ -24,7 +25,7 @@ export function createDocument() {
 /** @param {LevelDocument} document @param {string} prefix */
 function nextId(document, prefix) {
   const ids = new Set([document.id, ...document.rooms.map(value => value.id), ...document.connections.map(value => value.id),
-    ...document.entities.map(value => value.id), ...(document.formatVersion === 2 ? [...document.devices, ...document.doors].map(value => value.id) : [])]);
+    ...document.entities.map(value => value.id), ...(document.formatVersion !== 1 ? [...document.devices, ...document.doors].map(value => value.id) : [])]);
   let index = 1;
   while (ids.has(`${prefix}-${index}`)) index++;
   return `${prefix}-${index}`;
@@ -33,6 +34,17 @@ function nextId(document, prefix) {
 /** @param {LevelDocument} document @param {string} roomId @param {Face} port */
 function occupied(document, roomId, port) {
   return document.connections.some(connection => [connection.a, connection.b].some(endpoint => endpoint.roomId === roomId && endpoint.port === port));
+}
+
+/** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3}>} */
+function modernize(draft) {
+  if (draft.formatVersion !== 3) Object.assign(draft, {
+    formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
+    doors: draft.formatVersion === 1 ? [] : draft.doors,
+    mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
+  });
+  return /** @type {Extract<LevelDocument, {formatVersion: 3}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -92,7 +104,7 @@ export default class EditorDocument {
     if (![candidate.position, candidate.size].every(vector => vector.length === 3 && vector.every(number => Number.isFinite(number) && Number.isInteger(number / GRID)))) throw new Error('Position and size must use the 0.5 unit grid.');
     if (candidate.position.some(number => Math.abs(number) > 4096) || candidate.size.some(number => number < 4 || number > 64)) throw new Error('Positions must be within ±4096; dimensions must be 4–64 units.');
     if (![0, 90, 180, 270].includes(candidate.yaw)) throw new Error('Yaw must be 0, 90, 180 or 270 degrees.');
-    if (!['industrial-blue', 'industrial-red', 'industrial-green'].includes(candidate.materialPreset)) throw new Error('Choose a registered material.');
+    if (!Object.hasOwn(MATERIALS, candidate.materialPreset)) throw new Error('Choose a registered material.');
     if (candidate.prefab === 'straight-corridor' && (candidate.size[0] > 8 || candidate.size[1] > 8 || candidate.size[2] < Math.max(candidate.size[0], candidate.size[1]))) throw new Error('Corridor width/height must be at most 8; length must be at least its width/height.');
     this.change(draft => { Object.assign(draft.rooms.find(room => room.id === roomId) ?? {}, copy(values)); });
   }
@@ -123,5 +135,144 @@ export default class EditorDocument {
     if (this.document.connections.length >= LIMITS.connections) throw new Error('Connection limit reached (128).');
     const connection = connectionFor(this.document, this.room(aId), portA, this.room(bId), portB);
     this.change(draft => { draft.connections.push(connection); });
+  }
+
+  /** @param {string} roomId @param {Face | 'all'} face @param {number} color @param {import('../levelDocument.js').SurfacePattern} pattern */
+  setSurface(roomId, face, color, pattern) {
+    if ((!FACES.includes(/** @type {Face} */ (face)) && face !== 'all') || !Number.isInteger(color) || color < 0 || color > 0xffffff || !SURFACE_PATTERNS.includes(pattern)) throw new Error('Choose a face, color and supported wall pattern.');
+    this.room(roomId);
+    this.change(draft => {
+      modernize(draft);
+      const room = draft.rooms.find(room => room.id === roomId); if (!room) return;
+      room.surfaces ??= {};
+      for (const key of face === 'all' ? FACES : [face]) room.surfaces[key] = { color, pattern };
+    });
+  }
+
+  /** @param {string} roomId @param {Face | 'all'} face */
+  resetSurface(roomId, face) {
+    this.room(roomId);
+    this.change(draft => {
+      const room = draft.rooms.find(room => room.id === roomId); if (!room?.surfaces) return;
+      for (const key of face === 'all' ? FACES : [face]) delete room.surfaces[key];
+      if (!Object.keys(room.surfaces).length) delete room.surfaces;
+    });
+  }
+
+  /** @param {string} id */
+  disconnect(id) {
+    this.change(draft => {
+      if (draft.formatVersion === 2) modernize(draft);
+      draft.connections = draft.connections.filter(connection => connection.id !== id);
+      if (draft.formatVersion !== 1) draft.doors = draft.doors.filter(door => door.connectionId !== id);
+    });
+  }
+
+  /** Source-side offset ranges that leave frame clearance in both rooms.
+   * @param {string} id @param {number} width @param {number} height */
+  openingBounds(id, width, height) {
+    const connection = this.document.connections.find(connection => connection.id === id);
+    if (!connection) throw new Error('Select a connection.');
+    const a = portFrame(this.room(connection.a.roomId), connection.a.port), b = portFrame(this.room(connection.b.roomId), connection.b.port);
+    if (a.axis !== b.axis || a.direction !== -b.direction || a.center[a.axis] !== b.center[b.axis]) throw new Error('The room faces must share a plane and face opposite directions.');
+    const margin = WALL_THICKNESS + 0.25;
+    const ranges = [width, height].map((size, index) => {
+      const axis = index === 0 ? a.u : a.v, halfA = (index === 0 ? a.width : a.height) / 2, halfB = (index === 0 ? b.width : b.height) / 2;
+      const delta = a.center[axis] - b.center[axis];
+      return { min: Math.ceil(Math.max(-halfA + margin + size / 2, -halfB + margin + size / 2 - delta) / GRID) * GRID,
+        max: Math.floor(Math.min(halfA - margin - size / 2, halfB - margin - size / 2 - delta) / GRID) * GRID, delta };
+    });
+    if (ranges.some(range => range.min > range.max)) throw new Error('The opening is too large for the shared wall area.');
+    return ranges;
+  }
+
+  /** @param {string} id @param {number} width @param {number} height @param {number[]} offset */
+  updateOpening(id, width, height, offset) {
+    if (offset.length !== 2 || ![width, height, ...offset].every(value => Number.isFinite(value) && Number.isInteger(value / GRID)) || width < 2 || height < 2 || width > 62 || height > 62) throw new Error('Opening dimensions and offsets use the 0.5 unit grid; dimensions must be 2–62.');
+    const ranges = this.openingBounds(id, width, height);
+    if (ranges.some((range, index) => offset[index] < range.min || offset[index] > range.max)) throw new Error(`Opening must remain inside both wall frames: U ${ranges[0].min}…${ranges[0].max}, V ${ranges[1].min}…${ranges[1].max}.`);
+    this.change(draft => {
+      modernize(draft);
+      const connection = draft.connections.find(connection => connection.id === id); if (!connection) return;
+      connection.openingSize = [width, height]; connection.a.offset = [offset[0], offset[1]];
+      connection.b.offset = [offset[0] + ranges[0].delta, offset[1] + ranges[1].delta];
+    });
+  }
+
+  /** @param {string} id @param {number} width @param {number} height @param {string} anchor */
+  anchorOpening(id, width, height, anchor) {
+    const ranges = this.openingBounds(id, width, height);
+    const u = anchor.includes('left') ? ranges[0].min : anchor.includes('right') ? ranges[0].max : Math.max(ranges[0].min, Math.min(ranges[0].max, 0));
+    const v = anchor.includes('bottom') ? ranges[1].min : anchor.includes('top') ? ranges[1].max : Math.max(ranges[1].min, Math.min(ranges[1].max, 0));
+    this.updateOpening(id, width, height, [u, v]);
+  }
+
+  /** @param {string} id */
+  content(id) {
+    if (id === '@spawn') return { ...this.document.playerSpawn, id, kind: 'spawn' };
+    const value = this.document.entities.find(value => value.id === id)
+      ?? (this.document.formatVersion !== 1 ? this.document.devices.find(value => value.id === id) : undefined);
+    if (!value) throw new Error('Select mission content.');
+    return 'kind' in value ? value : { ...value, kind: 'relay' };
+  }
+
+  /** @param {string} roomId @param {'enemy' | 'pickup' | 'relay'} kind @param {string} type @param {number[]} position */
+  addContent(roomId, kind, type, position) {
+    this.room(roomId);
+    if (position.length !== 3 || !position.every(value => Number.isFinite(value) && Math.abs(value) <= 4096)) throw new Error('Enter finite room-local coordinates.');
+    if (kind === 'enemy' && !enemyTypes.some(enemy => enemy.name === type)) throw new Error('Choose a registered enemy.');
+    if (kind === 'pickup' && !Object.hasOwn(AUTHORED_PICKUPS, type)) throw new Error('Choose a registered pickup.');
+    if (this.document.entities.length >= LIMITS.entities) throw new Error('Entity limit reached.');
+    const id = nextId(this.document, kind);
+    this.change(draft => {
+      const local = /** @type {[number, number, number]} */ ([...position]);
+      if (kind === 'relay') {
+        const modern = modernize(draft); if (modern.devices.length >= 16) throw new Error('Relay limit reached (16).');
+        modern.devices.push({ id, label: id, roomId, position: local }); modern.mission.requiredDeviceIds.push(id);
+      } else if (kind === 'enemy') {
+        draft.entities.push({ id, kind, roomId, position: local, type: /** @type {import('../contracts.js').EnemyType} */ (type) }); draft.mission.requiredEnemyIds.push(id);
+      } else draft.entities.push({ id, kind, roomId, position: local, type: /** @type {import('../levelDocument.js').PickupType} */ (type) });
+    });
+    return id;
+  }
+
+  /** @param {string} id @param {string} roomId @param {number[]} position @param {boolean} required @param {number} [yaw] */
+  updateContent(id, roomId, position, required, yaw = 0) {
+    this.room(roomId); this.content(id);
+    if (position.length !== 3 || !position.every(value => Number.isFinite(value) && Math.abs(value) <= 4096) || ![0, 90, 180, 270].includes(yaw)) throw new Error('Enter finite room-local coordinates and a quarter-turn spawn heading.');
+    this.change(draft => {
+      const value = id === '@spawn' ? draft.playerSpawn : draft.entities.find(value => value.id === id) ?? (draft.formatVersion !== 1 ? draft.devices.find(value => value.id === id) : undefined);
+      if (!value) return;
+      value.roomId = roomId; value.position = /** @type {[number, number, number]} */ ([...position]);
+      if (id === '@spawn') draft.playerSpawn.rotation = [0, Math.sin(yaw * Math.PI / 360), 0, Math.cos(yaw * Math.PI / 360)];
+      if ('kind' in value && value.kind === 'enemy') draft.mission.requiredEnemyIds = required ? [...new Set([...draft.mission.requiredEnemyIds, id])] : draft.mission.requiredEnemyIds.filter(value => value !== id);
+    });
+  }
+
+  /** @param {string} id */
+  deleteContent(id) {
+    const value = this.content(id);
+    if (value.kind === 'spawn' || value.kind === 'exit') throw new Error('Move the required spawn or exit instead of deleting it.');
+    this.change(draft => {
+      draft.entities = draft.entities.filter(value => value.id !== id); draft.mission.requiredEnemyIds = draft.mission.requiredEnemyIds.filter(value => value !== id);
+      if (draft.formatVersion !== 1) {
+        // V3 allows removing the last relay/door without an invalid v2 shell.
+        const modern = modernize(draft); modern.devices = modern.devices.filter(value => value.id !== id);
+        modern.doors = modern.doors.filter(door => door.deviceId !== id); modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(value => value !== id);
+      }
+    });
+  }
+
+  /** @param {string} connectionId @param {string} deviceId */
+  setDoor(connectionId, deviceId) {
+    if (!this.document.connections.some(connection => connection.id === connectionId)) throw new Error('Select a connection.');
+    this.change(draft => {
+      const modern = modernize(draft); modern.doors = modern.doors.filter(door => door.connectionId !== connectionId);
+      if (deviceId) {
+        if (!modern.devices.some(device => device.id === deviceId)) throw new Error('Select the relay that unlocks this door.');
+        if (modern.doors.length >= 16) throw new Error('Door limit reached (16).');
+        modern.doors.push({ id: nextId(draft, 'door'), connectionId, deviceId });
+      }
+    });
   }
 }
