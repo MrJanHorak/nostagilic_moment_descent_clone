@@ -1,7 +1,7 @@
 import EditorDocument from './EditorDocument.js';
-import { FACE_LABELS, placementPosition } from './EditorPicking.js';
+import { faceLabel, placementPosition } from './EditorPicking.js';
 import { FACES, GRID, MATERIALS, SURFACE_PATTERNS } from '../core/levels/document/LevelContent.js';
-import { portFrame, toWorld } from '../core/levels/document/RoomMath.js';
+import { connectableFace, portFrame, toWorld } from '../core/levels/document/RoomMath.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 
 /** @param {import('./EditorPicking.js').ViewportTarget} target
@@ -11,7 +11,9 @@ export default function openContextActions(target, { model, viewport, menu, comm
   const room = model.room(target.roomId), face = target.face;
   const connection = face ? model.document.connections.find(connection => [connection.a, connection.b].some(end => end.roomId === room.id && end.port === face)) : undefined;
   const used = new Set(model.document.connections.flatMap(connection => [connection.a, connection.b].filter(end => end.roomId === room.id).map(end => end.port)));
-  const duplicateFace = face && !used.has(face) ? face : FACES.find(face => !used.has(face));
+  const duplicateFace = face && connectableFace(room, face) && !used.has(face) ? face : FACES.find(face => connectableFace(room, face) && !used.has(face));
+  const canAttach = face ? connectableFace(room, face) : false;
+  const sideReason = 'Sloped side faces stay solid. Continue from a corridor end face.';
   const protectedRoom = model.document.rooms.length === 1 || model.document.playerSpawn.roomId === room.id || model.document.entities.some(entity => entity.kind === 'exit' && entity.roomId === room.id);
   /** @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
   const preview = (kind, type = 'scout') => {
@@ -32,7 +34,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
     if (!face) return;
     const frame = portFrame(room, face), preset = MATERIALS[room.materialPreset], style = room.surfaces?.[face];
     const color = style?.color ?? (frame.axis === 1 ? frame.direction < 0 ? preset.floor : preset.ceiling : preset.wall);
-    menu.form('Wall appearance', `${room.id} · ${FACE_LABELS[face]}`, [
+    menu.form('Wall appearance', `${room.id} · ${faceLabel(room, face)}`, [
       { id: 'color', label: 'Wall color', type: 'color', value: `#${color.toString(16).padStart(6, '0')}` },
       { id: 'pattern', label: 'Wall pattern', value: style?.pattern ?? 'plain', options: SURFACE_PATTERNS.map(pattern => ({ value: pattern, label: pattern })) },
     ], values => commit(() => model.setSurface(room.id, face, Number.parseInt(values.color.slice(1), 16), /** @type {import('../levelDocument.js').SurfacePattern} */ (values.pattern))));
@@ -70,11 +72,15 @@ export default function openContextActions(target, { model, viewport, menu, comm
   }
   if (face) actions.push(
     { label: 'Wall color and pattern…', action: appearance },
-    { label: 'Opening and door…', action: opening, disabled: !connection, reason: !connection ? 'Attach a neighbor here, or use Connections to join existing touching rooms.' : undefined },
-    ...(connection ? [{ label: 'Move opening to this point', action: moveOpening }] : [
+    { label: 'Opening and door…', action: opening, disabled: !connection, reason: !connection ? canAttach ? 'Attach a neighbor here, or use Connections to join existing touching rooms.' : sideReason : undefined },
+    ...(connection ? [{ label: 'Move opening to this point', action: moveOpening }] : canAttach ? [
       { label: 'Attach room at this point', action: () => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'box-room'); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }) },
-      { label: 'Attach corridor at this point', action: () => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'straight-corridor'); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }) },
-    ]),
+      { label: portFrame(room, face).axis === 1 ? 'Attach vertical shaft at this point' : 'Attach corridor at this point', action: () => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'straight-corridor'); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }) },
+      { label: 'Attach ramp or diagonal corridor…', action: () => menu.form('Ramp or diagonal corridor', '16 units long. Move the far end right/up in the new corridor’s local frame; negative rise slopes down. Only end faces connect.', [
+        { id: 'side', label: 'Sideways offset', type: 'number', value: '0', min: '-16', max: '16', step: '1' },
+        { id: 'rise', label: 'Rise / fall', type: 'number', value: '8', min: '-16', max: '16', step: '1' },
+      ], values => commit(() => { const id = model.attachAt(room.id, face, target.localPoint, 'offset-corridor', [Number(values.side), Number(values.rise)]); select({ ...target, roomId: id, face: undefined, contentId: undefined }); }), 'Attach corridor') },
+    ] : []),
   );
   actions.push(
     { label: 'Place enemy…', preview: () => preview('enemy'), action: () => menu.form('Place enemy', `${room.id} · white/red marker shows the planned position`, [
@@ -91,7 +97,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
     { label: 'Delete room and contents', disabled: protectedRoom, reason: protectedRoom ? 'Keep one room, and move its spawn/exit elsewhere before deletion.' : undefined,
       action: () => commit(() => model.deleteRoom(room.id)) },
   );
-  menu.open(target.clientX, target.clientY, `${room.id}${face ? ` · ${FACE_LABELS[face]}` : target.contentId ? ' · item' : ' · room'}`,
+  menu.open(target.clientX, target.clientY, `${room.id}${face ? ` · ${faceLabel(room, face)}` : target.contentId ? ' · item' : ' · room'}`,
     'Right-click places just inside the selected surface, snapped to the grid. Esc closes this menu. Right-drag still pans.', actions);
   viewport.controls.enabled = false;
 }

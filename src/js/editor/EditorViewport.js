@@ -3,13 +3,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import compileLevelDocument from '../core/levels/document/compileLevelDocument.js';
 import buildArena from '../core/ArenaGeometry.js';
-import { openingFrame, portFrame, roomsOverlap, toWorld } from '../core/levels/document/RoomMath.js';
+import { openingFrame, orient, portFrame, roomsOverlap, shear, toWorld } from '../core/levels/document/RoomMath.js';
+import { boxCorners, BOX_FACES } from '../utils/BoxTopology.js';
+import { convexGeometry } from '../utils/ConvexSolid.js';
 import disposeObject from '../utils/disposeObject.js';
-import { toLocal } from './EditorPicking.js';
+import { snappedAngles, toLocal } from './EditorPicking.js';
 
 export default class EditorViewport {
   /** @param {HTMLElement} host @param {(id: string) => void} select
-   * @param {(id: string, values: {position: number[], yaw: number}) => void} commit
+   * @param {(id: string, values: {position: number[], yaw: number, pitch: number, roll: number}) => void} commit
    * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void}} [interaction] */
   constructor(host, select, commit, interaction = {}) {
     this.host = host; this.select = select; this.commit = commit;
@@ -35,7 +37,7 @@ export default class EditorViewport {
       const object = this.transform.object;
       if (object) this.commit(String(object.userData.roomId), {
         position: object.position.toArray().map(value => Math.round(value * 2) / 2),
-        yaw: ((Math.round(object.rotation.y / (Math.PI / 2)) * 90) % 360 + 360) % 360,
+        ...snappedAngles(object.quaternion, this.document?.rooms.find(room => room.id === object.userData.roomId)),
       });
     });
     this.world = new THREE.Group(); this.scene.add(this.world);
@@ -119,9 +121,9 @@ export default class EditorViewport {
     }
     for (const room of document.rooms) {
       const overlaps = document.rooms.some(other => other.id !== room.id && roomsOverlap(room, other));
-      const box = new THREE.BoxGeometry(...room.size);
+      const box = room.endOffset ? convexGeometry(boxCorners([0, 0, 0], room.size).map(point => shear(room, point))) : new THREE.BoxGeometry(...room.size);
       const proxy = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ visible: overlaps, color: 0xff384b, transparent: true, opacity: 0.22, depthWrite: false }));
-      proxy.position.fromArray(room.position); proxy.rotation.y = room.yaw * Math.PI / 180; proxy.userData.roomId = room.id; proxy.userData.overlaps = overlaps;
+      proxy.position.fromArray(room.position); proxy.rotation.set((room.pitch ?? 0) * Math.PI / 180, room.yaw * Math.PI / 180, (room.roll ?? 0) * Math.PI / 180, 'YXZ'); proxy.userData.roomId = room.id; proxy.userData.overlaps = overlaps;
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: overlaps ? 0xff5f69 : room.id === this.selected ? 0xffc16e : 0x7d9aaf }));
       proxy.add(edges); this.world.add(proxy); this.rooms.push(proxy);
     }
@@ -168,12 +170,22 @@ export default class EditorViewport {
     for (const marker of this.markers) marker.scale.setScalar(marker.userData.contentId === this.selectedContent ? 1.5 : 1);
     const room = this.document?.rooms.find(room => room.id === this.selected);
     if (!room || !this.selectedFace) return;
-    const frame = portFrame(room, this.selectedFace), geometry = new THREE.PlaneGeometry(frame.width - 1, frame.height - 1);
+    const frame = portFrame(room, this.selectedFace);
+    let geometry = /** @type {THREE.BufferGeometry} */ (new THREE.PlaneGeometry(frame.width - 1, frame.height - 1));
+    if (room.endOffset) {
+      geometry.dispose();
+      const normalAxis = this.selectedFace.endsWith('X') ? 0 : this.selectedFace.endsWith('Y') ? 1 : 2;
+      const corners = boxCorners([0, 0, 0], room.size.map((value, axis) => value - (axis === normalAxis ? 0 : 1)));
+      const points = BOX_FACES[this.selectedFace].map(index => new THREE.Vector3(...toWorld(room, corners[index])).addScaledVector(new THREE.Vector3(...frame.normal), -0.51));
+      geometry = new THREE.BufferGeometry().setFromPoints([points[0], points[1], points[2], points[0], points[2], points[3]]);
+    }
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x72e8f0, transparent: true, opacity: 0.16, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
-    mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...frame.normal));
-    // PlaneGeometry's first axis follows the canonical opening U direction.
-    if (frame.axis === 1) mesh.rotation.z += Math.PI;
-    mesh.position.fromArray(frame.center).addScaledVector(new THREE.Vector3(...frame.normal), -0.51);
+    if (!room.endOffset) {
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...frame.normal));
+      // PlaneGeometry's first axis follows the canonical opening U direction.
+      if (frame.axis === 1) mesh.rotation.z += Math.PI;
+      mesh.position.fromArray(frame.center).addScaledVector(new THREE.Vector3(...frame.normal), -0.51);
+    }
     mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x72e8f0, depthTest: false })));
     this.selectionOverlay.add(mesh);
   }
@@ -190,7 +202,8 @@ export default class EditorViewport {
     const roomId = String(fallback.object.userData.roomId), room = this.document.rooms.find(room => room.id === roomId); if (!room) return null;
     let point = fallback.point;
     if (!hit) {
-      const centerPlane = ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), -room.position[1]), new THREE.Vector3());
+      const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(new THREE.Vector3(...orient([0, 1, 0], room)), new THREE.Vector3(...room.position));
+      const centerPlane = ray.ray.intersectPlane(plane, new THREE.Vector3());
       if (centerPlane && toLocal(room, centerPlane.toArray()).every((value, axis) => Math.abs(value) < room.size[axis] / 2)) point = centerPlane;
     }
     return { roomId, localPoint: toLocal(room, point.toArray()), clientX, clientY,
@@ -216,7 +229,7 @@ export default class EditorViewport {
   setMode(mode) {
     this.mode = mode;
     if (mode !== 'select') this.transform.setMode(mode);
-    this.transform.showX = mode !== 'rotate'; this.transform.showY = true; this.transform.showZ = mode !== 'rotate';
+    this.transform.showX = true; this.transform.showY = true; this.transform.showZ = true;
     this.setSelection(this.selected);
   }
   /** @param {'xray' | 'cutaway' | 'solid'} view */

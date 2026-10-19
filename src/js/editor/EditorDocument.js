@@ -1,6 +1,6 @@
 import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
-import { distance, portFrame } from '../core/levels/document/RoomMath.js';
+import { connectableFace, distance, portFrame } from '../core/levels/document/RoomMath.js';
 import { parseLevelDocument, serializeLevelDocument, validateLevelDocument, validateLevelDraft } from '../core/levels/document/validateLevelDocument.js';
 import { placementPosition } from './EditorPicking.js';
 import { toWorld } from '../core/levels/document/RoomMath.js';
@@ -39,19 +39,20 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5}>} */
 function modernize(draft) {
-  if (draft.formatVersion !== 3) Object.assign(draft, {
+  if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
  * @param {LevelDocument} document @param {Room} a @param {Face} portA @param {Room} b @param {Face} portB */
 function connectionFor(document, a, portA, b, portB) {
+  if (!connectableFace(a, portA) || !connectableFace(b, portB)) throw new Error('Sloped side faces stay solid. Connect through a corridor end face.');
   if (a.id === b.id || occupied(document, a.id, portA) || occupied(document, b.id, portB)) throw new Error('Choose two different rooms with unused ports.');
   const frameA = portFrame(a, portA), frameB = portFrame(b, portB);
   if (distance(frameA.center, frameB.center) > 1e-6 || frameA.normal.some((value, axis) => value !== -frameB.normal[axis])) {
@@ -123,11 +124,11 @@ export default class EditorDocument {
     });
     return id;
   }
-  /** @param {string} roomId @param {Face} face @param {number[]} point @param {'box-room' | 'straight-corridor'} prefab */
-  attachAt(roomId, face, point, prefab) {
+  /** @param {string} roomId @param {Face} face @param {number[]} point @param {Room['prefab']} prefab @param {number[]} [endOffset] */
+  attachAt(roomId, face, point, prefab, endOffset) {
     let id = '';
     this.checked(candidate => {
-      id = candidate.attachRoom(roomId, face, prefab);
+      id = candidate.attachRoom(roomId, face, prefab, endOffset);
       const connection = candidate.document.connections[candidate.document.connections.length - 1];
       const source = portFrame(candidate.room(roomId), face), world = toWorld(candidate.room(roomId), /** @type {[number, number, number]} */ (point));
       const offsets = [source.u, source.v].map((axis, index) => {
@@ -191,32 +192,53 @@ export default class EditorDocument {
     if (!room) throw new Error('Select a room first.');
     return room;
   }
-  /** @param {string} roomId @param {{position?: number[], size?: number[], yaw?: number, materialPreset?: string}} values */
+  /** @param {string} roomId @param {{position?: number[], size?: number[], yaw?: number, pitch?: number, roll?: number, endOffset?: number[], materialPreset?: string}} values */
   updateRoom(roomId, values) {
     const original = this.room(roomId);
     const candidate = { ...original, ...values };
     if (![candidate.position, candidate.size].every(vector => vector.length === 3 && vector.every(number => Number.isFinite(number) && Number.isInteger(number / GRID)))) throw new Error('Position and size must use the 0.5 unit grid.');
     if (candidate.position.some(number => Math.abs(number) > 4096) || candidate.size.some(number => number < 4 || number > 64)) throw new Error('Positions must be within ±4096; dimensions must be 4–64 units.');
-    if (![0, 90, 180, 270].includes(candidate.yaw)) throw new Error('Yaw must be 0, 90, 180 or 270 degrees.');
+    if (![candidate.yaw, candidate.pitch ?? 0, candidate.roll ?? 0].every(value => [0, 90, 180, 270].includes(value))) throw new Error('Yaw, pitch and roll must be 0, 90, 180 or 270 degrees. Use corridor end offsets for slopes.');
     if (!Object.hasOwn(MATERIALS, candidate.materialPreset)) throw new Error('Choose a registered material.');
-    if (candidate.prefab === 'straight-corridor' && (candidate.size[0] > 8 || candidate.size[1] > 8 || candidate.size[2] < Math.max(candidate.size[0], candidate.size[1]))) throw new Error('Corridor width/height must be at most 8; length must be at least its width/height.');
-    this.change(draft => { Object.assign(draft.rooms.find(room => room.id === roomId) ?? {}, copy(values)); });
+    if (candidate.prefab !== 'box-room' && (candidate.size[0] > 8 || candidate.size[1] > 8 || candidate.size[2] < Math.max(candidate.size[0], candidate.size[1]))) throw new Error('Corridor width/height must be at most 8; length must be at least its width/height.');
+    if (candidate.prefab === 'offset-corridor') {
+      if (!candidate.endOffset || candidate.endOffset.length !== 2 || !candidate.endOffset.every(value => Number.isInteger(value) && Math.abs(value) <= 32) || Math.hypot(...candidate.endOffset) > candidate.size[2]) throw new Error('End offsets are whole units within ±32; their combined distance cannot exceed corridor length.');
+    } else if (candidate.endOffset) throw new Error('End offsets require a shaped corridor.');
+    this.change(draft => {
+      const updates = copy(values);
+      // Unchanged zero controls must not silently upgrade old imported files.
+      if (updates.pitch === 0 && original.pitch === undefined) delete updates.pitch;
+      if (updates.roll === 0 && original.roll === undefined) delete updates.roll;
+      if (updates.pitch !== undefined || updates.roll !== undefined) { modernize(draft); if (draft.formatVersion !== 5) Object.assign(draft, { formatVersion: 4 }); }
+      if (updates.endOffset !== undefined) { modernize(draft); Object.assign(draft, { formatVersion: 5 }); }
+      Object.assign(draft.rooms.find(room => room.id === roomId) ?? {}, updates);
+    });
   }
   /** Attach creates room + connection atomically, including vertical hatches.
-   * @param {string} roomId @param {Face} face @param {'box-room' | 'straight-corridor'} prefab */
-  attachRoom(roomId, face, prefab) {
+   * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] */
+  attachRoom(roomId, face, prefab, endOffset = [0, 8]) {
     if (this.document.rooms.length >= LIMITS.rooms) throw new Error('Room limit reached (64).');
     const source = this.room(roomId);
+    if (!connectableFace(source, face)) throw new Error('Sloped side faces stay solid. Continue from a corridor end face.');
     if (!FACES.includes(face) || occupied(this.document, roomId, face)) throw new Error('Choose an unused attachment port.');
     const frame = portFrame(source, face), id = nextId(this.document, 'room');
     /** @type {Room} */ const room = { id, prefab, position: [0, 0, 0], size: prefab === 'box-room' ? [16, 12, 16] : [8, 8, 16], yaw: 0, materialPreset: source.materialPreset };
-    // Orient horizontal corridors along the selected world axis.
+    // Corridors run along the selected world axis, including vertical shafts.
     if (prefab === 'straight-corridor' && frame.axis === 0) room.yaw = 90;
+    if (prefab === 'straight-corridor' && frame.axis === 1) room.pitch = 90;
+    if (prefab === 'offset-corridor') {
+      room.endOffset = /** @type {[number, number]} */ ([...endOffset]);
+      if (frame.axis === 0) room.yaw = frame.direction > 0 ? 270 : 90;
+      if (frame.axis === 1) room.pitch = frame.direction > 0 ? 90 : 270;
+      if (frame.axis === 2) room.yaw = frame.direction > 0 ? 180 : 0;
+    }
     const opposite = FACES.find(port => portFrame(room, port).normal.every((value, axis) => value === -frame.normal[axis]));
     if (!opposite) throw new Error('No compatible port.');
     const offset = portFrame(room, opposite).center;
     room.position = /** @type {[number, number, number]} */ (frame.center.map((value, axis) => value - offset[axis]));
     this.change(draft => {
+      if (room.pitch) { modernize(draft); if (draft.formatVersion !== 5) Object.assign(draft, { formatVersion: 4 }); }
+      if (prefab === 'offset-corridor') { modernize(draft); Object.assign(draft, { formatVersion: 5 }); }
       draft.rooms.push(room);
       draft.connections.push(connectionFor(draft, source, face, room, opposite));
       const result = validateLevelDocument(draft);

@@ -2,21 +2,22 @@ import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
 import { DEVICE_RADIUS } from './levels/document/LevelContent.js';
 import surfaceMaterials from './SurfaceMaterials.js';
+import { convexGeometry, convexHull } from '../utils/ConvexSolid.js';
 
 // Geometry stays at identity world transform. Keep the complete small arena loaded.
 /** @param {import('../levelDocument.js').ArenaLevel} level */
 export default function buildArena(level) {
   const group = new THREE.Group();
   group.name = level.id;
-  /** @type {{id: string, box: THREE.Box3}[]} */
+  /** @type {{id: string, box: THREE.Box3, convex?: import('../contracts.js').ConvexHull}[]} */
   const colliders = [];
   const materialFor = surfaceMaterials();
   try {
     for (const definition of [...level.solids, ...(level.doors ?? []).map(door => door.solid)]) {
       const center = new THREE.Vector3().fromArray(definition.center);
       const size = new THREE.Vector3().fromArray(definition.size);
-      const geometry = new THREE.BoxGeometry(...definition.size);
-      if (definition.pattern && definition.pattern !== 'plain') {
+      const geometry = definition.vertices ? convexGeometry(definition.vertices) : new THREE.BoxGeometry(...definition.size);
+      if (!definition.vertices && definition.pattern && definition.pattern !== 'plain') {
         // Keep repeats in world units and continuous across split wall panels.
         const points = geometry.getAttribute('position'), uv = geometry.getAttribute('uv');
         const thinAxis = definition.size.indexOf(Math.min(...definition.size));
@@ -25,9 +26,10 @@ export default function buildArena(level) {
       }
       const mesh = new THREE.Mesh(geometry, materialFor(definition));
       mesh.name = definition.id;
-      mesh.position.copy(center);
+      if (!definition.vertices) mesh.position.copy(center);
       group.add(mesh);
-      colliders.push({ id: definition.id, box: new THREE.Box3().setFromCenterAndSize(center, size) });
+      const convex = definition.vertices ? convexHull(definition.vertices) : undefined;
+      colliders.push({ id: definition.id, box: convex?.box ?? new THREE.Box3().setFromCenterAndSize(center, size), ...(convex ? { convex } : {}) });
     }
     group.add(new THREE.HemisphereLight(0xe4f4ff, 0x394455, 2));
     for (const device of level.devices ?? []) {

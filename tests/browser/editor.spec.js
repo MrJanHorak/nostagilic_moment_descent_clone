@@ -25,7 +25,7 @@ test('designer: assemble three spaces, undo invalid edit, export and reload prod
   await expect(page.getByRole('button', { name: 'Export JSON' })).toBeDisabled();
   await page.getByRole('button', { name: 'Undo', exact: true }).click();
   await page.getByRole('button', { name: 'Move', exact: true }).click();
-  await page.getByRole('button', { name: 'Rotate Y', exact: true }).click();
+  await page.getByRole('button', { name: 'Rotate XYZ', exact: true }).click();
   await page.getByRole('button', { name: 'Select', exact: true }).click();
   await page.getByRole('button', { name: 'Frame all', exact: true }).click();
   const downloadEvent = page.waitForEvent('download');

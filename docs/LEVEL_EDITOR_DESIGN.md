@@ -1,6 +1,6 @@
 # DESCENDED: level designer proposal
 
-> Implementation follow-up (October 18): [M4's current UX/recovery checkpoint](progress/M4_DESIGNER_UX.md) adds wall/item picking and context menus, grouped properties, room commands and local recovery to the editor/authoring/playtest workflow using [the supported v1/v2/v3 formats](LEVEL_DOCUMENT_FORMAT.md). The complete workflow has automated coverage; human M4 acceptance remains. The proposal and general document example below are historical design context, not a compatible runtime file.
+> Implementation follow-up (October 18): [M4's latest geometry checkpoint](progress/M4_SHAPED_CORRIDORS.md) adds ramps and diagonal corridor walls in format v5, following [vertical shafts and room orientation](progress/M4_VERTICAL_CORRIDORS.md) and [direct editing/recovery](progress/M4_DESIGNER_UX.md). Connections use rectangular end faces; sloped sides are solid and styleable. The shared author/export/reload/play/return workflow has automated coverage; human M4 acceptance remains. Freeform vertex editing stays deferred. The proposal and general document example below are historical design context, not a compatible runtime file.
 
 Date: October 14, 2026. **Proposed design; no editor or new level loader is implemented by this audit.** Dependencies and effort are in [ROADMAP.md](ROADMAP.md).
 

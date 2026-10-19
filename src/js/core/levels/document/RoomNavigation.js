@@ -1,11 +1,11 @@
 import { Vector3 } from 'three';
-import { openingFrame, worldSize } from './RoomMath.js';
+import { clearanceScale, fitsInside, inverseOrient, openingFrame, toLocal, toWorld, worldSize } from './RoomMath.js';
 import { WALL_THICKNESS } from './LevelContent.js';
 
 // Keep turns inside the convex room interior, clear of the portal's frame.
 const MARGIN = 0.1;
 
-/** Routes for the validated, axis-aligned rectangular shells in format v1.
+/** Routes through validated convex room interiors and rectangular end ports.
  * This graph contains no mutable combat or perception state. */
 export default class RoomNavigation {
   /** @param {import('../../../levelDocument.js').LevelDocument} document */
@@ -29,7 +29,7 @@ export default class RoomNavigation {
   roomAt(position) {
     const point = position.toArray();
     for (const [id, { room, size }] of this.rooms) {
-      if (point.every((value, axis) => Math.abs(value - room.position[axis]) <= size[axis] / 2 + 1e-6)) return id;
+      if (point.every((value, axis) => Math.abs(value - room.position[axis]) <= size[axis] / 2 + 1e-6) && toLocal(room, point).every((value, axis) => Math.abs(value) <= room.size[axis] / 2 + 1e-6)) return id;
     }
     return null;
   }
@@ -39,12 +39,10 @@ export default class RoomNavigation {
   destination(position, radius) {
     const id = this.roomAt(position), entry = id === null ? null : this.rooms.get(id);
     if (!entry || !Number.isFinite(radius) || radius <= 0) return null;
-    const inset = WALL_THICKNESS + radius + MARGIN;
-    if (entry.size.some(size => size / 2 <= inset)) return null;
-    return new Vector3(...position.toArray().map((value, axis) => {
-      const half = entry.size[axis] / 2 - inset, center = entry.room.position[axis];
-      return Math.max(center - half, Math.min(center + half, value));
-    }));
+    const scales = clearanceScale(entry.room), half = entry.room.size.map((size, axis) => size / 2 - WALL_THICKNESS - (radius + MARGIN) * scales[axis]);
+    if (half.some(value => value <= 0)) return null;
+    const local = toLocal(entry.room, position.toArray()).map((value, axis) => Math.max(-half[axis], Math.min(half[axis], value)));
+    return new Vector3(...toWorld(entry.room, /** @type {[number, number, number]} */ (local)));
   }
 
   /** Shortest portal count, with stable document-order ties and body clearance.
@@ -58,19 +56,27 @@ export default class RoomNavigation {
     const first = this.destination(start, radius), last = this.destination(target, radius);
     if (from === null || to === null || !first || !last) return null;
     const inset = WALL_THICKNESS + radius + MARGIN;
-    /** @type {Map<string, {from: string, approach: Vector3, departure: Vector3}>} */
+    /** @type {Map<string, {from: string, points: Vector3[]}>} */
     const previous = new Map();
     const queue = [from], visited = new Set(queue);
     for (let i = 0; i < queue.length && !visited.has(to); i++) {
       const current = queue[i];
       for (const edge of this.edges.get(current) ?? []) {
-        const room = this.rooms.get(edge.to);
+        const room = this.rooms.get(edge.to), source = this.rooms.get(current);
         if (blockedConnections?.has(edge.id) || visited.has(edge.to) || !room || room.size.some(size => size / 2 <= inset) ||
             Math.min(edge.width, edge.height) / 2 <= radius + MARGIN) continue;
+        if (!source) continue;
+        /** @param {import('../../../levelDocument.js').RoomDocument} shape @param {number} direction */
+        const innerPoint = (shape, direction) => {
+          if (!shape.endOffset) return edge.center.clone().addScaledVector(edge.normal, direction * inset);
+          const local = toLocal(shape, edge.center.toArray()), normal = inverseOrient(edge.normal.toArray(), shape);
+          local[2] += direction * normal[2] * inset;
+          return new Vector3(...toWorld(shape, local));
+        };
+        const approach = innerPoint(source.room, -1), departure = innerPoint(room.room, 1);
+        if (!fitsInside(source.room, toLocal(source.room, approach.toArray()), radius + MARGIN) || !fitsInside(room.room, toLocal(room.room, departure.toArray()), radius + MARGIN)) continue;
         visited.add(edge.to); queue.push(edge.to);
-        previous.set(edge.to, { from: current,
-          approach: edge.center.clone().addScaledVector(edge.normal, -inset),
-          departure: edge.center.clone().addScaledVector(edge.normal, inset) });
+        previous.set(edge.to, { from: current, points: [approach, ...(source.room.endOffset || room.room.endOffset ? [edge.center.clone()] : []), departure] });
       }
     }
     if (!visited.has(to)) return null;
@@ -79,7 +85,7 @@ export default class RoomNavigation {
     for (let current = to; current !== from;) {
       const edge = previous.get(current);
       if (!edge) return null;
-      crossings.push([edge.approach, edge.departure]); current = edge.from;
+      crossings.push(edge.points); current = edge.from;
     }
     return [first, ...crossings.reverse().flat(), last];
   }

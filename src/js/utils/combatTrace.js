@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { convexSegmentFraction } from './ConvexSolid.js';
 
 // Fractions along a finite segment, including a start already inside a collider.
 // Expanded AABBs deliberately give shots a small, conservative edge clearance.
@@ -52,7 +53,8 @@ export function traceShot(start, end, { colliders = [], targets = [], player = n
       hit = { ...contact, fraction, point: new THREE.Vector3().lerpVectors(start, end, fraction) };
     }
   };
-  for (const collider of colliders) consider(segmentBoxFraction(start, end, 'box' in collider ? collider.box : collider, radius), { kind: 'wall', target: collider });
+  for (const collider of colliders) consider('convex' in collider && collider.convex ? convexSegmentFraction(start, end, collider.convex, radius)
+    : segmentBoxFraction(start, end, 'box' in collider ? collider.box : collider, radius), { kind: 'wall', target: collider });
   for (const target of targets) {
     if (target.isActive) consider(segmentBoxFraction(start, end, target.collider, radius), { kind: 'enemy', target });
   }

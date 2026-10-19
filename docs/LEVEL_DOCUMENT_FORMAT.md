@@ -1,6 +1,6 @@
-# Shared level document — format versions 1, 2 and 3
+# Shared level document — format versions 1–5
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. All three versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. All five versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All base fields below are required. The version-3 extension below describes its 
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for the relay extension, or `3` for the designer extension; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, or `5` for shaped corridors; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -27,7 +27,7 @@ Use world units, **+Y up**, and local **-Z forward**. Room `position` is its wor
 
 A room has `id`, `prefab`, `position`, `size`, `yaw` and `materialPreset`. Supported prefabs are `box-room` and `straight-corridor`; both use the same rectangular shell generator. All dimensions are 4–64 units. A straight corridor additionally has local width/height at most 8 and local Z length at least its width/height.
 
-Room `yaw` is exactly `0`, `90`, `180` or `270` degrees around +Y. For example, at yaw 90 local +Z maps to world +X and local +X maps to world -Z. Room pitch/roll and freeform vertices are not part of v1. Vertical connections use ceiling/floor ports. Player rotation is a normalized `[x,y,z,w]` quaternion relative to its room, composed with room yaw when loaded.
+Room `yaw` is exactly `0`, `90`, `180` or `270` degrees around +Y. For example, at yaw 90 local +Z maps to world +X and local +X maps to world -Z. Versions 1–3 have yaw only; v4 optionally adds pitch/roll as described below. Player rotation is a normalized `[x,y,z,w]` quaternion relative to its room, composed with the complete room orientation when loaded.
 
 Local face names are `negativeX`, `positiveX`, `negativeY`, `positiveY`, `negativeZ`, `positiveZ`. Each port is centered on its face; each face supports at most one connection. Endpoint face names remain local after rotating a room. A connection's two world centers must coincide and their normals must oppose one another. Self-connections are errors.
 
@@ -111,7 +111,31 @@ Rooms may also have a `surfaces` object keyed by local face name. Omitted faces 
 
 This is the value of `room.surfaces`, not a complete room. Patterns are small, deterministic local textures repeating every four world units, with continuous world-plane UVs across split wall pieces. They do not change collision. The world owns and disposes its textures. Image URLs, uploaded images, shader code and extra appearance properties are not accepted in this version.
 
-Import preserves the input version. The editor upgrades an owned draft to v3 when an operation needs offsets, face styles or flexible relay content. Undo restores the previous version and data. V1/v2 reject the new fields; use a v3-capable game build for exported v3 files.
+Import preserves the input version. The editor upgrades an owned legacy draft to v3 when an operation needs offsets, face styles or flexible relay content, and preserves an existing v4 draft. Undo restores the previous version and data. V1/v2 reject the new fields; use a compatible game build for exported files.
+
+## Version 4: room pitch and roll
+
+V4 keeps the entire v3 root/mission structure, including explicit (possibly empty) device/door arrays. Rooms may additionally contain `pitch` and `roll`, each exactly `0`, `90`, `180` or `270` degrees; omission means zero. `yaw` remains required. V1–3 reject these fields, including explicit zero, rather than silently ignoring orientation.
+
+Orientation uses Three.js Euler order `YXZ`: apply local roll about Z, then pitch about X, then yaw about Y. Equivalently, `Qroom = Qyaw × Qpitch × Qroll`, and `Qspawn = Qroom × QlocalSpawn`. Local dimensions, placements, surface keys and endpoint face names stay local. World bounds/normals, opening planes, preview picking and navigation use the full orientation. Exact signed coordinate permutations retain snapped planes and axis-aligned collision without floating-point cracks.
+
+For example, a corridor with size `[8,8,16]`, pitch `90`, yaw `0` and center `[0,-14,0]` extends vertically from Y=-22 to Y=-6. Its local `negativeZ` end faces up; `positiveZ` faces down. It attaches to the floor of the starter `[16,12,16]` room at `[0,0,0]`. Its width/height remain its local X/Y dimensions; the size constraints do not change when tipped upright.
+
+The designer automatically orients attached corridors along the chosen world face normal, including floors/ceilings. This creates one atomic undo command and upgrades the draft to v4 only when needed. Numeric Pitch (X)/Roll (Z) and the XYZ rotation gizmo use quarter turns. Applying unchanged zero controls preserves a legacy file's version. Subsequent style/relay/offset edits never downgrade v4. Undo and structural draft recovery retain orientation.
+
+V4 retains rectangular shells. V5 adds the bounded sloped/diagonal extension below; arbitrary vertex editing remains unsupported.
+
+## Version 5: convex sloped/diagonal corridors
+
+V5 keeps v4 fields and adds prefab `offset-corridor`. It requires `endOffset: [sideways, rise]`, two whole-unit values from -32 through 32. Their combined Euclidean distance cannot exceed local Z length; the centerline slope is at most 45 degrees. Width/height are 4–8; length is 4–64 and at least the width/height. Other prefabs reject `endOffset`; v1–4 reject the new prefab/field.
+
+For local coordinates `[x,y,z]`, let `[dx,dy] = endOffset` and `L = size[2]`. Before quarter-turn orientation/translation the point is `[x - dx*z/L, y - dy*z/L, z]`. Local -Z is the far/forward end, so a positive rise raises it relative to +Z. Size describes the unsheared cross-section and length; position is the midpoint of the two end centers. For example, an `[8,8,16]` corridor at `[4,4,-16]` with yaw 0 and `endOffset: [8,8]` has end centers `[0,0,-8]` and `[8,8,-24]`.
+
+Only local `negativeZ`/`positiveZ` faces accept connections. They remain rectangular and axis-aligned after the existing quarter-turn orientation, so endpoint offsets, opening sizes and relay doors retain the v3 rules. Side faces are sloped/diagonal solid parallelograms with independent styles. Local wall thickness is still 0.5 before shear; its perpendicular thickness changes with slope. Perpendicular body clearance uses the actual planes, not just local coordinate bounds.
+
+All eight corners of each solid wall panel are compiled as shared vertices for rendering/convex collision. Room overlap uses actual convex volumes; navigation and picking invert the shear as well as the orthogonal orientation. Placements remain in cross-section coordinates relative to the centerline. The shared convex solver preserves rounded sphere edge/corner contacts and bounded sliding. Shots use actual hull planes with the existing small conservative radius expansion.
+
+Import/export, styles, relay edits, rotation, duplication, undo/redo and structurally safe draft recovery preserve v5. Initial shaped attachment upgrades an owned legacy draft atomically; it never edits an imported file in place. See [the authoring and verification checkpoint](progress/M4_SHAPED_CORRIDORS.md).
 
 ## Validation, snapshots and loading
 
@@ -135,7 +159,7 @@ Validation creates an owned, deeply frozen JSON snapshot. It never freezes or ed
 
 `Game.startLevelDocument(unknownData)` validates, compiles and constructs a detached candidate **before** ending the current run. Invalid data and candidate-construction failures preserve that run and its catalog. A successful handoff reuses one imported catalog slot, starts through the normal session path and supports restart. Once mounting begins, failures use normal error-session recovery and release claimed resources; the old run is not restored at that later stage. Unclaimed candidate resources are released by the caller's cleanup path. Direct users of `prepareLevelDocument` must likewise mount/claim or dispose their candidate.
 
-There is no file-picker/import UI or editor yet. The canonical JSON is bundled by Vite and loaded by Node tests through JSON import attributes, supported by the pinned Node runtime. The exported APIs provide the boundary for that later UI. Invalid input produces paths such as `$.connections[1]` with an alignment error or `$.entities[0].position` with a clearance error. No code evaluation or remote asset loading is involved.
+The separate `/editor.html` entry provides JSON file import/export and playtest through these APIs. Canonical samples are also bundled by Vite and loaded by Node tests through JSON import attributes. Invalid input produces paths such as `$.connections[1]` with an alignment error or `$.entities[0].position` with a clearance error. No code evaluation or remote asset loading is involved.
 
 ## Limits and compatibility
 

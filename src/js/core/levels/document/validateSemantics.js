@@ -1,5 +1,5 @@
 import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, WALL_THICKNESS, enemyClearance } from './LevelContent.js';
-import { distance, fitsInside, openingFrame, roomsOverlap, toWorld } from './RoomMath.js';
+import { connectableFace, distance, fitsInside, openingFrame, roomsOverlap, toWorld } from './RoomMath.js';
 import validateRelaySemantics from './validateRelaySemantics.js';
 
 /** @param {import('../../../levelDocument.js').LevelDocument} document
@@ -24,6 +24,7 @@ export default function validateSemantics(document, issue) {
       occupied.add(key);
     }
     if (!a || !b) continue;
+    if (!connectableFace(a, connection.a.port) || !connectableFace(b, connection.b.port)) { issue(path, 'shape-port', 'Sloped corridors connect through their local -Z/+Z end faces only'); continue; }
     if (a.id === b.id) { issue(path, 'connection', 'A connection must join two distinct rooms'); continue; }
     const frameA = openingFrame(a, connection.a), frameB = openingFrame(b, connection.b);
     if (distance(frameA.center, frameB.center) > 1e-6 || frameA.normal.some((value, axis) => value !== -frameB.normal[axis])) {

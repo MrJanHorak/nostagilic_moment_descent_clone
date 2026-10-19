@@ -1,0 +1,293 @@
+{
+  "date": "2026-10-18",
+  "command": "npx playwright test",
+  "environment": {
+    "node": "22.14.0",
+    "npm": "11.2.0",
+    "os": "Windows",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "viewport": "960x540; direct editing and vertical checks at 1280x800",
+    "authoringClock": "Controlled clock with native keyboard input for authored mission completion; no transform or game-state injection."
+  },
+  "stats": {
+    "startTime": "2026-10-18T21:29:41.989Z",
+    "duration": 390662.821,
+    "expected": 23,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 47,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 340,
+    "build": "passed",
+    "diffCheck": "passed",
+    "designerBrowserCases": 12,
+    "gameBrowserCases": 11
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2385,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8131,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2409,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1745,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 607,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: blocked draft storage keeps editing and portable export available",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 531,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7164,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 5263,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1843,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1783,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1140,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 807,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 20049,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 5197,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1674,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 38631,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7612,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2879,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7183,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3081,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 60135,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 58411,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "project": "deep-relay",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 145140,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "notes": [
+    "Covers all 64 room angle combinations and all six corridor attachment faces in runtime tests.",
+    "Native floor-menu shaft attachment, relay hatch, downward flight through two passages, unchanged JSON after return, up attachment and undo pass.",
+    "Numeric pitch/roll, native X-ring rotation and local recovery pass. Screenshots reviewed for the upright stack and XYZ controls.",
+    "Initial focused browser attempt used label text selectors that did not locate nested selects; semantic combobox selectors resolved it. Final full run has zero retries.",
+    "Sloped ramps and diagonal wall planes remain unimplemented; the next convex geometry increment is documented.",
+    "Existing large-chunk build warning remains. No dependency change, fresh audit, hardware capture, hosted CI, commit, push or deployment."
+  ]
+}

@@ -1,5 +1,7 @@
 # M4 direct editing, room commands and draft recovery
 
+> Follow-up: [upright corridors and room orientation](M4_VERTICAL_CORRIDORS.md) adds automatic vertical shaft attachment, pitch/roll, XYZ rotation and orientation-aware face labels in format v4. This document records the preceding UX checkpoint; its test counts are historical.
+
 October 18, 2026. This follows [content authoring and preview](M4_DESIGNER_AUTHORING.md). The owner requested the remaining steps and an assessment of whether the designer feels intuitive, specifically selecting walls and using right-click menus to style them, edit doors, and place content in a room.
 
 ## UX assessment
@@ -32,7 +34,7 @@ Run `npm run dev` and open `/editor.html`, or use LEVEL DESIGNER from the game m
 - **Edit an item:** click its marker or select it in the list. Right-clicking an item also provides edit/delete actions. The unique spawn and exit are moved rather than deleted.
 - **Keyboard:** focus the viewport and use Shift+F10, or choose Actions. This uses the selected room's center as its placement point; use numeric properties for a different precise location. Arrow keys move through the menu, Enter activates, and Esc closes. Inspector tabs support arrow navigation. The object lists and numeric panels remain keyboard-operable alternatives to 3D picking.
 
-Only compiled wall/door meshes and item markers participate in visible-surface picking. Hidden cutaway faces and selection overlays do not intercept clicks. Empty exposed room space falls back to a room interior point. Markers can be picked through translucent walls in X-ray mode. World intersections are converted through the inverse room yaw before storing room-local placement coordinates.
+Only compiled wall/door meshes and item markers participate in visible-surface picking. Hidden cutaway faces and selection overlays do not intercept clicks. Empty exposed room space falls back to a room interior point. Markers can be picked through translucent walls in X-ray mode. World intersections are converted through the inverse room orientation before storing room-local placement coordinates.
 
 ## Room commands
 

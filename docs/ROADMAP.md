@@ -6,6 +6,8 @@ Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verifie
 
 ## Scope and effort
 
+**Latest M4 extension:** [ramps and diagonal corridor walls](progress/M4_SHAPED_CORRIDORS.md) adds a bounded convex corridor prefab, rise/sideways presets and context authoring, shared rendering/collision, perpendicular clearance and convex-volume navigation/overlap validation in format v5. [Upright corridors](progress/M4_VERTICAL_CORRIDORS.md), quarter-turn pitch/roll and XYZ rotation remain supported. Human M4 acceptance and M2's hardware performance gate remain open.
+
 Target a small, original single-player browser game: first-person six-degree-of-freedom flight, a compact connected mine, a few weapons/enemies, and a local prefab-based level designer. Keep the present repository and Three.js. Establish a stable game/data boundary before building editor UI.
 
 The ranges below are **rough engineering estimates for one experienced developer's focused work**, informed by the audit but not implementation spikes. They assume simple geometric assets, no backend, no arbitrary terrain sculpting, and modest visual polish. Learning, substantial new art/audio, or changing the target experience increases them.

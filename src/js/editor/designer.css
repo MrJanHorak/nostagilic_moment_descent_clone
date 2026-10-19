@@ -16,6 +16,7 @@ h1 { font-size: 21px; font-weight: 550; margin: 0; }
 h2 { font-size: 13px; letter-spacing: .04em; margin: 0 0 12px; color: #bed1e0; }
 nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .primary { background: #b87e35; border-color: #e7b164; color: #131c25; font-weight: 650; }
+.primary:hover { background: #d69b4f; }
 .workspace { display: grid; grid-template-columns: 220px minmax(320px, 1fr) 260px; flex: 1; min-height: 0; }
 aside { background: #17222f; overflow-y: auto; }
 .left-panel { border-right: 1px solid #344657; }

@@ -1,4 +1,4 @@
-import type { Box3, Vector3 } from 'three';
+import type { Box3, Plane, Triangle, Vector3 } from 'three';
 import type GameSession from './core/GameSession.js';
 import type GameState from './core/GameState.js';
 import type Spaceship from './entities/Spaceship.js';
@@ -74,7 +74,8 @@ export interface MissionDefinition {
   readonly exit: { readonly id?: string; readonly position: readonly [number, number, number]; readonly radius: number };
 }
 
-export type SolidCollider = Box3 | { readonly box: Box3; readonly id?: string };
+export interface ConvexHull { readonly vertices: readonly Vector3[]; readonly planes: readonly Plane[]; readonly triangles: readonly Triangle[]; readonly box: Box3 }
+export type SolidCollider = Box3 | { readonly box: Box3; readonly id?: string; readonly convex?: ConvexHull };
 export interface ShotTarget { readonly isActive: boolean; readonly collider: Box3 }
 export interface ShotPlayer { readonly position: Vector3; readonly radius: number }
 export interface ShotOptions<T extends ShotTarget = ShotTarget> {

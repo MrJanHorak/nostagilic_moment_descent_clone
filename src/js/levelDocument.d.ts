@@ -10,10 +10,13 @@ export type SurfacePattern = 'plain' | 'grid' | 'panels' | 'hazard';
 export interface SurfaceStyle { readonly color: number; readonly pattern: SurfacePattern }
 export interface RoomDocument {
   readonly id: string;
-  readonly prefab: 'box-room' | 'straight-corridor';
+  readonly prefab: 'box-room' | 'straight-corridor' | 'offset-corridor';
   readonly position: Vec3;
   readonly size: Vec3;
   readonly yaw: 0 | 90 | 180 | 270;
+  readonly pitch?: 0 | 90 | 180 | 270;
+  readonly roll?: 0 | 90 | 180 | 270;
+  readonly endOffset?: readonly [number, number];
   readonly materialPreset: MaterialPreset;
   readonly surfaces?: Readonly<Partial<Record<Face, SurfaceStyle>>>;
 }
@@ -48,11 +51,15 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 3; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 4; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 5; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }
   | { readonly valid: false; readonly errors: readonly ValidationIssue[] };
-export interface SolidDefinition { readonly id: string; readonly center: Vec3; readonly size: Vec3; readonly color: number; readonly pattern?: SurfacePattern }
+export interface SolidDefinition { readonly id: string; readonly center: Vec3; readonly size: Vec3; readonly color: number; readonly pattern?: SurfacePattern; readonly vertices?: readonly Vec3[] }
 export interface ArenaLevel {
   readonly id: string;
   readonly kind: 'arena';

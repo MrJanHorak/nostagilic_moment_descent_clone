@@ -3,6 +3,7 @@ import { FACES, MATERIALS, WALL_THICKNESS } from './LevelContent.js';
 import { openingFrame, portFrame, toWorld } from './RoomMath.js';
 import { LevelDocumentError, validateLevelDocument } from './validateLevelDocument.js';
 import buildArena from '../../ArenaGeometry.js';
+import compileOffsetRoom from './compileOffsetRoom.js';
 
 /** Compile validated data into the existing finite-world adapter. No mesh,
  * material or GPU resources are allocated here. Validation owns the snapshot.
@@ -17,6 +18,7 @@ export default function compileLevelDocument(input) {
   }
   /** @type {import('../../../levelDocument.js').SolidDefinition[]} */ const solids = [];
   for (const room of document.rooms) {
+    if (room.prefab === 'offset-corridor') { solids.push(...compileOffsetRoom(room, openings)); continue; }
     const preset = MATERIALS[room.materialPreset];
     for (const face of FACES) {
       const frame = portFrame(room, face), opening = openings.get(`${room.id}/${face}`);
@@ -49,7 +51,7 @@ export default function compileLevelDocument(input) {
   };
   const startRoom = rooms.get(document.playerSpawn.roomId);
   if (!startRoom) throw new Error('Validated spawn room disappeared');
-  const orientation = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), startRoom.yaw * Math.PI / 180)
+  const orientation = new THREE.Quaternion().setFromEuler(new THREE.Euler((startRoom.pitch ?? 0) * Math.PI / 180, startRoom.yaw * Math.PI / 180, (startRoom.roll ?? 0) * Math.PI / 180, 'YXZ'))
     .multiply(new THREE.Quaternion().fromArray(document.playerSpawn.rotation)).normalize();
   const exit = document.entities.find(entity => entity.id === document.mission.exitId);
   if (exit?.kind !== 'exit') throw new Error('Validated exit disappeared');

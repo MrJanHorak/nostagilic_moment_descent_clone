@@ -1,0 +1,496 @@
+{
+  "date": "2026-10-18",
+  "command": "npx playwright test",
+  "environment": {
+    "node": "22.14.0",
+    "npm": "11.2.0",
+    "os": "Windows",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "viewport": "960x540; direct editing/shape checks at 1280x800",
+    "authoringClock": "Controlled browser clock, native keyboard flight; development-only read-only diagnostics for combined ramp/diagonal steering. No game or transform injection."
+  },
+  "stats": {
+    "startTime": "2026-10-19T01:03:13.417Z",
+    "duration": 400081.15900000004,
+    "expected": 25,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 50,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 353,
+    "build": "passed",
+    "diffCheck": "passed",
+    "designerBrowserCases": 14,
+    "gameBrowserCases": 11
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2128,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7596,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3753,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 35814,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2478,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1698,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 554,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: blocked draft storage keeps editing and portable export available",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 445,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8046,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 5407,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1763,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1627,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 851,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 781,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 18086,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4906,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1844,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 37158,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7602,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2700,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7270,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2425,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 55889,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 54156,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "project": "deep-relay",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 128887,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "gameplayAssets": [
+    {
+      "name": "compileLevelDocument-lsHV2Nrf.js",
+      "sha256": "75e348c848263659afe3fecd478166088591baf569965c3ae2ea131135ea6218"
+    },
+    {
+      "name": "main-BQsap_Gu.js",
+      "sha256": "fc831f909d3baff14094a60eb2bd991eb14dc303c827edbead18de4dd64681c2"
+    }
+  ],
+  "notes": [
+    "True sloped/diagonal corridor shell shared by rendering, convex collision, shots, placement and navigation.",
+    "Body traversal covers up/down, diagonal both ways, combined offsets, maximum slope, six attachment normals and corner-offset openings.",
+    "Runtime tests cover convex rounded contact, sliding, empty surrounding bounds, true room overlap, relay-door reset and actual scout pursuit.",
+    "Production browser picks/styles the sloped floor, undoes invalid reshaping, recovers/exports/imports and previews. Return from active preview uses the documented Escape release before the outer button.",
+    "Development browser authors a combined slope/sideways corridor and relay door, exports/imports, flies normally to completion and returns identical JSON.",
+    "Initial focused test refined the disabled-option assertion to its native DOM property and added the documented pointer-lock release; final full suite has zero retries.",
+    "A final menu-only refinement is checked separately below; gameplay assets are recorded for comparison.",
+    "No dependencies changed; no fresh audit/hardware capture, hosted CI, commit, push or deployment."
+  ],
+  "menuRefinement": {
+    "command": "npx playwright test tests/browser/editor-authoring.spec.js tests/browser/editor-shapes.spec.js tests/browser/editor-ux.spec.js tests/browser/editor-vertical.spec.js tests/browser/editor.spec.js --project=production",
+    "stats": {
+      "startTime": "2026-10-19T01:10:44.892Z",
+      "duration": 84104.092,
+      "expected": 14,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "gameplayAssetsByteIdentical": true,
+    "tests": [
+      {
+        "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2122,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 8256,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4217,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 41875,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2422,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1672,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 570,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer UX: blocked draft storage keeps editing and portable export available",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 459,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7366,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6039,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1844,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1690,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer: game menu links to a separate editor entry",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 918,
+            "errors": []
+          }
+        ]
+      },
+      {
+        "title": "designer: native gizmo drag snaps a room and is one undo command",
+        "project": "production",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 787,
+            "errors": []
+          }
+        ]
+      }
+    ],
+    "changes": "Sloped side-face menus retain one end-port explanation and omit irrelevant attachment actions; all editor workflows rechecked."
+  }
+}

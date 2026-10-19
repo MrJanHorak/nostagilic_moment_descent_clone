@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { convexContact } from './ConvexSolid.js';
 
 const SKIN = 1e-5;
 const MAX_SUBSTEPS = 512;
@@ -25,7 +26,12 @@ function contact(position, radius, box) {
   return { normal: faceNormal, depth: radius + depth };
 }
 
-/** Move a sphere against static world AABBs, projecting inward velocity off contacts.
+/** @param {THREE.Vector3} position @param {number} radius @param {import('../contracts.js').SolidCollider} collider */
+function solidContact(position, radius, collider) {
+  return 'convex' in collider && collider.convex ? convexContact(position, radius, collider.convex) : contact(position, radius, 'box' in collider ? collider.box : collider);
+}
+
+/** Move a sphere against static boxes/convex panels, projecting inward velocity off contacts.
  * Steps travel at most radius/4, so even a thin wall cannot be skipped. A fixed
  * work budget discards excessive travel for pathological speeds/deltas. Gameplay
  * uses 60 Hz and capped speed, normally requiring just one or two substeps.
@@ -50,7 +56,7 @@ export function moveSphere(position, velocity, delta, colliders, radius = 0.5) {
     for (let pass = 0; pass < MAX_CONTACT_PASSES; pass++) {
       let found = false;
       for (const collider of colliders) {
-        const hit = contact(position, radius, 'box' in collider ? collider.box : collider);
+        const hit = solidContact(position, radius, collider);
         if (!hit) continue;
         collided = found = true;
         position.addScaledVector(hit.normal, hit.depth + SKIN);
@@ -60,7 +66,7 @@ export function moveSphere(position, velocity, delta, colliders, radius = 0.5) {
       if (!found) break;
     }
     // Conflicting solids/invalid space must stop motion, never eject through a wall.
-    if (colliders.some(collider => contact(position, radius - SKIN / 2, 'box' in collider ? collider.box : collider))) {
+    if (colliders.some(collider => solidContact(position, radius - SKIN / 2, collider))) {
       position.copy(previous); velocity.set(0, 0, 0); unresolved = true; break;
     }
   }

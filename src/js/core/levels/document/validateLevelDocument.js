@@ -103,21 +103,35 @@ function inspectJSON(input, reader) {
   catch { reader.issue('$', 'json', 'Input could not be read as JSON data'); }
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} oriented @param {boolean} shaped
  * @returns {import('../../../levelDocument.js').RoomDocument | null} */
-function readRoom(value, path, reader, modern) {
-  const object = reader.object(value, path, ['id', 'prefab', 'position', 'size', 'yaw', 'materialPreset', ...(modern ? ['surfaces'] : [])]);
+function readRoom(value, path, reader, modern, oriented, shaped) {
+  const object = reader.object(value, path, ['id', 'prefab', 'position', 'size', 'yaw', 'materialPreset', ...(modern ? ['surfaces'] : []), ...(oriented ? ['pitch', 'roll'] : []), ...(shaped ? ['endOffset'] : [])]);
   if (!object) return null;
   const id = reader.text(object.id, `${path}.id`, 64, true);
-  const prefab = reader.choice(object.prefab, /** @type {const} */ (['box-room', 'straight-corridor']), `${path}.prefab`);
+  const prefab = reader.choice(object.prefab, shaped ? /** @type {const} */ (['box-room', 'straight-corridor', 'offset-corridor']) : /** @type {const} */ (['box-room', 'straight-corridor']), `${path}.prefab`);
   const position = reader.vector(object.position, `${path}.position`, true), size = reader.vector(object.size, `${path}.size`, true);
   const yaw = reader.choice(object.yaw, /** @type {const} */ ([0, 90, 180, 270]), `${path}.yaw`);
+  const pitch = oriented && 'pitch' in object ? reader.choice(object.pitch, /** @type {const} */ ([0, 90, 180, 270]), `${path}.pitch`) : undefined;
+  const roll = oriented && 'roll' in object ? reader.choice(object.roll, /** @type {const} */ ([0, 90, 180, 270]), `${path}.roll`) : undefined;
   const materialPreset = reader.choice(object.materialPreset, /** @type {const} */ (['industrial-blue', 'industrial-red', 'industrial-green']), `${path}.materialPreset`);
   if (!id || !prefab || !position || !size || yaw === null || !materialPreset) return null;
   if (size.some(dimension => dimension < 4 || dimension > 64)) reader.issue(`${path}.size`, 'size', 'Room dimensions must be between 4 and 64');
-  if (prefab === 'straight-corridor' && (size[0] > 8 || size[1] > 8 || size[2] < Math.max(size[0], size[1]))) {
+  if (prefab !== 'box-room' && (size[0] > 8 || size[1] > 8 || size[2] < Math.max(size[0], size[1]))) {
     reader.issue(`${path}.size`, 'size', 'Straight corridors have width/height at most 8 and length at least their width/height');
   }
+  /** @type {[number, number] | undefined} */ let endOffset;
+  if (shaped && prefab === 'offset-corridor') {
+    const pair = reader.array(object.endOffset, `${path}.endOffset`, 2);
+    if (!pair || pair.length !== 2) reader.issue(`${path}.endOffset`, 'shape', 'Expected [sideways, rise] for the local -Z end');
+    else {
+      const x = reader.number(pair[0], `${path}.endOffset[0]`, -32, 32, true), y = reader.number(pair[1], `${path}.endOffset[1]`, -32, 32, true);
+      if (x !== null && y !== null) {
+        endOffset = [x, y];
+        if (Math.hypot(x, y) > size[2]) reader.issue(`${path}.endOffset`, 'shape', 'Combined end offset cannot exceed corridor length (maximum 45 degree slope)');
+      }
+    }
+  } else if ('endOffset' in object) reader.issue(`${path}.endOffset`, 'field', 'End offsets require a version-5 offset-corridor');
   // This also ensures the runtime registry and structural enum stay aligned.
   if (!Object.hasOwn(MATERIALS, materialPreset)) reader.issue(`${path}.materialPreset`, 'content', 'Unknown material');
   /** @type {Partial<Record<import('../../../levelDocument.js').Face, import('../../../levelDocument.js').SurfaceStyle>>} */ const surfaces = {};
@@ -130,7 +144,7 @@ function readRoom(value, path, reader, modern) {
       if (color !== null && pattern) surfaces[face] = { color, pattern };
     }
   }
-  return { id, prefab, position, size, yaw, materialPreset, ...(Object.keys(surfaces).length ? { surfaces } : {}) };
+  return { id, prefab, position, size, yaw, materialPreset, ...(pitch !== undefined && pitch !== null ? { pitch } : {}), ...(roll !== undefined && roll !== null ? { roll } : {}), ...(endOffset ? { endOffset } : {}), ...(Object.keys(surfaces).length ? { surfaces } : {}) };
 }
 
 /** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern
@@ -231,11 +245,11 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1, 2 or 3 is supported');
-  const modern = root.formatVersion === 3, relay = root.formatVersion === 2 || modern;
+  if (![1, 2, 3, 4, 5].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–5 is supported');
+  const shaped = root.formatVersion === 5, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
   const id = reader.text(root.id, '$.id', 64, true), name = reader.text(root.name, '$.name', 80);
-  const rooms = (reader.array(root.rooms, '$.rooms', LIMITS.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern)).filter(value => value !== null);
+  const rooms = (reader.array(root.rooms, '$.rooms', LIMITS.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern, oriented, shaped)).filter(value => value !== null);
   const connections = (reader.array(root.connections, '$.connections', LIMITS.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern)).filter(value => value !== null);
   const entities = (reader.array(root.entities, '$.entities', LIMITS.entities) ?? []).map((value, i) => readEntity(value, `$.entities[${i}]`, reader)).filter(value => value !== null);
   const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader)).filter(value => value !== null) : [];
@@ -257,7 +271,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
+    ? { ...base, formatVersion: shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };
