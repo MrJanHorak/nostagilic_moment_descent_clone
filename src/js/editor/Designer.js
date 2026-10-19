@@ -1,6 +1,8 @@
+import connectionDialog from './ConnectionDialog.js';
+import doorDialog from './DoorDialog.js';
 import EditorDocument, { createDocument } from './EditorDocument.js';
 import EditorViewport from './EditorViewport.js';
-import { FACES, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS } from '../core/levels/document/LevelContent.js';
+import { FACES, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
 import { connectableFace, portFrame } from '../core/levels/document/RoomMath.js';
 import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
@@ -50,7 +52,7 @@ host.innerHTML = `
         <button id="actions">Actions</button>
         <label class="view-label">View<select id="view"><option value="xray">X-ray edit</option><option value="cutaway" selected>Solid cutaway</option><option value="solid">Solid exterior</option></select></label>
       </div>
-      <p id="geometry-status" role="status"></p>
+      <p id="geometry-status" role="status"></p><p id="tool-status" role="status" aria-live="polite"></p>
       <div id="viewport"></div>
       <div class="viewport-help">Click a wall/item to select · Right-click or Shift+F10: actions · Right-drag: pan<br>Drag: orbit · Scroll: zoom · F: focus · Stretch: local X width · Y height · Z length</div>
       <div class="validation"><h2 id="validation-title">Validation</h2><p id="notice" role="status" aria-live="polite"></p><div id="issues"></div></div>
@@ -75,18 +77,18 @@ host.innerHTML = `
         <label>Wall face<select id="surface-face"></select></label><label>Face color<input id="surface-color" type="color" value="#405a6b" /></label>
         <label>Repeating pattern<select id="surface-pattern"></select></label><button id="apply-surface">Apply face style</button><button id="reset-surface">Reset face to preset</button>
         <p>Use Solid cutaway or Playtest to see surfaces. Custom image uploads are not included yet.</p>
-        <p id="wall-connection-help"></p>
+        <p id="wall-connection-help"></p><button id="join-wall">Connect this face to an existing room…</button>
       </section>
-      <section><h2>Content properties</h2><p id="content-selection"></p>
+      <section><h2>Content properties</h2><p id="content-selection"></p><button id="move-content">Move selected item</button><p>Drag the world axes to move this item within its room. Positions snap to the room’s half-unit grid; Esc cancels. Use Content room below to transfer it.</p>
         <label>Content room<select id="content-room"></select></label><div class="vector" id="content-position"></div>
         <label>Spawn heading<select id="spawn-yaw"><option>0</option><option>90</option><option>180</option><option>270</option></select></label>
         <label class="checkbox"><input id="content-required" type="checkbox" />Required for completion</label>
         <button id="apply-content">Apply content</button><button id="delete-content">Delete content</button>
       </section>
-      <section><h2>Connect existing rooms</h2><p>Join aligned unused ports to close a loop.</p>
+      <section><h2>Connect existing rooms</h2><p>Join opposing wall faces to close loops. Faces can meet off center. Fit corridor length or snap a separate branch when needed.</p>
         <label>Selected room port<select id="source-port"></select></label>
         <label>Target room<select id="target-room"></select></label><label>Target port<select id="target-port"></select></label>
-        <button id="connect">Connect ports</button>
+        <button id="connect">Connect ports</button><button id="join-dialog">Connect / snap existing rooms…</button>
       </section>
       <section><h2>Connections</h2><div id="connections"></div></section>
       <section><h2>Opening and door</h2>
@@ -94,8 +96,8 @@ host.innerHTML = `
         <div class="pair"><label>Opening width<input id="opening-width" type="number" min="2" max="62" step="0.5" /></label><label>Opening height/depth<input id="opening-height" type="number" min="2" max="62" step="0.5" /></label></div>
         <label>Opening position<select id="opening-anchor"><option value="custom">Custom offset</option><option value="center">Center</option><option value="top-left">Top left</option><option value="top-right">Top right</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option></select></label>
         <div class="pair"><label>U offset<input id="opening-u" type="number" step="0.5" /></label><label>V offset<input id="opening-v" type="number" step="0.5" /></label></div>
-        <button id="apply-opening">Apply opening</button><label>Unlock relay<select id="door-relay"></select></label><button id="apply-door">Apply door</button>
-        <p>Open passages have cyan frames. A linked door stays closed until its relay is activated.</p>
+        <button id="apply-opening">Apply opening</button><button id="fit-opening">Use full shared opening</button><button id="door-dialog">Add or edit relay door…</button><label>Unlock relay<select id="door-relay"></select></label><button id="apply-door">Apply door</button>
+        <p>Cyan frames are open passages. Add a relay-controlled door above, or right-click a frame. Place relays with right-click → Place relay here. R activates a visible nearby relay in Playtest.</p>
       </section>
     </aside>
   </div>
@@ -187,6 +189,7 @@ function commit(action) { action(); element('notice').textContent = ''; refresh(
 /** @param {import('./EditorPicking.js').ViewportTarget} target */
 function selectTarget(target) {
   selectedId = target.roomId; selectedFace = target.face ?? null;
+  if (target.connectionId) select('opening-connection').value = target.connectionId;
   if (target.contentId) { selectedContentId = target.contentId; selectionKind = 'content'; setInspector('content'); }
   else { selectionKind = target.face ? 'wall' : 'room'; if (target.face) select('surface-face').value = target.face; setInspector(selectionKind); }
   refresh(false);
@@ -194,8 +197,11 @@ function selectTarget(target) {
 /** @type {ViewportMenu | null} */ let menu = null;
 const viewport = new EditorViewport(element('viewport'), id => { selectedId = id; selectionKind = 'room'; selectedFace = null; refresh(false); }, (id, values) => perform(() => model.updateRoom(id, values)), {
   selectTarget,
-  context: target => { selectTarget(target); if (menu) openContextActions(target, { model, viewport, menu, commit, select: selectTarget, inspect: () => setInspector(selectionKind) }); },
+  context: target => { selectTarget(target); if (menu) openContextActions(target, { model, viewport, menu, commit, select: selectTarget, inspect: () => setInspector(selectionKind), moveSelected: () => setToolMode('translate') }); },
   dismiss: () => menu?.close(false),
+  moveContent: (id, world) => perform(() => model.moveContent(id, world)),
+  contentPreview: (id, world) => { const preview = model.previewContentMove(id, world); element('tool-status').textContent = preview.error ? `Cannot move ${id}: ${preview.error}` : `Moving ${id} · half-unit room grid · release to apply · Esc cancels`; element('tool-status').classList.toggle('invalid', !!preview.error); return preview; },
+  cancel: () => { refresh(false); element('notice').textContent = 'Drag cancelled. No changes.'; },
   resize: (id, size) => perform(() => model.resizeRoom(id, size)),
   resizePreview: (size, error) => { element('stretch-status').textContent = error ? `Cannot apply: ${error}` : `Width ${size[0]} · Height ${size[1]} · Length ${size[2]} — release to apply; attached branches follow. Undo reverses the whole edit.`; },
 });
@@ -216,7 +222,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${room.id}` : `${room.id} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion === 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   element('rooms').replaceChildren(...model.document.rooms.map(room => {
@@ -226,7 +232,7 @@ function refresh(rebuild = true) {
   }));
   element('selection').textContent = `${room.id} · ${room.prefab}`;
   for (const [index, axis] of ['X', 'Y', 'Z'].entries()) {
-    input(`position-${axis}`).value = String(room.position[index]); input(`position-${axis}`).step = model.document.formatVersion === 6 ? '0.25' : '0.5'; input(`size-${axis}`).value = String(room.size[index]); input(`size-${axis}`).max = '256';
+    input(`position-${axis}`).value = String(room.position[index]); input(`position-${axis}`).step = model.document.formatVersion >= 6 ? '0.25' : '0.5'; input(`size-${axis}`).value = String(room.size[index]); input(`size-${axis}`).max = '256';
   }
   select('yaw').value = String(room.yaw); select('pitch').value = String(room.pitch ?? 0); select('roll').value = String(room.roll ?? 0); select('material').value = room.materialPreset;
   const firstLink = model.document.connections.find(link => link.a.roomId === room.id || link.b.roomId === room.id);
@@ -234,7 +240,7 @@ function refresh(rebuild = true) {
   element('stretch-status').textContent = firstLink ? `Stretch fixes the opening to ${firstLink.a.roomId === room.id ? firstLink.b.roomId : firstLink.a.roomId}; attached branches follow. Resize lets you choose another anchor.` : 'Stretch keeps the room center fixed. Dimensions snap to half units.';
   const corridorAxis = portFrame(room, 'positiveZ').axis;
   element('orientation-status').textContent = room.prefab === 'offset-corridor' ? `Shaped corridor: far end ${room.endOffset?.[0]} sideways, ${room.endOffset?.[1]} rise in its local frame. Only the two end faces connect; sloped sides stay solid.` : room.prefab === 'straight-corridor' ? `Corridor length follows world ${'XYZ'[corridorAxis]}${corridorAxis === 1 ? ' · Vertical shaft (up/down)' : ' · Horizontal passage'}. Dimensions and content coordinates stay local to the corridor.` : 'Yaw turns around Y; pitch tips around X; roll banks around Z. Dimensions and content coordinates stay local to the room.';
-  for (const id of ['shape-side', 'shape-rise']) { input(id).min = model.document.formatVersion === 6 ? '-256' : '-32'; input(id).max = model.document.formatVersion === 6 ? '256' : '32'; }
+  for (const id of ['shape-side', 'shape-rise']) { input(id).min = model.document.formatVersion >= 6 ? '-256' : '-32'; input(id).max = model.document.formatVersion >= 6 ? '256' : '32'; }
   element('offset-properties').hidden = room.prefab !== 'offset-corridor'; input('shape-side').value = String(room.endOffset?.[0] ?? 0); input('shape-rise').value = String(room.endOffset?.[1] ?? 0);
   const freeFace = FACES.find(face => connectableFace(room, face) && !model.document.connections.some(connection => [connection.a, connection.b].some(end => end.roomId === room.id && end.port === face)));
   button('duplicate-room').disabled = !freeFace;
@@ -269,7 +275,7 @@ function refresh(rebuild = true) {
   const overlappingIds = overlappingRoomIds(model.document.rooms), overlaps = model.document.rooms.filter(room => overlappingIds.has(room.id));
   element('geometry-status').textContent = overlaps.length ? `OVERLAP: ${overlaps.map(room => room.id).join(', ')}. Red rooms intersect; this does not create an opening. Preview and playtest are blocked until fixed.`
     : !result.valid ? 'Invalid draft: outlines only. Fix the listed issues before solid preview or playtest.'
-    : `${room.id}: ${model.document.connections.filter(connection => connection.a.roomId === room.id || connection.b.roomId === room.id).length} connected face(s). Other faces are solid. ${select('view').value === 'cutaway' ? 'Cutaway hides three outside faces for inspection.' : 'Cyan frames mark passages; amber doors are closed until unlocked.'}`;
+    : `${room.id}: ${model.document.connections.filter(connection => connection.a.roomId === room.id || connection.b.roomId === room.id).length} passage(s). Other wall areas stay solid. ${select('view').value === 'cutaway' ? 'Cutaway hides three outside faces for inspection.' : 'Cyan frames mark passages; amber doors are closed until unlocked.'}`;
   element('geometry-status').classList.toggle('invalid', !result.valid);
   element('issues').replaceChildren(...(result.valid ? [] : result.errors.map(issue => {
     const node = document.createElement('button'); node.textContent = `${issue.path}: ${issue.message}`;
@@ -290,7 +296,8 @@ function refresh(rebuild = true) {
   refreshPanels();
   if (rebuild) viewport.show(model.document);
   viewport.setSelection(selectedId);
-  viewport.setDetailSelection(selectionKind === 'wall' ? selectedFace : null, selectionKind === 'content' ? selectedContentId : '');
+  viewport.setDetailSelection(selectionKind === 'wall' ? selectedFace : null, selectionKind === 'content' ? selectedContentId : '', selectionKind === 'wall' ? select('opening-connection').value : '');
+  refreshToolStatus();
 }
 
 function refreshFaceLabels() {
@@ -322,17 +329,21 @@ function refreshPanels() {
   input('content-required').checked = content.kind === 'relay' || model.document.mission.requiredEnemyIds.includes(content.id);
   input('content-required').disabled = content.kind !== 'enemy'; button('delete-content').disabled = content.kind === 'spawn' || content.kind === 'exit';
   options(select('opening-connection'), model.document.connections.map(connection => connection.id));
-  const wallConnection = selectedFace && model.document.connections.find(connection => [connection.a, connection.b].some(end => end.roomId === selectedId && end.port === selectedFace));
+  const wallConnections = selectedFace ? model.document.connections.filter(connection => [connection.a, connection.b].some(end => end.roomId === selectedId && end.port === selectedFace)) : [];
+  const wallConnection = wallConnections.find(link => link.id === select('opening-connection').value) ?? wallConnections[0];
+  button('join-wall').disabled = !selectedFace || !connectableFace(room, selectedFace);
   if (inspector !== 'all' && selectionKind === 'wall') select('opening-connection').value = wallConnection ? wallConnection.id : '';
   const openingSection = element('opening-connection').closest('section');
   if (openingSection) openingSection.hidden = inspector !== 'all' && selectionKind === 'wall' && !wallConnection;
-  element('wall-connection-help').textContent = selectionKind === 'wall' ? wallConnection ? 'This wall has a connected passage. Edit it below or right-click its position.' : selectedFace && !connectableFace(room, selectedFace) ? 'This sloped side stays solid. Continue from one of the corridor’s rectangular end faces.' : 'This wall is solid. Right-click it to attach a neighboring room or corridor and create a passage.' : '';
+  element('wall-connection-help').textContent = selectionKind === 'wall' ? wallConnection ? `${wallConnections.length} passage(s) on this wall. Choose Connection below, or right-click a cyan frame to edit its door.` : selectedFace && !connectableFace(room, selectedFace) ? 'This sloped side stays solid. Continue from one of the corridor’s rectangular end faces.' : 'This wall is solid. Right-click it to attach a neighboring room or corridor and create a passage.' : '';
   const connection = model.document.connections.find(connection => connection.id === select('opening-connection').value);
-  button('apply-opening').disabled = !connection; button('apply-door').disabled = !connection;
+  button('apply-opening').disabled = !connection; button('apply-door').disabled = !connection; button('door-dialog').disabled = !connection; button('fit-opening').disabled = !connection;
   const devices = model.document.formatVersion !== 1 ? model.document.devices : [];
   select('door-relay').replaceChildren(new Option('Always open (no door)', ''), ...devices.map(device => new Option(device.label, device.id)));
   if (connection) {
-    input('opening-width').max = input('opening-height').max = model.document.formatVersion === 6 ? '254' : '62';
+    const rules = openingRules(model.document.formatVersion);
+    input('opening-width').max = input('opening-height').max = String(rules.maxSize);
+    for (const id of ['opening-width', 'opening-height', 'opening-u', 'opening-v']) input(id).step = String(rules.grid);
     input('opening-width').value = String(connection.openingSize[0]); input('opening-height').value = String(connection.openingSize[1]);
     input('opening-u').value = String(connection.a.offset?.[0] ?? 0); input('opening-v').value = String(connection.a.offset?.[1] ?? 0);
     const source = model.document.rooms.find(room => room.id === connection.a.roomId);
@@ -342,16 +353,23 @@ function refreshPanels() {
   } else element('opening-basis').textContent = 'Attach or connect two rooms first.';
 }
 
-for (const mode of /** @type {const} */ (['select', 'translate', 'rotate', 'resize'])) {
-  element(mode).onclick = () => {
-    viewport.setMode(mode);
-    for (const id of ['select', 'translate', 'rotate', 'resize']) element(id).setAttribute('aria-pressed', String(id === mode));
-  };
+function refreshToolStatus() {
+  const content = selectionKind === 'content';
+  if (content && ['rotate', 'resize'].includes(viewport.mode)) viewport.setMode('select');
+  for (const id of ['rotate', 'resize']) button(id).disabled = content;
+  for (const id of ['select', 'translate', 'rotate', 'resize']) element(id).setAttribute('aria-pressed', String(id === viewport.mode));
+  element('tool-status').classList.remove('invalid');
+  element('tool-status').textContent = content ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} selected · Move edits this item in ${selectedId}. Select a room to rotate or stretch.` : `${selectedId} selected · Move, Rotate and Stretch edit this room. Esc cancels a drag.`;
 }
+/** @param {'select' | 'translate' | 'rotate' | 'resize'} mode */
+function setToolMode(mode) { viewport.setMode(mode); refreshToolStatus(); }
+for (const mode of /** @type {const} */ (['select', 'translate', 'rotate', 'resize'])) element(mode).onclick = () => setToolMode(mode);
+element('move-content').onclick = () => { selectedId = model.content(selectedContentId).roomId; selectedFace = null; selectionKind = 'content'; refresh(false); setToolMode('translate'); };
+
 element('snap-connections').onclick = () => perform(() => model.snapConnections(selectedId));
 element('resize-room').onclick = () => { if (menu) { const bounds = element('viewport').getBoundingClientRect(); menu.x = bounds.left + bounds.width / 2; menu.y = bounds.top + 24; openResizeDialog(selectedId, model, viewport, menu, commit); } };
 element('frame').onclick = () => viewport.frame();
-element('actions').onclick = () => { const target = viewport.keyboardTarget(); if (target) { selectTarget(target); if (menu) openContextActions(target, { model, viewport, menu, commit, select: selectTarget, inspect: () => setInspector(selectionKind) }); } };
+element('actions').onclick = () => { const target = viewport.keyboardTarget(); if (target) { selectTarget(target); if (menu) openContextActions(target, { model, viewport, menu, commit, select: selectTarget, inspect: () => setInspector(selectionKind), moveSelected: () => setToolMode('translate') }); } };
 element('duplicate-room').onclick = () => perform(() => {
   const face = FACES.find(face => connectableFace(model.room(selectedId), face) && !model.document.connections.some(connection => [connection.a, connection.b].some(end => end.roomId === selectedId && end.port === face)));
   if (!face) throw new Error('No unused face is available for a duplicate.');
@@ -384,7 +402,12 @@ element('add-shaped').onclick = () => perform(() => {
   selectedId = model.attachRoom(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('attach-port').value), 'offset-corridor', offsets[/** @type {keyof typeof offsets} */ (select('corridor-shape').value)]);
   selectionKind = 'room'; selectedFace = null; if (inspector !== 'all') setInspector('room');
 });
-element('connect').onclick = () => perform(() => model.connect(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('source-port').value), select('target-room').value, /** @type {import('../levelDocument.js').Face} */ (select('target-port').value)));
+function positionMenu() { const bounds = element('viewport').getBoundingClientRect(); if (menu) { menu.x = bounds.left + 16; menu.y = bounds.top + 16; } }
+element('join-dialog').onclick = () => { try { positionMenu(); if (menu) { connectionDialog(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('source-port').value), model, menu, commit); viewport.controls.enabled = false; } } catch (error) { report(error); } };
+element('join-wall').onclick = () => { try { positionMenu(); if (menu && selectedFace) { connectionDialog(selectedId, selectedFace, model, menu, commit); viewport.controls.enabled = false; } } catch (error) { report(error); } };
+element('door-dialog').onclick = () => { positionMenu(); if (menu) { doorDialog(select('opening-connection').value, model, menu, commit); viewport.controls.enabled = false; } };
+element('fit-opening').onclick = () => perform(() => model.fitOpening(select('opening-connection').value));
+element('connect').onclick = () => perform(() => model.connectFaces(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('source-port').value), select('target-room').value, /** @type {import('../levelDocument.js').Face} */ (select('target-port').value)));
 select('target-room').onchange = refreshFaceLabels;
 element('properties').onsubmit = event => {
   event.preventDefault();

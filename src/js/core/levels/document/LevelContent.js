@@ -12,6 +12,9 @@ export const EXPANDED_LIMITS = Object.freeze({ ...LIMITS, rooms: 256, connection
 /** Keep old documents' validation contract; expanded editing opts into v6.
  * @param {number} version */
 export function documentLimits(version) { return version >= 6 ? EXPANDED_LIMITS : LIMITS; }
+/** V7 can open the whole shared clear face, including exact centers of partially shared faces.
+ * @param {number} version */
+export function openingRules(version) { return { grid: version >= 7 ? 0.125 : GRID, margin: WALL_THICKNESS + (version >= 7 ? 0 : 0.25), maxSize: version >= 7 ? 255 : version >= 6 ? 254 : 62 }; }
 /** @type {readonly import('../../../levelDocument.js').Face[]} */
 export const FACES = Object.freeze(['negativeX', 'positiveX', 'negativeY', 'positiveY', 'negativeZ', 'positiveZ']);
 export const MATERIALS = Object.freeze({

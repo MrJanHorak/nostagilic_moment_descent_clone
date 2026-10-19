@@ -1,5 +1,5 @@
 import { enemyTypes } from '../../../entities/EnemyTypes.js';
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, documentLimits, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, documentLimits, openingRules, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
 import validateSemantics from './validateSemantics.js';
 
 class Reader {
@@ -148,9 +148,9 @@ function readRoom(value, path, reader, modern, oriented, shaped, expanded) {
   return { id, prefab, position, size, yaw, materialPreset, ...(pitch !== undefined && pitch !== null ? { pitch } : {}), ...(roll !== undefined && roll !== null ? { roll } : {}), ...(endOffset ? { endOffset } : {}), ...(Object.keys(surfaces).length ? { surfaces } : {}) };
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded @param {number} version
  * @returns {import('../../../levelDocument.js').PortReference | null} */
-function readPort(value, path, reader, modern, expanded) {
+function readPort(value, path, reader, modern, expanded, version) {
   const object = reader.object(value, path, ['roomId', 'port', ...(modern ? ['offset'] : [])]); if (!object) return null;
   const roomId = reader.text(object.roomId, `${path}.roomId`, 64, true), port = reader.choice(object.port, FACES, `${path}.port`);
   /** @type {[number, number] | undefined} */ let offset;
@@ -160,7 +160,7 @@ function readPort(value, path, reader, modern, expanded) {
     else {
       const u = reader.number(values[0], `${path}.offset[0]`, expanded ? -128 : -32, expanded ? 128 : 32), v = reader.number(values[1], `${path}.offset[1]`, expanded ? -128 : -32, expanded ? 128 : 32);
       if (u !== null && v !== null) {
-        if (![u, v].every(number => Number.isInteger(number / GRID))) reader.issue(`${path}.offset`, 'grid', 'Opening offsets must use the half-unit grid');
+        if (![u, v].every(number => Number.isInteger(number / openingRules(version).grid))) reader.issue(`${path}.offset`, 'grid', `Opening offsets must use the ${openingRules(version).grid} grid`);
         offset = [u, v];
       }
     }
@@ -168,16 +168,16 @@ function readPort(value, path, reader, modern, expanded) {
   return roomId && port ? { roomId, port, ...(offset ? { offset } : {}) } : null;
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded @param {number} version
  * @returns {import('../../../levelDocument.js').ConnectionDocument | null} */
-function readConnection(value, path, reader, modern, expanded) {
+function readConnection(value, path, reader, modern, expanded, version) {
   const object = reader.object(value, path, ['id', 'a', 'b', 'openingSize']); if (!object) return null;
-  const id = reader.text(object.id, `${path}.id`, 64, true), a = readPort(object.a, `${path}.a`, reader, modern, expanded), b = readPort(object.b, `${path}.b`, reader, modern, expanded);
+  const id = reader.text(object.id, `${path}.id`, 64, true), a = readPort(object.a, `${path}.a`, reader, modern, expanded, version), b = readPort(object.b, `${path}.b`, reader, modern, expanded, version);
   const opening = reader.array(object.openingSize, `${path}.openingSize`, 2);
   if (!opening || opening.length !== 2) { reader.issue(`${path}.openingSize`, 'opening', 'Expected [width, height/depth]'); return null; }
-  const width = reader.number(opening[0], `${path}.openingSize[0]`, 2, expanded ? 254 : 62), height = reader.number(opening[1], `${path}.openingSize[1]`, 2, expanded ? 254 : 62);
+  const width = reader.number(opening[0], `${path}.openingSize[0]`, 2, openingRules(version).maxSize), height = reader.number(opening[1], `${path}.openingSize[1]`, 2, openingRules(version).maxSize);
   if (!id || !a || !b || width === null || height === null) return null;
-  if (![width, height].every(number => Number.isInteger(number / GRID))) reader.issue(`${path}.openingSize`, 'grid', 'Openings must use the half-unit grid');
+  if (![width, height].every(number => Number.isInteger(number / openingRules(version).grid))) reader.issue(`${path}.openingSize`, 'grid', `Openings must use the ${openingRules(version).grid} grid`);
   return { id, a, b, openingSize: [width, height] };
 }
 
@@ -246,13 +246,13 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–6 is supported');
-  const expanded = root.formatVersion === 6, limits = documentLimits(expanded ? 6 : 1);
+  if (![1, 2, 3, 4, 5, 6, 7].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–7 is supported');
+  const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
   const id = reader.text(root.id, '$.id', 64, true), name = reader.text(root.name, '$.name', 80);
   const rooms = (reader.array(root.rooms, '$.rooms', limits.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern, oriented, shaped, expanded)).filter(value => value !== null);
-  const connections = (reader.array(root.connections, '$.connections', limits.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern, expanded)).filter(value => value !== null);
+  const connections = (reader.array(root.connections, '$.connections', limits.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern, expanded, version)).filter(value => value !== null);
   const entities = (reader.array(root.entities, '$.entities', LIMITS.entities) ?? []).map((value, i) => readEntity(value, `$.entities[${i}]`, reader)).filter(value => value !== null);
   const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader)).filter(value => value !== null) : [];
   const doors = relay ? (reader.array(root.doors, '$.doors', 16) ?? []).map((value, i) => readDoor(value, `$.doors[${i}]`, reader)).filter(value => value !== null) : [];
@@ -273,7 +273,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
+    ? { ...base, formatVersion: version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

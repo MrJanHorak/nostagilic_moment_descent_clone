@@ -5,7 +5,7 @@ export { toLocal } from '../core/levels/document/RoomMath.js';
 
 export const FACE_LABELS = Object.freeze({ negativeX: 'Left wall', positiveX: 'Right wall', negativeY: 'Floor', positiveY: 'Ceiling', negativeZ: 'Forward wall', positiveZ: 'Rear wall' });
 /** @typedef {'spawn' | 'exit' | 'enemy' | 'health' | 'pulseAmmo' | 'relay'} PlacementKind */
-/** @typedef {{roomId: string, face?: import('../levelDocument.js').Face, contentId?: string, localPoint: number[], clientX: number, clientY: number}} ViewportTarget */
+/** @typedef {{roomId: string, face?: import('../levelDocument.js').Face, contentId?: string, connectionId?: string, localPoint: number[], clientX: number, clientY: number}} ViewportTarget */
 
 /** Labels describe the world-facing surface even in a pitched/rolled room.
  * @param {import('../levelDocument.js').RoomDocument} room @param {import('../levelDocument.js').Face} face */

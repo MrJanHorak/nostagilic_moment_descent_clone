@@ -1,6 +1,6 @@
-# Shared level document — format versions 1–6
+# Shared level document — format versions 1–7
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. All six versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. All seven versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All base fields below are required. The version-3 extension below describes its 
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, or `6` for expanded authoring; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, or `7` for shared/multiple openings; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -29,7 +29,7 @@ A room has `id`, `prefab`, `position`, `size`, `yaw` and `materialPreset`. Suppo
 
 Room `yaw` is exactly `0`, `90`, `180` or `270` degrees around +Y. For example, at yaw 90 local +Z maps to world +X and local +X maps to world -Z. Versions 1–3 have yaw only; v4 optionally adds pitch/roll as described below. Player rotation is a normalized `[x,y,z,w]` quaternion relative to its room, composed with the complete room orientation when loaded.
 
-Local face names are `negativeX`, `positiveX`, `negativeY`, `positiveY`, `negativeZ`, `positiveZ`. Each port is centered on its face; each face supports at most one connection. Endpoint face names remain local after rotating a room. A connection's two world centers must coincide and their normals must oppose one another. Self-connections are errors.
+Local face names are `negativeX`, `positiveX`, `negativeY`, `positiveY`, `negativeZ`, `positiveZ`. Each port is centered on its face; versions 1–6 support at most one connection per face. V7 permits up to eight non-overlapping openings on a face. Endpoint face names remain local after rotating a room. A connection's two world centers must coincide and their normals must oppose one another. Self-connections are errors.
 
 `openingSize` has two dimensions, interpreted in a **canonical world-plane basis**:
 
@@ -173,14 +173,23 @@ Resizing holds the chosen opening's world center fixed (default: first connectio
 
 Validation and editor overlap highlights use cached world bounds and a sweep before the existing exact convex intersection test. See [the authoring checkpoint](progress/M4_CONNECTED_RESIZING.md).
 
+## Version 7: shared faces and multiple wall openings
+
+V7 keeps the v6 room/mission fields and caps. Opening dimensions are 2–255 and endpoint offsets remain within ±128; both use an eighth-unit grid. This represents exact centers of partially overlapping quarter-grid wall rectangles. Room sizes stay half-unit and centers quarter-unit. Each endpoint opening must fit the clear face with the physical 0.5-unit wall margin, without the older extra 0.25 authoring rim. A full shared opening removes the mutual clear rectangle, retaining side-wall/floor/ceiling thickness.
+
+Up to eight separate openings may reference one face. Their U/V rectangles cannot overlap. Wall compilation subtracts all holes, preserving solids between/outside them; rectangular sloped-corridor end caps use the same decomposition. Door slabs and navigation continue to derive from each connection's exact center/size. Room volumes must remain non-overlapping and endpoint planes/normals must still meet/oppose. This is not a geometric union of intersecting rooms.
+
+The editor's join command can keep touching faces in place, translate a separate branch, or fit an anchored corridor's free end to a fixed target before adding the connection. New shared joins, full-opening fitting and additional same-wall attachments opt into v7. Later edits preserve it; imports of older versions and Undo retain their original contracts. See [the workflow and verification](progress/M4_LOOPS_AND_SHARED_OPENINGS.md).
+
 ## Limits and compatibility
 
 | Limit | Value |
 | --- | ---: |
 | Rooms / connections / entities, v1–5 | 64 / 128 / 256 |
-| Rooms / connections / entities, v6 | 256 / 512 / 256 |
+| Rooms / connections / entities, v6–7 | 256 / 512 / 256 |
 | Parsed JSON text | 1,000,000 UTF-16 code units |
 | Validated tree nodes / nesting depth | 50,000 / 16 |
+| Connections per face, v1–6 / v7 | 1 / 8 |
 | Reported diagnostics | 100 |
 | Coordinate component magnitude | 4,096 |
 

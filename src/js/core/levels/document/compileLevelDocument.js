@@ -1,3 +1,4 @@
+import wallOpenings from './WallOpenings.js';
 import * as THREE from 'three';
 import { FACES, MATERIALS, WALL_THICKNESS } from './LevelContent.js';
 import { openingFrame, portFrame, toWorld } from './RoomMath.js';
@@ -12,9 +13,9 @@ export default function compileLevelDocument(input) {
   const result = validateLevelDocument(input);
   if (!result.valid) throw new LevelDocumentError(result.errors);
   const document = result.document, rooms = new Map(document.rooms.map(room => [room.id, room]));
-  /** @type {Map<string, {size: readonly [number, number], offset: readonly [number, number]}>} */ const openings = new Map();
+  /** @type {Map<string, {size: readonly [number, number], offset: readonly [number, number]}[]>} */ const openings = new Map();
   for (const connection of document.connections) {
-    for (const endpoint of [connection.a, connection.b]) openings.set(`${endpoint.roomId}/${endpoint.port}`, { size: connection.openingSize, offset: endpoint.offset ?? [0, 0] });
+    for (const endpoint of [connection.a, connection.b]) { const key = `${endpoint.roomId}/${endpoint.port}`, values = openings.get(key) ?? []; values.push({ size: connection.openingSize, offset: endpoint.offset ?? [0, 0] }); openings.set(key, values); }
   }
   /** @type {import('../../../levelDocument.js').SolidDefinition[]} */ const solids = [];
   for (const room of document.rooms) {
@@ -33,15 +34,7 @@ export default function compileLevelDocument(input) {
         const color = style?.color ?? (frame.axis === 1 ? frame.direction < 0 ? preset.floor : preset.ceiling : preset.wall);
         solids.push(Object.freeze({ id: `@solid/${room.id}/${face}/${part}`, center: Object.freeze(center), size: Object.freeze(size), color, ...(style ? { pattern: style.pattern } : {}) }));
       };
-      const halfW = frame.width / 2, halfH = frame.height / 2;
-      if (!opening) rectangle(-halfW, halfW, -halfH, halfH, 'wall');
-      else {
-        const [width, height] = opening.size, [u, v] = opening.offset;
-        rectangle(-halfW, u - width / 2, -halfH, halfH, 'left');
-        rectangle(u + width / 2, halfW, -halfH, halfH, 'right');
-        rectangle(u - width / 2, u + width / 2, -halfH, v - height / 2, 'bottom');
-        rectangle(u - width / 2, u + width / 2, v + height / 2, halfH, 'top');
-      }
+      wallOpenings(frame.width, frame.height, opening ?? [], rectangle);
     }
   }
   /** @param {import('../../../levelDocument.js').Placement} placement */

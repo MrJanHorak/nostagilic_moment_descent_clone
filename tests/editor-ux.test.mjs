@@ -38,7 +38,7 @@ test('wall attachment places the connected corridor at the clicked opening as on
   const connection = model.document.connections[0]; assert.deepEqual(connection.a.offset, [4, 2]); assert.deepEqual(connection.b.offset, [0, 0]);
   assert.deepEqual(openingFrame(model.room('room-1'), connection.a).center, openingFrame(model.room(id), connection.b).center);
   assert.equal(model.past.length, 1); model.undo(); assert.equal(model.document.rooms.length, 1); model.redo(); assert.equal(model.document.rooms.length, 2);
-  const before = model.export(); assert.throws(() => model.attachAt('room-1', 'negativeZ', [0, 0, -8], 'box-room'), /unused/); assert.equal(model.export(), before);
+  const before = model.export(); assert.throws(() => model.attachAt('room-1', 'negativeZ', [0, 0, -8], 'box-room'), /overlap/); assert.equal(model.export(), before);
 });
 
 test('room duplication copies styles and ordinary content with fresh references, leaving unique spawn/exit intact', () => {

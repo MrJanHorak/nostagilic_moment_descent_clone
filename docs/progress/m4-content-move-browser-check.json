@@ -1,0 +1,315 @@
+{
+  "date": "2026-10-19",
+  "command": "npx playwright test editor",
+  "environment": {
+    "node": "22.14.0",
+    "os": "win32",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "viewport": "960x540; direct authoring checks at 1280x800",
+    "input": "Native mouse/keyboard for item/room transforms. Controlled clock for real runtime playtest cases. No model or transform injection."
+  },
+  "stats": {
+    "startTime": "2026-10-19T17:49:06.333Z",
+    "duration": 106097.24399999999,
+    "expected": 22,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 53,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 371,
+    "build": "passed",
+    "diffCheck": "passed",
+    "editorBrowserCases": 22
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2656,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8021,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: pickup drag moves only the selected item, rejects walls, cancels, undoes and recovers",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2838,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: native picking and movement in a rotated ramp preserve spawn orientation and room geometry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1284,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: enemy, relay and exit drags retain objective and door links",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1872,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: Escape cancels room Move and Stretch without adding history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1445,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: wall menu, precise dimensions, native stretch, undo and draft recovery",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2670,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: stretch a connected corridor, reject a bad shrink and fly its preserved door passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6672,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: import, frame and export a full 256-room mine",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1296,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: native hallway drag and numeric edits stay snapped; repair a displaced connection",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1888,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4008,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 41138,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2569,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1903,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 635,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: blocked draft storage keeps editing and portable export available",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 619,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8462,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6128,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2154,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1726,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1038,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 836,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "gameplayBundles": {
+    "byteIdenticalToPreviousFullRun": true,
+    "previousEvidence": "m4-resize-browser-check.json",
+    "hashes": {
+      "compileLevelDocument--qLBVGOt.js": "a1da9ec192b5027c97b4732dc6191c98fa4c46fd923e1f449fde5fb4f9d91c77",
+      "game-mudDbLZh.js": "81b4c6e999f42f7301c3559d92a701f56b9487af5e3a77b80e186db04f273434",
+      "main-BZr2xlGj.js": "4bc4f25caa04b560cd660ec871eccfd0d11c16e6007bbc29ec708ad927ab7923",
+      "modulepreload-polyfill-B5Qt9EMX.js": "607112fb81d7899ceedf89cdb1b3540a53eb96ad5e4202fb1e22f873281de839",
+      "playtest-H8cruP0O.js": "b0016a9d6e4ff3793f7634bee04fdc7bca415316bc6b87de4d36ab578d5cc452"
+    },
+    "gameCasesRerun": false
+  },
+  "visualReview": {
+    "viewport": "1280x800",
+    "screenshots": [
+      "item-move-preview.png",
+      "item-move-rejected.png"
+    ],
+    "findings": "Move targets the highlighted item. The Content panel exposes Move selected item; room Rotate/Stretch are disabled. A red preview/status explains wall rejection while the saved level remains valid."
+  },
+  "limits": "Movement stays in the existing room. Use Content room for transfers. Human M4 handling acceptance and M2 hardware performance acceptance remain open. No new audit/hardware capture or commit/push/deployment."
+}

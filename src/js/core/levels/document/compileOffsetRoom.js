@@ -1,3 +1,4 @@
+import wallOpenings from './WallOpenings.js';
 import { FACES, MATERIALS, WALL_THICKNESS } from './LevelContent.js';
 import { inverseOrient, portFrame, toWorld } from './RoomMath.js';
 import { boxCorners } from '../../../utils/BoxTopology.js';
@@ -5,7 +6,7 @@ import { boxCorners } from '../../../utils/BoxTopology.js';
 /** Convex shear of the rectangular shell. Only the two rectangular end caps
  * accept portals; sloped side faces stay solid and independently styleable.
  * @param {import('../../../levelDocument.js').RoomDocument} room
- * @param {Map<string, {size: readonly [number, number], offset: readonly [number, number]}>} openings */
+ * @param {Map<string, {size: readonly [number, number], offset: readonly [number, number]}[]>} openings */
 export default function compileOffsetRoom(room, openings) {
   /** @type {import('../../../levelDocument.js').SolidDefinition[]} */ const solids = [];
   const preset = MATERIALS[room.materialPreset];
@@ -37,13 +38,7 @@ export default function compileOffsetRoom(room, openings) {
         return toWorld(room, local);
       }), part);
     };
-    const halfW = frame.width / 2, halfH = frame.height / 2, opening = openings.get(`${room.id}/${face}`);
-    if (!opening) rectangle(-halfW, halfW, -halfH, halfH, 'wall');
-    else {
-      const [width, height] = opening.size, [u, v] = opening.offset;
-      rectangle(-halfW, u - width / 2, -halfH, halfH, 'left'); rectangle(u + width / 2, halfW, -halfH, halfH, 'right');
-      rectangle(u - width / 2, u + width / 2, -halfH, v - height / 2, 'bottom'); rectangle(u - width / 2, u + width / 2, v + height / 2, halfH, 'top');
-    }
+    wallOpenings(frame.width, frame.height, openings.get(`${room.id}/${face}`) ?? [], rectangle);
   }
   return solids;
 }

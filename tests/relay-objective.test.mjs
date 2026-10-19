@@ -33,7 +33,7 @@ function worldFixture(t, input = sample) {
 }
 
 const invalidCases = [
-  ['unknown version', input => { input.formatVersion = 7; }, 'version'],
+  ['unknown version', input => { input.formatVersion = 8; }, 'version'],
   ['v1 door fields', input => { input.formatVersion = 1; input.mission.type = 'clear-and-exit'; }, 'field'],
   ['missing doors', input => { delete input.doors; }, 'array'],
   ['empty devices', input => { input.devices = []; }, 'relay'],

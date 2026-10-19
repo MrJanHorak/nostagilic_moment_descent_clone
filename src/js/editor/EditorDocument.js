@@ -1,10 +1,11 @@
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS, openingRules } from '../core/levels/document/LevelContent.js';
+import { faceOverlap, sharedOpening, connectedBranch } from './ConnectionTools.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import { connectableFace, distance, portFrame } from '../core/levels/document/RoomMath.js';
 import { parseLevelDocument, serializeLevelDocument, validateLevelDocument, validateLevelDraft } from '../core/levels/document/validateLevelDocument.js';
 import resizeRoom from './ResizeRoom.js';
 import { placementPosition } from './EditorPicking.js';
-import { toWorld } from '../core/levels/document/RoomMath.js';
+import { toLocal, toWorld } from '../core/levels/document/RoomMath.js';
 
 /** @typedef {import('./DraftTypes.js').EditorLevelDocument} LevelDocument */
 /** @typedef {import('./DraftTypes.js').EditorRoom} Room */
@@ -40,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -128,6 +129,10 @@ export default class EditorDocument {
   /** @param {string} roomId @param {Face} face @param {number[]} point @param {Room['prefab']} prefab @param {number[]} [endOffset] */
   attachAt(roomId, face, point, prefab, endOffset) {
     let id = '';
+    if (occupied(this.document, roomId, face)) {
+      this.checked(candidate => { id = candidate.attachRoom(roomId, face, prefab, endOffset, point); });
+      return id;
+    }
     this.checked(candidate => {
       id = candidate.attachRoom(roomId, face, prefab, endOffset);
       const connection = candidate.document.connections[candidate.document.connections.length - 1];
@@ -150,7 +155,7 @@ export default class EditorDocument {
     const source = copy(this.room(roomId)); let id = '';
     this.checked(candidate => candidate.change(draft => {
       if (draft.rooms.length >= EXPANDED_LIMITS.rooms) throw new Error('Room limit reached (256).');
-      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); }
+      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); if (draft.formatVersion < 6) Object.assign(draft, { formatVersion: 6 }); }
       if (occupied(draft, roomId, face)) throw new Error('Choose an unused face for the duplicate.');
       id = nextId(draft, 'room'); const room = { ...copy(source), id, position: /** @type {[number, number, number]} */ ([0, 0, 0]) };
       const frame = portFrame(source, face), opposite = FACES.find(face => portFrame(room, face).normal.every((value, axis) => value === -frame.normal[axis]));
@@ -197,7 +202,7 @@ export default class EditorDocument {
   /** @param {string} roomId @param {{position?: number[], size?: number[], yaw?: number, pitch?: number, roll?: number, endOffset?: number[], materialPreset?: string}} values */
   updateRoom(roomId, values) {
     const original = this.room(roomId);
-    const candidate = { ...original, ...values }, expanded = this.document.formatVersion === 6;
+    const candidate = { ...original, ...values }, expanded = this.document.formatVersion >= 6;
     if (![candidate.position, candidate.size].every((vector, index) => vector.length === 3 && vector.every(number => Number.isFinite(number) && Number.isInteger(number / (expanded && index === 0 ? 0.25 : GRID))))) throw new Error('Use the position grid (0.25 in format 6, otherwise 0.5) and 0.5 dimension grid.');
     if (candidate.position.some(number => Math.abs(number) > 4096) || candidate.size.some(number => number < 4 || number > (expanded ? 256 : 64))) throw new Error(`Positions must be within ±4096; dimensions must be 4–${expanded ? 256 : 64} units. Use Resize to expand an older document.`);
     if (![candidate.yaw, candidate.pitch ?? 0, candidate.roll ?? 0].every(value => [0, 90, 180, 270].includes(value))) throw new Error('Yaw, pitch and roll must be 0, 90, 180 or 270 degrees. Use corridor end offsets for slopes.');
@@ -222,7 +227,7 @@ export default class EditorDocument {
   resizeRoom(roomId, size, anchor = this.document.connections.find(link => link.a.roomId === roomId || link.b.roomId === roomId)?.id ?? 'center') {
     if (size.length === 3 && this.room(roomId).size.every((value, axis) => value === size[axis])) return;
     this.checked(candidate => {
-      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 6 });
+      modernize(candidate.document); if (candidate.document.formatVersion < 6) Object.assign(candidate.document, { formatVersion: 6 });
       resizeRoom(candidate.document, roomId, size, anchor);
     });
   }
@@ -232,7 +237,7 @@ export default class EditorDocument {
   snapConnections(roomId, anchor = this.document.connections.find(link => link.a.roomId === roomId || link.b.roomId === roomId)?.id) {
     if (!anchor) throw new Error('This room has no connection to snap. Attach it from an unused face first.');
     this.checked(candidate => {
-      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 6 });
+      modernize(candidate.document); if (candidate.document.formatVersion < 6) Object.assign(candidate.document, { formatVersion: 6 });
       resizeRoom(candidate.document, roomId, candidate.room(roomId).size, anchor, true);
     });
   }
@@ -250,12 +255,12 @@ export default class EditorDocument {
     });
   }
   /** Attach creates room + connection atomically, including vertical hatches.
-   * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] */
-  attachRoom(roomId, face, prefab, endOffset = [0, 8]) {
+   * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] @param {number[]} [point] */
+  attachRoom(roomId, face, prefab, endOffset = [0, 8], point) {
     if (this.document.rooms.length >= EXPANDED_LIMITS.rooms) throw new Error('Room limit reached (256).');
     const source = this.room(roomId);
     if (!connectableFace(source, face)) throw new Error('Sloped side faces stay solid. Continue from a corridor end face.');
-    if (!FACES.includes(face) || occupied(this.document, roomId, face)) throw new Error('Choose an unused attachment port.');
+    if (!FACES.includes(face) || occupied(this.document, roomId, face) && !point) throw new Error('Choose an unused attachment port, or right-click another area of this wall.');
     const frame = portFrame(source, face), id = nextId(this.document, 'room');
     /** @type {Room} */ const room = { id, prefab, position: [0, 0, 0], size: prefab === 'box-room' ? [16, 12, 16] : [8, 8, 16], yaw: 0, materialPreset: source.materialPreset };
     // Corridors run along the selected world axis, including vertical shafts.
@@ -271,12 +276,18 @@ export default class EditorDocument {
     if (!opposite) throw new Error('No compatible port.');
     const offset = portFrame(room, opposite).center;
     room.position = /** @type {[number, number, number]} */ (frame.center.map((value, axis) => value - offset[axis]));
+    if (point) {
+      if (point.length !== 3 || !point.every(Number.isFinite)) throw new Error('Choose a finite point on the wall.');
+      const world = toWorld(source, /** @type {[number, number, number]} */ (point));
+      for (const axis of [frame.u, frame.v]) room.position[axis] += Math.round((world[axis] - frame.center[axis]) / GRID) * GRID;
+    }
     this.change(draft => {
+      if (point) { modernize(draft); Object.assign(draft, { formatVersion: 7 }); }
       if (room.pitch) { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 4 }); }
       if (prefab === 'offset-corridor') { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 5 }); }
-      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); }
+      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); if (draft.formatVersion < 6) Object.assign(draft, { formatVersion: 6 }); }
       draft.rooms.push(room);
-      draft.connections.push(connectionFor(draft, source, face, room, opposite));
+      draft.connections.push(point ? { id: nextId(draft, 'connection'), ...sharedOpening(source, face, room, opposite, false, toWorld(source, /** @type {[number, number, number]} */ (point))) } : connectionFor(draft, source, face, room, opposite));
       const result = validateLevelDocument(draft);
       if (!result.valid) throw new Error(result.errors.map(error => `${error.path}: ${error.message}`).join('\n'));
     });
@@ -286,7 +297,61 @@ export default class EditorDocument {
   connect(aId, portA, bId, portB) {
     if (this.document.connections.length >= EXPANDED_LIMITS.connections) throw new Error('Connection limit reached (512).');
     const connection = connectionFor(this.document, this.room(aId), portA, this.room(bId), portB);
-    this.change(draft => { if (draft.connections.length >= LIMITS.connections) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); } draft.connections.push(connection); });
+    this.change(draft => { if (draft.connections.length >= LIMITS.connections) { modernize(draft); if (draft.formatVersion < 6) Object.assign(draft, { formatVersion: 6 }); } draft.connections.push(connection); });
+  }
+
+  /** Opposing faces with shared projected area; gaps may be fitted explicitly.
+   * @param {string} roomId @param {Face} face */
+  connectionTargets(roomId, face) {
+    const source = this.room(roomId);
+    /** @type {{roomId: string, face: Face, gap: number}[]} */ const targets = [];
+    for (const room of this.document.rooms) for (const port of FACES) {
+      if (room.id === roomId) continue;
+      try {
+        const area = faceOverlap(source, face, room, port);
+        if (Math.abs(area.gap) <= 256 && (room.position[area.source.axis] - area.source.center[area.source.axis]) * area.source.direction >= -1e-6) targets.push({ roomId: room.id, face: port, gap: area.gap });
+      } catch { /* Non-opposing, sloped or non-overlapping faces are not targets. */ }
+    }
+    return targets.sort((a, b) => Math.abs(a.gap) - Math.abs(b.gap) || a.roomId.localeCompare(b.roomId));
+  }
+
+  /** Close a loop or align a free end to an existing wall. V7 supports exact
+   * shared-face openings and multiple non-overlapping passages per wall.
+   * @param {string} aId @param {Face} portA @param {string} bId @param {Face} portB
+   * @param {{mode?: 'touch' | 'snap' | 'fit', full?: boolean, point?: number[]}} [options] */
+  connectFaces(aId, portA, bId, portB, options = {}) {
+    if (this.document.connections.length >= EXPANDED_LIMITS.connections) throw new Error('Connection limit reached (512).');
+    let id = '';
+    this.checked(candidate => {
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 7 });
+      const area = faceOverlap(candidate.room(aId), portA, candidate.room(bId), portB);
+      if (Math.abs(area.gap) > 1e-6) {
+        if (options.mode === 'fit') {
+          const room = candidate.room(aId), anchor = candidate.document.connections.find(link => [link.a, link.b].some(end => end.roomId === aId && end.port === (portA === 'negativeZ' ? 'positiveZ' : 'negativeZ')));
+          if (room.prefab === 'box-room' || !portA.endsWith('Z') || !anchor) throw new Error('Fit requires a corridor end with its opposite end already connected.');
+          const target = [...candidate.room(bId).position];
+          resizeRoom(candidate.document, aId, [room.size[0], room.size[1], room.size[2] + area.gap], anchor.id);
+          if (candidate.room(bId).position.some((value, axis) => Math.abs(value - target[axis]) > 1e-6)) throw new Error('Fitting this branch would move the target room. Rework its other connections first.');
+        } else if (options.mode === 'snap') {
+          const branch = connectedBranch(candidate.document, aId);
+          if (branch.has(bId)) throw new Error('These rooms already share a route. Use Fit corridor end or align the loop without moving the target.');
+          for (const room of candidate.document.rooms) if (branch.has(room.id)) room.position[area.source.axis] += area.gap * area.source.direction;
+        } else throw new Error('Faces do not share a plane. Choose Snap branch or Fit corridor end.');
+      }
+      const opening = sharedOpening(candidate.room(aId), portA, candidate.room(bId), portB, options.full ?? false, options.point);
+      id = nextId(candidate.document, 'connection'); candidate.document.connections.push({ id, ...opening });
+    });
+    return id;
+  }
+
+  /** Fill the shared clear face, retaining its existing door/relay identity.
+   * @param {string} id */
+  fitOpening(id) {
+    this.checked(candidate => {
+      const link = candidate.document.connections.find(link => link.id === id); if (!link) throw new Error('Select a connection.');
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 7 });
+      Object.assign(link, sharedOpening(candidate.room(link.a.roomId), link.a.port, candidate.room(link.b.roomId), link.b.port, true));
+    });
   }
 
   /** @param {string} roomId @param {Face | 'all'} face @param {number} color @param {import('../levelDocument.js').SurfacePattern} pattern */
@@ -327,12 +392,12 @@ export default class EditorDocument {
     if (!connection) throw new Error('Select a connection.');
     const a = portFrame(this.room(connection.a.roomId), connection.a.port), b = portFrame(this.room(connection.b.roomId), connection.b.port);
     if (a.axis !== b.axis || a.direction !== -b.direction || a.center[a.axis] !== b.center[b.axis]) throw new Error('The room faces must share a plane and face opposite directions.');
-    const margin = WALL_THICKNESS + 0.25;
+    const { margin, grid } = openingRules(this.document.formatVersion);
     const ranges = [width, height].map((size, index) => {
       const axis = index === 0 ? a.u : a.v, halfA = (index === 0 ? a.width : a.height) / 2, halfB = (index === 0 ? b.width : b.height) / 2;
       const delta = a.center[axis] - b.center[axis];
-      return { min: Math.ceil(Math.max(-halfA + margin + size / 2, -halfB + margin + size / 2 - delta) / GRID) * GRID,
-        max: Math.floor(Math.min(halfA - margin - size / 2, halfB - margin - size / 2 - delta) / GRID) * GRID, delta };
+      return { min: Math.ceil(Math.max(-halfA + margin + size / 2, -halfB + margin + size / 2 - delta) / grid - 1e-6) * grid,
+        max: Math.floor(Math.min(halfA - margin - size / 2, halfB - margin - size / 2 - delta) / grid + 1e-6) * grid, delta };
     });
     if (ranges.some(range => range.min > range.max)) throw new Error('The opening is too large for the shared wall area.');
     return ranges;
@@ -340,7 +405,8 @@ export default class EditorDocument {
 
   /** @param {string} id @param {number} width @param {number} height @param {number[]} offset */
   updateOpening(id, width, height, offset) {
-    if (offset.length !== 2 || ![width, height, ...offset].every(value => Number.isFinite(value) && Number.isInteger(value / GRID)) || width < 2 || height < 2 || width > (this.document.formatVersion === 6 ? 254 : 62) || height > (this.document.formatVersion === 6 ? 254 : 62)) throw new Error('Opening dimensions and offsets use the 0.5 unit grid; dimensions must be 2–62 (2–254 in format 6).');
+    const { grid, maxSize } = openingRules(this.document.formatVersion);
+    if (offset.length !== 2 || ![width, height, ...offset].every(value => Number.isFinite(value) && Number.isInteger(value / grid)) || width < 2 || height < 2 || width > maxSize || height > maxSize) throw new Error(`Opening dimensions/offsets use the ${grid} unit grid; dimensions must be 2–${maxSize}.`);
     const ranges = this.openingBounds(id, width, height);
     if (ranges.some((range, index) => offset[index] < range.min || offset[index] > range.max)) throw new Error(`Opening must remain inside both wall frames: U ${ranges[0].min}…${ranges[0].max}, V ${ranges[1].min}…${ranges[1].max}.`);
     this.change(draft => {
@@ -401,6 +467,30 @@ export default class EditorDocument {
     });
   }
 
+  /** Stage a same-room item move without touching the document or history.
+   * Preserve spawn quaternion, objective membership and relay/door references.
+   * @param {string} id @param {number[]} world */
+  previewContentMove(id, world) {
+    if (world.length !== 3 || !world.every(Number.isFinite)) throw new Error('Choose a finite world position [x, y, z].');
+    const content = this.content(id), room = this.room(content.roomId);
+    const position = /** @type {[number, number, number]} */ (toLocal(room, world).map(value => Math.round(value / GRID) * GRID));
+    const document = copy(this.document);
+    const item = id === '@spawn' ? document.playerSpawn : document.entities.find(item => item.id === id) ?? (document.formatVersion !== 1 ? document.devices.find(item => item.id === id) : undefined);
+    if (!item) throw new Error('Select mission content.');
+    item.position = position;
+    const validation = validateLevelDocument(document);
+    return { document, world: toWorld(room, position), error: validation.valid ? '' : validation.errors.slice(0, 3).map(issue => issue.message).join('\n') };
+  }
+
+  /** A complete drag is one validated undo command. Preview and release share
+   * the same local-grid/clearance checks; rejected moves leave history intact.
+   * @param {string} id @param {number[]} world */
+  moveContent(id, world) {
+    const preview = this.previewContentMove(id, world);
+    if (preview.error) throw new Error(preview.error);
+    this.change(draft => Object.assign(draft, preview.document));
+  }
+
   /** @param {string} id */
   deleteContent(id) {
     const value = this.content(id);
@@ -426,5 +516,24 @@ export default class EditorDocument {
         modern.doors.push({ id: nextId(draft, 'door'), connectionId, deviceId });
       }
     });
+  }
+
+  /** Create an accessible relay near spawn and its door as one undo command.
+   * Existing placement/progression validation owns the candidate search.
+   * @param {string} connectionId */
+  createRelayDoor(connectionId) {
+    if (!this.document.connections.some(link => link.id === connectionId)) throw new Error('Select a real connection before adding a door.');
+    let id = '';
+    this.checked(candidate => {
+      const spawn = candidate.document.playerSpawn;
+      for (const distance of [2, 3, 4, 6]) for (const axis of [0, 1, 2]) for (const sign of [1, -1]) {
+        const test = new EditorDocument(); test.document = copy(candidate.document);
+        const point = [...spawn.position]; point[axis] += distance * sign;
+        const relay = test.addContent(spawn.roomId, 'relay', '', point); test.setDoor(connectionId, relay);
+        if (test.validation.valid) { id = relay; Object.assign(candidate.document, test.document); return; }
+      }
+      throw new Error('No clear relay position near spawn. Place a relay in an accessible room, then link it to this door.');
+    });
+    return id;
   }
 }

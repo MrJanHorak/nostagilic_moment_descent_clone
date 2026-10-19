@@ -81,6 +81,8 @@ main { display: flex; flex-direction: column; min-width: 0; min-height: 0; posit
 #issues button { text-align: left; color: #ffbd9d; font-size: 12px; }
 #notice { white-space: pre-wrap; color: #ffd69e; }
 #notice:empty { display: none; }
+#tool-status { padding: 6px 14px; margin: 0; background: #172936; color: #b5dbe0; white-space: pre-wrap; }
+#tool-status.invalid { background: #422a34; color: #ffb9bc; }
 #connections button { margin-top: 6px; display: block; font-size: 11px; }
 @media (max-width: 1050px) {
   header { padding: 10px 14px; min-height: 88px; }

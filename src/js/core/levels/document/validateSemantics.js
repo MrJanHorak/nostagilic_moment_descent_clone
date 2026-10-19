@@ -1,4 +1,4 @@
-import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, WALL_THICKNESS, enemyClearance } from './LevelContent.js';
+import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, openingRules, enemyClearance } from './LevelContent.js';
 import { connectableFace, distance, fitsInside, openingFrame, toWorld } from './RoomMath.js';
 import { overlappingPairs } from './RoomOverlap.js';
 import validateRelaySemantics from './validateRelaySemantics.js';
@@ -15,14 +15,17 @@ export default function validateSemantics(document, issue) {
   }
   const rooms = new Map(document.rooms.map(room => [room.id, room]));
   const graph = new Map(document.rooms.map(room => [room.id, new Set(/** @type {string[]} */ ([]))]));
-  /** @type {Set<string>} */ const occupied = new Set();
+  /** @type {Map<string, {u: number, v: number, width: number, height: number}[]>} */ const occupied = new Map();
   for (const [index, connection] of document.connections.entries()) {
     const path = `$.connections[${index}]`, a = rooms.get(connection.a.roomId), b = rooms.get(connection.b.roomId);
     for (const [side, endpoint] of /** @type {const} */ ([['a', connection.a], ['b', connection.b]])) {
       if (!rooms.has(endpoint.roomId)) issue(`${path}.${side}.roomId`, 'reference', `Unknown room: ${endpoint.roomId}`);
       const key = `${endpoint.roomId}/${endpoint.port}`;
-      if (occupied.has(key)) issue(`${path}.${side}`, 'occupied-port', `Port already connected: ${key}`);
-      occupied.add(key);
+      const existing = occupied.get(key) ?? [], [u, v] = endpoint.offset ?? [0, 0], [width, height] = connection.openingSize;
+      if (document.formatVersion < 7 && existing.length) issue(`${path}.${side}`, 'occupied-port', `Port already connected: ${key}`);
+      if (document.formatVersion >= 7 && existing.some(rect => Math.abs(rect.u - u) < (rect.width + width) / 2 - 1e-6 && Math.abs(rect.v - v) < (rect.height + height) / 2 - 1e-6)) issue(`${path}.${side}`, 'opening-overlap', `Passage overlaps another opening on ${key}`);
+      if (existing.length >= 8) issue(`${path}.${side}`, 'occupied-port', `A wall supports at most 8 separate openings: ${key}`);
+      existing.push({ u, v, width, height }); occupied.set(key, existing);
     }
     if (!a || !b) continue;
     if (!connectableFace(a, connection.a.port) || !connectableFace(b, connection.b.port)) { issue(path, 'shape-port', 'Sloped corridors connect through their local -Z/+Z end faces only'); continue; }
@@ -34,7 +37,7 @@ export default function validateSemantics(document, issue) {
     const [width, height] = connection.openingSize;
     if ([frameA, frameB].some((frame, side) => {
       const offset = (side === 0 ? connection.a : connection.b).offset ?? [0, 0];
-      return Math.abs(offset[0]) + width / 2 > frame.width / 2 - WALL_THICKNESS - 0.25 || Math.abs(offset[1]) + height / 2 > frame.height / 2 - WALL_THICKNESS - 0.25;
+      return Math.abs(offset[0]) + width / 2 > frame.width / 2 - openingRules(document.formatVersion).margin || Math.abs(offset[1]) + height / 2 > frame.height / 2 - openingRules(document.formatVersion).margin;
     })) {
       issue(`${path}.openingSize`, 'clearance', 'Opening must fit both faces with wall/frame clearance'); continue;
     }

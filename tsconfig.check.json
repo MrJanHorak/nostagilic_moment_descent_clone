@@ -76,6 +76,10 @@
     "tests/types/level-document-contracts.ts",
     "src/js/editor/ResizeRoom.js",
     "src/js/editor/ResizeDialog.js",
-    "src/js/core/levels/document/RoomOverlap.js"
+    "src/js/core/levels/document/RoomOverlap.js",
+    "src/js/editor/ConnectionTools.js",
+    "src/js/core/levels/document/WallOpenings.js",
+    "src/js/editor/ConnectionDialog.js",
+    "src/js/editor/DoorDialog.js"
   ]
 }

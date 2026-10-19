@@ -15,7 +15,7 @@ import { snappedAngles, toLocal } from './EditorPicking.js';
 export default class EditorViewport {
   /** @param {HTMLElement} host @param {(id: string) => void} select
    * @param {(id: string, values: {position: number[], yaw: number, pitch: number, roll: number}) => void} commit
-   * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void, resize?: (id: string, size: number[]) => void, resizePreview?: (size: number[], error?: string) => void}} [interaction] */
+   * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void, resize?: (id: string, size: number[]) => void, resizePreview?: (size: number[], error?: string) => void, moveContent?: (id: string, world: number[]) => void, contentPreview?: (id: string, world: number[]) => {world: number[], error: string}, cancel?: () => void}} [interaction] */
   constructor(host, select, commit, interaction = {}) {
     this.host = host; this.select = select; this.commit = commit;
     this.interaction = interaction;
@@ -35,14 +35,16 @@ export default class EditorViewport {
     this.transform.showY = true;
     this.scene.add(this.transform.getHelper());
     this.resizePivot = new THREE.Object3D(); this.scene.add(this.resizePivot);
-    this.transform.addEventListener('objectChange', () => { if (this.mode === 'resize') this.previewResize(); });
+    this.contentPivot = new THREE.Object3D(); this.scene.add(this.contentPivot);
+    this.transform.addEventListener('objectChange', () => { if (this.selectedContent) this.previewContentMove(); else if (this.mode === 'resize') this.previewResize(); });
     this.transform.addEventListener('change', () => this.render());
     this.transform.addEventListener('dragging-changed', event => { this.controls.enabled = !event.value; });
     this.transform.addEventListener('mouseUp', () => {
       const object = this.transform.object;
+      if (object?.userData.contentId) { this.interaction.moveContent?.(String(object.userData.contentId), object.position.toArray()); return; }
       if (object && this.mode === 'resize') { const size = this.resizeDimensions(); if (size) this.interaction.resize?.(String(object.userData.roomId), size); return; }
       if (object) this.commit(String(object.userData.roomId), {
-        position: object.position.toArray().map(value => { const steps = this.document?.formatVersion === 6 ? 4 : 2; return Math.round(value * steps) / steps; }),
+        position: object.position.toArray().map(value => { const steps = (this.document?.formatVersion ?? 1) >= 6 ? 4 : 2; return Math.round(value * steps) / steps; }),
         ...snappedAngles(object.quaternion, this.document?.rooms.find(room => room.id === object.userData.roomId)),
       });
     });
@@ -53,7 +55,7 @@ export default class EditorViewport {
     /** @type {THREE.Mesh[]} */ this.walls = [];
     /** @type {THREE.Mesh[]} */ this.markers = [];
     /** @type {import('../levelDocument.js').Face | null} */ this.selectedFace = null;
-    this.selectedContent = '';
+    this.selectedContent = ''; this.selectedConnection = '';
     this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
     this.placementOverlay = new THREE.Group(); this.scene.add(this.placementOverlay);
     this.selected = '';
@@ -87,6 +89,10 @@ export default class EditorViewport {
       if (!event.clientX && !event.clientY) { const target = this.keyboardTarget(); if (target) this.interaction.context?.(target); }
     }, { signal: this.events.signal });
     this.renderer.domElement.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && this.transform.dragging) {
+        event.preventDefault(); event.stopPropagation(); this.transform.reset(); this.transform.dragging = false; this.transform.axis = null; this.controls.enabled = true;
+        if (this.document) this.show(this.document); this.interaction.cancel?.(); return;
+      }
       if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) { event.preventDefault(); const target = this.keyboardTarget(); if (target) this.interaction.context?.(target); }
     }, { signal: this.events.signal });
     this.resize();
@@ -97,6 +103,16 @@ export default class EditorViewport {
     this.renderer.setSize(width, height); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.render();
   }
   render() { this.renderer.render(this.scene, this.camera); }
+  previewContentMove() {
+    const marker = this.markers.find(marker => marker.userData.contentId === this.selectedContent);
+    if (!marker || this.transform.object !== this.contentPivot) return;
+    const preview = this.interaction.contentPreview?.(this.selectedContent, this.contentPivot.position.toArray());
+    if (preview) {
+      marker.position.fromArray(preview.world); /** @type {THREE.MeshBasicMaterial} */ (marker.material).color.setHex(preview.error ? 0xff384b : 0xffffff);
+      this.arenaGroup?.getObjectByName(this.selectedContent)?.position.fromArray(preview.world);
+    }
+    this.render();
+  }
   resizeDimensions() {
     const room = this.document?.rooms.find(room => room.id === this.resizePivot.userData.roomId);
     return room ? room.size.map((value, axis) => Math.max(4, Math.min(256, Math.round(value * this.resizePivot.scale.getComponent(axis) * 2) / 2))) : null;
@@ -139,7 +155,7 @@ export default class EditorViewport {
   }
   /** @param {import('../levelDocument.js').LevelDocument} document */
   show(document) {
-    this.document = document; this.transform.setTranslationSnap(document.formatVersion === 6 ? 0.25 : 0.5);
+    this.document = document; this.transform.setTranslationSnap(document.formatVersion >= 6 ? 0.25 : 0.5);
     this.arenaGroup = null; this.passages.clear();
     this.transform.detach(); disposeObject(this.world); this.scene.remove(this.world);
     this.world = new THREE.Group(); this.scene.add(this.world); this.rooms = []; this.walls = []; this.markers = [];
@@ -153,7 +169,7 @@ export default class EditorViewport {
             const [, roomId, face] = object.name.split('/'); object.userData.roomId = roomId; object.userData.face = face; this.walls.push(object);
           } else {
             const door = level.doors?.find(door => door.id === object.name), connection = door && document.connections.find(connection => connection.id === door.connectionId);
-            if (connection) { object.userData.roomId = connection.a.roomId; object.userData.face = connection.a.port; this.walls.push(object); }
+            if (connection) { object.userData.roomId = connection.a.roomId; object.userData.face = connection.a.port; object.userData.connectionId = connection.id; this.walls.push(object); }
           }
           for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
             material.transparent = this.view === 'xray'; material.opacity = this.view === 'xray' ? 0.22 : 1; material.depthWrite = this.view !== 'xray';
@@ -186,6 +202,7 @@ export default class EditorViewport {
       const geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x48dbd2 }));
       geometry.dispose(); edges.position.fromArray(frame.center); this.world.add(edges);
+      edges.userData.roomId = connection.a.roomId; edges.userData.face = connection.a.port; edges.userData.connectionId = connection.id;
       this.passages.set(connection.id, edges);
     }
     for (const placement of [
@@ -208,17 +225,21 @@ export default class EditorViewport {
     for (const proxy of this.rooms) {
       const edges = /** @type {THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial>} */ (proxy.children[0]);
       edges.material.color.setHex(proxy.userData.overlaps ? 0xff5f69 : proxy.userData.roomId === id ? 0xffc16e : 0x7d9aaf);
-      if (proxy.userData.roomId === id && this.mode !== 'select') {
+      if (proxy.userData.roomId === id && this.mode !== 'select' && !this.selectedContent) {
         if (this.mode === 'resize') { this.resizePivot.position.copy(proxy.position); this.resizePivot.quaternion.copy(proxy.quaternion); this.resizePivot.scale.set(1, 1, 1); this.resizePivot.userData.roomId = id; this.transform.attach(this.resizePivot); }
         else this.transform.attach(proxy);
       }
     }
+    if (this.selectedContent && this.mode === 'translate') {
+      const marker = this.markers.find(marker => marker.userData.contentId === this.selectedContent);
+      if (marker) { this.contentPivot.position.copy(marker.position); this.contentPivot.quaternion.identity(); this.contentPivot.userData.contentId = this.selectedContent; this.transform.setTranslationSnap(null); this.transform.attach(this.contentPivot); }
+    } else this.transform.setTranslationSnap((this.document?.formatVersion ?? 1) >= 6 ? 0.25 : 0.5);
     this.drawSelection();
     this.render();
   }
-  /** @param {import('../levelDocument.js').Face | null} face @param {string} [contentId] */
-  setDetailSelection(face, contentId = '') {
-    this.selectedFace = face; this.selectedContent = contentId; this.drawSelection(); this.render();
+  /** @param {import('../levelDocument.js').Face | null} face @param {string} [contentId] @param {string} [connectionId] */
+  setDetailSelection(face, contentId = '', connectionId = '') {
+    this.selectedFace = face; this.selectedContent = contentId; this.selectedConnection = face ? connectionId : ''; this.setSelection(this.selected);
   }
   drawSelection() {
     disposeObject(this.selectionOverlay); this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
@@ -235,6 +256,16 @@ export default class EditorViewport {
       geometry = new THREE.BufferGeometry().setFromPoints([points[0], points[1], points[2], points[0], points[2], points[3]]);
     }
     const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: 0x72e8f0, transparent: true, opacity: 0.16, depthTest: false, depthWrite: false, side: THREE.DoubleSide }));
+    // Highlight the actual wall panels, leaving portals visibly empty. A full
+    // selection plane across a large opening otherwise looks like a closed wall.
+    const panels = this.walls.filter(wall => wall.name.startsWith('@solid/') && wall.userData.roomId === room.id && wall.userData.face === this.selectedFace);
+    if (panels.length) {
+      mesh.material.visible = false;
+      for (const panel of panels) {
+        const highlight = new THREE.Mesh(panel.geometry.clone(), new THREE.MeshBasicMaterial({ color: 0x72e8f0, transparent: true, opacity: 0.16, depthTest: false, depthWrite: false }));
+        highlight.position.copy(panel.position); highlight.quaternion.copy(panel.quaternion); highlight.scale.copy(panel.scale); this.selectionOverlay.add(highlight);
+      }
+    }
     if (!room.endOffset) {
       mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), new THREE.Vector3(...frame.normal));
       // PlaneGeometry's first axis follows the canonical opening U direction.
@@ -251,7 +282,8 @@ export default class EditorViewport {
     ray.setFromCamera(new THREE.Vector2((clientX - bounds.left) / bounds.width * 2 - 1, -(clientY - bounds.top) / bounds.height * 2 + 1), this.camera);
     /** @param {THREE.Object3D} object */
     const visible = object => { for (let node = /** @type {THREE.Object3D | null} */ (object); node; node = node.parent) if (!node.visible) return false; return true; };
-    const hits = ray.intersectObjects([...this.walls.filter(visible), ...this.markers], false);
+    ray.params.Line.threshold = 0.3;
+    const hits = ray.intersectObjects([...this.walls.filter(visible), ...this.markers, ...this.passages.values()], false);
     const hit = (this.view === 'xray' ? hits.find(hit => hit.object.userData.contentId) : null) ?? hits[0];
     const fallback = hit ?? ray.intersectObjects(this.rooms, false)[0]; if (!fallback) return null;
     const roomId = String(fallback.object.userData.roomId), room = this.document.rooms.find(room => room.id === roomId); if (!room) return null;
@@ -263,12 +295,14 @@ export default class EditorViewport {
     }
     return { roomId, localPoint: toLocal(room, point.toArray()), clientX, clientY,
       ...(hit?.object.userData.face ? { face: /** @type {import('../levelDocument.js').Face} */ (hit.object.userData.face) } : {}),
-      ...(hit?.object.userData.contentId ? { contentId: String(hit.object.userData.contentId) } : {}) };
+      ...(hit?.object.userData.contentId ? { contentId: String(hit.object.userData.contentId) } : {}),
+      ...(hit?.object.userData.connectionId ? { connectionId: String(hit.object.userData.connectionId) } : {}) };
   }
   keyboardTarget() {
     if (!this.selected) return null;
     const bounds = this.renderer.domElement.getBoundingClientRect();
-    return { roomId: this.selected, localPoint: [0, 0, 0], clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2, ...(this.selectedFace ? { face: this.selectedFace } : {}) };
+    const content = this.selectedContent === '@spawn' ? this.document?.playerSpawn : this.document?.entities.find(item => item.id === this.selectedContent) ?? (this.document?.formatVersion !== 1 ? this.document?.devices.find(item => item.id === this.selectedContent) : undefined);
+    return { roomId: this.selected, localPoint: content ? [...content.position] : [0, 0, 0], clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2, ...(this.selectedFace ? { face: this.selectedFace } : {}), ...(content ? { contentId: this.selectedContent } : {}), ...(this.selectedConnection ? { connectionId: this.selectedConnection } : {}) };
   }
   /** @param {string} roomId @param {number[] | null} point @param {boolean} [valid] */
   showPlacement(roomId, point, valid = true) {
@@ -295,7 +329,7 @@ export default class EditorViewport {
   }
   /** @param {boolean} [selectedOnly] */
   frame(selectedOnly = false) {
-    const targets = selectedOnly ? this.rooms.filter(room => room.userData.roomId === this.selected) : this.rooms;
+    const targets = selectedOnly ? this.selectedContent ? this.markers.filter(marker => marker.userData.contentId === this.selectedContent) : this.rooms.filter(room => room.userData.roomId === this.selected) : this.rooms;
     const bounds = new THREE.Box3();
     for (const room of targets) bounds.union(new THREE.Box3().setFromObject(room));
     if (bounds.isEmpty()) return;
