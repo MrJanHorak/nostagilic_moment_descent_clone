@@ -1,3 +1,4 @@
+import openResizeDialog from './ResizeDialog.js';
 import EditorDocument from './EditorDocument.js';
 import { faceLabel, placementPosition } from './EditorPicking.js';
 import { FACES, GRID, MATERIALS, SURFACE_PATTERNS } from '../core/levels/document/LevelContent.js';
@@ -44,8 +45,8 @@ export default function openContextActions(target, { model, viewport, menu, comm
     const devices = model.document.formatVersion === 1 ? [] : model.document.devices;
     const door = model.document.formatVersion === 1 ? undefined : model.document.doors.find(door => door.connectionId === connection.id);
     menu.form('Opening and door', `${connection.a.roomId} ↔ ${connection.b.roomId}. Offsets use the first room's face center.`, [
-      { id: 'width', label: 'Passage width', type: 'number', value: String(connection.openingSize[0]), min: '2', max: '62', step: '0.5' },
-      { id: 'height', label: 'Passage height/depth', type: 'number', value: String(connection.openingSize[1]), min: '2', max: '62', step: '0.5' },
+      { id: 'width', label: 'Passage width', type: 'number', value: String(connection.openingSize[0]), min: '2', max: model.document.formatVersion === 6 ? '254' : '62', step: '0.5' },
+      { id: 'height', label: 'Passage height/depth', type: 'number', value: String(connection.openingSize[1]), min: '2', max: model.document.formatVersion === 6 ? '254' : '62', step: '0.5' },
       { id: 'u', label: 'Across wall (U)', type: 'number', value: String(connection.a.offset?.[0] ?? 0), step: '0.5' },
       { id: 'v', label: 'Height/depth (V)', type: 'number', value: String(connection.a.offset?.[1] ?? 0), step: '0.5' },
       { id: 'relay', label: 'Door unlock relay', value: door?.deviceId ?? '', options: [{ value: '', label: 'Always open (no door)' }, ...devices.map(device => ({ value: device.id, label: device.label }))] },
@@ -92,6 +93,8 @@ export default function openContextActions(target, { model, viewport, menu, comm
     { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
     { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },
     { label: 'Focus this room', action: () => viewport.frame(true) },
+    { label: 'Resize room…', action: () => openResizeDialog(room.id, model, viewport, menu, commit) },
+    { label: 'Snap connections', disabled: !used.size, reason: !used.size ? 'This room has no existing connection to realign.' : undefined, action: () => commit(() => model.snapConnections(room.id)) },
     { label: 'Duplicate room', disabled: !duplicateFace, reason: !duplicateFace ? 'No unused face is available for an adjacent duplicate.' : undefined,
       action: () => commit(() => { if (duplicateFace) { const id = model.duplicateRoom(room.id, duplicateFace); select({ ...target, roomId: id, face: undefined, contentId: undefined }); } }) },
     { label: 'Delete room and contents', disabled: protectedRoom, reason: protectedRoom ? 'Keep one room, and move its spawn/exit elsewhere before deletion.' : undefined,

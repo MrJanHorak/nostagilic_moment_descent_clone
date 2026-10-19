@@ -1,0 +1,417 @@
+{
+  "date": "2026-10-18",
+  "command": "npx playwright test",
+  "environment": {
+    "node": "22.14.0",
+    "npm": "11.2.0",
+    "os": "win32",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "viewport": "960x540; direct editing and resize cases at 1280x800",
+    "authoringClock": "Native mouse/keyboard authoring; controlled clock for real runtime flight. No model or transform injection."
+  },
+  "stats": {
+    "startTime": "2026-10-19T01:34:51.752Z",
+    "duration": 429738.653,
+    "expected": 29,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 53,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 364,
+    "build": "passed",
+    "diffCheck": "passed",
+    "designerBrowserCases": 18,
+    "gameBrowserCases": 11
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2208,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8499,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: wall menu, precise dimensions, native stretch, undo and draft recovery",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3303,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: stretch a connected corridor, reject a bad shrink and fly its preserved door passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7916,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: import, frame and export a full 256-room mine",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1595,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: native hallway drag and numeric edits stay snapped; repair a displaced connection",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1977,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4137,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 39712,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2414,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1606,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 560,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: blocked draft storage keeps editing and portable export available",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 501,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 8002,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 5981,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1915,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1637,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 864,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 763,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 19258,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: JSON missions are selectable and reset their encounter, inventory and relay objective",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4863,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: Deep Relay starts with cover, room guidance and clean inventory on restart",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1962,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: pause freezes simulation and ten combat restarts return resources to baseline",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 40060,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 9017,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: blocked saving keeps live settings usable and reports the persistence limit",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3003,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: saved mixer preferences apply at startup, unmute without replacing loops, and preserve pause silence",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7606,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "production: audio controls remain saved and playable without Web Audio support",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2945,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: JSON mine loop and vertical hatch fly both ways, complete and replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 55934,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: relay unlocks a solid hatch, completes the objective and resets on replay",
+      "project": "prototypes",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 51959,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: Deep Relay lower loop, cache, chained hatches, exit and replay use real keyboard flight",
+      "project": "deep-relay",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 132641,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "bundleHashes": {
+    "compileLevelDocument--qLBVGOt.js": "a1da9ec192b5027c97b4732dc6191c98fa4c46fd923e1f449fde5fb4f9d91c77",
+    "game-mudDbLZh.js": "81b4c6e999f42f7301c3559d92a701f56b9487af5e3a77b80e186db04f273434",
+    "main-BZr2xlGj.js": "4bc4f25caa04b560cd660ec871eccfd0d11c16e6007bbc29ec708ad927ab7923",
+    "modulepreload-polyfill-B5Qt9EMX.js": "607112fb81d7899ceedf89cdb1b3540a53eb96ad5e4202fb1e22f873281de839",
+    "playtest-H8cruP0O.js": "b0016a9d6e4ff3793f7634bee04fdc7bca415316bc6b87de4d36ab578d5cc452"
+  },
+  "limits": {
+    "rooms": 256,
+    "connections": 512,
+    "dimensions": [
+      4,
+      256
+    ],
+    "streaming": false
+  },
+  "scope": "Functional coverage only; M4 human handling acceptance and M2 hardware performance acceptance remain open. No dependency changes, audit, commit, push or deployment.",
+  "finalInputValidationCheck": {
+    "change": "Require exactly three coordinates before treating an unchanged numeric position as omitted. Added malformed-vector rejection assertions to the existing atomic-properties test.",
+    "checks": {
+      "lintModules": 53,
+      "strictTypes": "passed",
+      "unitRuntimeCases": 364,
+      "build": "passed"
+    },
+    "command": "npx playwright test tests/browser/editor-resize.spec.js",
+    "stats": {
+      "startTime": "2026-10-19T01:42:47.435Z",
+      "duration": 15162.785,
+      "expected": 4,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "gameplayBundlesByteIdentical": true
+  },
+  "visualReview": "1280x800 screenshots: connected stretch, native stretched room and hallway mid-drag. Resize/Snap controls are visible near the top of Room properties; anchored branch and portal outlines stay aligned."
+}

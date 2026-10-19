@@ -86,7 +86,7 @@ const badExit: EntityDocument = { id: 'exit', kind: 'exit', radius: 'large', roo
 // @ts-expect-error Only the implemented completion objective belongs in version 1.
 const badMission: LevelDocument['mission'] = { type: 'activate-switch', requiredEnemyIds: [], exitId: 'exit' };
 // @ts-expect-error Authored version is a literal compatibility boundary.
-const badVersion: LevelDocument['formatVersion'] = 6;
+const badVersion: LevelDocument['formatVersion'] = 7;
 // @ts-expect-error Surface patterns are a bounded local registry, not executable or remote content.
 const badStyle: SurfaceStyle = { color: 0x112233, pattern: 'https://example.com/texture.png' };
 if (connection.a.offset) {

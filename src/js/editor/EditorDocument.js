@@ -1,7 +1,8 @@
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS } from '../core/levels/document/LevelContent.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import { connectableFace, distance, portFrame } from '../core/levels/document/RoomMath.js';
 import { parseLevelDocument, serializeLevelDocument, validateLevelDocument, validateLevelDraft } from '../core/levels/document/validateLevelDocument.js';
+import resizeRoom from './ResizeRoom.js';
 import { placementPosition } from './EditorPicking.js';
 import { toWorld } from '../core/levels/document/RoomMath.js';
 
@@ -39,14 +40,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -148,7 +149,8 @@ export default class EditorDocument {
   duplicateRoom(roomId, face) {
     const source = copy(this.room(roomId)); let id = '';
     this.checked(candidate => candidate.change(draft => {
-      if (draft.rooms.length >= LIMITS.rooms) throw new Error('Room limit reached (64).');
+      if (draft.rooms.length >= EXPANDED_LIMITS.rooms) throw new Error('Room limit reached (256).');
+      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); }
       if (occupied(draft, roomId, face)) throw new Error('Choose an unused face for the duplicate.');
       id = nextId(draft, 'room'); const room = { ...copy(source), id, position: /** @type {[number, number, number]} */ ([0, 0, 0]) };
       const frame = portFrame(source, face), opposite = FACES.find(face => portFrame(room, face).normal.every((value, axis) => value === -frame.normal[axis]));
@@ -195,29 +197,62 @@ export default class EditorDocument {
   /** @param {string} roomId @param {{position?: number[], size?: number[], yaw?: number, pitch?: number, roll?: number, endOffset?: number[], materialPreset?: string}} values */
   updateRoom(roomId, values) {
     const original = this.room(roomId);
-    const candidate = { ...original, ...values };
-    if (![candidate.position, candidate.size].every(vector => vector.length === 3 && vector.every(number => Number.isFinite(number) && Number.isInteger(number / GRID)))) throw new Error('Position and size must use the 0.5 unit grid.');
-    if (candidate.position.some(number => Math.abs(number) > 4096) || candidate.size.some(number => number < 4 || number > 64)) throw new Error('Positions must be within ±4096; dimensions must be 4–64 units.');
+    const candidate = { ...original, ...values }, expanded = this.document.formatVersion === 6;
+    if (![candidate.position, candidate.size].every((vector, index) => vector.length === 3 && vector.every(number => Number.isFinite(number) && Number.isInteger(number / (expanded && index === 0 ? 0.25 : GRID))))) throw new Error('Use the position grid (0.25 in format 6, otherwise 0.5) and 0.5 dimension grid.');
+    if (candidate.position.some(number => Math.abs(number) > 4096) || candidate.size.some(number => number < 4 || number > (expanded ? 256 : 64))) throw new Error(`Positions must be within ±4096; dimensions must be 4–${expanded ? 256 : 64} units. Use Resize to expand an older document.`);
     if (![candidate.yaw, candidate.pitch ?? 0, candidate.roll ?? 0].every(value => [0, 90, 180, 270].includes(value))) throw new Error('Yaw, pitch and roll must be 0, 90, 180 or 270 degrees. Use corridor end offsets for slopes.');
     if (!Object.hasOwn(MATERIALS, candidate.materialPreset)) throw new Error('Choose a registered material.');
-    if (candidate.prefab !== 'box-room' && (candidate.size[0] > 8 || candidate.size[1] > 8 || candidate.size[2] < Math.max(candidate.size[0], candidate.size[1]))) throw new Error('Corridor width/height must be at most 8; length must be at least its width/height.');
+    if (!expanded && candidate.prefab !== 'box-room' && (candidate.size[0] > 8 || candidate.size[1] > 8 || candidate.size[2] < Math.max(candidate.size[0], candidate.size[1]))) throw new Error('Corridor width/height must be at most 8; length must be at least its width/height.');
     if (candidate.prefab === 'offset-corridor') {
-      if (!candidate.endOffset || candidate.endOffset.length !== 2 || !candidate.endOffset.every(value => Number.isInteger(value) && Math.abs(value) <= 32) || Math.hypot(...candidate.endOffset) > candidate.size[2]) throw new Error('End offsets are whole units within ±32; their combined distance cannot exceed corridor length.');
+      if (!candidate.endOffset || candidate.endOffset.length !== 2 || !candidate.endOffset.every(value => Number.isInteger(value) && Math.abs(value) <= (expanded ? 256 : 32)) || Math.hypot(...candidate.endOffset) > candidate.size[2]) throw new Error(`End offsets are whole units within ±${expanded ? 256 : 32}; their combined distance cannot exceed corridor length.`);
     } else if (candidate.endOffset) throw new Error('End offsets require a shaped corridor.');
     this.change(draft => {
       const updates = copy(values);
       // Unchanged zero controls must not silently upgrade old imported files.
       if (updates.pitch === 0 && original.pitch === undefined) delete updates.pitch;
       if (updates.roll === 0 && original.roll === undefined) delete updates.roll;
-      if (updates.pitch !== undefined || updates.roll !== undefined) { modernize(draft); if (draft.formatVersion !== 5) Object.assign(draft, { formatVersion: 4 }); }
-      if (updates.endOffset !== undefined) { modernize(draft); Object.assign(draft, { formatVersion: 5 }); }
+      if (updates.pitch !== undefined || updates.roll !== undefined) { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 4 }); }
+      if (updates.endOffset !== undefined) { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 5 }); }
       Object.assign(draft.rooms.find(room => room.id === roomId) ?? {}, updates);
+    });
+  }
+  /** Precise, atomic stretching keeps openings aligned and rejects unsafe
+   * shrinks/loop constraints before touching history or the current document.
+   * @param {string} roomId @param {number[]} size @param {string} [anchor] */
+  resizeRoom(roomId, size, anchor = this.document.connections.find(link => link.a.roomId === roomId || link.b.roomId === roomId)?.id ?? 'center') {
+    if (size.length === 3 && this.room(roomId).size.every((value, axis) => value === size[axis])) return;
+    this.checked(candidate => {
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 6 });
+      resizeRoom(candidate.document, roomId, size, anchor);
+    });
+  }
+  /** Repair a disconnected draft by holding the neighboring anchor room still.
+   * Existing content travels with each translated piece.
+   * @param {string} roomId @param {string} [anchor] */
+  snapConnections(roomId, anchor = this.document.connections.find(link => link.a.roomId === roomId || link.b.roomId === roomId)?.id) {
+    if (!anchor) throw new Error('This room has no connection to snap. Attach it from an unused face first.');
+    this.checked(candidate => {
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 6 });
+      resizeRoom(candidate.document, roomId, candidate.room(roomId).size, anchor, true);
+    });
+  }
+  /** Numeric dimensions use the same safe resize as direct stretching. Raw
+   * transform edits remain available when dimensions are unchanged.
+   * @param {string} roomId @param {Parameters<EditorDocument['updateRoom']>[1]} values */
+  applyRoomProperties(roomId, values) {
+    const original = this.room(roomId);
+    if (!values.size || values.size.every((value, axis) => value === original.size[axis]) && values.size.length === 3) { this.updateRoom(roomId, values); return; }
+    this.checked(candidate => {
+      candidate.resizeRoom(roomId, values.size ?? original.size);
+      const rest = copy(values); delete rest.size;
+      if (rest.position?.length === 3 && rest.position.every((value, axis) => value === original.position[axis])) delete rest.position;
+      candidate.updateRoom(roomId, rest);
     });
   }
   /** Attach creates room + connection atomically, including vertical hatches.
    * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] */
   attachRoom(roomId, face, prefab, endOffset = [0, 8]) {
-    if (this.document.rooms.length >= LIMITS.rooms) throw new Error('Room limit reached (64).');
+    if (this.document.rooms.length >= EXPANDED_LIMITS.rooms) throw new Error('Room limit reached (256).');
     const source = this.room(roomId);
     if (!connectableFace(source, face)) throw new Error('Sloped side faces stay solid. Continue from a corridor end face.');
     if (!FACES.includes(face) || occupied(this.document, roomId, face)) throw new Error('Choose an unused attachment port.');
@@ -237,8 +272,9 @@ export default class EditorDocument {
     const offset = portFrame(room, opposite).center;
     room.position = /** @type {[number, number, number]} */ (frame.center.map((value, axis) => value - offset[axis]));
     this.change(draft => {
-      if (room.pitch) { modernize(draft); if (draft.formatVersion !== 5) Object.assign(draft, { formatVersion: 4 }); }
-      if (prefab === 'offset-corridor') { modernize(draft); Object.assign(draft, { formatVersion: 5 }); }
+      if (room.pitch) { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 4 }); }
+      if (prefab === 'offset-corridor') { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 5 }); }
+      if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); }
       draft.rooms.push(room);
       draft.connections.push(connectionFor(draft, source, face, room, opposite));
       const result = validateLevelDocument(draft);
@@ -248,9 +284,9 @@ export default class EditorDocument {
   }
   /** @param {string} aId @param {Face} portA @param {string} bId @param {Face} portB */
   connect(aId, portA, bId, portB) {
-    if (this.document.connections.length >= LIMITS.connections) throw new Error('Connection limit reached (128).');
+    if (this.document.connections.length >= EXPANDED_LIMITS.connections) throw new Error('Connection limit reached (512).');
     const connection = connectionFor(this.document, this.room(aId), portA, this.room(bId), portB);
-    this.change(draft => { draft.connections.push(connection); });
+    this.change(draft => { if (draft.connections.length >= LIMITS.connections) { modernize(draft); Object.assign(draft, { formatVersion: 6 }); } draft.connections.push(connection); });
   }
 
   /** @param {string} roomId @param {Face | 'all'} face @param {number} color @param {import('../levelDocument.js').SurfacePattern} pattern */
@@ -304,7 +340,7 @@ export default class EditorDocument {
 
   /** @param {string} id @param {number} width @param {number} height @param {number[]} offset */
   updateOpening(id, width, height, offset) {
-    if (offset.length !== 2 || ![width, height, ...offset].every(value => Number.isFinite(value) && Number.isInteger(value / GRID)) || width < 2 || height < 2 || width > 62 || height > 62) throw new Error('Opening dimensions and offsets use the 0.5 unit grid; dimensions must be 2–62.');
+    if (offset.length !== 2 || ![width, height, ...offset].every(value => Number.isFinite(value) && Number.isInteger(value / GRID)) || width < 2 || height < 2 || width > (this.document.formatVersion === 6 ? 254 : 62) || height > (this.document.formatVersion === 6 ? 254 : 62)) throw new Error('Opening dimensions and offsets use the 0.5 unit grid; dimensions must be 2–62 (2–254 in format 6).');
     const ranges = this.openingBounds(id, width, height);
     if (ranges.some((range, index) => offset[index] < range.min || offset[index] > range.max)) throw new Error(`Opening must remain inside both wall frames: U ${ranges[0].min}…${ranges[0].max}, V ${ranges[1].min}…${ranges[1].max}.`);
     this.change(draft => {

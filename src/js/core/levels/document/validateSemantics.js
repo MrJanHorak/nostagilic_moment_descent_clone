@@ -1,5 +1,6 @@
 import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, WALL_THICKNESS, enemyClearance } from './LevelContent.js';
-import { connectableFace, distance, fitsInside, openingFrame, roomsOverlap, toWorld } from './RoomMath.js';
+import { connectableFace, distance, fitsInside, openingFrame, toWorld } from './RoomMath.js';
+import { overlappingPairs } from './RoomOverlap.js';
 import validateRelaySemantics from './validateRelaySemantics.js';
 
 /** @param {import('../../../levelDocument.js').LevelDocument} document
@@ -39,15 +40,7 @@ export default function validateSemantics(document, issue) {
     }
     graph.get(a.id)?.add(b.id); graph.get(b.id)?.add(a.id);
   }
-  for (let i = 0; i < document.rooms.length; i++) {
-    const a = document.rooms[i];
-    for (let j = i + 1; j < document.rooms.length; j++) {
-      const b = document.rooms[j];
-      if (roomsOverlap(a, b)) {
-        issue(`$.rooms[${j}].position`, 'overlap', `Rooms ${a.id} and ${b.id} overlap`);
-      }
-    }
-  }
+  for (const [i, j] of overlappingPairs(document.rooms)) issue(`$.rooms[${j}].position`, 'overlap', `Rooms ${document.rooms[i].id} and ${document.rooms[j].id} overlap`);
   const startRoom = rooms.get(document.playerSpawn.roomId);
   if (!startRoom) issue('$.playerSpawn.roomId', 'reference', `Unknown room: ${document.playerSpawn.roomId}`);
   else if (!fitsInside(startRoom, document.playerSpawn.position, PLAYER_RADIUS)) issue('$.playerSpawn.position', 'clearance', `Player spawn intersects ${startRoom.id}'s walls`);

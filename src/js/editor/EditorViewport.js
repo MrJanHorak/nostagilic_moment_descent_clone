@@ -3,7 +3,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import compileLevelDocument from '../core/levels/document/compileLevelDocument.js';
 import buildArena from '../core/ArenaGeometry.js';
-import { openingFrame, orient, portFrame, roomsOverlap, shear, toWorld } from '../core/levels/document/RoomMath.js';
+import { openingFrame, orient, portFrame, shear, toWorld } from '../core/levels/document/RoomMath.js';
+import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
+import validateSemantics from '../core/levels/document/validateSemantics.js';
+import resizeRoom from './ResizeRoom.js';
 import { boxCorners, BOX_FACES } from '../utils/BoxTopology.js';
 import { convexGeometry } from '../utils/ConvexSolid.js';
 import disposeObject from '../utils/disposeObject.js';
@@ -12,7 +15,7 @@ import { snappedAngles, toLocal } from './EditorPicking.js';
 export default class EditorViewport {
   /** @param {HTMLElement} host @param {(id: string) => void} select
    * @param {(id: string, values: {position: number[], yaw: number, pitch: number, roll: number}) => void} commit
-   * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void}} [interaction] */
+   * @param {{selectTarget?: (target: import('./EditorPicking.js').ViewportTarget) => void, context?: (target: import('./EditorPicking.js').ViewportTarget) => void, dismiss?: () => void, resize?: (id: string, size: number[]) => void, resizePreview?: (size: number[], error?: string) => void}} [interaction] */
   constructor(host, select, commit, interaction = {}) {
     this.host = host; this.select = select; this.commit = commit;
     this.interaction = interaction;
@@ -31,16 +34,21 @@ export default class EditorViewport {
     this.transform.setTranslationSnap(0.5); this.transform.setRotationSnap(Math.PI / 2);
     this.transform.showY = true;
     this.scene.add(this.transform.getHelper());
+    this.resizePivot = new THREE.Object3D(); this.scene.add(this.resizePivot);
+    this.transform.addEventListener('objectChange', () => { if (this.mode === 'resize') this.previewResize(); });
     this.transform.addEventListener('change', () => this.render());
     this.transform.addEventListener('dragging-changed', event => { this.controls.enabled = !event.value; });
     this.transform.addEventListener('mouseUp', () => {
       const object = this.transform.object;
+      if (object && this.mode === 'resize') { const size = this.resizeDimensions(); if (size) this.interaction.resize?.(String(object.userData.roomId), size); return; }
       if (object) this.commit(String(object.userData.roomId), {
-        position: object.position.toArray().map(value => Math.round(value * 2) / 2),
+        position: object.position.toArray().map(value => { const steps = this.document?.formatVersion === 6 ? 4 : 2; return Math.round(value * steps) / steps; }),
         ...snappedAngles(object.quaternion, this.document?.rooms.find(room => room.id === object.userData.roomId)),
       });
     });
     this.world = new THREE.Group(); this.scene.add(this.world);
+    /** @type {THREE.Group | null} */ this.arenaGroup = null;
+    /** @type {Map<string, THREE.LineSegments>} */ this.passages = new Map();
     /** @type {THREE.Mesh[]} */ this.rooms = [];
     /** @type {THREE.Mesh[]} */ this.walls = [];
     /** @type {THREE.Mesh[]} */ this.markers = [];
@@ -89,9 +97,50 @@ export default class EditorViewport {
     this.renderer.setSize(width, height); this.camera.aspect = width / height; this.camera.updateProjectionMatrix(); this.render();
   }
   render() { this.renderer.render(this.scene, this.camera); }
+  resizeDimensions() {
+    const room = this.document?.rooms.find(room => room.id === this.resizePivot.userData.roomId);
+    return room ? room.size.map((value, axis) => Math.max(4, Math.min(256, Math.round(value * this.resizePivot.scale.getComponent(axis) * 2) / 2))) : null;
+  }
+  previewResize() {
+    const size = this.resizeDimensions(), room = this.document?.rooms.find(room => room.id === this.resizePivot.userData.roomId);
+    const proxy = this.rooms.find(proxy => proxy.userData.roomId === room?.id);
+    if (!size || !room || !proxy || !this.document) return;
+    const candidate = /** @type {import('./DraftTypes.js').EditorLevelDocument} */ (structuredClone(this.document));
+    const link = this.document?.connections.find(link => link.a.roomId === room.id || link.b.roomId === room.id);
+    let error = '';
+    try {
+      resizeRoom(candidate, room.id, size, link?.id ?? 'center');
+      if (candidate.rooms.some(room => room.position.some(value => Math.abs(value) > 4096))) throw new Error('Positions must stay within ±4096.');
+      validateSemantics(candidate, (_path, _code, message) => { throw new Error(message); });
+    } catch (reason) { error = reason instanceof Error ? reason.message : String(reason); }
+    const resized = candidate.rooms.find(value => value.id === room.id); if (!resized) return;
+    const geometry = room.endOffset ? convexGeometry(boxCorners([0, 0, 0], resized.size).map(point => shear(resized, point))) : new THREE.BoxGeometry(...resized.size);
+    proxy.geometry.dispose(); proxy.geometry = geometry;
+    const edges = /** @type {THREE.LineSegments} */ (proxy.children[0]); edges.geometry.dispose(); edges.geometry = new THREE.EdgesGeometry(geometry);
+    // Hide old solid walls while the snapped outlines, portals and content show
+    // the proposed connected layout. Rebuild real geometry only on commit.
+    if (this.arenaGroup) this.arenaGroup.visible = false;
+    this.selectionOverlay.visible = false;
+    const layout = error ? this.document : candidate, rooms = new Map(layout.rooms.map(room => [room.id, room]));
+    for (const outline of this.rooms) {
+      const source = outline === proxy ? resized : rooms.get(String(outline.userData.roomId)); if (!source) continue;
+      outline.position.fromArray(source.position);
+      const lines = /** @type {THREE.LineSegments<THREE.BufferGeometry, THREE.LineBasicMaterial>} */ (outline.children[0]);
+      lines.material.color.setHex(outline === proxy ? error ? 0xff5f69 : 0xffc16e : 0x7d9aaf);
+    }
+    for (const connection of layout.connections) {
+      const source = rooms.get(connection.a.roomId); if (source) this.passages.get(connection.id)?.position.fromArray(openingFrame(source, connection.a).center);
+    }
+    for (const item of [{ ...layout.playerSpawn, id: '@spawn' }, ...layout.entities, ...(layout.formatVersion === 1 ? [] : layout.devices)]) {
+      const source = rooms.get(item.roomId), marker = this.markers.find(marker => marker.userData.contentId === item.id);
+      if (source && marker) marker.position.fromArray(toWorld(source, item.position));
+    }
+    this.interaction.resizePreview?.(size, error || undefined); this.render();
+  }
   /** @param {import('../levelDocument.js').LevelDocument} document */
   show(document) {
-    this.document = document;
+    this.document = document; this.transform.setTranslationSnap(document.formatVersion === 6 ? 0.25 : 0.5);
+    this.arenaGroup = null; this.passages.clear();
     this.transform.detach(); disposeObject(this.world); this.scene.remove(this.world);
     this.world = new THREE.Group(); this.scene.add(this.world); this.rooms = []; this.walls = []; this.markers = [];
     // Only the shared compiler generates walls/openings. Invalid drafts use
@@ -116,11 +165,13 @@ export default class EditorViewport {
         }
       });
       this.world.add(arena.group);
+      this.arenaGroup = arena.group;
     } catch (error) {
       if (!(error instanceof Error) || error.name !== 'LevelDocumentError') throw error;
     }
+    const overlappingIds = overlappingRoomIds(document.rooms);
     for (const room of document.rooms) {
-      const overlaps = document.rooms.some(other => other.id !== room.id && roomsOverlap(room, other));
+      const overlaps = overlappingIds.has(room.id);
       const box = room.endOffset ? convexGeometry(boxCorners([0, 0, 0], room.size).map(point => shear(room, point))) : new THREE.BoxGeometry(...room.size);
       const proxy = new THREE.Mesh(box, new THREE.MeshBasicMaterial({ visible: overlaps, color: 0xff384b, transparent: true, opacity: 0.22, depthWrite: false }));
       proxy.position.fromArray(room.position); proxy.rotation.set((room.pitch ?? 0) * Math.PI / 180, room.yaw * Math.PI / 180, (room.roll ?? 0) * Math.PI / 180, 'YXZ'); proxy.userData.roomId = room.id; proxy.userData.overlaps = overlaps;
@@ -135,6 +186,7 @@ export default class EditorViewport {
       const geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geometry), new THREE.LineBasicMaterial({ color: 0x48dbd2 }));
       geometry.dispose(); edges.position.fromArray(frame.center); this.world.add(edges);
+      this.passages.set(connection.id, edges);
     }
     for (const placement of [
       { ...document.playerSpawn, id: '@spawn', kind: 'spawn' }, ...document.entities,
@@ -156,7 +208,10 @@ export default class EditorViewport {
     for (const proxy of this.rooms) {
       const edges = /** @type {THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial>} */ (proxy.children[0]);
       edges.material.color.setHex(proxy.userData.overlaps ? 0xff5f69 : proxy.userData.roomId === id ? 0xffc16e : 0x7d9aaf);
-      if (proxy.userData.roomId === id && this.mode !== 'select') this.transform.attach(proxy);
+      if (proxy.userData.roomId === id && this.mode !== 'select') {
+        if (this.mode === 'resize') { this.resizePivot.position.copy(proxy.position); this.resizePivot.quaternion.copy(proxy.quaternion); this.resizePivot.scale.set(1, 1, 1); this.resizePivot.userData.roomId = id; this.transform.attach(this.resizePivot); }
+        else this.transform.attach(proxy);
+      }
     }
     this.drawSelection();
     this.render();
@@ -225,10 +280,11 @@ export default class EditorViewport {
     }
     this.render();
   }
-  /** @param {'select' | 'translate' | 'rotate'} mode */
+  /** @param {'select' | 'translate' | 'rotate' | 'resize'} mode */
   setMode(mode) {
     this.mode = mode;
-    if (mode !== 'select') this.transform.setMode(mode);
+    if (mode !== 'select') this.transform.setMode(mode === 'resize' ? 'scale' : mode);
+    this.transform.setSpace(mode === 'resize' ? 'local' : 'world');
     this.transform.showX = true; this.transform.showY = true; this.transform.showZ = true;
     this.setSelection(this.selected);
   }
@@ -244,6 +300,7 @@ export default class EditorViewport {
     for (const room of targets) bounds.union(new THREE.Box3().setFromObject(room));
     if (bounds.isEmpty()) return;
     const center = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3()).length();
+    this.camera.far = Math.max(3000, size * 8); this.camera.updateProjectionMatrix(); this.controls.maxDistance = Math.max(1500, size * 4);
     this.controls.target.copy(center); this.camera.position.copy(center).add(new THREE.Vector3(1, 0.85, 1).normalize().multiplyScalar(Math.max(20, size * 1.25)));
     this.controls.update(); this.render();
   }

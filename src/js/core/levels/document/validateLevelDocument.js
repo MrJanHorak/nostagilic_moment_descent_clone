@@ -1,5 +1,5 @@
 import { enemyTypes } from '../../../entities/EnemyTypes.js';
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, documentLimits, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
 import validateSemantics from './validateSemantics.js';
 
 class Reader {
@@ -47,13 +47,13 @@ class Reader {
     if (!Array.isArray(value) || value.length > max) { this.issue(path, 'array', `Expected an array of at most ${max} entries`); return null; }
     return value;
   }
-  /** @param {unknown} value @param {string} path @param {boolean} [snapped]
+  /** @param {unknown} value @param {string} path @param {boolean | number} [snapped]
    * @returns {import('../../../levelDocument.js').Vec3 | null} */
   vector(value, path, snapped = false) {
     if (!Array.isArray(value) || value.length !== 3) { this.issue(path, 'vector', 'Expected [x, y, z]'); return null; }
     const x = this.number(value[0], `${path}[0]`, -4096, 4096), y = this.number(value[1], `${path}[1]`, -4096, 4096), z = this.number(value[2], `${path}[2]`, -4096, 4096);
     if (x === null || y === null || z === null) return null;
-    if (snapped && [x, y, z].some(number => !Number.isInteger(number / GRID))) { this.issue(path, 'grid', `Expected multiples of ${GRID} world units`); return null; }
+    if (snapped && [x, y, z].some(number => !Number.isInteger(number / (typeof snapped === 'number' ? snapped : GRID)))) { this.issue(path, 'grid', `Expected multiples of ${typeof snapped === 'number' ? snapped : GRID} world units`); return null; }
     return [x, y, z];
   }
   /** @param {unknown} value @param {string} path @returns {import('../../../levelDocument.js').Rotation | null} */
@@ -103,21 +103,22 @@ function inspectJSON(input, reader) {
   catch { reader.issue('$', 'json', 'Input could not be read as JSON data'); }
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} oriented @param {boolean} shaped
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} oriented @param {boolean} shaped @param {boolean} expanded
  * @returns {import('../../../levelDocument.js').RoomDocument | null} */
-function readRoom(value, path, reader, modern, oriented, shaped) {
+function readRoom(value, path, reader, modern, oriented, shaped, expanded) {
   const object = reader.object(value, path, ['id', 'prefab', 'position', 'size', 'yaw', 'materialPreset', ...(modern ? ['surfaces'] : []), ...(oriented ? ['pitch', 'roll'] : []), ...(shaped ? ['endOffset'] : [])]);
   if (!object) return null;
   const id = reader.text(object.id, `${path}.id`, 64, true);
   const prefab = reader.choice(object.prefab, shaped ? /** @type {const} */ (['box-room', 'straight-corridor', 'offset-corridor']) : /** @type {const} */ (['box-room', 'straight-corridor']), `${path}.prefab`);
-  const position = reader.vector(object.position, `${path}.position`, true), size = reader.vector(object.size, `${path}.size`, true);
+  const position = reader.vector(object.position, `${path}.position`, expanded ? 0.25 : GRID), size = reader.vector(object.size, `${path}.size`, true);
   const yaw = reader.choice(object.yaw, /** @type {const} */ ([0, 90, 180, 270]), `${path}.yaw`);
   const pitch = oriented && 'pitch' in object ? reader.choice(object.pitch, /** @type {const} */ ([0, 90, 180, 270]), `${path}.pitch`) : undefined;
   const roll = oriented && 'roll' in object ? reader.choice(object.roll, /** @type {const} */ ([0, 90, 180, 270]), `${path}.roll`) : undefined;
   const materialPreset = reader.choice(object.materialPreset, /** @type {const} */ (['industrial-blue', 'industrial-red', 'industrial-green']), `${path}.materialPreset`);
   if (!id || !prefab || !position || !size || yaw === null || !materialPreset) return null;
-  if (size.some(dimension => dimension < 4 || dimension > 64)) reader.issue(`${path}.size`, 'size', 'Room dimensions must be between 4 and 64');
-  if (prefab !== 'box-room' && (size[0] > 8 || size[1] > 8 || size[2] < Math.max(size[0], size[1]))) {
+  const maxSize = expanded ? 256 : 64;
+  if (size.some(dimension => dimension < 4 || dimension > maxSize)) reader.issue(`${path}.size`, 'size', `Room dimensions must be between 4 and ${maxSize}`);
+  if (!expanded && prefab !== 'box-room' && (size[0] > 8 || size[1] > 8 || size[2] < Math.max(size[0], size[1]))) {
     reader.issue(`${path}.size`, 'size', 'Straight corridors have width/height at most 8 and length at least their width/height');
   }
   /** @type {[number, number] | undefined} */ let endOffset;
@@ -125,7 +126,7 @@ function readRoom(value, path, reader, modern, oriented, shaped) {
     const pair = reader.array(object.endOffset, `${path}.endOffset`, 2);
     if (!pair || pair.length !== 2) reader.issue(`${path}.endOffset`, 'shape', 'Expected [sideways, rise] for the local -Z end');
     else {
-      const x = reader.number(pair[0], `${path}.endOffset[0]`, -32, 32, true), y = reader.number(pair[1], `${path}.endOffset[1]`, -32, 32, true);
+      const x = reader.number(pair[0], `${path}.endOffset[0]`, expanded ? -256 : -32, expanded ? 256 : 32, true), y = reader.number(pair[1], `${path}.endOffset[1]`, expanded ? -256 : -32, expanded ? 256 : 32, true);
       if (x !== null && y !== null) {
         endOffset = [x, y];
         if (Math.hypot(x, y) > size[2]) reader.issue(`${path}.endOffset`, 'shape', 'Combined end offset cannot exceed corridor length (maximum 45 degree slope)');
@@ -147,9 +148,9 @@ function readRoom(value, path, reader, modern, oriented, shaped) {
   return { id, prefab, position, size, yaw, materialPreset, ...(pitch !== undefined && pitch !== null ? { pitch } : {}), ...(roll !== undefined && roll !== null ? { roll } : {}), ...(endOffset ? { endOffset } : {}), ...(Object.keys(surfaces).length ? { surfaces } : {}) };
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded
  * @returns {import('../../../levelDocument.js').PortReference | null} */
-function readPort(value, path, reader, modern) {
+function readPort(value, path, reader, modern, expanded) {
   const object = reader.object(value, path, ['roomId', 'port', ...(modern ? ['offset'] : [])]); if (!object) return null;
   const roomId = reader.text(object.roomId, `${path}.roomId`, 64, true), port = reader.choice(object.port, FACES, `${path}.port`);
   /** @type {[number, number] | undefined} */ let offset;
@@ -157,7 +158,7 @@ function readPort(value, path, reader, modern) {
     const values = reader.array(object.offset, `${path}.offset`, 2);
     if (!values || values.length !== 2) reader.issue(`${path}.offset`, 'offset', 'Expected [horizontal, vertical/depth] offset');
     else {
-      const u = reader.number(values[0], `${path}.offset[0]`, -32, 32), v = reader.number(values[1], `${path}.offset[1]`, -32, 32);
+      const u = reader.number(values[0], `${path}.offset[0]`, expanded ? -128 : -32, expanded ? 128 : 32), v = reader.number(values[1], `${path}.offset[1]`, expanded ? -128 : -32, expanded ? 128 : 32);
       if (u !== null && v !== null) {
         if (![u, v].every(number => Number.isInteger(number / GRID))) reader.issue(`${path}.offset`, 'grid', 'Opening offsets must use the half-unit grid');
         offset = [u, v];
@@ -167,14 +168,14 @@ function readPort(value, path, reader, modern) {
   return roomId && port ? { roomId, port, ...(offset ? { offset } : {}) } : null;
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded
  * @returns {import('../../../levelDocument.js').ConnectionDocument | null} */
-function readConnection(value, path, reader, modern) {
+function readConnection(value, path, reader, modern, expanded) {
   const object = reader.object(value, path, ['id', 'a', 'b', 'openingSize']); if (!object) return null;
-  const id = reader.text(object.id, `${path}.id`, 64, true), a = readPort(object.a, `${path}.a`, reader, modern), b = readPort(object.b, `${path}.b`, reader, modern);
+  const id = reader.text(object.id, `${path}.id`, 64, true), a = readPort(object.a, `${path}.a`, reader, modern, expanded), b = readPort(object.b, `${path}.b`, reader, modern, expanded);
   const opening = reader.array(object.openingSize, `${path}.openingSize`, 2);
   if (!opening || opening.length !== 2) { reader.issue(`${path}.openingSize`, 'opening', 'Expected [width, height/depth]'); return null; }
-  const width = reader.number(opening[0], `${path}.openingSize[0]`, 2, 62), height = reader.number(opening[1], `${path}.openingSize[1]`, 2, 62);
+  const width = reader.number(opening[0], `${path}.openingSize[0]`, 2, expanded ? 254 : 62), height = reader.number(opening[1], `${path}.openingSize[1]`, 2, expanded ? 254 : 62);
   if (!id || !a || !b || width === null || height === null) return null;
   if (![width, height].every(number => Number.isInteger(number / GRID))) reader.issue(`${path}.openingSize`, 'grid', 'Openings must use the half-unit grid');
   return { id, a, b, openingSize: [width, height] };
@@ -245,12 +246,13 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–5 is supported');
-  const shaped = root.formatVersion === 5, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
+  if (![1, 2, 3, 4, 5, 6].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–6 is supported');
+  const expanded = root.formatVersion === 6, limits = documentLimits(expanded ? 6 : 1);
+  const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
   const id = reader.text(root.id, '$.id', 64, true), name = reader.text(root.name, '$.name', 80);
-  const rooms = (reader.array(root.rooms, '$.rooms', LIMITS.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern, oriented, shaped)).filter(value => value !== null);
-  const connections = (reader.array(root.connections, '$.connections', LIMITS.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern)).filter(value => value !== null);
+  const rooms = (reader.array(root.rooms, '$.rooms', limits.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern, oriented, shaped, expanded)).filter(value => value !== null);
+  const connections = (reader.array(root.connections, '$.connections', limits.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern, expanded)).filter(value => value !== null);
   const entities = (reader.array(root.entities, '$.entities', LIMITS.entities) ?? []).map((value, i) => readEntity(value, `$.entities[${i}]`, reader)).filter(value => value !== null);
   const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader)).filter(value => value !== null) : [];
   const doors = relay ? (reader.array(root.doors, '$.doors', 16) ?? []).map((value, i) => readDoor(value, `$.doors[${i}]`, reader)).filter(value => value !== null) : [];
@@ -271,7 +273,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
+    ? { ...base, formatVersion: expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

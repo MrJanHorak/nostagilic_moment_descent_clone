@@ -73,6 +73,9 @@
     "tests/types/player-contracts.ts",
     "tests/types/combat-contracts.ts",
     "tests/types/enemy-effects-contracts.ts",
-    "tests/types/level-document-contracts.ts"
+    "tests/types/level-document-contracts.ts",
+    "src/js/editor/ResizeRoom.js",
+    "src/js/editor/ResizeDialog.js",
+    "src/js/core/levels/document/RoomOverlap.js"
   ]
 }

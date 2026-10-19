@@ -8,6 +8,10 @@ export const GRID = 0.5;
 /** @type {readonly import('../../../levelDocument.js').SurfacePattern[]} */
 export const SURFACE_PATTERNS = Object.freeze(['plain', 'grid', 'panels', 'hazard']);
 export const LIMITS = Object.freeze({ rooms: 64, connections: 128, entities: 256, text: 1_000_000, errors: 100 });
+export const EXPANDED_LIMITS = Object.freeze({ ...LIMITS, rooms: 256, connections: 512 });
+/** Keep old documents' validation contract; expanded editing opts into v6.
+ * @param {number} version */
+export function documentLimits(version) { return version >= 6 ? EXPANDED_LIMITS : LIMITS; }
 /** @type {readonly import('../../../levelDocument.js').Face[]} */
 export const FACES = Object.freeze(['negativeX', 'positiveX', 'negativeY', 'positiveY', 'negativeZ', 'positiveZ']);
 export const MATERIALS = Object.freeze({

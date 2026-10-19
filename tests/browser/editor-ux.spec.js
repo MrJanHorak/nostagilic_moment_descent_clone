@@ -76,7 +76,7 @@ test('designer UX: pick a wall, style it and place content from context menus wi
 test('designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
   let menu = await contextAt(page, [4, 2, -7.5]); await menu.getByRole('menuitem', { name: 'Attach corridor at this point', exact: true }).click();
-  await expect(page.locator('#room-count')).toHaveText('2 / 64');
+  await expect(page.locator('#room-count')).toHaveText('2 / 256');
   // A point on the remaining shared wall identifies its connection directly.
   menu = await contextAt(page, [-3, 1, -7.5]); await menu.getByRole('menuitem', { name: 'Opening and door…', exact: true }).click();
   const opening = page.getByRole('dialog', { name: 'Opening and door', exact: true });
@@ -84,16 +84,16 @@ test('designer UX: attach at a wall point, edit its door, duplicate/delete/undo 
   await opening.getByRole('button', { name: 'Apply', exact: true }).click();
   await page.locator('#rooms').getByRole('button', { name: 'room-2 · corridor', exact: true }).click();
   await page.getByRole('button', { name: 'Duplicate room', exact: true }).click();
-  await expect(page.locator('#room-count')).toHaveText('3 / 64');
-  await page.getByRole('button', { name: 'Delete room', exact: true }).click(); await expect(page.locator('#room-count')).toHaveText('2 / 64');
-  await page.getByRole('button', { name: 'Undo', exact: true }).click(); await expect(page.locator('#room-count')).toHaveText('3 / 64');
+  await expect(page.locator('#room-count')).toHaveText('3 / 256');
+  await page.getByRole('button', { name: 'Delete room', exact: true }).click(); await expect(page.locator('#room-count')).toHaveText('2 / 256');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click(); await expect(page.locator('#room-count')).toHaveText('3 / 256');
   await expect(page.locator('#draft-status')).toContainText('Draft saved locally');
   const before = await exportDocument(page, testInfo, 'before-recovery.json');
   await page.reload(); await expect(page.getByRole('region', { name: 'Draft recovery', exact: true })).toBeVisible();
-  await expect(page.locator('#room-count')).toHaveText('1 / 64');
+  await expect(page.locator('#room-count')).toHaveText('1 / 256');
   await page.screenshot({ path: testInfo.outputPath('draft-recovery.png'), fullPage: true });
   await page.getByRole('button', { name: 'Restore draft', exact: true }).click();
-  await expect(page.locator('#room-count')).toHaveText('3 / 64'); await expect(page.locator('#save-state')).toContainText('Unsaved changes');
+  await expect(page.locator('#room-count')).toHaveText('3 / 256'); await expect(page.locator('#save-state')).toContainText('Unsaved changes');
   expect(await exportDocument(page, testInfo, 'recovered.json')).toBe(before);
   await expect(page.getByRole('region', { name: 'Draft recovery', exact: true })).toBeHidden();
 });

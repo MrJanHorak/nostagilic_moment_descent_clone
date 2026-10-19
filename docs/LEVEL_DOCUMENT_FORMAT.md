@@ -1,6 +1,6 @@
-# Shared level document — format versions 1–5
+# Shared level document — format versions 1–6
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. All five versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. All six versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All base fields below are required. The version-3 extension below describes its 
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, or `5` for shaped corridors; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, or `6` for expanded authoring; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -23,9 +23,9 @@ The document ID, room IDs, connection IDs entity IDs, device IDs and door IDs sh
 
 ## Rooms, coordinates and ports
 
-Use world units, **+Y up**, and local **-Z forward**. Room `position` is its world center. `size` is its **outer** `[x, y, z]` extent. Half-unit-thick walls sit inside those bounds; clear interior dimensions are therefore one unit smaller. Room positions/dimensions use a 0.5-unit grid.
+Use world units, **+Y up**, and local **-Z forward**. Room `position` is its world center. `size` is its **outer** `[x, y, z]` extent. Half-unit-thick walls sit inside those bounds; clear interior dimensions are therefore one unit smaller. Versions 1–5 use a 0.5-unit position/dimension grid. Version 6 retains half-unit dimensions and permits quarter-unit centers so half-unit stretches can hold one end fixed.
 
-A room has `id`, `prefab`, `position`, `size`, `yaw` and `materialPreset`. Supported prefabs are `box-room` and `straight-corridor`; both use the same rectangular shell generator. All dimensions are 4–64 units. A straight corridor additionally has local width/height at most 8 and local Z length at least its width/height.
+A room has `id`, `prefab`, `position`, `size`, `yaw` and `materialPreset`. Supported prefabs are `box-room` and `straight-corridor`; both use the same rectangular shell generator. In versions 1–5 all dimensions are 4–64 units. A straight corridor additionally has local width/height at most 8 and local Z length at least its width/height.
 
 Room `yaw` is exactly `0`, `90`, `180` or `270` degrees around +Y. For example, at yaw 90 local +Z maps to world +X and local +X maps to world -Z. Versions 1–3 have yaw only; v4 optionally adds pitch/roll as described below. Player rotation is a normalized `[x,y,z,w]` quaternion relative to its room, composed with the complete room orientation when loaded.
 
@@ -39,7 +39,7 @@ Local face names are `negativeX`, `positiveX`, `negativeY`, `positiveY`, `negati
 | Z | X width | Y height |
 | Y | X width | Z depth |
 
-Openings are 2–62 units on the half-unit grid and must fit **both** faces with frame clearance: each dimension is at most the corresponding face dimension minus 1.5. The generator splits each connected wall into four rectangular solids around that opening. Unconnected faces stay closed. Both adjoining half-unit walls receive the same opening, producing continuous traversable space. The very same solid definitions generate visible boxes and colliders.
+Versions 1–5 openings are 2–62 units on the half-unit grid and must fit **both** faces with frame clearance: each dimension is at most the corresponding face dimension minus 1.5. The generator splits each connected wall into four rectangular solids around that opening. Unconnected faces stay closed. Both adjoining half-unit walls receive the same opening, producing continuous traversable space. The very same solid definitions generate visible boxes and colliders.
 
 ## Content, placement and objectives
 
@@ -161,11 +161,24 @@ Validation creates an owned, deeply frozen JSON snapshot. It never freezes or ed
 
 The separate `/editor.html` entry provides JSON file import/export and playtest through these APIs. Canonical samples are also bundled by Vite and loaded by Node tests through JSON import attributes. Invalid input produces paths such as `$.connections[1]` with an alignment error or `$.entities[0].position` with a clearance error. No code evaluation or remote asset loading is involved.
 
+## Version 6: expanded authoring and connected resizing
+
+V6 retains all v5 fields and geometry. It raises the room/connection limits to **256/512**; entities remain capped at 256. Every prefab accepts local width, height and length from **4–256**, on the half-unit grid. The old corridor cross-section/aspect restrictions no longer apply. Room centers use a quarter-unit grid, with the unchanged ±4096 component bound. Openings are 2–254 on the half-unit grid; endpoint offsets allow ±128. Shaped end offsets are whole units within ±256 and their combined distance still cannot exceed local Z length (45° maximum centerline slope).
+
+These are authoring bounds, not unlimited streaming or a hardware-performance guarantee. Empty space between pieces remains closed unless a connection explicitly cuts matching openings. Overlap remains invalid.
+
+The editor opts into v6 on a successful Stretch/Resize command, numeric dimension edit, or attachment/duplication beyond 64 rooms (connections beyond 128 also opt in). Import preserves versions 1–5 and their original validation rules. Later style/orientation/relay edits retain v6; undo restores the exact previous document/version. No editing metadata enters JSON.
+
+Resizing holds the chosen opening's world center fixed (default: first connection), translates attached branches to keep every opening aligned, and keeps content in the resized piece at its previous world position. Translated neighbors carry their own local content. A center anchor is also available. End offsets, opening offsets/dimensions, face styles and door/relay links are retained. Contradictory loop constraints, overlap, wall/placement clearance failures and out-of-range positions reject the entire command without changing history. The separate **Snap connections** command repairs an existing displaced/center-resized draft, holding its first connected neighbor fixed and carrying content with translated pieces. It does not invent new connections or resolve incompatible orientations/loops.
+
+Validation and editor overlap highlights use cached world bounds and a sweep before the existing exact convex intersection test. See [the authoring checkpoint](progress/M4_CONNECTED_RESIZING.md).
+
 ## Limits and compatibility
 
 | Limit | Value |
 | --- | ---: |
-| Rooms / connections / entities | 64 / 128 / 256 |
+| Rooms / connections / entities, v1–5 | 64 / 128 / 256 |
+| Rooms / connections / entities, v6 | 256 / 512 / 256 |
 | Parsed JSON text | 1,000,000 UTF-16 code units |
 | Validated tree nodes / nesting depth | 50,000 / 16 |
 | Reported diagnostics | 100 |

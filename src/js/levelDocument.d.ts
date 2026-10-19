@@ -55,6 +55,8 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 5; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 6; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }
