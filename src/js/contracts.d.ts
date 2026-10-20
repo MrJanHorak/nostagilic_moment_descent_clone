@@ -72,10 +72,12 @@ export interface MouseMotion {
 }
 
 export type DefeatCause = 'shot' | 'ram';
+export interface EscapeDefinition { readonly triggerDeviceId: string; readonly durationSeconds: number }
 export interface MissionDefinition {
   readonly type: 'clear-and-exit' | 'relay-clear-and-exit';
   readonly requiredEnemyIds: readonly string[];
   readonly requiredDeviceIds?: readonly string[];
+  readonly escape?: EscapeDefinition;
   readonly exit: { readonly id?: string; readonly position: readonly [number, number, number]; readonly radius: number };
 }
 

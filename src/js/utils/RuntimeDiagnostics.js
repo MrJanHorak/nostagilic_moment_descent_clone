@@ -39,6 +39,7 @@ export default class RuntimeDiagnostics {
       frames: this.frames, sessionFrames: this.sessionFrames,
       position: ship?.group.position.toArray(), velocity: ship?.velocity.toArray(),
       quaternion: ship?.group.quaternion.toArray(),
+      escapeRemainingMs: gameState.game?.mission?.remainingEscapeMs(gameState.session.timeMs) ?? null,
       surfaceContact: gameState.game?.levelManager?.environment?.contact ?? null,
       scouts: gameState.game?.enemyManager?.enemies.filter(enemy => enemy.type.name === 'scout' && enemy.isActive).slice(0, 16)
         .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.scoutAttack?.phase ?? 'approach', since: enemy.scoutAttack?.since ?? 0 })),

@@ -52,7 +52,7 @@ The mission library leads with three authored shared-document missions. The main
 | --- | --- |
 | Signal Breach | Eleven spaces, a shot-open entry door, concealed repair alcove, ranged fighter on the direct approach, blue overhead route and optional green maintenance loop with a scout. Restore the uplink and unlock the sliding extraction gate. Kills are optional. |
 | Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft, lava in the upper works and side cache. Restore lift power, climb and activate extraction controls. |
-| Nightfall Reactor | Seven spaces, safe coolant water, reactor lava, a lower loop, reserve supplies and upper control room. Defeat two guards, activate coolant bypass/shutdown relays, then extract. |
+| Nightfall Reactor | Seven spaces, safe coolant water, reactor lava, a lower loop and optional supply rooms. Clear two guards and coolant bypass, then use upper Reactor shutdown to start a 60-second escape through the lift and lower loop back to arrival. |
 
 The first encounter pass expands Signal Breach from seven spaces to ten. The fighter takes three normal pulse hits; arrival starts outside its pursuit/fire range, and the arrival doorway provides sightline cover. Two ceiling shafts connect a hazard-marked blue overhead gallery to the signal hall, while the green maintenance scout stays hidden from spawn. The briefing explains the choices. AI, global enemy values and relay/exit requirements are unchanged.
 

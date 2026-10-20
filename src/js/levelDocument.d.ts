@@ -1,5 +1,5 @@
 import type { Vector3 } from 'three';
-import type { EnemyType, MissionDefinition } from './contracts.js';
+import type { EnemyType, MissionDefinition, EscapeDefinition } from './contracts.js';
 
 export type Vec3 = readonly [number, number, number];
 export type Rotation = readonly [number, number, number, number];
@@ -63,6 +63,8 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 9; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 10; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }

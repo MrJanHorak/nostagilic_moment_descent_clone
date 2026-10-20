@@ -1,0 +1,48 @@
+{
+  "date": "2026-10-20",
+  "verification": {
+    "unitAndSimulationTests": 440,
+    "lintedRuntimeModules": 72,
+    "types": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "browser": {
+    "engine": "Chromium / SwiftShader",
+    "retries": 0,
+    "checks": [
+      {
+        "title": "production: cockpit instruments, firing, map, view cycle and saved selection",
+        "status": "passed",
+        "durationMs": 8558
+      },
+      {
+        "title": "development: campaign Nightfall Reactor route, relays, extraction and replay",
+        "status": "passed",
+        "durationMs": 101586
+      },
+      {
+        "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+        "status": "passed",
+        "durationMs": 26920
+      },
+      {
+        "title": "production: editor reactor countdown authoring, timeout, reboot and native timed escape",
+        "status": "passed",
+        "durationMs": 20336
+      }
+    ]
+  },
+  "notes": [
+    "Four distinct scenarios passed across targeted runs. Nightfall progression uses the labeled development neutralize control to isolate the route/countdown; the production combat regression and editor Playtest escape use ordinary input.",
+    "Nightfall was rerun with transient notices allowed to clear for visual review and completed with roughly 23 seconds remaining. The initial route completed with roughly 26 seconds remaining.",
+    "The editor harness waits for file import and selects the relay dropdown by its role. Earlier exact label matching included option text and did not locate the dropdown.",
+    "No fresh hardware frame-time acceptance is claimed."
+  ],
+  "images": [
+    "reactor-escape-map.png",
+    "reactor-escape-complete.png",
+    "reactor-countdown-cockpit.png",
+    "reactor-meltdown.png"
+  ]
+}

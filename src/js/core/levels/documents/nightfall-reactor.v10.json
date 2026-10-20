@@ -1,0 +1,444 @@
+{
+  "formatVersion": 10,
+  "id": "nightfall-reactor",
+  "name": "Nightfall Reactor",
+  "rooms": [
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-works",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2325913,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reactor",
+      "prefab": "box-room",
+      "position": [
+        24,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877138,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lift-junction",
+      "prefab": "box-room",
+      "position": [
+        24,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "upper-control",
+      "prefab": "box-room",
+      "position": [
+        24,
+        16,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "upper-cache",
+      "prefab": "box-room",
+      "position": [
+        48,
+        16,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reserve-cache",
+      "prefab": "box-room",
+      "position": [
+        -24,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "coolant-entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "coolant-works",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "reactor-entry",
+      "a": {
+        "roomId": "coolant-works",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "reactor",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "reactor-gate",
+      "a": {
+        "roomId": "reactor",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "lift-junction",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "return-loop",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "arrival",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "control-hatch",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "upper-control",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "upper-cache-entry",
+      "a": {
+        "roomId": "upper-control",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "upper-cache",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "cache-entry",
+      "a": {
+        "roomId": "coolant-works",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "reserve-cache",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        8,
+        6
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "coolant-guard",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "coolant-works",
+      "position": [
+        -5,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "reactor-guard",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "reactor",
+      "position": [
+        4,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "reserve-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "reserve-cache",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "reserve-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "reserve-cache",
+      "position": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "control-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "upper-cache",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "arrival",
+      "position": [
+        -7,
+        0,
+        5
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-coolant",
+      "label": "Coolant bypass",
+      "roomId": "coolant-works",
+      "position": [
+        2,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "relay-reactor",
+      "label": "Reactor shutdown",
+      "roomId": "upper-control",
+      "position": [
+        2,
+        0,
+        0
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "reactor-door",
+      "connectionId": "reactor-gate",
+      "deviceId": "relay-coolant"
+    },
+    {
+      "id": "extraction-door",
+      "connectionId": "return-loop",
+      "deviceId": "relay-reactor"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "coolant-guard",
+      "reactor-guard"
+    ],
+    "requiredDeviceIds": [
+      "relay-coolant",
+      "relay-reactor"
+    ],
+    "exitId": "exit",
+    "escape": {
+      "triggerDeviceId": "relay-reactor",
+      "durationSeconds": 60
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  }
+}

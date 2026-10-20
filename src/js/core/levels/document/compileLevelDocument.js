@@ -81,6 +81,7 @@ export default function compileLevelDocument(input) {
       id: entity.id, powerupType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),
     mission: Object.freeze({ type: document.mission.type, requiredEnemyIds: document.mission.requiredEnemyIds,
+      ...('escape' in document.mission && document.mission.escape ? { escape: document.mission.escape } : {}),
       ...(document.formatVersion !== 1 ? { requiredDeviceIds: document.mission.requiredDeviceIds } : {}),
       exit: Object.freeze({ id: exit.id, position: Object.freeze(world(exit)), radius: exit.radius }) }),
   });

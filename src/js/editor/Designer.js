@@ -1,5 +1,6 @@
 import connectionDialog from './ConnectionDialog.js';
 import doorDialog from './DoorDialog.js';
+import escapeDialog from './EscapeDialog.js';
 import EditorDocument, { createDocument } from './EditorDocument.js';
 import EditorViewport from './EditorViewport.js';
 import { FACES, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
@@ -23,6 +24,7 @@ host.innerHTML = `
       <button id="new">New mine</button><button id="sample">Open example</button>
       <button id="import">Import JSON</button><button id="export" class="primary">Export JSON</button>
       <button id="playtest">Playtest level</button>
+      <button id="escape-settings">Reactor escape…</button>
       <a href="/">Back to game</a>
     </nav>
     <input id="file" type="file" accept=".json,application/json" hidden />
@@ -243,7 +245,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${room.id}` : `${room.id} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 10 ? ' · Reactor escape countdown' : model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   element('rooms').replaceChildren(...model.document.rooms.map(room => {
@@ -430,6 +432,7 @@ function positionMenu() { const bounds = element('viewport').getBoundingClientRe
 element('join-dialog').onclick = () => { try { positionMenu(); if (menu) { connectionDialog(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('source-port').value), model, menu, commit); viewport.controls.enabled = false; } } catch (error) { report(error); } };
 element('join-wall').onclick = () => { try { positionMenu(); if (menu && selectedFace) { connectionDialog(selectedId, selectedFace, model, menu, commit); viewport.controls.enabled = false; } } catch (error) { report(error); } };
 element('door-dialog').onclick = () => { positionMenu(); if (menu) { doorDialog(select('opening-connection').value, model, menu, commit); viewport.controls.enabled = false; } };
+element('escape-settings').onclick = () => { positionMenu(); if (menu) { escapeDialog(model, menu, commit); viewport.controls.enabled = false; } };
 element('fit-opening').onclick = () => perform(() => model.fitOpening(select('opening-connection').value));
 element('connect').onclick = () => perform(() => model.connectFaces(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('source-port').value), select('target-room').value, /** @type {import('../levelDocument.js').Face} */ (select('target-port').value)));
 select('target-room').onchange = refreshFaceLabels;

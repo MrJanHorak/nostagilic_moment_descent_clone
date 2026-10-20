@@ -154,7 +154,7 @@ test('production: cockpit follows enemy shield damage and resets on restart', as
 const routes = [
   ['Signal Breach', [[2, -32], [0, 20], [2, 0], [0, 0], [2, -30], 'r', [2, -56]]],
   ['Vector Foundry', [[2, -9], [1, 2], [2, -14], [1, 4], [2, -18], [1, 6], [2, -22], [1, 8], [2, -33], 'r', [2, -36], [1, 38], 'r', [0, 24]]],
-  ['Nightfall Reactor', [[2, -20], 'r', [2, -24], [0, 24], [2, 0], [1, 16], 'r', [0, 53]]],
+  ['Nightfall Reactor', [[2, -20], 'r', [2, -24], [0, 24], [2, 0], [1, 16], 'r', [1, 0], [0, 0], [2, 5], [0, -7]]],
 ];
 
 test('development: scout warning and recovery, water contact, lava damage, pause and restart with native flight', async ({ page }, testInfo) => {
@@ -324,7 +324,21 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
   }
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
   for (const step of route) {
-    if (step === 'r') { await page.keyboard.press('r'); await page.clock.fastForward(100); }
+    if (step === 'r') {
+      await page.keyboard.press('r'); await page.clock.fastForward(100);
+      if (name === 'Nightfall Reactor' && await page.locator('#escape-countdown').isVisible()) {
+        await expect(page.locator('#escape-countdown')).toContainText('ESCAPE 01:00');
+        await page.keyboard.press('h'); await expect(page.locator('#escape-countdown')).toBeVisible();
+        await page.keyboard.press('h'); await page.keyboard.press('m'); await page.clock.runFor(32);
+        for (let i = 0; i < 30; i++) await page.clock.fastForward(100); // Let transient activation/view notices clear for visual review.
+        await page.screenshot({ path: testInfo.outputPath('reactor-escape-map.png'), animations: 'disabled' });
+        await page.keyboard.press('m');
+        await page.keyboard.press('Escape'); const frozen = await page.locator('#escape-countdown').textContent();
+        for (let i = 0; i < 15; i++) await page.clock.fastForward(100);
+        await expect(page.locator('#escape-countdown')).toHaveText(frozen);
+        await button(page, 'CONTINUE').press('Enter'); await page.clock.fastForward(100);
+      }
+    }
     else await fly(page, step[0], step[1]);
   }
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
@@ -332,6 +346,7 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
   await page.screenshot({ path: testInfo.outputPath(`${name.replaceAll(' ', '-').toLowerCase()}-complete.png`), fullPage: true });
   await button(page, 'REPLAY MISSION').press('Enter'); await page.clock.fastForward(100);
   await expect(page.locator('#health-percentage')).toHaveText('100%');
+  if (name === 'Nightfall Reactor') await expect(page.locator('#escape-countdown')).toBeHidden();
   await expect(page.locator('#weapon-slot-1')).toContainText('80');
   await expect(page.locator('#arena-guide')).toContainText(name.toUpperCase());
   await expect(page.locator('#arena-guide')).toContainText('Relays 0/');

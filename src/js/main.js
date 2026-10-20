@@ -37,6 +37,7 @@ export default class Game {
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
+    this.failureReason = null;
     this.exploration = null;
     this.currentLevelIndex = 0;
     this.importedLevelIndex = null;
@@ -169,6 +170,7 @@ export default class Game {
     this.session.begin();
     try {
       this.gameState.resetForSession();
+      this.failureReason = null;
       this.spaceship.reset();
       this.lastMovement = null;
       this.camera.position.set(0, 0, 0);
@@ -283,8 +285,10 @@ export default class Game {
 
   togglePause() { return this.session.phase === 'paused' ? this.resumeGame() : this.pauseGame(); }
 
-  die() {
+  die(reason = 'combat') {
     if (this.session.phase !== 'playing') return false;
+    this.failureReason = reason;
+    if (reason === 'reactor') this.gameState.playerHealth = 0;
     this.session.transition('dead');
     this.session.tasks.clear();
     this.inputManager.clearKeys();
@@ -331,10 +335,18 @@ export default class Game {
 
   interact() {
     if (this.session.phase !== 'playing') return false;
+    const nearby = this.levelManager.interaction?.nearest(this.spaceship.group.position);
+    if (nearby && this.mission && !this.mission.canActivateDevice(nearby.id)) {
+      this.uiManager.showMessage('REACTOR INTERLOCK · Clear required drones and activate the other relays first', 2500, '#ffce77');
+      return false;
+    }
     const device = this.levelManager.interaction?.tryActivate(this.spaceship.group.position);
     if (!device) return false;
-    this.mission?.recordDeviceActivation(device.id);
-    this.uiManager.showMessage(`${device.label} activated · linked doors unlocked`, 2500, '#45ff96');
+    this.mission?.recordDeviceActivation(device.id, this.session.timeMs);
+    const escape = this.mission?.definition.escape;
+    this.uiManager.showMessage(device.id === escape?.triggerDeviceId
+      ? `REACTOR CRITICAL · ${escape.durationSeconds}s TO ESCAPE · Follow the map to extraction`
+      : `${device.label} activated · linked doors unlocked`, 2500, device.id === escape?.triggerDeviceId ? '#ff9944' : '#45ff96');
     this.uiManager.updateMissionUI?.();
     return true;
   }
@@ -351,8 +363,9 @@ export default class Game {
 
   updateMission() {
     if (!this.mission || this.session.phase !== 'playing') return;
+    if (this.mission.failed || this.mission.updateEscape(this.session.timeMs)) { this.die('reactor'); return; }
     this.levelManager.updateExitMarker(this.mission.ready);
-    if (this.mission.tryComplete(this.spaceship.group.position, this.spaceship.radius)) this.completeSession();
+    if (this.mission.tryComplete(this.spaceship.group.position, this.spaceship.radius, this.session.timeMs)) this.completeSession();
   }
 
   updateSimulation(delta) {
@@ -360,6 +373,7 @@ export default class Game {
     const generation = this.session.id;
     this.session.advance(delta);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
+    if (this.mission?.failed || this.mission?.updateEscape(this.session.timeMs)) { this.die('reactor'); return; }
     this.levelManager.interaction?.update(delta);
     for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);

@@ -69,6 +69,6 @@ Keep quiet travel, a supply/recovery beat, and a landmark between demanding figh
 1. **Implemented:** a ranged fighter encounter, doorway cover and an overhead approach in Signal Breach. Continue measuring damage taken, ammo expenditure and fallback use during player feedback.
 2. **Attack cues implemented:** fighter wind-up/single shot/recovery and scout warning/committed lunge/withdrawal. Next add bounded fighter repositioning with wall/door safety checks. See [environments and mission variety](ENVIRONMENT_AND_MISSION_ROADMAP.md) for the scout contract and lava/water pass.
 3. Author one mixed encounter around a loop and vertical approach; test ordinary input/fire and restart, not only the development neutralize action.
-4. Add one new mission mechanic (for example, reactor-triggered timed escape), with portable document validation and editor authoring.
+4. **Timed escape implemented:** Nightfall's reactor interlock, 60-second countdown and return to arrival use portable v10 rules and editor authoring. Next consider panel-controlled force fields. See [the reactor guide](REACTOR_ESCAPE.md).
 
 Record kills/shots, minimum shields, optional-route use and completion time during playtesting. Set balance from those results rather than multiplying enemy counts or health across the campaign. Separate weapon energy/secondary fire and a rotatable marked automap remain useful cockpit-system follow-ups, but are separate from this visual/encounter review.

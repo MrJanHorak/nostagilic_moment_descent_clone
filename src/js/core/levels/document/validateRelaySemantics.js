@@ -10,6 +10,7 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   const devices = new Map(document.devices.map(device => [device.id, device]));
   const connections = new Set(document.connections.map(connection => connection.id));
   const occupied = new Set();
+  const escape = document.formatVersion === 10 ? document.mission.escape : undefined;
   for (const [key, values] of /** @type {const} */ ([['devices', document.devices], ['doors', document.doors]])) {
     for (const [index, value] of values.entries()) {
       if (ids.has(value.id)) issue(`$.${key}[${index}].id`, 'duplicate-id', `Duplicate ID: ${value.id}`);
@@ -44,6 +45,7 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   // Solve monotonic unlocks: only relays reached with currently open doors may
   // unlock additional connections. A self-lock or cycle cannot bootstrap itself.
   const active = new Set();
+  if (escape && !required.has(escape.triggerDeviceId)) issue('$.mission.escape.triggerDeviceId', 'reference', 'The escape trigger must identify a required relay');
   let reachable = new Set([document.playerSpawn.roomId]);
   for (let pass = 0; pass <= document.devices.length; pass++) {
     reachable = new Set([document.playerSpawn.roomId]);
@@ -55,7 +57,11 @@ export default function validateRelaySemantics(document, issue, ids, placements)
       if (next && !reachable.has(next)) { reachable.add(next); pending.push(next); }
     }
     const before = active.size;
-    for (const device of document.devices) if (reachable.has(device.roomId)) active.add(device.id);
+    for (const device of document.devices) if (reachable.has(device.roomId)) {
+      if (device.id === escape?.triggerDeviceId && ([...required].some(id => id !== device.id && !active.has(id)) ||
+        document.entities.some(entity => document.mission.requiredEnemyIds.includes(entity.id) && !reachable.has(entity.roomId)))) continue;
+      active.add(device.id);
+    }
     if (active.size === before) break;
   }
   for (const [index, device] of document.devices.entries()) if (!active.has(device.id)) {

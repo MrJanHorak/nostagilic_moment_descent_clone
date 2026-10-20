@@ -16,7 +16,7 @@ Version 9 opts authored documents into these surface rules and retains sliding d
 
 ## Suggested next work
 
-1. **Reactor escape countdown.** Give the last relay a visible countdown and an escape route through previously explored rooms. Teach the return route before starting the timer; allow restart without stale timers or doors. This would turn our existing loop and map into a different kind of challenge.
+1. **Reactor escape countdown implemented.** Nightfall now starts a 60-second clock at shutdown and sends the player back through the lift/lower loop to arrival. Required objectives must be cleared first. See [the reactor guide](REACTOR_ESCAPE.md) for editor authoring, validation and lifecycle rules.
 2. **Panel-controlled force fields.** Distinguish them from doors with an unmistakable energy membrane and a nearby control or alternate passage. Decide projectile reflection and ship damage rules before implementing them; expose both field and control in the editor and map.
 3. **Rescue objectives.** Put optional survivors in a side room, show the carried count in the cockpit, and award the rescue only on successful extraction. This gives exploration a purpose beyond ammunition.
 4. **Recharge stations.** Add recognizable safe alcoves with bounded shield/energy restoration. Decide how weapon energy works first; avoid turning a mandatory fight into unlimited refilling at its doorway.
@@ -31,6 +31,6 @@ The original [Descent II manual](https://cdn.akamai.steamstatic.com/steam/apps/2
 
 ## Verification
 
-`npm run verify` passes: 71 linted runtime modules, strict types, all 429 unit/simulation cases and the production build. Cases cover strike timing, evasion, single-hit recovery, sight cancellation, wall/door collision, reentrant reset, physical doorway/hatch navigation, old-version rejection, editor round-trips, all six oriented/sloped surfaces, empty portals, damage cadence, pause, safe campaign placements and texture disposal.
+The environment/scout pass verified 71 linted runtime modules, strict types, all 429 unit/simulation cases and the production build. Cases cover strike timing, evasion, single-hit recovery, sight cancellation, wall/door collision, reentrant reset, physical doorway/hatch navigation, old-version rejection, editor round-trips, all six oriented/sloped surfaces, empty portals, damage cadence, pause, safe campaign placements and texture disposal. The later [reactor pass](REACTOR_ESCAPE.md#verification) brings the suite to 440 cases and 72 linted modules.
 
 Five targeted browser scenarios pass across completed runs: native scout warning/strike/recovery and flight onto water/lava with pause/resume, climbing clear and restart; both updated campaign routes; editor export/import; and production weapon kills, extraction, replay, death/reboot and menu. See the [verification record](progress/environment-browser-check.json), reviewed [coolant water](progress/coolant-water.png) and [reactor lava](progress/reactor-lava.png). Earlier harness assumptions and their corrections are recorded there. These are functional checks; water volume physics and hardware frame-time acceptance remain separate work.

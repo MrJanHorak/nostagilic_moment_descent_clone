@@ -94,6 +94,7 @@
     "src/js/editor/ConnectionTools.js",
     "src/js/core/levels/document/WallOpenings.js",
     "src/js/editor/ConnectionDialog.js",
-    "src/js/editor/DoorDialog.js"
+    "src/js/editor/DoorDialog.js",
+    "src/js/editor/EscapeDialog.js"
   ]
 }

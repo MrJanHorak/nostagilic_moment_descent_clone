@@ -101,6 +101,7 @@ for (const level of createCampaign()) test(`${level.name}: valid round trip, gat
   const world = buildArena(level), session = new GameSession(); session.begin(); session.transition('playing');
   const relay = new RelayController(level, world.group, world.colliders, session), mission = new MissionObjective(level.mission);
   assert.equal(mission.ready, false); assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), false);
+  for (const id of level.mission.requiredEnemyIds) mission.recordDefeat(id, 'shot');
   const reachable = () => {
     const rooms = new Set([document.playerSpawn.roomId]), queue = [...rooms];
     for (let i = 0; i < queue.length; i++) for (const link of document.connections) {

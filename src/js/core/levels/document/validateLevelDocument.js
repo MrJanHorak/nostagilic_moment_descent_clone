@@ -250,7 +250,7 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–9 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–10 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -264,11 +264,18 @@ function readLevelDocument(input, semantics) {
   if (!rooms.length) reader.issue('$.rooms', 'rooms', 'At least one room is required');
   const spawn = reader.object(root.playerSpawn, '$.playerSpawn', ['roomId', 'position', 'rotation']);
   const roomId = reader.text(spawn?.roomId, '$.playerSpawn.roomId', 64, true), position = reader.vector(spawn?.position, '$.playerSpawn.position'), rotation = reader.rotation(spawn?.rotation, '$.playerSpawn.rotation');
-  const mission = reader.object(root.mission, '$.mission', relay ? ['type', 'requiredEnemyIds', 'requiredDeviceIds', 'exitId'] : ['type', 'requiredEnemyIds', 'exitId']);
+  const mission = reader.object(root.mission, '$.mission', relay ? ['type', 'requiredEnemyIds', 'requiredDeviceIds', 'exitId', ...(version >= 10 ? ['escape'] : [])] : ['type', 'requiredEnemyIds', 'exitId']);
   const missionType = reader.choice(mission?.type, relay ? /** @type {const} */ (['relay-clear-and-exit']) : /** @type {const} */ (['clear-and-exit']), '$.mission.type');
   const exitId = reader.text(mission?.exitId, '$.mission.exitId', 64, true);
   const requiredEnemyIds = (reader.array(mission?.requiredEnemyIds, '$.mission.requiredEnemyIds', LIMITS.entities) ?? []).map((value, i) => reader.text(value, `$.mission.requiredEnemyIds[${i}]`, 64, true)).filter(value => value !== null);
   const requiredDeviceIds = relay ? (reader.array(mission?.requiredDeviceIds, '$.mission.requiredDeviceIds', 16) ?? []).map((value, i) => reader.text(value, `$.mission.requiredDeviceIds[${i}]`, 64, true)).filter(value => value !== null) : [];
+  /** @type {import('../../../contracts.js').EscapeDefinition | undefined} */ let escape;
+  if (version >= 10 && mission && 'escape' in mission) {
+    const settings = reader.object(mission.escape, '$.mission.escape', ['triggerDeviceId', 'durationSeconds']);
+    const triggerDeviceId = reader.text(settings?.triggerDeviceId, '$.mission.escape.triggerDeviceId', 64, true);
+    const durationSeconds = reader.number(settings?.durationSeconds, '$.mission.escape.durationSeconds', 10, 600, true);
+    if (triggerDeviceId && durationSeconds !== null) escape = { triggerDeviceId, durationSeconds };
+  }
   const combat = reader.object(root.combat, '$.combat', ['pulseDamage', 'initialPulseAmmo', 'maxPulseAmmo']);
   const pulseDamage = reader.number(combat?.pulseDamage, '$.combat.pulseDamage', 1, 100);
   const initialPulseAmmo = reader.number(combat?.initialPulseAmmo, '$.combat.initialPulseAmmo', 0, 2000, true), maxPulseAmmo = reader.number(combat?.maxPulseAmmo, '$.combat.maxPulseAmmo', 1, 2000, true);
@@ -277,7 +284,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId } }
+    ? { ...base, formatVersion: version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

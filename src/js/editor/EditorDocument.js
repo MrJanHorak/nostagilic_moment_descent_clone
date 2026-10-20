@@ -41,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -190,6 +190,7 @@ export default class EditorDocument {
         const modern = modernize(draft), devices = new Set(modern.devices.filter(device => device.roomId === roomId).map(device => device.id));
         modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && (!door.deviceId || !devices.has(door.deviceId)));
         modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
+        if (modern.formatVersion === 10 && modern.mission.escape && devices.has(modern.mission.escape.triggerDeviceId)) delete modern.mission.escape;
       }
     });
   }
@@ -360,7 +361,7 @@ export default class EditorDocument {
     this.room(roomId);
     this.change(draft => {
       modernize(draft);
-      if (pattern === 'lava' || pattern === 'water') Object.assign(draft, { formatVersion: 9 });
+      if (pattern === 'lava' || pattern === 'water') Object.assign(draft, { formatVersion: Math.max(9, draft.formatVersion) });
       const room = draft.rooms.find(room => room.id === roomId); if (!room) return;
       room.surfaces ??= {};
       for (const key of face === 'all' ? FACES : [face]) room.surfaces[key] = { color, pattern };
@@ -374,6 +375,20 @@ export default class EditorDocument {
       const room = draft.rooms.find(room => room.id === roomId); if (!room?.surfaces) return;
       for (const key of face === 'all' ? FACES : [face]) delete room.surfaces[key];
       if (!Object.keys(room.surfaces).length) delete room.surfaces;
+    });
+  }
+
+  /** @param {string} triggerDeviceId @param {number} [durationSeconds] */
+  setEscape(triggerDeviceId, durationSeconds = 60) {
+    this.checked(candidate => {
+      if (!triggerDeviceId) {
+        if (candidate.document.formatVersion === 10) delete candidate.document.mission.escape;
+        return;
+      }
+      if (!Number.isInteger(durationSeconds) || durationSeconds < 10 || durationSeconds > 600) throw new Error('Escape time must be a whole number from 10 to 600 seconds.');
+      const draft = modernize(candidate.document);
+      Object.assign(draft, { formatVersion: 10 });
+      Object.assign(draft.mission, { escape: { triggerDeviceId, durationSeconds } });
     });
   }
 
@@ -502,6 +517,7 @@ export default class EditorDocument {
         // V3 allows removing the last relay/door without an invalid v2 shell.
         const modern = modernize(draft); modern.devices = modern.devices.filter(value => value.id !== id);
         modern.doors = modern.doors.filter(door => door.deviceId !== id); modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(value => value !== id);
+        if (modern.formatVersion === 10 && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
       }
     });
   }

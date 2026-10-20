@@ -1059,7 +1059,10 @@ class UIManager {
     this.guideDetails = document.createElement('span'); this.guideDetails.textContent = guide.textContent;
     this.guideSummary = document.createElement('span'); this.guideSummary.id = 'cockpit-objective'; this.guideSummary.hidden = true;
     this.guideSummary.textContent = this.game.levelManager.currentLevel?.combat ? 'COMBAT TRAINING · CLEAR DRONES' : 'FLIGHT TRAINING · CYAN DOORWAY';
-    guide.replaceChildren(this.guideDetails, this.guideSummary);
+    this.guideEscape = document.createElement('span'); this.guideEscape.id = 'escape-countdown'; this.guideEscape.hidden = true;
+    this.guideEscape.setAttribute('role', 'timer'); this.guideEscape.setAttribute('aria-label', 'Reactor escape time remaining');
+    Object.assign(this.guideEscape.style, { font: 'bold 18px monospace', marginTop: '6px', color: '#ffce77' });
+    guide.replaceChildren(this.guideDetails, this.guideSummary, this.guideEscape);
     Object.assign(guide.style, { position: 'fixed', left: '50%', transform: 'translateX(-50%)',
       bottom: this.game?.diagnostics.enabled ? '150px' : '24px', width: 'min(640px, 85vw)',
       padding: '10px 16px', background: '#001624dd', border: '1px solid #45e5ed',
@@ -1144,7 +1147,19 @@ class UIManager {
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
         level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
     const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
-    const text = `${level.name.toUpperCase()} · ${status}${relay}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const remaining = mission.remainingEscapeMs(this.game.session.timeMs);
+    const escapeHint = mission.definition.escape && remaining === null ? ' · Reactor control starts the escape countdown after other objectives are clear' : '';
+    if (this.guideEscape) {
+      this.guideEscape.hidden = remaining === null;
+      this.guideEscape.style.display = remaining === null ? 'none' : 'block';
+      if (remaining !== null) {
+        const seconds = Math.ceil(remaining / 1000), time = `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
+        const countdown = `REACTOR CRITICAL · ESCAPE ${time}`;
+        if (this.guideEscape.textContent !== countdown) this.guideEscape.textContent = countdown;
+        this.guideEscape.style.color = seconds <= 10 ? '#ff7777' : '#ffce77';
+      }
+    }
+    const text = `${level.name.toUpperCase()} · ${status}${relay}${escapeHint}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
     if (this.guideSummary) {
       const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size
@@ -1164,6 +1179,7 @@ class UIManager {
     this.transientElements.clear();
     this.arenaGuide = null;
     this.guideDetails = this.guideSummary = null;
+    this.guideEscape = null;
     this.mineGuide = null;
     this.hidePauseMenu();
     this.resultScreen?.remove();
@@ -1304,7 +1320,9 @@ class UIManager {
   }
 
   showGameOver() {
-    this.hudElements.finalScore.textContent = `Final Score: ${this.gameState.score}`;
+    const meltdown = this.game?.failureReason === 'reactor';
+    this.hudElements.gameOverDisplay.querySelector('h2').textContent = meltdown ? 'REACTOR MELTDOWN' : 'SYSTEM FAILURE';
+    this.hudElements.finalScore.textContent = `${meltdown ? 'Escape time expired · ' : ''}Final Score: ${this.gameState.score}`;
     this.hudElements.gameOverDisplay.style.display = 'block';
   }
 
