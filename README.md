@@ -242,3 +242,5 @@ Web Audio supplies synthesized effects and an original 40-second stereo mission 
 - Sound effects created with Web Audio API
 - Original procedural stereo mission music
 - Inspired by the classic game Descent
+
+Relay-controlled [force fields](docs/FORCE_FIELDS.md) now guard Vector Foundry’s lift. Cyan membranes absorb shots and stop ships until their control relay is activated with R. The editor supports field authoring, and the survey map marks discovered fields and controls.

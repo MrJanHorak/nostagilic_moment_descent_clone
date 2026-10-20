@@ -41,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -190,7 +190,7 @@ export default class EditorDocument {
         const modern = modernize(draft), devices = new Set(modern.devices.filter(device => device.roomId === roomId).map(device => device.id));
         modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && (!door.deviceId || !devices.has(door.deviceId)));
         modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
-        if (modern.formatVersion === 10 && modern.mission.escape && devices.has(modern.mission.escape.triggerDeviceId)) delete modern.mission.escape;
+        if ('escape' in modern.mission && modern.mission.escape && devices.has(modern.mission.escape.triggerDeviceId)) delete modern.mission.escape;
       }
     });
   }
@@ -382,12 +382,12 @@ export default class EditorDocument {
   setEscape(triggerDeviceId, durationSeconds = 60) {
     this.checked(candidate => {
       if (!triggerDeviceId) {
-        if (candidate.document.formatVersion === 10) delete candidate.document.mission.escape;
+        if ('escape' in candidate.document.mission) delete candidate.document.mission.escape;
         return;
       }
       if (!Number.isInteger(durationSeconds) || durationSeconds < 10 || durationSeconds > 600) throw new Error('Escape time must be a whole number from 10 to 600 seconds.');
       const draft = modernize(candidate.document);
-      Object.assign(draft, { formatVersion: 10 });
+      Object.assign(draft, { formatVersion: Math.max(10, draft.formatVersion) });
       Object.assign(draft.mission, { escape: { triggerDeviceId, durationSeconds } });
     });
   }
@@ -517,13 +517,13 @@ export default class EditorDocument {
         // V3 allows removing the last relay/door without an invalid v2 shell.
         const modern = modernize(draft); modern.devices = modern.devices.filter(value => value.id !== id);
         modern.doors = modern.doors.filter(door => door.deviceId !== id); modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(value => value !== id);
-        if (modern.formatVersion === 10 && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
+        if ('escape' in modern.mission && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
       }
     });
   }
 
   /** @param {string} connectionId @param {string} deviceId
-   * @param {{concealed?: boolean, sliding?: boolean}} [options] */
+   * @param {{concealed?: boolean, sliding?: boolean, forceField?: boolean}} [options] */
   setDoor(connectionId, deviceId, options = {}) {
     if (!this.document.connections.some(connection => connection.id === connectionId)) throw new Error('Select a connection.');
     this.change(draft => {
@@ -532,17 +532,20 @@ export default class EditorDocument {
       if (deviceId) {
         if (deviceId !== '@shot' && !modern.devices.some(device => device.id === deviceId)) throw new Error('Select the relay that unlocks this door.');
         if (modern.doors.length >= 16) throw new Error('Door limit reached (16).');
-        const concealed = options.concealed ?? previous?.concealed;
+        const forceField = options.forceField ?? previous?.kind === 'force-field';
+        if (forceField && (deviceId === '@shot' || options.concealed === true)) throw new Error('Force fields require a relay and cannot be concealed.');
+        const concealed = forceField ? false : options.concealed ?? previous?.concealed;
+        if (forceField) Object.assign(modern, { formatVersion: 11 });
         if (deviceId === '@shot' || concealed !== undefined || options.sliding) Object.assign(modern, { formatVersion: Math.max(8, modern.formatVersion) });
         modern.doors.push({ id: previous?.id ?? nextId(draft, 'door'), connectionId,
-          ...(deviceId === '@shot' ? { activation: 'shot' } : { deviceId }), ...(concealed !== undefined ? { concealed } : {}) });
+          ...(deviceId === '@shot' ? { activation: 'shot' } : { deviceId }), ...(forceField ? { kind: 'force-field' } : {}), ...(concealed !== undefined ? { concealed } : {}) });
       }
     });
   }
 
   /** Create an accessible relay near spawn and its door as one undo command.
    * Existing placement/progression validation owns the candidate search.
-   * @param {string} connectionId @param {{concealed?: boolean, sliding?: boolean}} [options] */
+   * @param {string} connectionId @param {{concealed?: boolean, sliding?: boolean, forceField?: boolean}} [options] */
   createRelayDoor(connectionId, options = {}) {
     if (!this.document.connections.some(link => link.id === connectionId)) throw new Error('Select a real connection before adding a door.');
     let id = '';

@@ -4,6 +4,7 @@ import { DEVICE_RADIUS } from './levels/document/LevelContent.js';
 import surfaceMaterials from './SurfaceMaterials.js';
 import { convexGeometry, convexHull } from '../utils/ConvexSolid.js';
 import { buildSlidingDoor } from './SlidingDoor.js';
+import { buildForceField } from './ForceField.js';
 
 // Geometry stays at identity world transform. Keep the complete small arena loaded.
 /** @param {import('../levelDocument.js').ArenaLevel} level */
@@ -15,7 +16,7 @@ export default function buildArena(level) {
   /** @type {import('./SurfaceEnvironment.js').EnvironmentSurface[]} */ const surfaces = [];
   const materialFor = surfaceMaterials();
   try {
-    for (const definition of [...level.solids, ...(level.doors ?? []).filter(door => !door.sliding).map(door => door.solid)]) {
+    for (const definition of [...level.solids, ...(level.doors ?? []).filter(door => !door.sliding && door.kind !== 'force-field').map(door => door.solid)]) {
       const center = new THREE.Vector3().fromArray(definition.center);
       const size = new THREE.Vector3().fromArray(definition.size);
       const geometry = definition.vertices ? convexGeometry(definition.vertices) : new THREE.BoxGeometry(...definition.size);
@@ -37,6 +38,7 @@ export default function buildArena(level) {
       if (level.solids.includes(definition) && (definition.pattern === 'lava' || definition.pattern === 'water')) surfaces.push({ kind: definition.pattern, collider, material: mesh.material });
     }
     for (const door of level.doors ?? []) if (door.sliding) buildSlidingDoor(group, colliders, door, materialFor);
+    for (const door of level.doors ?? []) if (door.kind === 'force-field') buildForceField(group, colliders, door);
     group.add(new THREE.HemisphereLight(0xe4f4ff, 0x394455, 2));
     for (const device of level.devices ?? []) {
       const marker = new THREE.Mesh(new THREE.OctahedronGeometry(DEVICE_RADIUS - 0.1), new THREE.MeshBasicMaterial({ color: 0x45e5ed }));

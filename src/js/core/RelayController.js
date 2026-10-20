@@ -1,4 +1,4 @@
-import { Mesh, MeshBasicMaterial, Vector3 } from 'three';
+import { Mesh, MeshBasicMaterial, ShaderMaterial, Vector3 } from 'three';
 import { hasLineOfSight } from '../utils/combatTrace.js';
 import { DOOR_OPEN_SECONDS } from './SlidingDoor.js';
 
@@ -20,6 +20,13 @@ export default class RelayController {
     this.revision = 0;
     this.sessionId = session.id;
     this.retired = false;
+    this.fieldTime = 0;
+    /** @type {ShaderMaterial[]} */ this.fieldMaterials = [];
+    for (const door of this.doors) if (door.kind === 'force-field') {
+      root.children.find(child => child.name === door.id)?.traverse(child => {
+        if (child instanceof Mesh && child.material instanceof ShaderMaterial) this.fieldMaterials.push(child.material);
+      });
+    }
     this.slides = this.doors.filter(door => door.sliding).map(door => ({ door, elapsed: -1,
       panels: [-1, 1].map(side => {
         // Imported IDs may resemble a generated panel name. Resolve parts
@@ -64,6 +71,8 @@ export default class RelayController {
    * @param {number} delta */
   update(delta) {
     if (!this.isLive() || !Number.isFinite(delta) || delta <= 0) return;
+    this.fieldTime += delta;
+    for (const material of this.fieldMaterials) material.uniforms.time.value = this.fieldTime;
     for (const slide of this.slides) {
       if (slide.elapsed < 0 || slide.elapsed >= DOOR_OPEN_SECONDS) continue;
       slide.elapsed = Math.min(DOOR_OPEN_SECONDS, slide.elapsed + delta);

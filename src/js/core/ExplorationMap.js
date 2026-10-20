@@ -1,5 +1,5 @@
 import RoomNavigation from './levels/document/RoomNavigation.js';
-import { toWorld } from './levels/document/RoomMath.js';
+import { openingFrame, toWorld } from './levels/document/RoomMath.js';
 
 /** Session-local discovery; the authored document is never modified. */
 export default class ExplorationMap {
@@ -61,6 +61,28 @@ export function drawExploration(ctx, map, position, forward, closed, width, heig
     line(screen(a.position), screen(b.position));
   }
   ctx.setLineDash([]);
+  // A visited room reveals its field boundary without disclosing the room
+  // beyond it. Relay markers appear only after entering their own room.
+  const doors = map.document.formatVersion === 1 ? [] : map.document.doors;
+  const fields = doors.filter(door => door.kind === 'force-field');
+  ctx.lineWidth = 2;
+  for (const field of fields) {
+    const link = map.document.connections.find(link => link.id === field.connectionId);
+    if (!link || ![link.a.roomId, link.b.roomId].some(id => map.visited.has(id))) continue;
+    const room = map.navigation.rooms.get(link.a.roomId)?.room; if (!room) continue;
+    const [x, y] = screen(openingFrame(room, link.a).center);
+    ctx.strokeStyle = closed.has(link.id) ? '#65f4ff' : '#45ff96';
+    line([x - 4, y - 6], [x - 4, y + 6]); line([x + 4, y - 6], [x + 4, y + 6]);
+  }
+  for (const device of map.document.formatVersion === 1 ? [] : map.document.devices) {
+    const controlled = fields.filter(field => field.deviceId === device.id);
+    const room = map.navigation.rooms.get(device.roomId)?.room;
+    if (!controlled.length || !room || !map.visited.has(device.roomId)) continue;
+    const [x, y] = screen(toWorld(room, device.position));
+    ctx.strokeStyle = controlled.some(field => closed.has(field.connectionId)) ? '#65f4ff' : '#45ff96';
+    ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 5); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke();
+    if (width > 500) { ctx.fillStyle = ctx.strokeStyle; ctx.font = '11px monospace'; ctx.fillText(device.label, x + 9, y - 7); }
+  }
   const player = screen(position.toArray()), heading = screen(position.clone().addScaledVector(forward, 20 / scale).toArray());
   ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 3; line(player, heading);
   const angle = Math.atan2(heading[1] - player[1], heading[0] - player[0]);

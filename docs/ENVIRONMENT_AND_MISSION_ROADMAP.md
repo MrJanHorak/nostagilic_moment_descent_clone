@@ -17,7 +17,7 @@ Version 9 opts authored documents into these surface rules and retains sliding d
 ## Suggested next work
 
 1. **Reactor escape countdown implemented.** Nightfall now starts a 60-second clock at shutdown and sends the player back through the lift/lower loop to arrival. Required objectives must be cleared first. See [the reactor guide](REACTOR_ESCAPE.md) for editor authoring, validation and lifecycle rules.
-2. **Panel-controlled force fields.** Distinguish them from doors with an unmistakable energy membrane and a nearby control or alternate passage. Decide projectile reflection and ship damage rules before implementing them; expose both field and control in the editor and map.
+2. **Panel-controlled force fields implemented.** Vector Foundry has a cyan lift field disabled by its nearby relay. Fields absorb shots, block bodies without contact damage, and appear with their controls on the visited-area map. See [force-field rules and authoring](FORCE_FIELDS.md).
 3. **Rescue objectives.** Put optional survivors in a side room, show the carried count in the cockpit, and award the rescue only on successful extraction. This gives exploration a purpose beyond ammunition.
 4. **Recharge stations.** Add recognizable safe alcoves with bounded shield/energy restoration. Decide how weapon energy works first; avoid turning a mandatory fight into unlimited refilling at its doorway.
 5. **Flooded passages and currents.** Author a separate fluid volume, with a clear boundary, submerged visibility/audio and consistent ship/enemy/projectile rules. A gentle current could create a route choice without introducing gravity into six-axis flight. This is a larger feature than a face texture and needs volume validation, editor tools and transition tests.

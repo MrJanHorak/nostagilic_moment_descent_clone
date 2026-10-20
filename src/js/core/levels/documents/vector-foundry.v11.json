@@ -1,0 +1,395 @@
+{
+  "formatVersion": 11,
+  "id": "vector-foundry",
+  "name": "Vector Foundry",
+  "rooms": [
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "incline",
+      "prefab": "offset-corridor",
+      "position": [
+        0,
+        4,
+        -18
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      },
+      "endOffset": [
+        0,
+        8
+      ]
+    },
+    {
+      "id": "upper-works",
+      "prefab": "box-room",
+      "position": [
+        0,
+        8,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877138,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lift-shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        23,
+        -36
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "lift-control",
+      "prefab": "box-room",
+      "position": [
+        0,
+        38,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "extraction",
+      "prefab": "box-room",
+      "position": [
+        20,
+        38,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-cache",
+      "prefab": "box-room",
+      "position": [
+        20,
+        8,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "incline-entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "incline",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "incline-exit",
+      "a": {
+        "roomId": "incline",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "upper-works",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "lift-bottom",
+      "a": {
+        "roomId": "upper-works",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "lift-shaft",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "lift-top",
+      "a": {
+        "roomId": "lift-shaft",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "lift-control",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "extraction-gate",
+      "a": {
+        "roomId": "lift-control",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "extraction",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "cache",
+      "a": {
+        "roomId": "upper-works",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "coolant-cache",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        6
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "works-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "coolant-cache",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "lift-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "lift-control",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "extraction",
+      "position": [
+        4,
+        0,
+        0
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-lift",
+      "label": "Lift field control",
+      "roomId": "upper-works",
+      "position": [
+        2,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "relay-control",
+      "label": "Extraction controls",
+      "roomId": "lift-control",
+      "position": [
+        2,
+        0,
+        0
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "lift-door",
+      "connectionId": "lift-bottom",
+      "deviceId": "relay-lift",
+      "kind": "force-field"
+    },
+    {
+      "id": "extraction-door",
+      "connectionId": "extraction-gate",
+      "deviceId": "relay-control"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [],
+    "requiredDeviceIds": [
+      "relay-lift",
+      "relay-control"
+    ],
+    "exitId": "exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  }
+}

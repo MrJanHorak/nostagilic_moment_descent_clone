@@ -217,13 +217,15 @@ function readDevice(value, path, reader) {
 /** @param {unknown} value @param {string} path @param {Reader} reader @param {number} version
  * @returns {import('../../../levelDocument.js').DoorDocument | null} */
 function readDoor(value, path, reader, version) {
-  const object = reader.object(value, path, ['id', 'connectionId', 'deviceId', ...(version >= 8 ? ['activation', 'concealed'] : [])]); if (!object) return null;
+  const object = reader.object(value, path, ['id', 'connectionId', 'deviceId', ...(version >= 8 ? ['activation', 'concealed'] : []), ...(version >= 11 ? ['kind'] : [])]); if (!object) return null;
   const id = reader.text(object.id, `${path}.id`, 64, true), connectionId = reader.text(object.connectionId, `${path}.connectionId`, 64, true);
   const activation = 'activation' in object ? reader.choice(object.activation, /** @type {const} */ (['shot']), `${path}.activation`) : undefined;
   const deviceId = activation === 'shot' ? undefined : reader.text(object.deviceId, `${path}.deviceId`, 64, true);
   if (activation === 'shot' && 'deviceId' in object) reader.issue(`${path}.deviceId`, 'door-control', 'Shot doors have no relay link');
   if ('concealed' in object && typeof object.concealed !== 'boolean') reader.issue(`${path}.concealed`, 'boolean', 'Expected a boolean');
-  return id && connectionId && (deviceId || activation === 'shot') ? { id, connectionId, ...(deviceId ? { deviceId } : {}), ...(activation ? { activation } : {}), ...(typeof object.concealed === 'boolean' ? { concealed: object.concealed } : {}) } : null;
+  const kind = 'kind' in object ? reader.choice(object.kind, /** @type {const} */ (['force-field']), `${path}.kind`) : undefined;
+  if (kind && (activation === 'shot' || object.concealed === true)) reader.issue(path, 'field-control', 'Force fields require a relay and cannot be concealed');
+  return id && connectionId && (deviceId || activation === 'shot') ? { id, connectionId, ...(deviceId ? { deviceId } : {}), ...(activation ? { activation } : {}), ...(kind ? { kind } : {}), ...(typeof object.concealed === 'boolean' ? { concealed: object.concealed } : {}) } : null;
 }
 
 /** @template T @param {T} value @returns {T} */
@@ -250,7 +252,7 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–10 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–11 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -284,7 +286,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
+    ? { ...base, formatVersion: version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

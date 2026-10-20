@@ -10,7 +10,7 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   const devices = new Map(document.devices.map(device => [device.id, device]));
   const connections = new Set(document.connections.map(connection => connection.id));
   const occupied = new Set();
-  const escape = document.formatVersion === 10 ? document.mission.escape : undefined;
+  const escape = 'escape' in document.mission ? document.mission.escape : undefined;
   for (const [key, values] of /** @type {const} */ ([['devices', document.devices], ['doors', document.doors]])) {
     for (const [index, value] of values.entries()) {
       if (ids.has(value.id)) issue(`$.${key}[${index}].id`, 'duplicate-id', `Duplicate ID: ${value.id}`);

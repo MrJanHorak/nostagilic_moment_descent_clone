@@ -2,10 +2,12 @@
 
 Finite missions use the validated shared level documents in `documents/`. Open `/editor.html` to build and play a mission without editing code. Export JSON for portable backups.
 
-The campaign is defined by `Campaign.js`: Signal Breach uses v8 (eleven spaces); Vector Foundry and Nightfall Reactor use v7 (seven each). They share authored relay/door progression, pickups and color/pattern landmarks. Signal Breach introduces a shot-open entry door, a concealed repair alcove, a sliding extraction gate, a ranged fighter, arrival doorway cover, a ceiling-hatch route through an overhead gallery, and a scout in the optional maintenance branch. Its kills are optional. The last mission requires two guard defeats. The previous Level1/Level2/Level3/ExampleLevel segment blueprints have been removed.
+The campaign is defined by `Campaign.js`: Signal Breach uses v8 (eleven spaces); Vector Foundry uses v11 and Nightfall Reactor uses v10 (seven spaces each). They share authored relay/door progression, pickups and color/pattern landmarks. Signal Breach introduces a shot-open entry door, a concealed repair alcove, a sliding extraction gate, a ranged fighter, arrival doorway cover, a ceiling-hatch route through an overhead gallery, and a scout in the optional maintenance branch. Its kills are optional. The last mission requires two guard defeats. The previous Level1/Level2/Level3/ExampleLevel segment blueprints have been removed.
 
 Use the editor's **Open example** to inspect Signal Breach. Select a wall or item and right-click for actions. **Build tools** and the searchable **Scene browser** are optional panels. Import/export round trips use the exact same compiler, collision solids and objectives as the runtime.
 
 See [the document format](../../../../docs/LEVEL_DOCUMENT_FORMAT.md), [editor design](../../../../docs/LEVEL_EDITOR_DESIGN.md), and [current player experience](../../../../docs/PLAYER_EXPERIENCE.md).
 
 Flight Training Arena, Arena Escape, Mine Link, Relay Gate and Deep Relay remain available in **Practice & prototypes** for testing and practice. These are finite fixtures. `LevelBlueprint.js` and `SegmentTypes.js` support the internal endless generator and its regression checks; do not use them to author new campaign missions. Endless mode is no longer a mission-library choice.
+
+Vector Foundry’s lower lift hatch is protected by a relay-controlled force field; Nightfall Reactor’s shutdown starts a timed return to arrival.

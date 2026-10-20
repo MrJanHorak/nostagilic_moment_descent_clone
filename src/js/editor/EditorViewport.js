@@ -172,6 +172,7 @@ export default class EditorViewport {
             if (connection) { object.userData.roomId = connection.a.roomId; object.userData.face = connection.a.port; object.userData.connectionId = connection.id; this.walls.push(object); }
           }
           for (const material of Array.isArray(object.material) ? object.material : [object.material]) {
+            if (material instanceof THREE.ShaderMaterial) continue;
             material.transparent = this.view === 'xray'; material.opacity = this.view === 'xray' ? 0.22 : 1; material.depthWrite = this.view !== 'xray';
           }
           if (this.view === 'cutaway' && object.name.startsWith('@solid/')) {

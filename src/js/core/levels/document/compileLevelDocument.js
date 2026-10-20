@@ -60,7 +60,7 @@ export default function compileLevelDocument(input) {
     const front = room.surfaces?.[connection.a.port], back = other?.surfaces?.[connection.b.port];
     const frontBase = MATERIALS[room.materialPreset][connection.a.port === 'negativeY' ? 'floor' : connection.a.port === 'positiveY' ? 'ceiling' : 'wall'];
     const backBase = MATERIALS[other?.materialPreset ?? room.materialPreset][connection.b.port === 'negativeY' ? 'floor' : connection.b.port === 'positiveY' ? 'ceiling' : 'wall'];
-    return Object.freeze({ ...door, ...(document.formatVersion >= 8 ? { sliding: true, slideAxis: frame.u, normalAxis: frame.axis, direction: frame.direction,
+    return Object.freeze({ ...door, ...(document.formatVersion >= 8 ? { sliding: door.kind !== 'force-field', slideAxis: frame.u, normalAxis: frame.axis, direction: frame.direction,
       reverseStyle: { color: back?.color ?? backBase, pattern: back?.pattern } } : {}),
       solid: Object.freeze({ id: door.id, center: Object.freeze(frame.center), size: Object.freeze(size),
         color: door.concealed ? front?.color ?? frontBase : 0x677b83,

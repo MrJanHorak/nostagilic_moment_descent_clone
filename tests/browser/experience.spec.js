@@ -323,8 +323,18 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
     for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
   }
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  let liftFieldChecked = false;
   for (const step of route) {
     if (step === 'r') {
+      if (name === 'Vector Foundry' && !liftFieldChecked) {
+        await fly(page, 2, -36); await page.keyboard.down('Space');
+        try { for (let tick = 0; tick < 35; tick++) await page.clock.fastForward(100); }
+        finally { await page.keyboard.up('Space'); }
+        const blocked = JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+        expect(blocked.position[1]).toBeGreaterThan(13.7); expect(blocked.position[1]).toBeLessThan(14.1);
+        await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'upper-works');
+        await fly(page, 1, 8); await fly(page, 2, -33); liftFieldChecked = true;
+      }
       await page.keyboard.press('r'); await page.clock.fastForward(100);
       if (name === 'Nightfall Reactor' && await page.locator('#escape-countdown').isVisible()) {
         await expect(page.locator('#escape-countdown')).toContainText('ESCAPE 01:00');

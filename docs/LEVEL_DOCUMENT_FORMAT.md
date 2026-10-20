@@ -1,4 +1,4 @@
-# Shared level document — format versions 1–10
+# Shared level document — format versions 1–11
 
 Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. Version 9 adds lava contact hazards and animated safe water surfaces. Version 10 adds optional reactor escape countdowns. All ten versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
@@ -240,3 +240,7 @@ Successful activation starts a full allowance in simulation time. Linked doors f
 Programmatic input must be a plain JSON tree. Accessors, non-enumerable/symbol properties, nonfinite numbers, sparse/extended arrays, cycles, functions and class instances are rejected. These checks do not establish a sandbox for arbitrary JavaScript proxies supplied by application code. Text input is parsed with `JSON.parse` before validation.
 
 These are input/work bounds, not a promise that maximum-size worlds meet the reference GPU frame-time target. Future incompatible geometry/objective semantics require a new version or an explicit migration of a copy. Old executable level blueprints are retained as legacy content and are not automatically converted by this implementation.
+
+## Version 11: relay force fields
+
+A door may add `kind: "force-field"` to create a translucent energy barrier instead of sliding panels. It must reference a relay via `deviceId`, cannot use shot activation or `concealed: true`, and follows the same accessible-control progression checks. It blocks bodies, shots, AI sight and interaction until its relay clears it immediately. It deals no contact damage. Earlier versions reject `kind`. Version 11 also retains optional reactor escape settings from v10. See [force fields](FORCE_FIELDS.md).

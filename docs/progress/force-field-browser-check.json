@@ -1,0 +1,85 @@
+{
+  "date": "2026-10-20",
+  "feature": "Relay-controlled force fields",
+  "verification": {
+    "command": "npm run verify",
+    "passed": true,
+    "unitAndSimulationTests": 452,
+    "lintedRuntimeModules": 73,
+    "strictTypes": true,
+    "productionBuild": true,
+    "diffCheck": true
+  },
+  "browser": {
+    "rendering": "Chromium / SwiftShader; functional checks, no hardware performance acceptance",
+    "completedRuns": [
+      {
+        "command": "npx playwright test tests/browser/force-fields.spec.js --project=production",
+        "cases": [
+          {
+            "title": "production: author a force field, shoot and collide, pause, restart, disable its relay and extract",
+            "status": "passed",
+            "durationMs": 20400
+          }
+        ]
+      },
+      {
+        "command": "npx playwright test tests/browser/experience.spec.js tests/browser/editor-connections.spec.js tests/browser/reactor.spec.js --project=production --grep \"campaign Vector Foundry|designer doors:|editor reactor countdown\"",
+        "cases": [
+          {
+            "title": "designer doors: author a concealed shot door, undo, reload and fly through it in production playtest",
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "durationMs": 6458
+              }
+            ]
+          },
+          {
+            "title": "development: campaign Vector Foundry route, relays, extraction and replay",
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "durationMs": 89473
+              }
+            ]
+          },
+          {
+            "title": "production: editor reactor countdown authoring, timeout, reboot and native timed escape",
+            "status": "expected",
+            "results": [
+              {
+                "status": "passed",
+                "durationMs": 28809
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "notes": [
+      "Force-field production workflow uses ordinary UI, firing, thrust and relay inputs without state injection.",
+      "Vector Foundry geometry/progression check neutralizes drones with the existing labeled development control, then uses native flight to collide with the active horizontal field, return to its relay, climb, extract and replay.",
+      "Concealed shot-door authoring and reactor timeout/reboot/escape regressions passed."
+    ]
+  },
+  "reviewedScreenshots": [
+    "force-field-cockpit.png",
+    "force-field-map.png",
+    "force-field-disabled.png"
+  ],
+  "rules": {
+    "blocksBodies": true,
+    "absorbsShots": true,
+    "blocksAISight": true,
+    "contactDamage": false,
+    "reflection": false,
+    "control": "R at a reachable linked relay; instant one-way disable until next attempt"
+  },
+  "limits": [
+    "Water remains a solid surface treatment; fluid volumes are separate future work.",
+    "Existing Vite large-chunk warning remains."
+  ]
+}
