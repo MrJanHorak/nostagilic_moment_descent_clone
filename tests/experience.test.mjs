@@ -16,6 +16,10 @@ import MissionObjective from '../src/js/core/MissionObjective.js';
 import disposeObject from '../src/js/utils/disposeObject.js';
 import ExplorationMap from '../src/js/core/ExplorationMap.js';
 import { toWorld } from '../src/js/core/levels/document/RoomMath.js';
+import GameState from '../src/js/core/GameState.js';
+import EnemyManager from '../src/js/entities/EnemyManager.js';
+import ProjectileManager from '../src/js/entities/ProjectileManager.js';
+import { hasLineOfSight, traceShot } from '../src/js/utils/combatTrace.js';
 
 test('external camera retracts at a wall and leaves the flight/weapon pose and headlights fixed', () => {
   const ship = new Spaceship(), camera = new THREE.PerspectiveCamera(75, 1.6, 0.1, 1000);
@@ -93,7 +97,7 @@ test('original music is deterministic stereo with bounded samples and a continuo
 for (const level of createCampaign()) test(`${level.name}: valid round trip, gated progression and all physical portals traverse after activation`, () => {
   const document = level.sourceDocument;
   assert.equal(validateLevelDocument(JSON.parse(JSON.stringify(document))).valid, true);
-  assert.equal(document.rooms.length, 7);
+  assert.equal(document.rooms.length, level.id === 'signal-breach' ? 10 : 7);
   const world = buildArena(level), session = new GameSession(); session.begin(); session.transition('playing');
   const relay = new RelayController(level, world.group, world.colliders, session), mission = new MissionObjective(level.mission);
   assert.equal(mission.ready, false); assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), false);
@@ -129,4 +133,67 @@ for (const level of createCampaign()) test(`${level.name}: valid round trip, gat
   assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), true);
   assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), false);
   disposeObject(world.group);
+});
+
+function signalEncounter(t) {
+  t.mock.method(Math, 'random', () => 0.5);
+  const level = createCampaign()[0], world = buildArena(level), scene = new THREE.Scene(), player = new THREE.Group();
+  scene.add(world.group, player); player.position.fromArray(level.spawn);
+  const state = new GameState(); state.session.begin(); state.session.transition('playing');
+  state.weaponInventory.pulse.ammo = level.combat.initialPulseAmmo;
+  const manager = new EnemyManager(scene, player, state, null, { currentLevel: level, solidColliders: world.colliders, isEndless: false });
+  const shots = new ProjectileManager(scene, player, null, state.session); shots.setCanvas({});
+  shots.setCombatWorld({ getColliders: () => world.colliders, getTargets: () => manager.enemies,
+    getRules: () => level.combat, onTargetHit: (enemy, shot, point) => manager.hitEnemy(enemy, shot, point) });
+  manager.updateEnemies(0);
+  t.after(() => { state.session.end(); manager.resetLevel(); manager.projectileManager.dispose(); manager.effectsManager.dispose(); shots.dispose(); disposeObject(world.group); });
+  const tick = () => {
+    state.session.advance(1 / 60); manager.updateEnemies(1 / 60);
+    shots.updateProjectiles(1 / 60, player, state, manager.effectsManager);
+    manager.projectileManager.updateProjectiles(1 / 60, player, state, manager.effectsManager);
+  };
+  return { level, world, player, state, manager, shots, tick };
+}
+
+test('Signal Breach: safe arrival, doorway cover and a body-clear overhead approach into the hall', t => {
+  const { level, world, player, manager, tick, state } = signalEncounter(t);
+  const fighter = manager.enemies.find(enemy => enemy.type.name === 'fighter');
+  const scout = manager.enemies.find(enemy => enemy.type.name === 'scout');
+  assert(fighter.mesh.position.distanceTo(player.position) > 30, 'arrival begins outside pursuit/fire range');
+  assert.equal(manager.canSeePlayer(scout), false, 'the optional scout cannot rush the arrival');
+  for (let frame = 0; frame < 300; frame++) tick();
+  assert.equal(state.playerHealth, 100);
+  assert.deepEqual(fighter.mesh.position.toArray(), [0, 0, -36]);
+  assert.equal(hasLineOfSight(fighter.mesh.position, new THREE.Vector3(0, 0, -7), world.colliders), true);
+  assert.equal(hasLineOfSight(fighter.mesh.position, new THREE.Vector3(6, 0, -7), world.colliders), false, 'a side-step behind the arrival wall breaks the direct sightline');
+  for (const target of [[0, 0, 0], [0, 21, 0], [0, 21, -32], [0, 0, -32]]) {
+    const end = new THREE.Vector3(...target);
+    assert.equal(traceShot(player.position, end, { colliders: world.colliders, radius: 0.5 }), null);
+    const result = moveSphere(player.position, end.clone().sub(player.position), 1, world.colliders, 0.5);
+    assert.equal(result.collided, false); assert(player.position.distanceTo(end) < 1e-6);
+  }
+  const mission = new MissionObjective(level.mission);
+  mission.recordDeviceActivation('relay-signal');
+  assert.equal(mission.ready, true, 'both routes support optional combat');
+});
+
+test('Signal Breach: the guard fires real damaging projectiles, takes three normal pulse shots and resets', t => {
+  const { player, manager, state, shots, tick } = signalEncounter(t);
+  player.position.set(0, 0, -15);
+  const fighter = manager.enemies.find(enemy => enemy.type.name === 'fighter');
+  for (let frame = 0; frame < 600 && state.playerHealth === 100; frame++) tick();
+  assert.equal(state.playerHealth, 90, 'a waiting player must experience the ranged threat');
+  for (let shot = 1; shot <= 3; shot++) {
+    shots.fireProjectile(state, { requirePointerLock: false });
+    for (let frame = 0; frame < 45; frame++) tick();
+    assert.equal(fighter.isActive, shot < 3);
+  }
+  assert.equal(state.weaponInventory.pulse.ammo, 77);
+  assert.equal(state.enemyKills.fighter, 1); assert.equal(state.score, 100);
+  assert.equal(manager.enemies.length, 1, 'the optional branch remains independent');
+  manager.resetLevel(); state.resetForSession(); manager.updateEnemies(0);
+  assert.equal(state.playerHealth, 100);
+  assert.equal(manager.enemies.length, 2);
+  assert.equal(manager.enemies.find(enemy => enemy.type.name === 'fighter').health, 25);
+  assert.equal(manager.projectileManager.enemyProjectiles.length, 0);
 });

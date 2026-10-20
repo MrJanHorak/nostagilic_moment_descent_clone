@@ -107,7 +107,7 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await page.keyboard.press('m'); await page.clock.fastForward(200);
   await expect(page.locator('#exploration-map')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(2);
-  await expect(page.locator('#exploration-map')).toContainText('1 / 7 rooms');
+  await expect(page.locator('#exploration-map')).toContainText('1 / 10 rooms');
   await page.clock.runFor(100); await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('cockpit-map.png'), animations: 'disabled' });
   await page.keyboard.press('h'); await page.clock.fastForward(100);
@@ -156,6 +156,45 @@ const routes = [
   ['Vector Foundry', [[2, -9], [1, 2], [2, -14], [1, 4], [2, -18], [1, 6], [2, -22], [1, 8], [2, -33], 'r', [2, -36], [1, 38], 'r', [0, 24]]],
   ['Nightfall Reactor', [[2, -20], 'r', [2, -24], [0, 24], [2, 0], [1, 16], 'r', [0, 53]]],
 ];
+
+test('development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input', async ({ page }, testInfo) => {
+  test.setTimeout(300000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
+  await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await fly(page, 2, -15);
+  await advanceUntil(page, async () => parseInt(await page.locator('#health-percentage').textContent(), 10) < 100,
+    { ticks: 100, message: 'The fighter must land an ordinary projectile hit' });
+  expect(parseInt(await page.locator('#health-percentage').textContent(), 10)).toBeGreaterThan(0);
+  await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('signal-ranged-encounter.png'), animations: 'disabled' });
+  for (let shot = 0; shot < 3; shot++) {
+    await page.keyboard.press('f');
+    for (let tick = 0; tick < 12; tick++) await page.clock.fastForward(100);
+  }
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
+  await expect(page.locator('#score-display')).toHaveText('100');
+  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 77');
+  // Read flight diagnostics only; all movement, fire and interaction use normal keys.
+  for (const [axis, target] of [[2, 0], [1, 21], [2, -16]]) await fly(page, axis, target);
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'overhead-gallery');
+  await page.keyboard.press('m'); await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('signal-overhead-route.png'), animations: 'disabled' });
+  await page.keyboard.press('m');
+  for (const [axis, target] of [[2, -32], [1, 0], [2, -30]]) await fly(page, axis, target);
+  await page.keyboard.press('r'); await page.clock.fastForward(100);
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · EXIT READY');
+  await fly(page, 2, -56);
+  await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
+  await button(page, 'REPLAY MISSION').press('Enter'); await page.clock.fastForward(100);
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
+  await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 80');
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1');
+});
+
 for (const [name, route] of routes) test(`development: campaign ${name} route, relays, extraction and replay`, async ({ page }, testInfo) => {
   test.setTimeout(300000);
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');

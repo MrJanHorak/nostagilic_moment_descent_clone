@@ -4,6 +4,40 @@
   "name": "Signal Breach",
   "rooms": [
     {
+      "id": "arrival-shaft",
+      "prefab": "box-room",
+      "position": [0, 12, 0],
+      "size": [8, 10, 8],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeZ": { "color": 3958404, "pattern": "hazard" }
+      }
+    },
+    {
+      "id": "overhead-gallery",
+      "prefab": "straight-corridor",
+      "position": [0, 21, -16],
+      "size": [8, 8, 40],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": { "color": 2373447, "pattern": "grid" },
+        "negativeZ": { "color": 3958404, "pattern": "hazard" }
+      }
+    },
+    {
+      "id": "hall-shaft",
+      "prefab": "box-room",
+      "position": [0, 12, -32],
+      "size": [8, 10, 8],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeZ": { "color": 3958404, "pattern": "hazard" }
+      }
+    },
+    {
       "id": "arrival",
       "prefab": "box-room",
       "position": [
@@ -188,6 +222,30 @@
   ],
   "connections": [
     {
+      "id": "arrival-hatch",
+      "a": { "roomId": "arrival", "port": "positiveY" },
+      "b": { "roomId": "arrival-shaft", "port": "negativeY" },
+      "openingSize": [6, 6]
+    },
+    {
+      "id": "gallery-entry",
+      "a": { "roomId": "arrival-shaft", "port": "positiveY" },
+      "b": { "roomId": "overhead-gallery", "port": "negativeY", "offset": [0, 16] },
+      "openingSize": [6, 6]
+    },
+    {
+      "id": "gallery-return",
+      "a": { "roomId": "overhead-gallery", "port": "negativeY", "offset": [0, -16] },
+      "b": { "roomId": "hall-shaft", "port": "positiveY" },
+      "openingSize": [6, 6]
+    },
+    {
+      "id": "hall-hatch",
+      "a": { "roomId": "hall-shaft", "port": "negativeY" },
+      "b": { "roomId": "signal-hall", "port": "positiveY" },
+      "openingSize": [6, 6]
+    },
+    {
       "id": "entry",
       "a": {
         "roomId": "arrival",
@@ -295,15 +353,22 @@
   ],
   "entities": [
     {
-      "id": "hall-scout",
+      "id": "hall-fighter",
       "kind": "enemy",
-      "type": "scout",
+      "type": "fighter",
       "roomId": "signal-hall",
       "position": [
-        5,
         0,
-        -3
+        0,
+        -4
       ]
+    },
+    {
+      "id": "maintenance-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "maintenance",
+      "position": [5, 0, -3]
     },
     {
       "id": "arrival-ammo",

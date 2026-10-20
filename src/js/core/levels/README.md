@@ -2,7 +2,7 @@
 
 Finite missions use the validated shared level documents in `documents/`. Open `/editor.html` to build and play a mission without editing code. Export JSON for portable backups.
 
-The campaign is defined by `Campaign.js` and three v7 documents: Signal Breach, Vector Foundry and Nightfall Reactor. Each has seven spaces, authored relay/door progression, pickups and color/pattern landmarks. The last mission requires two guard defeats. The previous Level1/Level2/Level3/ExampleLevel segment blueprints have been removed.
+The campaign is defined by `Campaign.js` and three v7 documents: Signal Breach (ten spaces), Vector Foundry and Nightfall Reactor (seven each). They share authored relay/door progression, pickups and color/pattern landmarks. Signal Breach introduces a ranged fighter, arrival doorway cover, a ceiling-hatch route through an overhead gallery, and a scout in the optional maintenance branch. Its kills are optional. The last mission requires two guard defeats. The previous Level1/Level2/Level3/ExampleLevel segment blueprints have been removed.
 
 Use the editor's **Open example** to inspect Signal Breach. Select a wall or item and right-click for actions. **Build tools** and the searchable **Scene browser** are optional panels. Import/export round trips use the exact same compiler, collision solids and objectives as the runtime.
 

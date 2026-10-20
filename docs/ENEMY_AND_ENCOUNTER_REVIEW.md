@@ -1,20 +1,30 @@
 # Enemy and encounter design review
 
-October 20, 2026. Assessment of the authored campaign and current runtime, followed by proposed work. Enemy/mission recommendations below are not implemented by this review.
+October 20, 2026. Assessment of the authored campaign and current runtime, followed by proposed work. The first ranged encounter and overhead route are now implemented in Signal Breach. Further behavior and mission recommendations remain proposed.
 
 ## What is actually in the campaign
 
 | Mission | Rooms / connections | Enemies | Required combat | Supplies |
 | --- | --- | --- | --- | --- |
-| Signal Breach | 7 / 7 | 1 scout in signal hall | None | Pulse ammo, repair |
+| Signal Breach | 10 / 11 | 1 fighter in signal hall, 1 scout in maintenance | None | Pulse ammo, repair |
 | Vector Foundry | 7 / 6 | 1 scout in optional coolant cache | None | Pulse ammo, repair |
 | Nightfall Reactor | 7 / 7 | 2 scouts in coolant works/reactor | Both scouts | Two ammo and two repair pickups |
 
-All three use pulse damage 10. Scout health is 10: a normal pulse hit defeats each campaign enemy. Scouts pursue and inflict contact damage; they are excluded from projectile firing and are destroyed on contact. There is therefore no ranged enemy fire in the current authored campaign. The fighter/scout Arena Escape practice mission exercises ranged combat, but that is separate content.
+All three use pulse damage 10. Scout health is 10: a normal pulse hit defeats a scout. Scouts pursue and inflict contact damage; they are excluded from projectile firing and are destroyed on contact. The new Signal Breach fighter has 25 health and takes three normal pulse hits. Before this encounter pass, the campaign had only four scouts across 21 rooms; the ranged fighter/scout Arena Escape was separate practice content.
 
-The runtime contains five distinct visual models, health/speed/damage values, firing ranges and weapon patterns. Authored-mine movement already respects physical walls/closed doors and routes through portals toward a last observed position. Ranged types share the broad approach/hold-within-eight-units behavior; scouts continue closing. This is a useful navigation foundation, but not yet a varied tactical roster. Campaign geometry already supports loops, vertical routes, affine ramps and optional supply spaces. Vector Foundry's graph is a tree; Signal Breach and Nightfall each have one graph cycle.
+The runtime contains five distinct visual models, health/speed/damage values, firing ranges and weapon patterns. Authored-mine movement already respects physical walls/closed doors and routes through portals toward a last observed position. Ranged types share the broad approach/hold-within-eight-units behavior; scouts continue closing. This is a useful navigation foundation, but not yet a varied tactical roster. Campaign geometry supports loops, vertical routes, affine ramps and optional supply spaces. Vector Foundry's graph is a tree; Signal Breach now has two independent graph cycles and Nightfall has one.
 
 Evidence: [campaign documents](../src/js/core/levels/documents), [enemy definitions](../src/js/entities/EnemyTypes.js), [perception/navigation/combat](../src/js/entities/EnemyManager.js), [campaign compilation](../src/js/core/levels/Campaign.js).
+
+## Implemented first encounter
+
+Signal Breach's fighter starts at the back of the amber hall, outside pursuit/fire range from spawn. The direct entry tunnel teaches incoming fire. Moving sideways behind the arrival doorway breaks the sightline; the guard can still pursue a last seen position, so cover provides a repositioning opportunity rather than permanent immunity.
+
+Two ceiling shafts and a blue overhead gallery connect arrival to the hall from above. Hazard-pattern end walls distinguish this route; the mission briefing describes Space to climb the arrival hatch. The former hall scout is replaced by the fighter, with a scout placed in maintenance away from spawn. The existing green return loop and repair cache remain available. Enemy definitions, damage values, AI and objective requirements are unchanged; combat remains optional and the relay still controls extraction. The same document opens in the editor without a schema change.
+
+New simulation cases exercise safe arrival, hidden scout placement, direct/covered sightlines, body-clear travel through the overhead route, real hostile projectile damage, three ordinary pulse shots, ammo use, kill credit and enemy reset. Existing campaign cases check every portal, relay gating and document round-trip validity.
+
+Verification passes: lint/types, all 393 unit/simulation cases and production build. Four browser scenarios pass, including ordinary-input combat plus overhead flight/relay/extraction/replay, the original green-loop progression regression, and two production cockpit checks. See the [browser report](progress/signal-encounter-browser-check.json), [ranged encounter](progress/signal-ranged-encounter.png) and [overhead survey](progress/signal-overhead-route.png). The new combat route uses read-only development flight diagnostics, not enemy-neutralization controls; the separate green-loop regression still isolates geometry with the existing neutralize action. Final balance remains subject to player feedback.
 
 ## Lessons from the original
 
@@ -50,7 +60,7 @@ Keep quiet travel, a supply/recovery beat, and a landmark between demanding figh
 
 ## Suggested build order
 
-1. Add a ranged fighter to a deliberately tested encounter using existing systems; measure damage taken, ammo expenditure and escape/fallback options.
+1. **Implemented:** a ranged fighter encounter, doorway cover and an overhead approach in Signal Breach. Continue measuring damage taken, ammo expenditure and fallback use during player feedback.
 2. Give fighter/scout attacks clear cues and recovery, then add bounded lateral movement or strike/withdraw behavior with simulation tests.
 3. Author one mixed encounter around a loop and vertical approach; test ordinary input/fire and restart, not only the development neutralize action.
 4. Add one new mission mechanic (for example, reactor-triggered timed escape), with portable document validation and editor authoring.

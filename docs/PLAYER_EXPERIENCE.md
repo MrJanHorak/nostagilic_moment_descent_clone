@@ -50,9 +50,13 @@ The mission library leads with three new authored v7 missions. The main Start ro
 
 | Mission | Layout and objective |
 | --- | --- |
-| Signal Breach | Seven spaces, an optional green supply loop and amber signal hall. Restore the uplink and unlock extraction. Combat is optional. |
+| Signal Breach | Ten spaces, a ranged fighter on the direct approach, a blue overhead route and optional green repair/maintenance loop with a scout. Restore the uplink and unlock extraction. Kills are optional. |
 | Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft and side cache. Restore lift power, climb and activate extraction controls. |
 | Nightfall Reactor | Seven spaces, a lower loop, reserve supplies and upper control room. Defeat two guards, activate coolant bypass/shutdown relays, then extract. |
+
+The first encounter pass expands Signal Breach from seven spaces to ten. The fighter takes three normal pulse hits; arrival starts outside its pursuit/fire range, and the arrival doorway provides sightline cover. Two ceiling shafts connect a hazard-marked blue overhead gallery to the signal hall, while the green maintenance scout stays hidden from spawn. The briefing explains the choices. AI, global enemy values and relay/exit requirements are unchanged.
+
+Encounter verification: `npm run verify` passes (66 linted runtime modules, strict types, all 393 unit/simulation cases and build). Four targeted browser scenarios pass: both production cockpit scenarios, an ordinary-input fighter fight/overhead-route/relay/extraction/replay scenario, and the existing green-loop progression/replay scenario. The new fight uses three F presses and native flight keys, with development diagnostics only for read-only steering; it does not neutralize enemies through the test control. The separate green-loop regression still uses that control to isolate geometry. Reviewed evidence: [ranged encounter](progress/signal-ranged-encounter.png), [overhead exploration map](progress/signal-overhead-route.png), and the [four-case browser report](progress/signal-encounter-browser-check.json). These checks establish functional behavior, not final player balance or hardware frame-time acceptance.
 
 The old Level1/Level2/Level3/ExampleLevel finite segment blueprints are retired from the catalog and source. The old finite-level guide is replaced. The proven flight/combat arenas and Mine Link, Relay Gate and Deep Relay fixtures remain in the optional **Practice & prototypes** section. Endless mode is no longer offered in the mission library; the internal segment generator remains for existing diagnostics/tests. New missions are finite shared-document geometry, not that generator.
 

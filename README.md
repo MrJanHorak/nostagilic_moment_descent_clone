@@ -96,11 +96,11 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 
 ### Campaign
 
-- **Signal Breach**: Restore an uplink and extract; explore the green supply loop. Combat is optional.
+- **Signal Breach**: A ranged fighter covers the direct tunnel; use doorway cover or climb the blue overhead route. Restore an uplink and extract; the green maintenance loop holds repairs and a scout. Kills are optional.
 - **Vector Foundry**: Follow a rising ramp, restore lift power and climb to extraction controls.
 - **Nightfall Reactor**: Clear two guards, restore coolant and shut down the reactor before upper extraction.
 
-Each mission has seven authored spaces, pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
+Signal Breach has ten authored spaces; Vector Foundry and Nightfall Reactor have seven each. Missions include pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
 
 ### Practice and custom missions
 
