@@ -97,7 +97,7 @@ test('relay hints respect reachability even when authoring order lists the locke
 
 test('real thrust traverses the lower loop, rotated supply cache, two relay gates and upper extraction; ten replays restore ownership', t => {
   const game = fixture(t), source = serializeLevelDocument(game.levelManager.currentLevel.sourceDocument);
-  assert.equal(game.levelManager.currentLevelIndex, 8);
+  assert.equal(game.levelManager.currentLevelIndex, game.levelManager.levels.findIndex(level => level.id === 'deep-relay'));
   for (const enemy of [...game.enemyManager.enemies]) game.enemyManager.hitEnemy(enemy, { power: 100 }, enemy.mesh.position);
   assert.equal(game.mission.ready, false);
   // Start out of direct sight. Center before crossing the north doorway, then fly the entire lower loop.

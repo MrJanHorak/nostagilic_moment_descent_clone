@@ -1,0 +1,379 @@
+{
+  "date": "2026-10-19",
+  "command": "npx playwright test editor",
+  "environment": {
+    "node": "22.14.0",
+    "os": "win32",
+    "renderer": "Chromium / ANGLE SwiftShader",
+    "cpuSlowdown": 1,
+    "viewport": "960x540; direct authoring cases at 1280x800",
+    "input": "Native mouse/keyboard authoring and real runtime flight; controlled clock in flight scenarios. No model or transform injection."
+  },
+  "stats": {
+    "startTime": "2026-10-20T01:29:01.482Z",
+    "duration": 115782.259,
+    "expected": 27,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "checks": {
+    "lintModules": 58,
+    "strictTypes": "passed",
+    "unitRuntimeCases": 383,
+    "build": "passed",
+    "designerBrowserCases": 27
+  },
+  "tests": [
+    {
+      "title": "designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2228,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: authored content plays to completion and returns to an unchanged document and history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6873,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer joins: close an off-center loop, add a relay door from its frame and fly the full shared opening",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 4091,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer joins: fit a corridor free end to close a gapped loop without moving its target",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1343,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer joins: attach another room on a large wall, open the shared face and link a manually placed relay",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1292,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: pickup drag moves only the selected item, rejects walls, cancels, undoes and recovers",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2725,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: native picking and movement in a rotated ramp preserve spawn orientation and room geometry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1222,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: enemy, relay and exit drags retain objective and door links",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1912,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer content: Escape cancels room Move and Stretch without adding history",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1610,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: wall menu, precise dimensions, native stretch, undo and draft recovery",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2312,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: stretch a connected corridor, reject a bad shrink and fly its preserved door passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6975,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: import, frame and export a full 256-room mine",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1340,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer resize: native hallway drag and numeric edits stay snapped; repair a displaced connection",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2013,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3419,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 44535,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: pick a wall, style it and place content from context menus without coordinate entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2450,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1715,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 592,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: blocked draft storage keeps editing and portable export available",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 449,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 7835,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer validation: an issue selects the affected item or room despite an unrelated content selection",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1409,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer validation: spawn and misaligned passage errors open the precise properties and can be repaired",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1294,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 6209,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 1972,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 2002,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: game menu links to a separate editor entry",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 939,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    },
+    {
+      "title": "designer: native gizmo drag snaps a room and is one undo command",
+      "project": "production",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 808,
+          "retry": 0,
+          "errors": []
+        }
+      ]
+    }
+  ],
+  "bundleHashes": {
+    "compileLevelDocument-BXj78a9I.js": "2e9cf3ba6da15176ed425d2d4c36a103ff4c92c6ebd8a950ab1477106114bf26",
+    "Designer-C3-rscNl.js": "771bbecff898e2f7854239a41369d72058db24b88149ac0faa55ab57e5f575ac",
+    "editor-DuZLMxU9.js": "df928f5305662f54bea2fe9e09407fc6ff4e738498e17cc58908693456119357",
+    "game-DKDE66MY.js": "b909c618d5a3db00aea4b833688d429d523be8f819efc15346997852ab529ca3",
+    "main-DMDgWaco.js": "f1653a9d2a702692b65eba1a76873e159bdeab54184336fce110bf0e0b885053",
+    "modulepreload-polyfill-B5Qt9EMX.js": "607112fb81d7899ceedf89cdb1b3540a53eb96ad5e4202fb1e22f873281de839",
+    "playtest-8AFuQcDN.js": "6bb7a3757807cfa327ceb91cd0e8327e4d7115c51a8979cef22779051728a06b"
+  },
+  "reusedGameplayEvidence": {
+    "source": "m4-joins-browser-check.json",
+    "cases": 11,
+    "matchedBundles": [
+      "main-DMDgWaco.js",
+      "compileLevelDocument-BXj78a9I.js",
+      "game-DKDE66MY.js",
+      "playtest-8AFuQcDN.js"
+    ],
+    "reason": "Only editor UI/navigation changed. Gameplay/compiler/playtest byte hashes match the preceding full-suite run; those eleven game cases were not rerun."
+  },
+  "visualReview": {
+    "viewport": "1280x800",
+    "screenshot": "m4-validation-navigation.png",
+    "findings": "Problem-first buttons show their precise target and diagnostic path. Clicking overlap focuses the affected room inspector and position control; unrelated content is no longer marked selected."
+  },
+  "limits": "Functional software-rendered checks. Human M4 authoring/handling acceptance and M2 hardware performance acceptance remain open. No new hardware capture, audit, commit, push or deployment."
+}

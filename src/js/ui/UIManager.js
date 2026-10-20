@@ -1,6 +1,7 @@
 // UI Manager for handling game interface elements
 import SettingsDialog from './SettingsDialog.js';
 import MineGuide from '../core/levels/document/MineGuide.js';
+import createMissionSelect from './MissionSelect.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -30,6 +31,7 @@ class UIManager {
       hudContainer.style.top = '0';
       hudContainer.style.left = '0';
       hudContainer.style.width = '100%';
+      hudContainer.style.boxSizing = 'border-box';
       hudContainer.style.pointerEvents = 'none';
       hudContainer.style.zIndex = '100';
       hudContainer.style.padding = '20px';
@@ -545,10 +547,11 @@ class UIManager {
           
           <div class="buttons-container" style="
             display: flex;
-            gap: 30px;
+            gap: 16px;
+            flex-wrap: wrap;
             justify-content: center;
           ">
-            <div id="start-game-btn" class="game-button" style="
+            <button type="button" id="start-game-btn" class="game-button" style="
               font-size: 22px;
               cursor: pointer;
               background: linear-gradient(to bottom, #00cc22, #008800);
@@ -565,7 +568,7 @@ class UIManager {
               position: relative;
               overflow: hidden;
             ">
-              <span style="position: relative; z-index: 2;">START FLIGHT ARENA</span>
+              <span style="position: relative; z-index: 2;">START CAMPAIGN</span>
               <div style="
                 position: absolute;
                 top: -10%;
@@ -576,9 +579,9 @@ class UIManager {
                 transform: rotate(45deg);
                 animation: shine 3s infinite;
               "></div>
-            </div>
+            </button>
             
-            <div id="select-level-btn" class="game-button" style="
+            <button type="button" id="select-level-btn" class="game-button" style="
               font-size: 22px;
               cursor: pointer;
               background: linear-gradient(to bottom, #0088ff, #0044aa);
@@ -595,7 +598,7 @@ class UIManager {
               position: relative;
               overflow: hidden;
             ">
-              <span style="position: relative; z-index: 2;">SELECT LEVEL</span>
+              <span style="position: relative; z-index: 2;">SELECT MISSION</span>
               <div style="
                 position: absolute;
                 top: -10%;
@@ -606,7 +609,7 @@ class UIManager {
                 transform: rotate(45deg);
                 animation: shine 3s infinite 1s;
               "></div>
-            </div>
+            </button>
           </div>
         </div>
         
@@ -625,6 +628,7 @@ class UIManager {
           .game-button:active {
             transform: scale(0.98);
           }
+          .game-button:focus-visible { outline: 2px solid white; outline-offset: 4px; }
         </style>
       `;
       document.body.appendChild(startScreen);
@@ -651,7 +655,8 @@ class UIManager {
 
       const startButton = document.getElementById('start-game-btn');
       startButton.addEventListener('click', () => {
-        this.game.startSession({ endless: false, levelIndex: 0 });
+        const campaign = this.game.levelManager.levels.findIndex(level => level.campaignOrder === 1);
+        this.game.startSession({ endless: false, levelIndex: Math.max(0, campaign) });
       });
       return startButton;
     } catch (error) {
@@ -709,265 +714,12 @@ class UIManager {
   // Create level selection screen
   createLevelSelect(game) {
     this.levelSelectMenu?.remove();
-    this.game = game;
-
-    const menuContainer = document.createElement('div');
-    menuContainer.className = 'level-select';
-    menuContainer.style.position = 'absolute';
-    menuContainer.style.top = '0';
-    menuContainer.style.left = '0';
-    menuContainer.style.width = '100%';
-    menuContainer.style.height = '100%';
-    menuContainer.style.display = 'flex';
-    menuContainer.style.justifyContent = 'center';
-    menuContainer.style.alignItems = 'center';
-    menuContainer.style.background = 'rgba(0, 0, 0, 0.7)';
-    menuContainer.style.zIndex = '1000';
-
-    const contentContainer = document.createElement('div');
-    contentContainer.style.background =
-      'linear-gradient(rgba(0,0,0,0.8), rgba(0,10,30,0.95))';
-    contentContainer.style.border = '1px solid #00aaff';
-    contentContainer.style.borderRadius = '10px';
-    contentContainer.style.boxShadow =
-      '0 0 20px #0066aa, inset 0 0 30px rgba(0,100,200,0.3)';
-    contentContainer.style.padding = '40px';
-    contentContainer.style.maxWidth = '600px';
-    contentContainer.style.width = '90%';
-    contentContainer.style.maxHeight = '80vh';
-    contentContainer.style.overflowY = 'auto';
-    contentContainer.style.textAlign = 'center';
-
-    // Title with matching style to main screen
-    const title = document.createElement('h1');
-    title.textContent = 'SELECT MISSION';
-    title.style.color = '#ffffff';
-    title.style.fontSize = '48px';
-    title.style.marginBottom = '30px';
-    title.style.fontFamily = 'Arial Black, sans-serif';
-    title.style.textTransform = 'uppercase';
-    title.style.letterSpacing = '4px';
-    title.style.textShadow = '0 0 10px #00aaff, 0 0 15px #00aaff';
-    title.style.background = 'linear-gradient(#ffffff, #00aaff)';
-    title.style.webkitBackgroundClip = 'text';
-    title.style.webkitTextFillColor = 'transparent';
-    contentContainer.appendChild(title);
-
-    // Decorative divider
-    const divider = document.createElement('div');
-    divider.style.width = '80%';
-    divider.style.height = '2px';
-    divider.style.background =
-      'linear-gradient(to right, transparent, #00aaff, transparent)';
-    divider.style.margin = '0 auto 30px';
-    contentContainer.appendChild(divider);
-
-    // Levels container with styled scrollbar
-    const levelsContainer = document.createElement('div');
-    levelsContainer.style.marginBottom = '20px';
-    levelsContainer.style.maxHeight = '50vh';
-    levelsContainer.style.overflowY = 'auto';
-    levelsContainer.style.padding = '0 10px';
-    levelsContainer.style.scrollbarWidth = 'thin';
-    levelsContainer.style.scrollbarColor = '#00aaff #001830';
-
-    // Get levels from the level manager
-    const levels = this.game.levelManager.levels;
-
-    // Level selection buttons
-    levels.forEach((level, index) => {
-      const levelBtnContainer = document.createElement('div');
-      levelBtnContainer.style.position = 'relative';
-      levelBtnContainer.style.marginBottom = '15px';
-
-      const levelBtn = document.createElement('button');
-      levelBtn.textContent = level.kind === 'arena' ? level.name : `Legacy level ${level.id}: ${level.name}`;
-      levelBtn.className = 'level-btn';
-      levelBtn.style.width = '100%';
-      levelBtn.style.padding = '15px 20px';
-      levelBtn.style.background =
-        'linear-gradient(to bottom, #003366, #001830)';
-      levelBtn.style.color = '#00ddff';
-      levelBtn.style.border = '1px solid #0088cc';
-      levelBtn.style.borderRadius = '5px';
-      levelBtn.style.cursor = 'pointer';
-      levelBtn.style.fontSize = '18px';
-      levelBtn.style.fontWeight = 'bold';
-      levelBtn.style.textTransform = 'uppercase';
-      levelBtn.style.letterSpacing = '1px';
-      levelBtn.style.textShadow = '0 0 5px rgba(0, 170, 255, 0.5)';
-      levelBtn.style.boxShadow =
-        '0 0 10px rgba(0, 100, 200, 0.3), inset 0 0 15px rgba(0, 100, 200, 0.2)';
-      levelBtn.style.transition = 'all 0.2s ease';
-      levelBtn.style.position = 'relative';
-      levelBtn.style.overflow = 'hidden';
-
-      // Add shine effect
-      const shine = document.createElement('div');
-      shine.style.position = 'absolute';
-      shine.style.top = '-10%';
-      shine.style.left = '-10%';
-      shine.style.width = '120%';
-      shine.style.height = '10%';
-      shine.style.background = 'rgba(255,255,255,0.2)';
-      shine.style.transform = 'rotate(45deg)';
-      shine.style.animation = `shine${index} 4s infinite`;
-      levelBtn.appendChild(shine);
-
-      // Add custom animation for each button with different delays
-      const style = document.createElement('style');
-      style.textContent = `
-        @keyframes shine${index} {
-          0% { top: -10%; left: -10%; }
-          20% { top: 110%; left: 110%; }
-          100% { top: 110%; left: 110%; }
-        }
-        
-        .level-btn:hover {
-          transform: scale(1.03);
-          box-shadow: 0 0 15px #00aaff, inset 0 0 20px rgba(0, 170, 255, 0.3);
-          background: linear-gradient(to bottom, #004488, #002244);
-        }
-        
-        .level-btn:active {
-          transform: scale(0.98);
-        }
-      `;
-      menuContainer.appendChild(style);
-
-      levelBtn.addEventListener('click', () => {
-        this.game.startSession({ endless: false, levelIndex: index });
-      });
-
-      levelBtnContainer.appendChild(levelBtn);
-      levelsContainer.appendChild(levelBtnContainer);
-    });
-
-    contentContainer.appendChild(levelsContainer);
-
-    // Endless mode button (special styling)
-    const endlessContainer = document.createElement('div');
-    endlessContainer.style.marginTop = '30px';
-    endlessContainer.style.position = 'relative';
-
-    const endlessBtn = document.createElement('button');
-    endlessBtn.textContent = 'ENDLESS MODE';
-    endlessBtn.className = 'endless-btn';
-    endlessBtn.style.width = '100%';
-    endlessBtn.style.padding = '18px 20px';
-    endlessBtn.style.background =
-      'linear-gradient(to bottom, #660033, #330011)';
-    endlessBtn.style.color = '#ff77aa';
-    endlessBtn.style.border = '1px solid #cc3366';
-    endlessBtn.style.borderRadius = '5px';
-    endlessBtn.style.cursor = 'pointer';
-    endlessBtn.style.fontSize = '22px';
-    endlessBtn.style.fontWeight = 'bold';
-    endlessBtn.style.textTransform = 'uppercase';
-    endlessBtn.style.letterSpacing = '2px';
-    endlessBtn.style.textShadow = '0 0 8px rgba(255, 50, 100, 0.7)';
-    endlessBtn.style.boxShadow =
-      '0 0 15px rgba(200, 50, 100, 0.4), inset 0 0 20px rgba(200, 50, 100, 0.2)';
-    endlessBtn.style.transition = 'all 0.2s ease';
-    endlessBtn.style.position = 'relative';
-    endlessBtn.style.overflow = 'hidden';
-
-    // Add pulsing effect to endless mode button
-    const pulseStyle = document.createElement('style');
-    pulseStyle.textContent = `
-      @keyframes pulse {
-        0% { box-shadow: 0 0 15px rgba(255, 50, 100, 0.4), inset 0 0 20px rgba(255, 50, 100, 0.2); }
-        50% { box-shadow: 0 0 20px rgba(255, 50, 100, 0.7), inset 0 0 30px rgba(255, 50, 100, 0.3); }
-        100% { box-shadow: 0 0 15px rgba(255, 50, 100, 0.4), inset 0 0 20px rgba(255, 50, 100, 0.2); }
-      }
-      
-      .endless-btn {
-        animation: pulse 2s infinite;
-      }
-      
-      .endless-btn:hover {
-        transform: scale(1.05);
-        background: linear-gradient(to bottom, #880044, #440022);
-      }
-      
-      .endless-btn:active {
-        transform: scale(0.98);
-      }
-    `;
-    menuContainer.appendChild(pulseStyle);
-
-    // Add shine effect
-    const endlessShine = document.createElement('div');
-    endlessShine.style.position = 'absolute';
-    endlessShine.style.top = '-10%';
-    endlessShine.style.left = '-10%';
-    endlessShine.style.width = '120%';
-    endlessShine.style.height = '10%';
-    endlessShine.style.background = 'rgba(255,255,255,0.3)';
-    endlessShine.style.transform = 'rotate(45deg)';
-    endlessShine.style.animation = 'endlessShine 4s infinite';
-    endlessBtn.appendChild(endlessShine);
-
-    // Add endless shine animation
-    const endlessShineStyle = document.createElement('style');
-    endlessShineStyle.textContent = `
-      @keyframes endlessShine {
-        0% { top: -10%; left: -10%; }
-        20% { top: 110%; left: 110%; }
-        100% { top: 110%; left: 110%; }
-      }
-    `;
-    menuContainer.appendChild(endlessShineStyle);
-
-    endlessBtn.addEventListener('click', () => {
-      this.game.startSession({ endless: true });
-    });
-
-    endlessContainer.appendChild(endlessBtn);
-    contentContainer.appendChild(endlessContainer);
-
-    // Return button
-    const backContainer = document.createElement('div');
-    backContainer.style.marginTop = '25px';
-
-    const backButton = document.createElement('button');
-    backButton.textContent = 'RETURN TO MAIN MENU';
-    backButton.style.padding = '10px 20px';
-    backButton.style.background =
-      'linear-gradient(to bottom, #333333, #111111)';
-    backButton.style.color = '#aaaaaa';
-    backButton.style.border = '1px solid #555555';
-    backButton.style.borderRadius = '5px';
-    backButton.style.cursor = 'pointer';
-    backButton.style.fontSize = '16px';
-    backButton.style.textTransform = 'uppercase';
-    backButton.style.transition = 'all 0.2s ease';
-    backButton.addEventListener('click', () => {
-      this.game.showMainMenu();
-    });
-
-    backButton.onmouseover = () => {
-      backButton.style.background =
-        'linear-gradient(to bottom, #444444, #222222)';
-      backButton.style.color = '#ffffff';
-    };
-
-    backButton.onmouseout = () => {
-      backButton.style.background =
-        'linear-gradient(to bottom, #333333, #111111)';
-      backButton.style.color = '#aaaaaa';
-    };
-
-    backContainer.appendChild(backButton);
-    contentContainer.appendChild(backContainer);
-
-    menuContainer.appendChild(contentContainer);
-    document.body.appendChild(menuContainer);
-    this.levelSelectMenu = menuContainer;
-
-    return menuContainer;
+    this.levelSelectMenu = createMissionSelect(game.levelManager.levels,
+      index => game.startSession({ endless: false, levelIndex: index }), () => game.showMainMenu());
+    document.body.appendChild(this.levelSelectMenu);
+    this.levelSelectMenu.querySelector('button')?.focus();
+    return this.levelSelectMenu;
   }
-
   hideLevelSelect() {
     if (this.levelSelectMenu) {
       this.levelSelectMenu.style.display = 'none';
@@ -1322,6 +1074,30 @@ class UIManager {
     }
   }
 
+  updateShipView(aim) {
+    const values = this.game?.settings.values;
+    if (!values) return;
+    const hud = document.getElementById('hud-container');
+    if (hud) hud.style.visibility = values.showHUD ? 'visible' : 'hidden';
+    const reticle = document.getElementById('aim-reticle');
+    if (reticle) {
+      reticle.style.visibility = values.showHUD ? 'visible' : 'hidden';
+      reticle.style.left = `${aim ? (aim.x + 1) * 50 : 50}%`;
+      reticle.style.top = `${aim ? (1 - aim.y) * 50 : 50}%`;
+    }
+    if (!this.shipStatus) {
+      this.shipStatus = document.createElement('aside'); this.shipStatus.id = 'ship-view-status';
+      this.shipStatus.setAttribute('aria-label', 'Ship systems');
+      Object.assign(this.shipStatus.style, { position: 'fixed', right: '16px', top: '45%', zIndex: '90',
+        color: '#b5dfe8', background: '#061925bf', padding: '8px 12px', borderRight: '2px solid #68c7d3',
+        font: '11px/1.8 monospace', whiteSpace: 'pre', pointerEvents: 'none' });
+      document.body.appendChild(this.shipStatus);
+    }
+    this.shipStatus.hidden = this.game.session.phase !== 'playing';
+    const text = `C · ${values.cameraView === 'hud' ? 'HUD VIEW' : 'EXTERNAL VIEW'}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}`;
+    if (this.shipStatus.textContent !== text) this.shipStatus.textContent = text;
+  }
+
   updateMissionUI() {
     const mission = this.game?.mission;
     if (!mission || !this.arenaGuide) return;
@@ -1331,7 +1107,7 @@ class UIManager {
     const navigation = this.mineGuide?.describe(this.game.spaceship.group.position, mission.activatedDevices, interaction?.closedConnections ?? new Set());
     const destination = ['mine-link', 'relay-gate'].includes(level.id) ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : level.sourceDocument ? 'at the marked exit' : 'at the far end';
     const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
-      : `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size} · Exit locked (amber ring ${destination})`;
+      : `${mission.requiredIds.size ? `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size}` : 'Reach extraction'} · Exit locked (amber ring ${destination})`;
     const device = this.game.levelManager.interaction?.nearest(this.game.spaceship.group.position);
     const relay = mission.requiredDeviceIds.size ? ` · Relays ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?

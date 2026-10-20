@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -27,7 +28,7 @@ async function projectStarter(page, point) {
 
 test('designer vertical: attach a shaft from a floor menu, author a hatch and fly through two vertical passages', async ({ page }, testInfo) => {
   const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Playtest level', exact: true }).waitFor({ state: 'visible' }); await page.clock.pauseAt(start + 3600000);
   const floor = await projectStarter(page, [0, -5.5, 0]); await page.mouse.click(floor.x, floor.y, { button: 'right' });
   await page.getByRole('menuitem', { name: 'Attach vertical shaft at this point', exact: true }).click();
@@ -72,7 +73,7 @@ test('designer vertical: attach a shaft from a floor menu, author a hatch and fl
 });
 
 test('designer vertical: numeric pitch/roll, native rotation ring, undo and draft recovery retain authored orientation', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   const original = await saveJSON(page, testInfo, 'unrotated.json');
   await page.getByRole('combobox', { name: 'Pitch (X)', exact: true }).selectOption('90'); await page.getByRole('combobox', { name: 'Roll (Z)', exact: true }).selectOption('270');
   await page.getByRole('button', { name: 'Apply properties', exact: true }).click();

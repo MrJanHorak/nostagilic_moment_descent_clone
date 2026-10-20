@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { Box3, PerspectiveCamera, Vector3 } from 'three';
@@ -33,7 +34,7 @@ async function setContent(page, name, room, position) {
 }
 
 test('designer shapes: attach from a wall menu, pick/style the sloped floor, undo a reshape and recover v5 JSON', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   const starter = { position: [0, 0, 0], size: [16, 12, 16], yaw: 0 };
   const wall = await projectedPoint(page, [starter], [0, 1, -7.5]); await page.mouse.click(wall.x, wall.y, { button: 'right' });
   await page.getByRole('menuitem', { name: 'Attach ramp or diagonal corridor…', exact: true }).click();
@@ -98,7 +99,7 @@ async function flyAxis(page, frame, axis, target) {
 test('development: designer shaped corridor authors and flies a combined ramp/diagonal mission with relay, export and return', async ({ page }, testInfo) => {
   test.setTimeout(180000);
   const time = Date.UTC(2026, 0, 1); await page.clock.install({ time });
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5183/editor.html?smoke=1');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5183/editor.html?smoke=1'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Playtest level', exact: true }).waitFor({ state: 'visible' }); await page.clock.pauseAt(time + 3600000);
   await page.getByRole('button', { name: 'Attach shaped corridor', exact: true }).click();
   await expect(page.getByLabel('Far end rise', { exact: true })).toHaveValue('8');

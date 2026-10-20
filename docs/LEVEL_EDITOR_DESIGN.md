@@ -1,6 +1,6 @@
 # DESCENDED: level designer proposal
 
-> Implementation follow-up (October 18): [M4's latest geometry checkpoint](progress/M4_SHAPED_CORRIDORS.md) adds ramps and diagonal corridor walls in format v5, following [vertical shafts and room orientation](progress/M4_VERTICAL_CORRIDORS.md) and [direct editing/recovery](progress/M4_DESIGNER_UX.md). Connections use rectangular end faces; sloped sides are solid and styleable. The shared author/export/reload/play/return workflow has automated coverage; human M4 acceptance remains. Freeform vertex editing stays deferred. The proposal and general document example below are historical design context, not a compatible runtime file.
+> Current implementation (October 19): [M4's functional workflow is owner-accepted](M4_ACCEPTANCE.md). [The player experience follow-up](PLAYER_EXPERIENCE.md) adds a viewport-first layout with optional Build/Scene panels and a new campaign example. [Shared openings/loops](progress/M4_LOOPS_AND_SHARED_OPENINGS.md) use format v7, following ramps, vertical shafts, face styles, relay doors, direct item movement and recovery. Connections use rectangular end faces; sloped sides are solid and styleable. Freeform vertex editing stays deferred. The proposal and general document example below are historical design context, not a compatible runtime file.
 
 Date: October 14, 2026. **Proposed design; no editor or new level loader is implemented by this audit.** Dependencies and effort are in [ROADMAP.md](ROADMAP.md).
 

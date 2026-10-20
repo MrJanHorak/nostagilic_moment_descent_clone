@@ -1,0 +1,388 @@
+{
+  "formatVersion": 7,
+  "id": "signal-breach",
+  "name": "Signal Breach",
+  "rooms": [
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "entry-tunnel",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -16
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "signal-hall",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -32
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "maintenance",
+      "prefab": "box-room",
+      "position": [
+        20,
+        0,
+        -32
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "return-tunnel",
+      "prefab": "straight-corridor",
+      "position": [
+        20,
+        0,
+        -16
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "supply-bay",
+      "prefab": "box-room",
+      "position": [
+        20,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "extraction",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "entry-tunnel",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "signal",
+      "a": {
+        "roomId": "entry-tunnel",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "signal-hall",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "east-loop",
+      "a": {
+        "roomId": "signal-hall",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "maintenance",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        10,
+        8
+      ]
+    },
+    {
+      "id": "return-north",
+      "a": {
+        "roomId": "maintenance",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "return-tunnel",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "return-south",
+      "a": {
+        "roomId": "return-tunnel",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "supply-bay",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "supply-loop",
+      "a": {
+        "roomId": "supply-bay",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "arrival",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        10,
+        8
+      ]
+    },
+    {
+      "id": "extraction-gate",
+      "a": {
+        "roomId": "signal-hall",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "extraction",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "hall-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "signal-hall",
+      "position": [
+        5,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "cache-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "supply-bay",
+      "position": [
+        -3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "extraction",
+      "position": [
+        0,
+        0,
+        -4
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-signal",
+      "label": "Signal uplink",
+      "roomId": "signal-hall",
+      "position": [
+        2,
+        0,
+        2
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "signal-door",
+      "connectionId": "extraction-gate",
+      "deviceId": "relay-signal"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [],
+    "requiredDeviceIds": [
+      "relay-signal"
+    ],
+    "exitId": "exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  }
+}

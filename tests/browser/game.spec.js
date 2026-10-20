@@ -52,8 +52,14 @@ test.afterEach(async ({ page }, testInfo) => {
 });
 
 const button = (page, name) => page.getByRole('button', { name, exact: true });
+async function chooseFlight(page) {
+  await page.locator('#select-level-btn').click();
+  await page.locator('.mission-library summary').click();
+  await button(page, 'Flight Training Arena').press('Enter');
+}
 async function chooseMine(page) {
   await page.locator('#select-level-btn').click();
+  await page.locator('.mission-library summary').click();
   await button(page, 'Mine Link Prototype').click();
   await expect(page.locator('#arena-guide')).toContainText('MINE LINK PROTOTYPE');
   await expect(page.locator('#arena-guide')).toContainText('ceiling hatch');
@@ -61,12 +67,14 @@ async function chooseMine(page) {
 }
 async function chooseRelay(page) {
   await page.locator('#select-level-btn').click();
+  await page.locator('.mission-library summary').click();
   await button(page, 'Relay Gate Prototype').click();
   await expect(page.locator('#arena-guide')).toContainText('RELAYS 0/1', { ignoreCase: true });
   await expect(page.locator('#arena-guide')).toContainText('R activates nearby');
 }
 async function chooseDeepRelay(page) {
   await page.locator('#select-level-btn').click();
+  await page.locator('.mission-library summary').click();
   await button(page, 'Deep Relay').click();
   await expect(page.locator('#arena-guide')).toContainText('DEEP RELAY');
   await expect(page.locator('#arena-guide')).toContainText('Location: Blue Docking Bay');
@@ -76,6 +84,7 @@ async function chooseDeepRelay(page) {
 async function chooseMission(page, { keyboard = false } = {}) {
   // This main-menu control is a legacy div; click it before pointer capture.
   await page.locator('#select-level-btn').click();
+  await page.locator('.mission-library summary').click();
   const mission = page.getByRole('button', { name: /arena escape/i });
   if (keyboard) await mission.press('Enter');
   else await mission.click();
@@ -164,7 +173,7 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.locator('#score-display')).toHaveText('0');
   await page.keyboard.press('Escape');
   await button(page, 'RETURN TO BASE').press('Enter');
-  await page.locator('#start-game-btn').click();
+  await chooseFlight(page);
   await expect(page.locator('#arena-guide')).toContainText('FLIGHT TRAINING');
   await page.keyboard.press('f');
   await expect(page.locator('#weapon-slot-1')).toContainText('∞');
@@ -462,7 +471,7 @@ test('production: settings persist, reset, remain isolated while paused, and fit
   await expect(sensitivity).toHaveValue('1');
   await expect(invert).not.toBeChecked();
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
-  await page.locator('#start-game-btn').click();
+  await chooseFlight(page);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('heading', { name: 'PAUSED', exact: true })).toBeVisible();
   await button(page, 'SETTINGS').click();
@@ -516,7 +525,7 @@ test('production: blocked saving keeps live settings usable and reports the pers
   await mute.check();
   await expect(dialog.getByRole('status', { name: 'Settings saving status' })).toContainText('could not be saved');
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
-  await page.locator('#start-game-btn').click();
+  await chooseFlight(page);
   await page.keyboard.press('Escape');
   await button(page, 'SETTINGS').click();
   await expect(sensitivity).toHaveValue('3');
@@ -577,7 +586,7 @@ test('production: saved mixer preferences apply at startup, unmute without repla
   await button(page, 'SETTINGS').click();
   await expect(music).toHaveValue('0'); await expect(effects).toHaveValue('100'); await expect(mute).toBeChecked();
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
-  await page.locator('#start-game-btn').click();
+  await chooseFlight(page);
   await expectMixer('muted startup', { master: 0, effects: 1, music: 0, startedLoops: 2, activeLoops: 2 });
   await page.keyboard.press('Escape');
   await button(page, 'SETTINGS').click();
@@ -616,7 +625,7 @@ test('production: audio controls remain saved and playable without Web Audio sup
   await effects.press('Home'); await effects.press('ArrowRight'); await mute.check();
   await expect(dialog.getByRole('status', { name: 'Settings saving status' })).toContainText('Saved on this browser');
   await dialog.getByRole('button', { name: 'Done', exact: true }).click();
-  await page.locator('#start-game-btn').click();
+  await chooseFlight(page);
   await expect(page.locator('#arena-guide')).toContainText('FLIGHT TRAINING');
   await page.keyboard.press('Escape'); await button(page, 'SETTINGS').click();
   await expect(effects).toHaveValue('1'); await expect(mute).toBeChecked();

@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -23,7 +24,7 @@ async function resize(page, size) {
 }
 
 test('designer resize: wall menu, precise dimensions, native stretch, undo and draft recovery', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   const original = await save(page, testInfo, 'starter.json');
   const bounds = await page.locator('#viewport canvas').boundingBox(), camera = new PerspectiveCamera(50, bounds.width / bounds.height, 0.1, 3000);
   camera.position.copy(new Vector3(1, 0.85, 1).normalize().multiplyScalar(new Vector3(16, 12, 16).length() * 1.25)); camera.lookAt(0, 0, 0); camera.updateMatrixWorld();
@@ -48,7 +49,7 @@ test('designer resize: wall menu, precise dimensions, native stretch, undo and d
 
 test('designer resize: stretch a connected corridor, reject a bad shrink and fly its preserved door passages', async ({ page }, testInfo) => {
   const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Playtest level', exact: true }).waitFor({ state: 'visible' }); await page.clock.pauseAt(start + 3600000);
   await page.getByRole('button', { name: 'Attach corridor', exact: true }).click(); await page.getByRole('button', { name: 'Attach room', exact: true }).click();
   await page.getByRole('button', { name: 'All properties', exact: true }).click();
@@ -85,7 +86,7 @@ test('designer resize: import, frame and export a full 256-room mine', async ({ 
   Object.assign(doc, { formatVersion: 6, devices: [], doors: [], mission: { ...doc.mission, type: 'relay-clear-and-exit', requiredDeviceIds: [] } });
   doc.rooms = Array.from({ length: 256 }, (_, i) => ({ ...starter, id: `room-${i + 1}`, position: [0, 0, -16 * i] }));
   doc.connections = Array.from({ length: 255 }, (_, i) => ({ id: `connection-${i + 1}`, a: { roomId: `room-${i + 1}`, port: 'negativeZ' }, b: { roomId: `room-${i + 2}`, port: 'positiveZ' }, openingSize: [6, 6] }));
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.locator('#file').setInputFiles({ name: 'large-mine.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(doc)) });
   await expect(page.locator('#room-count')).toHaveText('256 / 256'); await expect(page.locator('#validation-title')).toContainText('Valid level');
   await page.getByRole('button', { name: 'Frame all', exact: true }).click();
@@ -95,7 +96,7 @@ test('designer resize: import, frame and export a full 256-room mine', async ({ 
 });
 
 test('designer resize: native hallway drag and numeric edits stay snapped; repair a displaced connection', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Attach corridor', exact: true }).click(); await page.getByRole('button', { name: 'Attach room', exact: true }).click();
   await page.locator('#rooms').getByRole('button', { name: 'room-2 · corridor', exact: true }).click();
   await page.getByRole('button', { name: 'Frame all', exact: true }).click(); await page.getByRole('button', { name: 'Stretch', exact: true }).click();

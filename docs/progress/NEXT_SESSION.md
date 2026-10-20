@@ -1,6 +1,18 @@
 # Current handoff — October 19, 2026
 
-## Current checkpoint: M4 loops, shared openings and relay doors
+## Latest checkpoint: owner accepts M4; editor/player experience
+
+The owner confirms the editor works and authored levels can be played through, closing [M4 functional acceptance](../M4_ACCEPTANCE.md). Historical pending M4 sign-off statements below are superseded. M1/M3 remain accepted; M2 hardware performance acceptance remains open.
+
+[The current follow-up](../PLAYER_EXPERIENCE.md) makes Build tools and the searchable Scene browser optional, expands the default viewport, keeps name/save status visible, and uses Signal Breach as the editor example. C switches HUD/external ship cameras; L toggles ship-mounted headlights; H toggles HUD with mission objectives retained. Settings persist these choices; shortcuts ignore paused/menu/settings states. External camera traces real walls/doors while preserving flight/weapon/light ownership; the first-person path avoids camera traces. The original 40-second stereo music uses the existing mixer/lifecycle. Three seven-space v7 missions (Signal Breach, Vector Foundry, Nightfall Reactor) replace old finite levels in the primary mission library; practice/prototype fixtures remain in a collapsed section. The internal endless generator remains for regression tests but has no mission-library choice. The main menu now has native keyboard-accessible buttons and starts the campaign instead of the flight arena.
+
+**Final verification:** lint/types (62 modules), all 389 unit/runtime cases, build and diff checks pass. All 43 browser cases pass in 10.7 minutes (28 designer/workbench, 15 game), without skips, unexpected/flaky results or retries. [Evidence](player-experience-browser-check.json) records final bundle hashes and screenshots. The three new route checks use the existing labeled development neutralize action for traversal/progression; the ordinary-fire combat suite remains included. Default editor, external ship and mission-library screenshots reviewed at 1280×800. Owned browser servers exited. New campaign balance and music taste need player feedback; M2 hardware remains open. No dependencies/audit/hardware capture, commit/push/deployment; existing bundle warning remains. Keep source/build stable while Playwright owns its servers.
+
+## Previous follow-up: actionable validation
+
+[Validation navigation](M4_VALIDATION_NAVIGATION.md) fixes error clicks retaining an unrelated content selection or framing the wrong room. Issues now select/frame the exact room, face, item, spawn or passage, open its inspector and focus a control. Door and objective paths resolve through current document references. Unresolvable scene targets remain readable text. Selection navigation leaves history and document unchanged; the content list no longer highlights a previously selected item during room/wall editing. Lint/types (58 modules), all 383 unit/runtime cases and build pass. All 27 editor browser cases pass in 1.9 minutes without skips, unexpected/flaky results or retries; [evidence](m4-validation-browser-check.json) includes unchanged gameplay/compiler/playtest hashes. The eleven game cases retain preceding full-suite evidence and were not rerun for this editor-only change. Screenshot reviewed at 1280×800. Owned test servers exited. No dependencies/audit/hardware capture, commit/push/deployment; existing bundle warning remains. M4 human acceptance and M2 hardware performance acceptance remain open.
+
+## Previous checkpoint: M4 loops, shared openings and relay doors
 
 The owner reports hosted CI passed before these M4 extensions; no new run URL was provided. M3 remains accepted; do not request repeat sign-off. **M2 remains open for hardware performance acceptance** (last Intel GPU p95 about 18 ms versus the provisional 16.7 ms target).
 

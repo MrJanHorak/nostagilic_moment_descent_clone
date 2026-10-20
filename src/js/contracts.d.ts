@@ -12,6 +12,9 @@ export interface UserPreferences {
   readonly musicVolume: number;
   readonly effectsVolume: number;
   readonly muted: boolean;
+  readonly cameraView: 'hud' | 'external';
+  readonly headlights: boolean;
+  readonly showHUD: boolean;
 }
 export type SettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export type SettingsSaveStatus = 'ready' | 'saved' | 'unavailable';
@@ -54,6 +57,7 @@ export interface InputGameActions {
   pauseGame(): boolean;
   releasePointerLock(): void;
   interact?(): boolean;
+  toggleShipOption?(option: 'cameraView' | 'headlights' | 'showHUD'): void;
 }
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;

@@ -91,6 +91,11 @@ class InputManager {
     if (event.code === 'KeyR' && !event.repeat && this.gameState.session.phase === 'playing') {
       event.preventDefault?.(); this.game?.interact?.();
     }
+    if (!event.repeat && this.gameState.session.phase === 'playing') {
+      const option = /** @type {const} */ ({ KeyC: 'cameraView', KeyL: 'headlights', KeyH: 'showHUD' });
+      const key = /** @type {keyof typeof option} */ (event.code);
+      if (option[key]) { event.preventDefault?.(); this.game?.toggleShipOption?.(option[key]); }
+    }
 
     // Handle escape key for pause menu
     if (

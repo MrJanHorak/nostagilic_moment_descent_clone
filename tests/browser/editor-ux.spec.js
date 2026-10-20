@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -34,7 +35,7 @@ async function exportDocument(page, testInfo, name) {
 }
 
 test('designer UX: pick a wall, style it and place content from context menus without coordinate entry', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await expect(page.getByRole('tab', { name: 'Room', exact: true })).toHaveAttribute('aria-selected', 'true');
   const wallPoint = await starterPoint(page, [0, 1, -7.5]); await page.mouse.click(wallPoint.x, wallPoint.y);
   await expect(page.getByRole('tab', { name: 'Wall', exact: true })).toHaveAttribute('aria-selected', 'true');
@@ -74,7 +75,7 @@ test('designer UX: pick a wall, style it and place content from context menus wi
 });
 
 test('designer UX: attach at a wall point, edit its door, duplicate/delete/undo and recover the local draft', async ({ page }, testInfo) => {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   let menu = await contextAt(page, [4, 2, -7.5]); await menu.getByRole('menuitem', { name: 'Attach corridor at this point', exact: true }).click();
   await expect(page.locator('#room-count')).toHaveText('2 / 256');
   // A point on the remaining shared wall identifies its connection directly.
@@ -99,7 +100,7 @@ test('designer UX: attach at a wall point, edit its door, duplicate/delete/undo 
 });
 
 test('designer UX: keyboard actions, Escape, right-drag pan and viewport-bound menus remain usable', async ({ page }) => {
-  await page.goto('http://127.0.0.1:5184/editor.html'); const canvas = page.locator('#viewport canvas');
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page); const canvas = page.locator('#viewport canvas');
   await canvas.focus(); await page.keyboard.press('Shift+F10');
   const menu = page.getByRole('menu'); await expect(menu).toBeVisible();
   await page.keyboard.press('ArrowDown');
@@ -116,14 +117,14 @@ test('designer UX: keyboard actions, Escape, right-drag pan and viewport-bound m
 
 test('designer UX: blocked draft storage keeps editing and portable export available', async ({ page }, testInfo) => {
   await page.addInitScript(() => { Object.defineProperty(window, 'localStorage', { get() { throw new Error('storage blocked'); } }); });
-  await page.goto('http://127.0.0.1:5184/editor.html'); await page.getByRole('button', { name: 'Attach room', exact: true }).click();
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page); await page.getByRole('button', { name: 'Attach room', exact: true }).click();
   await expect(page.locator('#draft-status')).toContainText('failed');
   const text = await exportDocument(page, testInfo, 'portable-despite-blocked-storage.json'); expect(JSON.parse(text).rooms).toHaveLength(2);
 });
 
 test('designer UX: three authored spaces export/reload, play to completion, return and undo with the layout intact', async ({ page }, testInfo) => {
   const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Playtest level', exact: true }).waitFor({ state: 'visible' });
   await page.clock.pauseAt(start + 3600000);
   await page.getByRole('button', { name: 'All properties', exact: true }).click();

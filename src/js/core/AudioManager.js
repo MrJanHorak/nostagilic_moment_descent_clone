@@ -1,4 +1,5 @@
 // Audio management system for the game
+import createMissionMusic from './MissionMusic.js';
 export default class AudioManager {
   constructor() {
     this.sounds = {};
@@ -278,38 +279,7 @@ export default class AudioManager {
 
   // Create synthesized background music
   createSynthesizedBackgroundMusic() {
-    const duration = 30; // 30 seconds of music that can loop
-    const ctx = this.context;
-    const sampleRate = ctx.sampleRate;
-    const buffer = ctx.createBuffer(1, sampleRate * duration, sampleRate);
-    const data = buffer.getChannelData(0);
-
-    // Use pentatonic scale for sci-fi feel
-    const notes = [220, 261.63, 329.63, 392, 440];
-    const baseFreq = notes[0];
-
-    for (let i = 0; i < data.length; i++) {
-      const t = i / sampleRate;
-      const noteIndex = Math.floor(t * 0.25) % 16;
-      const octave = Math.floor(noteIndex / 5);
-      const note = notes[noteIndex % 5];
-      const freq = note * (1 + octave * 0.5);
-
-      // Create a drone bass
-      const bass = 0.15 * Math.sin(2 * Math.PI * baseFreq * 0.5 * t);
-
-      // Create a melody
-      const melody =
-        noteIndex % 8 < 7 ? 0.1 * Math.sin(2 * Math.PI * freq * t) : 0;
-
-      // Add some atmosphere
-      const atmosphere =
-        0.05 * Math.sin(2 * Math.PI * baseFreq * 2 * t) * Math.sin(0.5 * t);
-
-      data[i] = bass + melody + atmosphere;
-    }
-
-    return buffer;
+    return createMissionMusic(this.context);
   }
 
   // Create synthesized player damage sound

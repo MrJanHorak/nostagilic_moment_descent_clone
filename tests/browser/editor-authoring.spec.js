@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import compileLevelDocument from '../../src/js/core/levels/document/compileLevelDocument.js';
@@ -21,7 +22,7 @@ async function saveJSON(page, testInfo, name) {
 
 test('designer: overlap warnings, corner openings, relay doors and patterned solid preview survive export', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'All properties', exact: true }).click();
   await page.getByRole('button', { name: 'Attach room', exact: true }).click();
   await page.getByLabel('position Z', { exact: true }).fill('0');
@@ -61,7 +62,7 @@ test('designer: overlap warnings, corner openings, relay doors and patterned sol
 
 test('designer: authored content plays to completion and returns to an unchanged document and history', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'All properties', exact: true }).click();
   for (const [axis, value] of [['X', '0'], ['Y', '0'], ['Z', '4']]) await page.getByLabel(`content-position ${axis}`, { exact: true }).fill(value);
   await page.getByRole('button', { name: 'Apply content', exact: true }).click();

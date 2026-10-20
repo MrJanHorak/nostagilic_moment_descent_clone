@@ -17,10 +17,18 @@ h2 { font-size: 13px; letter-spacing: .04em; margin: 0 0 12px; color: #bed1e0; }
 nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .primary { background: #b87e35; border-color: #e7b164; color: #131c25; font-weight: 650; }
 .primary:hover { background: #d69b4f; }
-.workspace { display: grid; grid-template-columns: 220px minmax(320px, 1fr) 260px; flex: 1; min-height: 0; }
+.document-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 18px; padding: 6px 18px; border-bottom: 1px solid #344657; background: #14202c; }
+.document-strip label { flex-direction: row; align-items: center; margin: 0; gap: 10px; }
+.document-strip input { width: 190px; padding: 4px 8px; }
+.document-strip p { margin: 0; }
+.document-strip details { position: relative; margin-left: auto; color: #a7bdcd; font-size: 12px; }
+.document-strip details[open] { z-index: 20; }
+.document-strip details p { background: #182432; padding: 8px; max-width: 280px; }
+.workspace { display: grid; grid-template-columns: 0 minmax(320px, 1fr) 260px; flex: 1; min-height: 0; }
+.workspace.has-library { grid-template-columns: 220px minmax(320px, 1fr) 260px; }
 aside { background: #17222f; overflow-y: auto; }
-.left-panel { border-right: 1px solid #344657; }
-.right-panel { border-left: 1px solid #344657; }
+.left-panel { grid-column: 1; grid-row: 1; border-right: 1px solid #344657; }
+.right-panel { grid-column: 3; grid-row: 1; border-left: 1px solid #344657; }
 .inspector-header { position: sticky; top: 0; z-index: 5; background: #1b2937; padding: 12px; border-bottom: 1px solid #41576b; }
 #inspector-selection { display: block; font-size: 12px; overflow-wrap: anywhere; margin-bottom: 8px; color: #9ce4e9; }
 #inspector-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
@@ -53,7 +61,7 @@ legend { color: #bdd0df; font-size: 12px; }
 #rooms { display: grid; gap: 6px; }
 #rooms button { text-align: left; font-size: 12px; }
 #room-count { color: #829caf; float: right; }
-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; }
+main { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; position: relative; }
 .viewport-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; background: #1b2937; }
 .viewport-toolbar button { font-size: 12px; }
 .view-label { margin: 0 0 0 auto; flex-direction: row; align-items: center; }
@@ -79,6 +87,7 @@ main { display: flex; flex-direction: column; min-width: 0; min-height: 0; posit
 .validation h2 { margin-bottom: 0; color: #8edacf; }
 #issues { display: grid; gap: 5px; }
 #issues button { text-align: left; color: #ffbd9d; font-size: 12px; }
+#issues button span { display: block; color: #a7bdcd; font-size: 11px; overflow-wrap: anywhere; margin-top: 3px; }
 #notice { white-space: pre-wrap; color: #ffd69e; }
 #notice:empty { display: none; }
 #tool-status { padding: 6px 14px; margin: 0; background: #172936; color: #b5dbe0; white-space: pre-wrap; }
@@ -86,14 +95,17 @@ main { display: flex; flex-direction: column; min-width: 0; min-height: 0; posit
 #connections button { margin-top: 6px; display: block; font-size: 11px; }
 @media (max-width: 1050px) {
   header { padding: 10px 14px; min-height: 88px; }
-  .workspace { grid-template-columns: 180px minmax(300px, 1fr) 220px; }
+  .workspace { grid-template-columns: 0 minmax(300px, 1fr) 220px; }
+  .workspace.has-library { grid-template-columns: 180px minmax(300px, 1fr) 220px; }
   section { padding: 12px; }
   nav { gap: 4px; } nav button { font-size: 12px; }
 }
 @media (max-width: 740px) {
   #designer { height: auto; overflow: visible; }
   header { align-items: flex-start; flex-direction: column; }
-  .workspace { height: auto; grid-template-columns: 1fr; }
-  main { height: 75dvh; grid-row: 1; }
+  .workspace, .workspace.has-library { height: auto; grid-template-columns: 1fr; }
+  main { height: 75dvh; grid-column: 1; grid-row: 1; }
+  .left-panel { grid-column: 1; grid-row: 2; }
+  .right-panel { grid-column: 1; grid-row: 3; }
   aside { overflow: visible; }
 }

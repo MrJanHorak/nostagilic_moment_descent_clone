@@ -6,6 +6,51 @@ import { placementPosition, toLocal } from '../src/js/editor/EditorPicking.js';
 import { toWorld, openingFrame } from '../src/js/core/levels/document/RoomMath.js';
 import { validateLevelDraft, validateLevelDocument } from '../src/js/core/levels/document/validateLevelDocument.js';
 import compileLevelDocument from '../src/js/core/levels/document/compileLevelDocument.js';
+import { validationTarget } from '../src/js/editor/ValidationNavigation.js';
+
+test('validation navigation resolves exact content, spawn and mission references without editing history', () => {
+  const model = new EditorDocument();
+  const room = model.attachRoom('room-1', 'negativeZ', 'box-room');
+  const enemy = model.addContent(room, 'enemy', 'scout', [0, 0, 0]);
+  const relay = model.addContent('room-1', 'relay', '', [0, 0, 0]);
+  const before = model.export(), history = model.past.length;
+  for (const path of ['$.playerSpawn', '$.playerSpawn.position[0]', '$.playerSpawn.rotation']) {
+    assert.deepEqual(validationTarget(model.document, path), { roomId: 'room-1', contentId: '@spawn' });
+  }
+  for (const path of ['$.entities[1].position', '$.mission.requiredEnemyIds[0]']) {
+    assert.deepEqual(validationTarget(model.document, path), { roomId: room, contentId: enemy });
+  }
+  for (const path of ['$.devices[0].roomId', '$.mission.requiredDeviceIds[0]']) {
+    assert.deepEqual(validationTarget(model.document, path), { roomId: 'room-1', contentId: relay });
+  }
+  assert.deepEqual(validationTarget(model.document, '$.mission.exitId'), { roomId: 'room-1', contentId: 'exit-1' });
+  assert.equal(model.export(), before); assert.equal(model.past.length, history);
+});
+
+test('validation navigation identifies room faces, connection endpoint B and the exact door passage', () => {
+  const model = new EditorDocument(); model.attachRoom('room-1', 'negativeZ', 'box-room');
+  model.attachRoom('room-1', 'positiveX', 'box-room');
+  const relay = model.addContent('room-1', 'relay', '', [0, 0, 0]); model.setDoor('connection-2', relay);
+  assert.deepEqual(validationTarget(model.document, '$.rooms[1].position'), { roomId: 'room-2' });
+  assert.deepEqual(validationTarget(model.document, '$.rooms[1].surfaces.negativeY.pattern'), { roomId: 'room-2', face: 'negativeY' });
+  assert.deepEqual(validationTarget(model.document, '$.connections[0].b.offset[0]'), { roomId: 'room-2', face: 'positiveZ', connectionId: 'connection-1' });
+  for (const path of ['$.doors[0].deviceId', '$.doors[0].connectionId']) {
+    assert.deepEqual(validationTarget(model.document, path), { roomId: 'room-1', face: 'positiveX', connectionId: 'connection-2' });
+  }
+});
+
+test('validation navigation tolerates legacy documents, absent paths and dangling references', () => {
+  const model = new EditorDocument();
+  for (const path of ['$', '$.formatVersion', '$.entities', '$.rooms[50]', '$.entities[50].position', '$.devices[0]', '$.doors[0]', '$.mission.requiredEnemyIds[0]', '$.mission.requiredDeviceIds[0]', '$.rooms[0]extra']) {
+    assert.equal(validationTarget(model.document, path), null, path);
+  }
+  const document = structuredClone(model.document); document.entities[0].roomId = 'missing';
+  assert.equal(validationTarget(document, '$.entities[0].position'), null);
+  document.mission.exitId = 'missing'; assert.equal(validationTarget(document, '$.mission.exitId'), null);
+  model.attachRoom('room-1', 'negativeZ', 'box-room');
+  const dangling = structuredClone(model.document); dangling.connections[0].b.roomId = 'missing';
+  assert.deepEqual(validationTarget(dangling, '$.connections[0].b.roomId'), { roomId: 'room-1', face: 'negativeZ', connectionId: 'connection-1' });
+});
 
 function storage(initial = null) {
   let value = initial;

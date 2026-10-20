@@ -26,7 +26,7 @@ class Spaceship {
     // === Main Body ===
     const bodyGeometry = new THREE.BoxGeometry(0.6, 0.25, 1);
     const bodyMaterial = new THREE.MeshStandardMaterial({
-      color: 0x2c2c2c,
+      color: 0x4d6d80,
       roughness: 0.3,
       metalness: 0.8,
     });
@@ -60,7 +60,7 @@ class Spaceship {
     // === Red Nose Cone ===
     const noseGeometry = new THREE.ConeGeometry(0.18, 0.4, 24);
     const noseMaterial = new THREE.MeshStandardMaterial({
-      color: 0xcc0000,
+      color: 0xd78134,
       roughness: 0.2,
       metalness: 0.6,
     });
@@ -72,7 +72,7 @@ class Spaceship {
     // === Wings (Flatter, Sleeker) ===
     const wingGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.3);
     const wingMaterial = new THREE.MeshStandardMaterial({
-      color: 0x1e1e1e,
+      color: 0x293f50,
       metalness: 0.6,
       roughness: 0.3,
     });
@@ -84,6 +84,8 @@ class Spaceship {
     const engineGlowGeometry = new THREE.CylinderGeometry(0.08, 0.12, 0.12, 20);
     const engineMaterial = new THREE.MeshStandardMaterial({
       color: 0x00ffff,
+      emissive: 0x00ddee,
+      emissiveIntensity: 2,
       transparent: true,
       opacity: 0.9,
     });

@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -16,7 +17,7 @@ async function save(page, info, name) {
   const download = await pending, path = info.outputPath(name); await download.saveAs(path); return readFile(path, 'utf8');
 }
 async function load(page, doc) {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.locator('#file').setInputFiles({ name: 'content-move.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(doc)) });
   await expect(page.locator('#validation-title')).toContainText('Valid level');
 }

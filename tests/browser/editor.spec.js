@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -7,7 +8,7 @@ test('designer: assemble three spaces, undo invalid edit, export and reload prod
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
-  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'All properties', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Level designer', exact: true })).toBeVisible();
   await expect(page.locator('#viewport canvas')).toBeVisible();
@@ -65,7 +66,7 @@ test('designer: game menu links to a separate editor entry', async ({ page }) =>
 
 test('designer: native gizmo drag snaps a room and is one undo command', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Move', exact: true }).click();
   const canvas = await page.locator('#viewport canvas').boundingBox();
   expect(canvas).not.toBeNull();

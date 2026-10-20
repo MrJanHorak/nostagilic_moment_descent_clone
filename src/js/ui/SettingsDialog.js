@@ -41,6 +41,10 @@ export default class SettingsDialog {
       <p id="sensitivity-hint" class="settings-hint">0.25× slow · 1× default · 3× fast</p>
       <label><input id="invert-mouse-y" type="checkbox" aria-describedby="invert-hint"> Invert mouse Y</label>
       <p id="invert-hint" class="settings-hint">When enabled, moving the mouse up pitches the ship down.</p>
+      <label for="camera-view">Ship camera</label><select id="camera-view"><option value="hud">HUD / first person</option><option value="external">External chase camera</option></select>
+      <label><input id="ship-headlights" type="checkbox"> Ship headlights</label>
+      <label><input id="show-flight-hud" type="checkbox"> Show flight HUD</label>
+      <p class="settings-hint">During flight: C switches camera · L toggles headlights · H toggles HUD. Mission objectives stay visible.</p>
       <label for="music-volume">Music volume <output id="music-volume-value" for="music-volume"></output></label>
       <input id="music-volume" type="range" min="0" max="100" step="1">
       <label for="effects-volume">Effects volume <output id="effects-volume-value" for="effects-volume"></output></label>
@@ -56,6 +60,9 @@ export default class SettingsDialog {
     const music = dialog.querySelector('input#music-volume');
     const effects = dialog.querySelector('input#effects-volume');
     const mute = dialog.querySelector('input#mute-audio');
+    const cameraView = dialog.querySelector('select#camera-view');
+    const headlights = dialog.querySelector('input#ship-headlights');
+    const showHUD = dialog.querySelector('input#show-flight-hud');
     const musicOutput = dialog.querySelector('output#music-volume-value');
     const effectsOutput = dialog.querySelector('output#effects-volume-value');
     const output = dialog.querySelector('output#sensitivity-value');
@@ -64,7 +71,7 @@ export default class SettingsDialog {
     const done = dialog.querySelector('button.settings-done');
     if (!(sensitivity instanceof HTMLInputElement) || !(invert instanceof HTMLInputElement) ||
       !(music instanceof HTMLInputElement) || !(effects instanceof HTMLInputElement) ||
-      !(mute instanceof HTMLInputElement) || !musicOutput || !effectsOutput ||
+      !(mute instanceof HTMLInputElement) || !(cameraView instanceof HTMLSelectElement) || !(headlights instanceof HTMLInputElement) || !(showHUD instanceof HTMLInputElement) || !musicOutput || !effectsOutput ||
       !output || !status || !(reset instanceof HTMLButtonElement) || !(done instanceof HTMLButtonElement)) {
       throw new Error('Settings dialog controls are missing');
     }
@@ -74,6 +81,7 @@ export default class SettingsDialog {
       music.value = String(Math.round(this.settings.values.musicVolume * 100));
       effects.value = String(Math.round(this.settings.values.effectsVolume * 100));
       mute.checked = this.settings.values.muted;
+      cameraView.value = this.settings.values.cameraView; headlights.checked = this.settings.values.headlights; showHUD.checked = this.settings.values.showHUD;
       musicOutput.textContent = `${music.value}%`;
       effectsOutput.textContent = `${effects.value}%`;
       output.textContent = `${this.settings.values.mouseSensitivity.toFixed(2)}×`;
@@ -87,6 +95,9 @@ export default class SettingsDialog {
     music.addEventListener('input', () => { this.settings.update({ musicVolume: Number(music.value) / 100 }); refresh(); });
     effects.addEventListener('input', () => { this.settings.update({ effectsVolume: Number(effects.value) / 100 }); refresh(); });
     mute.addEventListener('change', () => { this.settings.update({ muted: mute.checked }); refresh(); });
+    cameraView.addEventListener('change', () => { this.settings.update({ cameraView: cameraView.value }); refresh(); });
+    headlights.addEventListener('change', () => { this.settings.update({ headlights: headlights.checked }); refresh(); });
+    showHUD.addEventListener('change', () => { this.settings.update({ showHUD: showHUD.checked }); refresh(); });
     reset.addEventListener('click', () => { this.settings.reset(); refresh(); });
     done.addEventListener('click', () => this.close());
     // Escape closes only this dialog; slider arrows and F never reach gameplay handlers.

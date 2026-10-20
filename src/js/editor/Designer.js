@@ -7,11 +7,12 @@ import { connectableFace, portFrame } from '../core/levels/document/RoomMath.js'
 import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
-import sample from '../core/levels/documents/mine-link.v1.json';
+import sample from '../core/levels/documents/signal-breach.v7.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';
 import EditorDraftStore from './EditorDraftStore.js';
 import { faceLabel } from './EditorPicking.js';
+import { validationTarget } from './ValidationNavigation.js';
 
 const host = document.querySelector('#designer');
 if (!(host instanceof HTMLElement)) throw new Error('Designer host is missing.');
@@ -26,27 +27,33 @@ host.innerHTML = `
     </nav>
     <input id="file" type="file" accept=".json,application/json" hidden />
   </header>
+  <div class="document-strip"><label>Mine name<input id="name" maxlength="80" /></label><p id="save-state"></p><details><summary>Save details</summary><p id="draft-status" role="status"></p><p id="format-version"></p></details></div>
   <div id="recovery-banner" hidden role="region" aria-label="Draft recovery"><span id="recovery-description"></span><button id="restore-draft">Restore draft</button><button id="discard-draft">Discard saved draft</button></div>
   <div class="workspace">
-    <aside class="left-panel">
-      <section><h2>Mine</h2><label>Name<input id="name" maxlength="80" /></label><p id="save-state"></p><p id="draft-status" role="status"></p><p id="format-version"></p></section>
-      <section><h2>Rooms <span id="room-count"></span></h2><div id="rooms" aria-label="Rooms"></div><div class="pair room-actions"><button id="duplicate-room">Duplicate room</button><button id="delete-room">Delete room</button></div><p id="room-delete-help"></p></section>
-      <section><h2>Attach a prefab</h2><p>Grow from an unused face. Corridors through a floor or ceiling become vertical shafts, with connected hatches.</p>
+    <aside class="left-panel" id="library-panel" hidden aria-label="Authoring library">
+      <div id="build-panel" hidden>
+      <section><h2>Build from a face</h2><p>Select a wall, then attach a space. Right-click that wall to build at a specific point.</p>
         <label>Attachment port<select id="attach-port"></select></label>
         <div class="stack"><button id="add-room">Attach room</button><button id="add-corridor">Attach corridor</button></div>
         <label>Sloped / diagonal shape<select id="corridor-shape"><option value="up">Ramp up</option><option value="down">Ramp down</option><option value="right">Diagonal right</option><option value="left">Diagonal left</option></select></label>
         <button id="add-shaped">Attach shaped corridor</button>
         <p>Shape offsets follow the new corridor's local right/up axes. Continue from either end face.</p>
       </section>
-      <section><h2>Mission content</h2><div id="entities"></div></section>
       <section><h2>Add mission content</h2><p>Place in the selected room using local coordinates.</p>
         <label>Content kind<select id="place-kind"><option value="enemy">Enemy</option><option value="health">Health pickup</option><option value="pulseAmmo">Pulse ammo pickup</option><option value="relay">Relay objective</option></select></label>
         <label>Enemy type<select id="enemy-type"></select></label>
         <div class="vector" id="place-position"></div><button id="add-content">Add content</button>
       </section>
+      </div>
+      <div id="scene-panel" hidden>
+        <section><h2>Scene browser</h2><label>Search scene<input id="scene-search" type="search" placeholder="Room, item or relay…" /></label><p>Find hidden objects or select directly in the view. F focuses your selection.</p><p id="scene-results" role="status"></p></section>
+        <section><h2>Rooms <span id="room-count"></span></h2><div id="rooms" aria-label="Rooms"></div><div class="pair room-actions"><button id="duplicate-room">Duplicate room</button><button id="delete-room">Delete room</button></div><p id="room-delete-help"></p></section>
+        <section><h2>Mission content</h2><div id="entities"></div></section>
+      </div>
     </aside>
     <main>
       <div class="viewport-toolbar" role="toolbar" aria-label="Viewport tools">
+        <button id="toggle-build" aria-pressed="false" aria-controls="build-panel">Build tools</button><button id="toggle-scene" aria-pressed="false" aria-controls="scene-panel">Scene browser</button>
         <button id="select" aria-pressed="true">Select</button><button id="translate" aria-pressed="false">Move</button><button id="resize" aria-pressed="false" title="Drag a local axis to stretch; the first connected opening stays fixed">Stretch</button><button id="rotate" aria-pressed="false">Rotate XYZ</button>
         <button id="frame">Frame all</button><button id="undo">Undo</button><button id="redo">Redo</button>
         <button id="actions">Actions</button>
@@ -54,8 +61,8 @@ host.innerHTML = `
       </div>
       <p id="geometry-status" role="status"></p><p id="tool-status" role="status" aria-live="polite"></p>
       <div id="viewport"></div>
-      <div class="viewport-help">Click a wall/item to select · Right-click or Shift+F10: actions · Right-drag: pan<br>Drag: orbit · Scroll: zoom · F: focus · Stretch: local X width · Y height · Z length</div>
-      <div class="validation"><h2 id="validation-title">Validation</h2><p id="notice" role="status" aria-live="polite"></p><div id="issues"></div></div>
+      <div class="viewport-help">Select a wall or item → right-click for build, style and placement tools · Shift+F10: keyboard actions<br>Drag: orbit · Right-drag: pan · Scroll: zoom · F: focus · Build tools / Scene browser: optional panels</div>
+      <div class="validation"><h2 id="validation-title">Validation</h2><p id="validation-help" hidden>Choose an issue to focus its room, opening or item and open the relevant properties. Fix it here or Undo the edit.</p><p id="notice" role="status" aria-live="polite"></p><div id="issues"></div></div>
     </main>
     <aside class="right-panel">
       <div class="inspector-header"><strong id="inspector-selection" aria-live="polite"></strong><div id="inspector-tabs" role="tablist" aria-label="Inspector">
@@ -138,6 +145,20 @@ for (const key of ['position', 'size', 'place-position', 'content-position']) {
 }
 
 let model = new EditorDocument();
+for (const key of ['build', 'scene']) element(`toggle-${key}`).onclick = () => {
+  const panel = element(`${key}-panel`); panel.hidden = !panel.hidden;
+  element(`toggle-${key}`).setAttribute('aria-pressed', String(!panel.hidden));
+  element('library-panel').hidden = element('build-panel').hidden && element('scene-panel').hidden;
+  document.querySelector('.workspace')?.classList.toggle('has-library', !element('library-panel').hidden);
+  if (key === 'scene' && !panel.hidden) input('scene-search').focus();
+};
+function filterScene() {
+  const query = input('scene-search').value.trim().toLowerCase();
+  const nodes = [...element('rooms').children, ...element('entities').children];
+  for (const node of nodes) if (node instanceof HTMLElement) node.hidden = !node.textContent?.toLowerCase().includes(query);
+  element('scene-results').textContent = `${nodes.filter(node => node instanceof HTMLElement && !node.hidden).length} of ${nodes.length} objects`;
+}
+input('scene-search').oninput = filterScene;
 let selectedId = model.document.rooms[0].id;
 let selectedContentId = '@spawn';
 /** @type {'room' | 'wall' | 'content'} */ let selectionKind = 'room';
@@ -256,9 +277,10 @@ function refresh(rebuild = true) {
   ];
   if (!content.some(value => value.id === selectedContentId)) selectedContentId = '@spawn';
   element('entities').replaceChildren(...content.map(value => {
-    const node = document.createElement('button'); node.textContent = value.text; node.setAttribute('aria-pressed', String(selectedContentId === value.id));
+    const node = document.createElement('button'); node.textContent = value.text; node.setAttribute('aria-pressed', String(selectionKind === 'content' && selectedContentId === value.id));
     node.onclick = () => { selectedContentId = value.id; selectedId = model.content(value.id).roomId; selectedFace = null; selectionKind = 'content'; if (inspector !== 'all') setInspector('content'); refresh(false); }; return node;
   }));
+  filterScene();
   element('connections').replaceChildren(...model.document.connections.map(connection => {
     const door = model.document.formatVersion !== 1 ? model.document.doors.find(door => door.connectionId === connection.id) : null;
     const row = document.createElement('p'); row.textContent = `${connection.a.roomId}/${connection.a.port} ↔ ${connection.b.roomId}/${connection.b.port} · ${door ? `CLOSED until ${door.deviceId}` : 'OPEN passage'}`;
@@ -277,19 +299,20 @@ function refresh(rebuild = true) {
     : !result.valid ? 'Invalid draft: outlines only. Fix the listed issues before solid preview or playtest.'
     : `${room.id}: ${model.document.connections.filter(connection => connection.a.roomId === room.id || connection.b.roomId === room.id).length} passage(s). Other wall areas stay solid. ${select('view').value === 'cutaway' ? 'Cutaway hides three outside faces for inspection.' : 'Cyan frames mark passages; amber doors are closed until unlocked.'}`;
   element('geometry-status').classList.toggle('invalid', !result.valid);
+  element('validation-help').hidden = result.valid;
   element('issues').replaceChildren(...(result.valid ? [] : result.errors.map(issue => {
-    const node = document.createElement('button'); node.textContent = `${issue.path}: ${issue.message}`;
+    const target = validationTarget(model.document, issue.path);
+    const node = document.createElement(target ? 'button' : 'p'); node.textContent = issue.message;
+    if (!target) { node.textContent = `${issue.path}: ${issue.message}`; return node; }
+    const detail = document.createElement('span');
+    detail.textContent = `Show ${target.contentId === '@spawn' ? 'player spawn' : target.contentId ?? target.connectionId ?? target.roomId} · ${issue.path}`;
+    node.append(detail);
     node.onclick = () => {
-      const match = issue.path.match(/^\$\.rooms\[(\d+)\]/);
-      const connection = issue.path.match(/^\$\.connections\[(\d+)\]/);
-      const entity = issue.path.match(/^\$\.(entities|devices)\[(\d+)\]/);
-      if (match) selectedId = model.document.rooms[Number(match[1])]?.id ?? selectedId;
-      if (connection) selectedId = model.document.connections[Number(connection[1])]?.a.roomId ?? selectedId;
-      if (entity) {
-        const values = entity[1] === 'entities' ? model.document.entities : model.document.formatVersion !== 1 ? model.document.devices : [];
-        selectedId = values[Number(entity[2])]?.roomId ?? selectedId;
-      }
-      refresh(false); viewport.frame(true);
+      selectTarget({ ...target, localPoint: [0, 0, 0], clientX: 0, clientY: 0 });
+      viewport.frame(true);
+      const control = target.contentId ? 'content-position-X' : target.connectionId ? issue.path.startsWith('$.doors') ? 'door-dialog' : 'opening-width'
+        : target.face ? 'surface-color' : issue.path.includes('.size') ? 'size-X' : 'position-X';
+      element(control).focus(); element(control).scrollIntoView({ block: 'nearest' });
     };
     return node;
   })));

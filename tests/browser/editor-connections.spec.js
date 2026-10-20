@@ -1,3 +1,4 @@
+import { openAuthoringPanels } from '../helpers/editor-layout.mjs';
 import { test as base, expect } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { PerspectiveCamera, Vector3 } from 'three';
@@ -12,7 +13,7 @@ function fixture() {
   const side = model.attachRoom(hall, 'positiveX', 'box-room'); model.updateContent('@spawn', 'room-1', [4, 0, 0], false); model.updateContent('exit-1', side, [0, 0, 0], false); return model;
 }
 async function load(page, doc) {
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.locator('#file').setInputFiles({ name: 'join.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(doc)) }); await expect(page.locator('#validation-title')).toContainText('Valid level');
 }
 async function save(page, info, name) {

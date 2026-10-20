@@ -21,7 +21,7 @@ test('settings start at the original flight defaults and round-trip only version
   assert.deepEqual(new UserSettings(() => storage).values, settings.values);
   assert.equal(settings.saveStatus, 'saved');
   assert.ok(Object.isFrozen(settings.values));
-  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false });
+  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false, cameraView: 'hud', headlights: true, showHUD: true });
 });
 
 test('invalid, malformed and future-version records fall back without rewriting stored data', () => {

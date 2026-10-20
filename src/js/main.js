@@ -15,6 +15,7 @@ import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import MissionObjective from './core/MissionObjective.js';
 import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
+import ShipView from './core/ShipView.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 import { moveSphere } from './utils/sphereMovement.js';
@@ -26,7 +27,11 @@ export default class Game {
     this.scene = new THREE.Scene();
     this.audioManager = new AudioManager();
     this.gameState = new GameState();
-    this.settings = new UserSettings(undefined, values => this.audioManager.applyPreferences(values));
+    this.settings = new UserSettings(undefined, values => {
+      this.audioManager.applyPreferences(values);
+      this.shipView?.apply(values);
+      this.uiManager?.updateShipView?.();
+    });
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
@@ -46,6 +51,8 @@ export default class Game {
       this.uiManager = new UIManager(this.gameState, this.audioManager);
       this.uiManager.game = this;
       this.levelManager = new LevelManager(this.scene, this.spaceship.group);
+      this.currentLevelIndex = this.levelManager.levels.findIndex(level => level.campaignOrder === 1);
+      this.isEndlessMode = false;
       this.projectileManager = new ProjectileManager(this.scene, this.spaceship.group, this.audioManager, this.session);
       this.projectileManager.setCanvas(this.canvas);
       this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager, this.settings).init(this.canvas);
@@ -78,6 +85,8 @@ export default class Game {
     this.scene.add(this.camera);
     this.spaceship = new Spaceship();
     this.spaceship.attachCamera(this.camera);
+    this.shipView = new ShipView(this.spaceship, this.camera);
+    this.shipView.apply(this.settings.values);
   }
 
   initRenderer() {
@@ -97,13 +106,6 @@ export default class Game {
     const directional = new THREE.DirectionalLight(0xcccccc, 0.5);
     directional.position.set(5, 10, 7.5);
     this.scene.add(directional);
-    for (const [color, intensity, distance, angle, penumbra] of [
-      [0xffffff, 2, 30, Math.PI / 5, 0.5], [0xaaccff, 1, 20, Math.PI / 3, 0.8],
-    ]) {
-      const light = new THREE.SpotLight(color, intensity, distance, angle, penumbra, 1);
-      light.target.position.set(0, 0, -1);
-      this.camera.add(light, light.target);
-    }
   }
 
   initializeAudio() {
@@ -321,6 +323,13 @@ export default class Game {
     return true;
   }
 
+  toggleShipOption(option) {
+    const values = this.settings.values;
+    this.settings.update({ [option]: option === 'cameraView' ? values.cameraView === 'hud' ? 'external' : 'hud' : !values[option] });
+    const current = this.settings.values;
+    this.uiManager?.showMessage(option === 'cameraView' ? `${current.cameraView === 'hud' ? 'HUD / first-person' : 'External'} view` : option === 'headlights' ? `Headlights ${current.headlights ? 'on' : 'off'}` : `HUD ${current.showHUD ? 'on' : 'off'} · H to toggle`, 1800, '#9ce5ed');
+  }
+
   updateMission() {
     if (!this.mission || this.session.phase !== 'playing') return;
     this.levelManager.updateExitMarker(this.mission.ready);
@@ -381,6 +390,10 @@ export default class Game {
     try {
       const frameStart = this.diagnostics.enabled ? performance.now() : 0;
       this.advanceFrame(this.clock.getDelta());
+      if (this.shipView && this.levelManager) {
+        const aim = this.shipView.update(this.levelManager.solidColliders);
+        this.uiManager?.updateShipView?.(aim);
+      }
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
       this.diagnostics.recordFrame(this.gameState, this.diagnostics.enabled ? performance.now() - frameStart : 0);
     } catch (error) {

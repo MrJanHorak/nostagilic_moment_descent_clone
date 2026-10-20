@@ -1,10 +1,7 @@
 // Level Manager for creating and managing the tunnel environment
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
-import createLevel1 from './levels/Level1.js';
-import createLevel2 from './levels/Level2.js';
-import createLevel3 from './levels/Level3.js';
-import createExampleLevel from './levels/ExampleLevel.js';
+import createCampaign from './levels/Campaign.js';
 import { SegmentType, ObstaclePattern } from './levels/SegmentTypes.js';
 import createFlightArena from './levels/FlightArena.js';
 import createCombatArena from './levels/CombatArena.js';
@@ -48,13 +45,10 @@ class LevelManager {
     this.levels = [
       createFlightArena(),
       createCombatArena(),
-      createLevel1(),
-      createLevel2(),
-      createLevel3(),
-      createExampleLevel(),
       createMineLinkLevel(),
       createRelayGateLevel(),
       createDeepRelayLevel(),
+      ...createCampaign(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;
