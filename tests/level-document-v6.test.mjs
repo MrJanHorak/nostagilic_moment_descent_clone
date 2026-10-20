@@ -98,7 +98,7 @@ test('format 6 supports wide corridors and larger openings with strict version, 
   model.updateOpening('connection-1', 240, 240, [0, 0]); aligned(model);
   model.updateRoom(middle, { pitch: 0, roll: 0 }); model.setSurface(middle, 'positiveY', 1, 'plain'); assert.equal(model.document.formatVersion, 6);
   const valid = JSON.parse(model.export());
-  for (const mutate of [input => input.formatVersion = 5, input => input.formatVersion = 8, input => input.rooms[0].size[0] = 256.5, input => input.rooms[0].size[0] = 10.25, input => input.rooms[0].position[0] = 0.1, input => input.rooms[0].position[0] = 4096.25, input => input.entities = Array(257).fill(input.entities[0]), input => input.connections[0].a.offset = [128.5, 0]]) {
+  for (const mutate of [input => input.formatVersion = 5, input => input.formatVersion = 9, input => input.rooms[0].size[0] = 256.5, input => input.rooms[0].size[0] = 10.25, input => input.rooms[0].position[0] = 0.1, input => input.rooms[0].position[0] = 4096.25, input => input.entities = Array(257).fill(input.entities[0]), input => input.connections[0].a.offset = [128.5, 0]]) {
     const input = structuredClone(valid); mutate(input); assert.equal(validateLevelDocument(input).valid, false);
   }
   assert.equal(validateLevelDraft(valid).valid, true);

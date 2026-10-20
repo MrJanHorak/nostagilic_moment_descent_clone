@@ -136,5 +136,5 @@ test('legacy formats retain their bytes; orientation upgrades and undo/recovery 
   for (const values of [{ pitch: 45 }, { roll: -90 }, { pitch: NaN }, { roll: 360 }]) {
     assert.throws(() => model.updateRoom('room-1', values), /Yaw, pitch and roll/); assert.equal(model.export(), after);
   }
-  const input = createDocument(); input.formatVersion = 8; assert.equal(validateLevelDocument(input).valid, false);
+  const input = createDocument(); input.formatVersion = 9; assert.equal(validateLevelDocument(input).valid, false);
 });

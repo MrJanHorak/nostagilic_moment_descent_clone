@@ -6,7 +6,7 @@ October 20, 2026. Assessment of the authored campaign and current runtime, follo
 
 | Mission | Rooms / connections | Enemies | Required combat | Supplies |
 | --- | --- | --- | --- | --- |
-| Signal Breach | 10 / 11 | 1 fighter in signal hall, 1 scout in maintenance | None | Pulse ammo, repair |
+| Signal Breach | 11 / 12 | 1 fighter in signal hall, 1 scout in maintenance | None | Pulse ammo, repair; additional hidden ammo/repair alcove |
 | Vector Foundry | 7 / 6 | 1 scout in optional coolant cache | None | Pulse ammo, repair |
 | Nightfall Reactor | 7 / 7 | 2 scouts in coolant works/reactor | Both scouts | Two ammo and two repair pickups |
 
@@ -21,6 +21,8 @@ Evidence: [campaign documents](../src/js/core/levels/documents), [enemy definiti
 Signal Breach's fighter starts at the back of the amber hall, outside pursuit/fire range from spawn. The direct entry tunnel teaches incoming fire. Moving sideways behind the arrival doorway breaks the sightline; the guard can still pursue a last seen position, so cover provides a repositioning opportunity rather than permanent immunity.
 
 Two ceiling shafts and a blue overhead gallery connect arrival to the hall from above. Hazard-pattern end walls distinguish this route; the mission briefing describes Space to climb the arrival hatch. The former hall scout is replaced by the fighter, with a scout placed in maintenance away from spawn. The existing green return loop and repair cache remain available. Enemy definitions, damage values, AI and objective requirements are unchanged; combat remains optional and the relay still controls extraction. The same document opens in the editor without a schema change.
+
+The following doors pass upgrades Signal Breach to v8: a marked player-shot door teaches opening the entry, a concealed wall panel leads to a new optional supply alcove off arrival, and the relay extraction gate slides open. The original green loop is retained. All doors stay open until restart; enemies cannot shoot them open. This introduces hidden-route discovery using existing pickup types without adding a key or secret-score system. See [the v8 door contract](LEVEL_DOCUMENT_FORMAT.md#version-8-sliding-doors-and-concealed-access).
 
 New simulation cases exercise safe arrival, hidden scout placement, direct/covered sightlines, body-clear travel through the overhead route, real hostile projectile damage, three ordinary pulse shots, ammo use, kill credit and enemy reset. Existing campaign cases check every portal, relay gating and document round-trip validity.
 

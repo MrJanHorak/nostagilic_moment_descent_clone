@@ -8,6 +8,39 @@ import compileLevelDocument from '../../src/js/core/levels/document/compileLevel
 import { advanceUntil } from '../helpers/browser-clock.mjs';
 
 const test = base.extend({ cleanBrowser: [async ({ page }, use) => { const errors = []; page.on('pageerror', error => errors.push(error.message)); page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); }); await use(); expect(errors).toEqual([]); }, { auto: true }] });
+
+test('designer doors: author a concealed shot door, undo, reload and fly through it in production playtest', async ({ page }, info) => {
+  const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
+  const model = new EditorDocument(), room = model.attachRoom('room-1', 'negativeZ', 'box-room');
+  model.updateContent('@spawn', 'room-1', [0, 0, 3], false); model.updateContent('exit-1', room, [0, 0, 0], false);
+  await load(page, model.document); await page.clock.pauseAt(start + 3600000);
+  const before = await save(page, info, 'before-shot-door.json');
+  await page.getByRole('tab', { name: 'Wall', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1');
+  await page.getByRole('button', { name: 'Add or edit door…', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Door controls', exact: true });
+  await dialog.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('@shot');
+  await dialog.getByRole('combobox', { name: 'Door appearance', exact: true }).selectOption('hidden');
+  await page.screenshot({ path: info.outputPath('hidden-door-authoring.png'), fullPage: true });
+  await dialog.getByRole('button', { name: 'Apply door', exact: true }).click();
+  const text = await save(page, info, 'hidden-shot-door.json'), authored = JSON.parse(text);
+  expect(authored.formatVersion).toBe(8); expect(authored.devices).toEqual([]);
+  expect(authored.doors[0]).toMatchObject({ connectionId: 'connection-1', activation: 'shot', concealed: true });
+  await page.getByRole('button', { name: 'Undo', exact: true }).click(); expect(await save(page, info, 'undo-shot-door.json')).toBe(before);
+  await page.getByRole('button', { name: 'Redo', exact: true }).click(); expect(await save(page, info, 'redo-shot-door.json')).toBe(text);
+  await page.locator('#file').setInputFiles({ name: 'hidden-shot-door.json', mimeType: 'application/json', buffer: Buffer.from(text) });
+  expect(await save(page, info, 'reloaded-shot-door.json')).toBe(text);
+  await page.getByRole('button', { name: 'Playtest level', exact: true }).click();
+  const frame = page.frameLocator('iframe[title="Mission playtest"]'); await frame.getByRole('button', { name: 'Start playtest', exact: true }).press('Enter');
+  await page.keyboard.press('f');
+  for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
+  await expect(frame.locator('#weapon-slot-1')).toContainText('59');
+  await page.keyboard.down('w');
+  try { await advanceUntil(page, () => frame.getByRole('heading', { name: 'MISSION COMPLETE', exact: true }).isVisible(), { ticks: 130, message: 'Shot-only door must open through the production fire/collision path' }); }
+  finally { await page.keyboard.up('w'); }
+  await page.getByRole('button', { name: 'Return to editor', exact: true }).click();
+  expect(await save(page, info, 'after-shot-playtest.json')).toBe(text);
+});
 function fixture() {
   const model = new EditorDocument(); model.resizeRoom('room-1', [32, 16, 16]); const hall = model.attachAt('room-1', 'negativeZ', [-8, 0, -8], 'straight-corridor');
   const side = model.attachRoom(hall, 'positiveX', 'box-room'); model.updateContent('@spawn', 'room-1', [4, 0, 0], false); model.updateContent('exit-1', side, [0, 0, 0], false); return model;
@@ -34,14 +67,14 @@ test('designer joins: close an off-center loop, add a relay door from its frame 
   const join = page.getByRole('dialog', { name: 'Connect existing rooms', exact: true });
   await join.getByRole('combobox', { name: 'Target wall', exact: true }).selectOption({ label: 'room-3 · Rear wall · touching' }); await join.getByRole('combobox', { name: 'Opening style', exact: true }).selectOption('full'); await join.getByRole('button', { name: 'Connect rooms', exact: true }).click();
   const loop = await save(page, info, 'loop.json'), doc = JSON.parse(loop); expect(doc.formatVersion).toBe(7); expect(doc.connections).toHaveLength(3); expect(doc.connections[2].openingSize).toEqual([15, 11]);
-  await contextAt(page, doc, [11.5, 0, -8]); await page.getByRole('menuitem', { name: 'Add or edit relay door…', exact: true }).click();
-  const door = page.getByRole('dialog', { name: 'Relay-controlled door', exact: true }); await expect(door).toContainText('room-3'); await expect(door.getByRole('combobox', { name: 'Door control', exact: true })).toHaveValue('@new');
+  await contextAt(page, doc, [11.5, 0, -8]); await page.getByRole('menuitem', { name: 'Add or edit door…', exact: true }).click();
+  const door = page.getByRole('dialog', { name: 'Door controls', exact: true }); await expect(door).toContainText('room-3'); await expect(door.getByRole('combobox', { name: 'Door control', exact: true })).toHaveValue('@new');
   await page.screenshot({ path: info.outputPath('relay-door-dialog.png'), fullPage: true }); await door.getByRole('button', { name: 'Apply door', exact: true }).click();
   const text = await save(page, info, 'loop-door.json'), authored = JSON.parse(text); expect(authored.devices).toHaveLength(1); expect(authored.doors[0].connectionId).toBe('connection-3'); expect(authored.mission.requiredDeviceIds).toEqual([authored.devices[0].id]);
   // This corner of the large door is closer to the other portal's center.
   // Picking the door must keep its own identity rather than choose by distance.
-  await contextAt(page, authored, [-3, 0, -7.5]); await page.getByRole('menuitem', { name: 'Add or edit relay door…', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Relay-controlled door', exact: true })).toContainText('room-3'); await page.getByRole('button', { name: 'Cancel', exact: true }).click();
+  await contextAt(page, authored, [-3, 0, -7.5]); await page.getByRole('menuitem', { name: 'Add or edit door…', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Door controls', exact: true })).toContainText('room-3'); await page.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.screenshot({ path: info.outputPath('loop-shared-openings.png'), fullPage: true }); compileLevelDocument(authored);
   await page.getByRole('button', { name: 'Playtest level', exact: true }).click(); const frame = page.frameLocator('iframe[title="Mission playtest"]'); await frame.getByRole('button', { name: 'Start playtest', exact: true }).press('Enter');
   await page.keyboard.press('r'); await expect(frame.locator('#arena-guide')).toContainText('RELAYS 1/1', { ignoreCase: true }); await page.keyboard.down('w');
@@ -72,7 +105,7 @@ test('designer joins: attach another room on a large wall, open the shared face 
   await page.getByRole('button', { name: 'Frame all', exact: true }).click(); await contextAt(page, attached, [11, 0, -8]); await page.getByRole('menuitem', { name: 'Use full shared opening', exact: true }).click();
   const full = JSON.parse(await save(page, info, 'full-second-room.json')); expect(full.connections[1].openingSize).toEqual([15, 11]);
   await page.locator('#rooms').getByRole('button', { name: 'room-1 · room', exact: true }).click(); await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay'); await page.getByRole('button', { name: 'Add content', exact: true }).click();
-  await page.getByRole('tab', { name: 'Wall', exact: true }).click(); await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-2'); await page.getByRole('button', { name: 'Add or edit relay door…', exact: true }).click();
-  const door = page.getByRole('dialog', { name: 'Relay-controlled door', exact: true }); await door.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1'); await door.getByRole('button', { name: 'Apply door', exact: true }).click();
+  await page.getByRole('tab', { name: 'Wall', exact: true }).click(); await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-2'); await page.getByRole('button', { name: 'Add or edit door…', exact: true }).click();
+  const door = page.getByRole('dialog', { name: 'Door controls', exact: true }); await door.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1'); await door.getByRole('button', { name: 'Apply door', exact: true }).click();
   const doc = JSON.parse(await save(page, info, 'manually-linked-door.json')); expect(doc.devices).toHaveLength(1); expect(doc.doors[0].deviceId).toBe('relay-1'); expect(doc.doors[0].connectionId).toBe('connection-2'); compileLevelDocument(doc);
 });

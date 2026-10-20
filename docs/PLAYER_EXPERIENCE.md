@@ -6,7 +6,7 @@ October 19, 2026. The owner confirmed the editor works and authored levels are p
 
 The editor opens with the viewport and selection inspector. **Build tools** opens the optional prefab/numeric placement palette; **Scene browser** opens the optional searchable room/item list. They can be opened together for detailed authoring, or closed to recover canvas space. The scene browser is useful for hidden/overlapping objects and large maps, but direct wall/item selection remains the main workflow. Search matches room IDs, item kinds, relay IDs and containing rooms. F focuses the selection. Right-click or Shift+F10 opens its actions. Panel/search state stays outside the saved level and Undo history.
 
-The mine name and save status remain visible above the workspace. Draft/format details are behind **Save details**. **Open example** now loads Signal Breach, which uses the same v7 document as the campaign.
+The mine name and save status remain visible above the workspace. Draft/format details are behind **Save details**. **Open example** loads the same Signal Breach document as the campaign (now v8).
 
 Reviewed screenshots: [default editor](progress/canvas-first-editor.png), [external ship view](progress/external-ship-view.png), [mission library](progress/new-mission-library.png).
 
@@ -46,17 +46,27 @@ This pass passes lint, strict types (66 modules), production build, 17 targeted 
 
 ## Campaign
 
-The mission library leads with three new authored v7 missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors.
+The mission library leads with three authored shared-document missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors.
 
 | Mission | Layout and objective |
 | --- | --- |
-| Signal Breach | Ten spaces, a ranged fighter on the direct approach, a blue overhead route and optional green repair/maintenance loop with a scout. Restore the uplink and unlock extraction. Kills are optional. |
+| Signal Breach | Eleven spaces, a shot-open entry door, concealed repair alcove, ranged fighter on the direct approach, blue overhead route and optional green maintenance loop with a scout. Restore the uplink and unlock the sliding extraction gate. Kills are optional. |
 | Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft and side cache. Restore lift power, climb and activate extraction controls. |
 | Nightfall Reactor | Seven spaces, a lower loop, reserve supplies and upper control room. Defeat two guards, activate coolant bypass/shutdown relays, then extract. |
 
 The first encounter pass expands Signal Breach from seven spaces to ten. The fighter takes three normal pulse hits; arrival starts outside its pursuit/fire range, and the arrival doorway provides sightline cover. Two ceiling shafts connect a hazard-marked blue overhead gallery to the signal hall, while the green maintenance scout stays hidden from spawn. The briefing explains the choices. AI, global enemy values and relay/exit requirements are unchanged.
 
 Encounter verification: `npm run verify` passes (66 linted runtime modules, strict types, all 393 unit/simulation cases and build). Four targeted browser scenarios pass: both production cockpit scenarios, an ordinary-input fighter fight/overhead-route/relay/extraction/replay scenario, and the existing green-loop progression/replay scenario. The new fight uses three F presses and native flight keys, with development diagnostics only for read-only steering; it does not neutralize enemies through the test control. The separate green-loop regression still uses that control to isolate geometry. Reviewed evidence: [ranged encounter](progress/signal-ranged-encounter.png), [overhead exploration map](progress/signal-overhead-route.png), and the [four-case browser report](progress/signal-encounter-browser-check.json). These checks establish functional behavior, not final player balance or hardware frame-time acceptance.
+
+The subsequent doors pass adds a marked entry door that opens on a player shot and a concealed panel in arrival's left wall leading to a separate ammo/repair alcove. Signal Breach now has eleven rooms. Its existing extraction gate slides when the uplink relay activates. A start cue and mission-library briefing explain shooting striped doors; R still activates cyan relays. Hidden panels match the face styles on both sides and omit shot indicators, leaving a narrow seam as a discovery clue. The explored map reveals the alcove only after entry. There is no separate secret-count score or key inventory.
+
+V8 door panels and their collision boxes move together for 0.8 simulation seconds, freeze during pause, stay open until restart and never close on a ship. Enemy shots cannot activate them. The triggering player shot is consumed at the first swept hit; walls in front still block it. The portal graph stays closed until the panels fully clear, then invalidates enemy routes. V1–7 retain instant relay gates. The editor's **Add or edit door…** dialog can choose a shot door or relay link and marked/concealed appearance, with Undo/Redo, import/export and production playtest. Later room/opening edits preserve the new version. See the [v8 format](LEVEL_DOCUMENT_FORMAT.md#version-8-sliding-doors-and-concealed-access).
+
+Door verification: lint (67 runtime modules), strict types, all 407 unit/simulation cases, production build and diff checks pass. Cases cover six wall/hatch directions, moving mesh/collider agreement, hostile-shot rejection, first-wall interception, shot-only missions without relays, pause/stale ownership, old-version compatibility, geometric unlock solving, editor history/version retention, and ten restart/resource-disposal cycles. Imported IDs resembling internal panel names have a dedicated ownership regression.
+
+Nine browser scenarios pass together: four editor authoring/join/playtest cases, both production cockpit cases, native hidden-wall collision/shoot/traversal/restart, ordinary-fire combat/overhead-route/extraction/replay, and the original green-loop progression/replay check. The native hidden route uses ArrowLeft/W/F and read-only flight feedback (now including orientation); it does not set transforms or neutralize enemies. The separate green-loop test retains the development neutralize action to isolate geometry. See the [nine-case report](progress/doors-browser-check.json). Following the imported-ID fix, the two editor/playtest cases are repeated in the [final report](progress/doors-final-browser-check.json).
+
+Reviewed door evidence: [marked entry](progress/doors-marked-entry.png), [concealed wall closed](progress/doors-hidden-closed.png), [panels opening](progress/doors-hidden-opening.png), [supply alcove entered](progress/doors-hidden-alcove.png), and [editor controls](progress/doors-editor.png). No dependencies or deployment. Hardware frame-time acceptance and final player balance remain open; the existing large-chunk build warning remains.
 
 The old Level1/Level2/Level3/ExampleLevel finite segment blueprints are retired from the catalog and source. The old finite-level guide is replaced. The proven flight/combat arenas and Mine Link, Relay Gate and Deep Relay fixtures remain in the optional **Practice & prototypes** section. Endless mode is no longer offered in the mission library; the internal segment generator remains for existing diagnostics/tests. New missions are finite shared-document geometry, not that generator.
 

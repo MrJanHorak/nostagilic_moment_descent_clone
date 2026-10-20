@@ -184,7 +184,7 @@ export default class Game {
       } else this.levelManager.loadLevel(levelIndex, preparedWorld);
       const level = this.levelManager.currentLevel;
       this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
-      if (!endless && level.devices?.length) this.levelManager.interaction = new RelayController(
+      if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
         level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
         this.gameState.weaponInventory.pulse.ammo = level.combat.initialPulseAmmo;
@@ -198,6 +198,10 @@ export default class Game {
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
+        onWallHit: collider => {
+          const door = this.levelManager.interaction?.hitDoor(collider);
+          if (door) this.uiManager.showMessage(door.concealed ? 'Hidden passage opening' : 'Door opening', 1800, '#ffce77');
+        },
       });
       if (this.levelManager.currentLevel?.kind === 'arena' && !endless) {
         this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
@@ -220,6 +224,9 @@ export default class Game {
       this.uiManager.updateHUD();
       this.uiManager.updateEnemyCount(0, endless ? 0 : this.levelManager.currentLevel.enemySpawns.length);
       if (!endless && this.levelManager.currentLevel?.kind === 'arena') this.uiManager.showArenaGuide?.();
+      if (!endless && level.doors?.some(door => door.activation === 'shot' && !door.concealed)) {
+        this.uiManager.showMessage('Shoot striped doors to open · R activates cyan relays', 3500, '#ffce77');
+      }
       this.inputManager.requestPointerLock();
       return true;
     } catch (error) {
@@ -353,6 +360,7 @@ export default class Game {
     const generation = this.session.id;
     this.session.advance(delta);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
+    this.levelManager.interaction?.update(delta);
     for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }

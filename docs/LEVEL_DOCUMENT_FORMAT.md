@@ -1,6 +1,6 @@
-# Shared level document — format versions 1–7
+# Shared level document — format versions 1–8
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. All seven versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. All eight versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All base fields below are required. The version-3 extension below describes its 
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, or `7` for shared/multiple openings; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, `7` for shared/multiple openings, or `8` for sliding/shot/concealed doors; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -181,15 +181,37 @@ Up to eight separate openings may reference one face. Their U/V rectangles canno
 
 The editor's join command can keep touching faces in place, translate a separate branch, or fit an anchored corridor's free end to a fixed target before adding the connection. New shared joins, full-opening fitting and additional same-wall attachments opt into v7. Later edits preserve it; imports of older versions and Undo retain their original contracts. See [the workflow and verification](progress/M4_LOOPS_AND_SHARED_OPENINGS.md).
 
+## Version 8: sliding doors and concealed access
+
+V8 retains v7 geometry, limits and objective fields. Each door still has a unique `id` and valid `connectionId`, with at most one door per passage. Choose exactly one control:
+
+```json
+{ "id": "entry-door", "connectionId": "entry", "activation": "shot" }
+```
+
+```json
+{ "id": "exit-door", "connectionId": "exit-link", "deviceId": "relay-exit" }
+```
+
+An omitted `activation` means a required `deviceId` relay link. A shot door requires `activation: "shot"` and forbids `deviceId`; it needs no relay entity or objective membership. Both forms accept optional `concealed: true` (default false). Unknown modes, non-boolean concealment, missing references, duplicate door occupancy and relay self-locks remain validation errors. V1–7 reject the new fields and retain their existing instant relay gates.
+
+V8 doors have two panels that slide apart over 0.8 simulation seconds. Meshes and collision boxes move together, pause freezes them, and the portal graph remains closed until the panels fully clear. They stay open until restart and never auto-close on a ship. Each attempt reconstructs the original closed panels. Retired/stale controllers cannot keep animating. Opening panels hide at full travel while their resources remain world-owned until teardown.
+
+Only the first swept **player** projectile hit on a closed shot panel starts opening it. The shot is consumed before the callback, so the same hit cannot also pass through the door or activate it twice. Enemy shots, shooting an intervening wall, nearby interaction with R, and shots at relay-controlled panels do not unlock shot/relay controls interchangeably. Existing cyan relays still require visibility and proximity, turn green, and record their objective once.
+
+Marked doors use amber seam markings/shot indicators. Concealed doors omit those cues and match the color/pattern of each adjoining room's face, including world-aligned closed-panel UVs. A narrow seam provides a discovery clue. An optional room behind one is an ordinary room with supplies; there is no separate secret-count score, key inventory or trigger system. The survey reveals that room only after entry.
+
+Progression treats a shot door adjacent to a reachable room as openable, then solves relay reachability as before. This establishes geometric progression, not ammunition sufficiency or combat balance. Provide reachable ammunition and test routes through normal firing. The editor's **Add or edit door…** dialog supports marked/concealed appearance, **Shoot door to open**, a new near-spawn relay, or a placed relay. New door controls opt the document into v8; Undo restores the exact previous version, and later opening/style/resize edits preserve v8. See [Signal Breach](../src/js/core/levels/documents/signal-breach.v8.json) for the first playable example.
+
 ## Limits and compatibility
 
 | Limit | Value |
 | --- | ---: |
 | Rooms / connections / entities, v1–5 | 64 / 128 / 256 |
-| Rooms / connections / entities, v6–7 | 256 / 512 / 256 |
+| Rooms / connections / entities, v6–8 | 256 / 512 / 256 |
 | Parsed JSON text | 1,000,000 UTF-16 code units |
 | Validated tree nodes / nesting depth | 50,000 / 16 |
-| Connections per face, v1–6 / v7 | 1 / 8 |
+| Connections per face, v1–6 / v7–8 | 1 / 8 |
 | Reported diagnostics | 100 |
 | Coordinate component magnitude | 4,096 |
 

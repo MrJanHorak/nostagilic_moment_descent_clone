@@ -38,6 +38,7 @@ export default class RuntimeDiagnostics {
       timeMs: gameState.session.timeMs, steps: gameState.session.steps,
       frames: this.frames, sessionFrames: this.sessionFrames,
       position: ship?.group.position.toArray(), velocity: ship?.velocity.toArray(),
+      quaternion: ship?.group.quaternion.toArray(),
       speed: ship?.velocity.length() ?? 0,
     }));
   }

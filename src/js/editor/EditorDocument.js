@@ -41,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -188,7 +188,7 @@ export default class EditorDocument {
       draft.entities = draft.entities.filter(entity => !removed.has(entity.id)); draft.mission.requiredEnemyIds = draft.mission.requiredEnemyIds.filter(id => !removed.has(id));
       if (draft.formatVersion !== 1) {
         const modern = modernize(draft), devices = new Set(modern.devices.filter(device => device.roomId === roomId).map(device => device.id));
-        modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && !devices.has(door.deviceId));
+        modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && (!door.deviceId || !devices.has(door.deviceId)));
         modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
       }
     });
@@ -282,7 +282,7 @@ export default class EditorDocument {
       for (const axis of [frame.u, frame.v]) room.position[axis] += Math.round((world[axis] - frame.center[axis]) / GRID) * GRID;
     }
     this.change(draft => {
-      if (point) { modernize(draft); Object.assign(draft, { formatVersion: 7 }); }
+      if (point) { modernize(draft); Object.assign(draft, { formatVersion: Math.max(7, draft.formatVersion) }); }
       if (room.pitch) { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 4 }); }
       if (prefab === 'offset-corridor') { modernize(draft); if (draft.formatVersion < 5) Object.assign(draft, { formatVersion: 5 }); }
       if (draft.rooms.length >= LIMITS.rooms) { modernize(draft); if (draft.formatVersion < 6) Object.assign(draft, { formatVersion: 6 }); }
@@ -323,7 +323,7 @@ export default class EditorDocument {
     if (this.document.connections.length >= EXPANDED_LIMITS.connections) throw new Error('Connection limit reached (512).');
     let id = '';
     this.checked(candidate => {
-      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 7 });
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: Math.max(7, candidate.document.formatVersion) });
       const area = faceOverlap(candidate.room(aId), portA, candidate.room(bId), portB);
       if (Math.abs(area.gap) > 1e-6) {
         if (options.mode === 'fit') {
@@ -349,7 +349,7 @@ export default class EditorDocument {
   fitOpening(id) {
     this.checked(candidate => {
       const link = candidate.document.connections.find(link => link.id === id); if (!link) throw new Error('Select a connection.');
-      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: 7 });
+      modernize(candidate.document); Object.assign(candidate.document, { formatVersion: Math.max(7, candidate.document.formatVersion) });
       Object.assign(link, sharedOpening(candidate.room(link.a.roomId), link.a.port, candidate.room(link.b.roomId), link.b.port, true));
     });
   }
@@ -505,23 +505,28 @@ export default class EditorDocument {
     });
   }
 
-  /** @param {string} connectionId @param {string} deviceId */
-  setDoor(connectionId, deviceId) {
+  /** @param {string} connectionId @param {string} deviceId
+   * @param {{concealed?: boolean, sliding?: boolean}} [options] */
+  setDoor(connectionId, deviceId, options = {}) {
     if (!this.document.connections.some(connection => connection.id === connectionId)) throw new Error('Select a connection.');
     this.change(draft => {
-      const modern = modernize(draft); modern.doors = modern.doors.filter(door => door.connectionId !== connectionId);
+      const modern = modernize(draft), previous = modern.doors.find(door => door.connectionId === connectionId);
+      modern.doors = modern.doors.filter(door => door.connectionId !== connectionId);
       if (deviceId) {
-        if (!modern.devices.some(device => device.id === deviceId)) throw new Error('Select the relay that unlocks this door.');
+        if (deviceId !== '@shot' && !modern.devices.some(device => device.id === deviceId)) throw new Error('Select the relay that unlocks this door.');
         if (modern.doors.length >= 16) throw new Error('Door limit reached (16).');
-        modern.doors.push({ id: nextId(draft, 'door'), connectionId, deviceId });
+        const concealed = options.concealed ?? previous?.concealed;
+        if (deviceId === '@shot' || concealed !== undefined || options.sliding) Object.assign(modern, { formatVersion: 8 });
+        modern.doors.push({ id: previous?.id ?? nextId(draft, 'door'), connectionId,
+          ...(deviceId === '@shot' ? { activation: 'shot' } : { deviceId }), ...(concealed !== undefined ? { concealed } : {}) });
       }
     });
   }
 
   /** Create an accessible relay near spawn and its door as one undo command.
    * Existing placement/progression validation owns the candidate search.
-   * @param {string} connectionId */
-  createRelayDoor(connectionId) {
+   * @param {string} connectionId @param {{concealed?: boolean, sliding?: boolean}} [options] */
+  createRelayDoor(connectionId, options = {}) {
     if (!this.document.connections.some(link => link.id === connectionId)) throw new Error('Select a real connection before adding a door.');
     let id = '';
     this.checked(candidate => {
@@ -529,7 +534,7 @@ export default class EditorDocument {
       for (const distance of [2, 3, 4, 6]) for (const axis of [0, 1, 2]) for (const sign of [1, -1]) {
         const test = new EditorDocument(); test.document = copy(candidate.document);
         const point = [...spawn.position]; point[axis] += distance * sign;
-        const relay = test.addContent(spawn.roomId, 'relay', '', point); test.setDoor(connectionId, relay);
+        const relay = test.addContent(spawn.roomId, 'relay', '', point); test.setDoor(connectionId, relay, options);
         if (test.validation.valid) { id = relay; Object.assign(candidate.document, test.document); return; }
       }
       throw new Error('No clear relay position near spawn. Place a relay in an accessible room, then link it to this door.');

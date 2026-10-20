@@ -7,7 +7,7 @@ import { connectableFace, portFrame } from '../core/levels/document/RoomMath.js'
 import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
-import sample from '../core/levels/documents/signal-breach.v7.json';
+import sample from '../core/levels/documents/signal-breach.v8.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';
 import EditorDraftStore from './EditorDraftStore.js';
@@ -103,8 +103,8 @@ host.innerHTML = `
         <div class="pair"><label>Opening width<input id="opening-width" type="number" min="2" max="62" step="0.5" /></label><label>Opening height/depth<input id="opening-height" type="number" min="2" max="62" step="0.5" /></label></div>
         <label>Opening position<select id="opening-anchor"><option value="custom">Custom offset</option><option value="center">Center</option><option value="top-left">Top left</option><option value="top-right">Top right</option><option value="bottom-left">Bottom left</option><option value="bottom-right">Bottom right</option></select></label>
         <div class="pair"><label>U offset<input id="opening-u" type="number" step="0.5" /></label><label>V offset<input id="opening-v" type="number" step="0.5" /></label></div>
-        <button id="apply-opening">Apply opening</button><button id="fit-opening">Use full shared opening</button><button id="door-dialog">Add or edit relay door…</button><label>Unlock relay<select id="door-relay"></select></label><button id="apply-door">Apply door</button>
-        <p>Cyan frames are open passages. Add a relay-controlled door above, or right-click a frame. Place relays with right-click → Place relay here. R activates a visible nearby relay in Playtest.</p>
+        <button id="apply-opening">Apply opening</button><button id="fit-opening">Use full shared opening</button><button id="door-dialog">Add or edit door…</button><label>Door control<select id="door-relay"></select></label><button id="apply-door">Apply door</button>
+        <p>Cyan frames mark passages. Add a sliding shot door, concealed wall panel or relay gate above, or right-click a frame. R activates a visible nearby relay in Playtest; player shots open shot doors.</p>
       </section>
     </aside>
   </div>
@@ -243,7 +243,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${room.id}` : `${room.id} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   element('rooms').replaceChildren(...model.document.rooms.map(room => {
@@ -283,7 +283,7 @@ function refresh(rebuild = true) {
   filterScene();
   element('connections').replaceChildren(...model.document.connections.map(connection => {
     const door = model.document.formatVersion !== 1 ? model.document.doors.find(door => door.connectionId === connection.id) : null;
-    const row = document.createElement('p'); row.textContent = `${connection.a.roomId}/${connection.a.port} ↔ ${connection.b.roomId}/${connection.b.port} · ${door ? `CLOSED until ${door.deviceId}` : 'OPEN passage'}`;
+    const row = document.createElement('p'); row.textContent = `${connection.a.roomId}/${connection.a.port} ↔ ${connection.b.roomId}/${connection.b.port} · ${door ? `${door.concealed ? 'CONCEALED' : 'CLOSED'} · ${door.activation === 'shot' ? 'shoot to open' : `relay ${door.deviceId}`}` : 'OPEN passage'}`;
     const edit = document.createElement('button'); edit.textContent = 'Edit opening'; edit.setAttribute('aria-label', `Edit opening ${connection.id}`);
     edit.onclick = () => { select('opening-connection').value = connection.id; selectedId = connection.a.roomId; selectedFace = connection.a.port; selectionKind = 'wall'; setInspector('wall'); refresh(false); element('opening-connection').scrollIntoView({ block: 'nearest' }); };
     const remove = document.createElement('button'); remove.textContent = 'Disconnect'; remove.setAttribute('aria-label', `Disconnect ${connection.id}`);
@@ -362,7 +362,7 @@ function refreshPanels() {
   const connection = model.document.connections.find(connection => connection.id === select('opening-connection').value);
   button('apply-opening').disabled = !connection; button('apply-door').disabled = !connection; button('door-dialog').disabled = !connection; button('fit-opening').disabled = !connection;
   const devices = model.document.formatVersion !== 1 ? model.document.devices : [];
-  select('door-relay').replaceChildren(new Option('Always open (no door)', ''), ...devices.map(device => new Option(device.label, device.id)));
+  select('door-relay').replaceChildren(new Option('Always open (no door)', ''), new Option('Shoot door to open', '@shot'), ...devices.map(device => new Option(device.label, device.id)));
   if (connection) {
     const rules = openingRules(model.document.formatVersion);
     input('opening-width').max = input('opening-height').max = String(rules.maxSize);
@@ -372,7 +372,8 @@ function refreshPanels() {
     const source = model.document.rooms.find(room => room.id === connection.a.roomId);
     const frame = source && portFrame(source, connection.a.port);
     element('opening-basis').textContent = frame ? `${connection.a.roomId}: U = world ${'XYZ'[frame.u]}, V = world ${'XYZ'[frame.v]}. Offsets are measured from this face's center.` : 'This connection needs a valid source room.';
-    select('door-relay').value = model.document.formatVersion !== 1 ? model.document.doors.find(door => door.connectionId === connection.id)?.deviceId ?? '' : '';
+    const door = model.document.formatVersion !== 1 ? model.document.doors.find(door => door.connectionId === connection.id) : null;
+    select('door-relay').value = door?.activation === 'shot' ? '@shot' : door?.deviceId ?? '';
   } else element('opening-basis').textContent = 'Attach or connect two rooms first.';
 }
 
@@ -416,7 +417,7 @@ element('apply-opening').onclick = () => perform(() => {
   if (anchor === 'custom') model.updateOpening(id, width, height, [Number(input('opening-u').value), Number(input('opening-v').value)]);
   else model.anchorOpening(id, width, height, anchor);
 });
-element('apply-door').onclick = () => perform(() => model.setDoor(select('opening-connection').value, select('door-relay').value));
+element('apply-door').onclick = () => perform(() => model.setDoor(select('opening-connection').value, select('door-relay').value, { sliding: true }));
 element('undo').onclick = () => perform(() => model.undo()); element('redo').onclick = () => perform(() => model.redo());
 element('add-room').onclick = () => perform(() => { selectedId = model.attachRoom(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('attach-port').value), 'box-room'); selectionKind = 'room'; selectedFace = null; if (inspector !== 'all') setInspector('room'); });
 element('add-corridor').onclick = () => perform(() => { selectedId = model.attachRoom(selectedId, /** @type {import('../levelDocument.js').Face} */ (select('attach-port').value), 'straight-corridor'); selectionKind = 'room'; selectedFace = null; if (inspector !== 'all') setInspector('room'); });

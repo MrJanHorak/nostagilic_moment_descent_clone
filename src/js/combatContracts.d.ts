@@ -112,6 +112,7 @@ export interface CombatWorld {
   getTargets?(): readonly EnemyCombatTarget[];
   getRules?(): { readonly pulseDamage: number } | null | undefined;
   onTargetHit?(enemy: EnemyCombatTarget, projectile: PlayerProjectile, position: Vector3): void;
+  onWallHit?(collider: SolidCollider, projectile: PlayerProjectile, position: Vector3): void;
 }
 export interface CombatAudio {
   readonly initialized: boolean;

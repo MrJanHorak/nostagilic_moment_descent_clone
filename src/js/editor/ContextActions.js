@@ -54,7 +54,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
       { id: 'height', label: 'Passage height/depth', type: 'number', value: String(connection.openingSize[1]), min: '2', max: model.document.formatVersion >= 6 ? '254' : '62', step: '0.5' },
       { id: 'u', label: 'Across wall (U)', type: 'number', value: String(connection.a.offset?.[0] ?? 0), step: String(openingRules(model.document.formatVersion).grid) },
       { id: 'v', label: 'Height/depth (V)', type: 'number', value: String(connection.a.offset?.[1] ?? 0), step: String(openingRules(model.document.formatVersion).grid) },
-      { id: 'relay', label: 'Door unlock relay', value: door?.deviceId ?? '', options: [{ value: '', label: 'Always open (no door)' }, ...devices.map(device => ({ value: device.id, label: device.label }))] },
+      { id: 'relay', label: 'Door control', value: door?.activation === 'shot' ? '@shot' : door?.deviceId ?? '', options: [{ value: '', label: 'Always open (no door)' }, { value: '@shot', label: 'Shoot door to open' }, ...devices.map(device => ({ value: device.id, label: device.label }))] },
     ], values => commit(() => model.checked(candidate => {
       candidate.updateOpening(connection.id, Number(values.width), Number(values.height), [Number(values.u), Number(values.v)]);
       candidate.setDoor(connection.id, values.relay);
@@ -79,7 +79,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
   if (face) actions.push(
     { label: 'Wall color and pattern…', action: appearance },
     ...(canAttach ? [{ label: 'Connect to existing room…', action: () => connectionDialog(room.id, face, model, menu, commit, worldPoint) }] : []),
-    ...(connection ? [{ label: 'Add or edit relay door…', action: () => doorDialog(connection.id, model, menu, commit) }, { label: 'Use full shared opening', action: () => commit(() => model.fitOpening(connection.id)) }] : []),
+    ...(connection ? [{ label: 'Add or edit door…', action: () => doorDialog(connection.id, model, menu, commit) }, { label: 'Use full shared opening', action: () => commit(() => model.fitOpening(connection.id)) }] : []),
     { label: 'Opening and door…', action: opening, disabled: !connection, reason: !connection ? canAttach ? 'Attach a neighbor here, or use Connections to join existing touching rooms.' : sideReason : undefined },
     ...(connection ? [{ label: 'Move opening to this point', action: moveOpening }] : []),
     ...(canAttach ? [

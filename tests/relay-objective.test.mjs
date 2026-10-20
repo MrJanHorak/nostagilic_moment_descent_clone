@@ -19,6 +19,7 @@ import InputManager from '../src/js/core/InputManager.js';
 import LevelManager from '../src/js/core/LevelManager.js';
 import ProjectileManager from '../src/js/entities/ProjectileManager.js';
 import PowerUpManager from '../src/js/entities/PowerUpManager.js';
+import EditorDocument from '../src/js/editor/EditorDocument.js';
 
 const sample = JSON.parse(readFileSync(new URL('../src/js/core/levels/documents/relay-gate.v2.json', import.meta.url), 'utf8'));
 const v = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
@@ -33,7 +34,7 @@ function worldFixture(t, input = sample) {
 }
 
 const invalidCases = [
-  ['unknown version', input => { input.formatVersion = 8; }, 'version'],
+  ['unknown version', input => { input.formatVersion = 9; }, 'version'],
   ['v1 door fields', input => { input.formatVersion = 1; input.mission.type = 'clear-and-exit'; }, 'field'],
   ['missing doors', input => { delete input.doors; }, 'array'],
   ['empty devices', input => { input.devices = []; }, 'relay'],
@@ -224,6 +225,32 @@ test('relay mission completes once and ten restarts restore the closed door, mar
     assert.equal(game.levelManager.solidColliders.length, baseline); assert.equal(game.levelManager.interaction.closedConnections.size, 1);
     assert.equal(game.mission.activatedDevices.size, 0); assert.equal(game.mission.ready, false); assert.equal(game.gameState.score, 0);
     assert.equal(game.levelManager.levelSegments[0].getObjectByName('relay:ceiling').material.color.getHex(), 0x45e5ed);
+    assert.equal(serializeLevelDocument(game.levelManager.currentLevel.sourceDocument), source);
+  }
+});
+
+test('shot-only missions wire native fire without relays and restore/dispose sliding doors across ten restarts', t => {
+  const model = new EditorDocument(), room = model.attachRoom('room-1', 'negativeZ', 'box-room');
+  model.updateContent('@spawn', 'room-1', [0, 0, 3], false); model.updateContent('exit-1', room, [0, 0, 0], false);
+  model.setDoor('connection-1', '@shot', { concealed: true });
+  const game = gameFixture(t); game.startLevelDocument(model.document); game.projectileManager.setCanvas({});
+  const source = model.export(), count = game.levelManager.solidColliders.length;
+  for (let cycle = 0; cycle < 10; cycle++) {
+    const controller = game.levelManager.interaction, root = controller.root.getObjectByName(controller.doors[0].id);
+    const resources = new Map();
+    root.traverse(object => {
+      for (const resource of [object.geometry, ...(Array.isArray(object.material) ? object.material : [object.material])]) {
+        if (resource && !resources.has(resource)) { resources.set(resource, 0); resource.addEventListener('dispose', () => resources.set(resource, resources.get(resource) + 1)); }
+      }
+    });
+    game.inputManager.onKeyDown({ code: 'KeyF' }); game.inputManager.onKeyUp({ code: 'KeyF' });
+    for (let frame = 0; frame < 90; frame++) game.updateSimulation(1 / 60);
+    assert.equal(controller.closedConnections.size, 0); assert.equal(game.gameState.weaponInventory.pulse.ammo, 59);
+    assert.equal(game.mission.activatedDevices.size, 0); assert.equal(game.gameState.score, 0);
+    game.restartLevel(); game.updateSimulation(1 / 60);
+    assert.equal(controller.retired, true); assert([...resources.values()].every(value => value === 1));
+    assert.equal(game.levelManager.solidColliders.length, count); assert.equal(game.levelManager.interaction.closedConnections.size, 1);
+    assert.equal(game.gameState.weaponInventory.pulse.ammo, 60); assert.equal(game.gameState.playerHealth, 100);
     assert.equal(serializeLevelDocument(game.levelManager.currentLevel.sourceDocument), source);
   }
 });

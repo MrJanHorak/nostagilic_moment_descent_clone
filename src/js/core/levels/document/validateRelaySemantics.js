@@ -28,7 +28,7 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   }
   for (const [index, door] of document.doors.entries()) {
     if (!connections.has(door.connectionId)) issue(`$.doors[${index}].connectionId`, 'reference', `Unknown connection: ${door.connectionId}`);
-    if (!devices.has(door.deviceId)) issue(`$.doors[${index}].deviceId`, 'reference', `Unknown relay: ${door.deviceId}`);
+    if (door.activation !== 'shot' && (!door.deviceId || !devices.has(door.deviceId))) issue(`$.doors[${index}].deviceId`, 'reference', `Unknown relay: ${door.deviceId}`);
     if (occupied.has(door.connectionId)) issue(`$.doors[${index}].connectionId`, 'occupied-door', 'Only one door may occupy a connection');
     occupied.add(door.connectionId);
   }
@@ -49,7 +49,8 @@ export default function validateRelaySemantics(document, issue, ids, placements)
     reachable = new Set([document.playerSpawn.roomId]);
     const pending = [...reachable];
     for (let i = 0; i < pending.length; i++) for (const connection of document.connections) {
-      if (document.doors.some(door => door.connectionId === connection.id && !active.has(door.deviceId))) continue;
+      // A shot door can be opened from either adjacent reachable room, independently of relays.
+      if (document.doors.some(door => door.connectionId === connection.id && door.activation !== 'shot' && !active.has(door.deviceId))) continue;
       const next = connection.a.roomId === pending[i] ? connection.b.roomId : connection.b.roomId === pending[i] ? connection.a.roomId : null;
       if (next && !reachable.has(next)) { reachable.add(next); pending.push(next); }
     }

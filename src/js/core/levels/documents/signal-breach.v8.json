@@ -1,8 +1,17 @@
 {
-  "formatVersion": 7,
+  "formatVersion": 8,
   "id": "signal-breach",
   "name": "Signal Breach",
   "rooms": [
+    {
+      "id": "repair-alcove",
+      "prefab": "box-room",
+      "position": [-16, 0, 0],
+      "size": [12, 8, 12],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": { "negativeY": { "color": 2309175, "pattern": "grid" } }
+    },
     {
       "id": "arrival-shaft",
       "prefab": "box-room",
@@ -222,6 +231,12 @@
   ],
   "connections": [
     {
+      "id": "secret-access",
+      "a": { "roomId": "arrival", "port": "negativeX" },
+      "b": { "roomId": "repair-alcove", "port": "positiveX" },
+      "openingSize": [4, 4]
+    },
+    {
       "id": "arrival-hatch",
       "a": { "roomId": "arrival", "port": "positiveY" },
       "b": { "roomId": "arrival-shaft", "port": "negativeY" },
@@ -352,6 +367,8 @@
     }
   ],
   "entities": [
+    { "id": "secret-ammo", "kind": "pickup", "type": "pulseAmmo", "roomId": "repair-alcove", "position": [-2, 0, 2] },
+    { "id": "secret-health", "kind": "pickup", "type": "health", "roomId": "repair-alcove", "position": [-2, 0, -2] },
     {
       "id": "hall-fighter",
       "kind": "enemy",
@@ -417,6 +434,17 @@
     }
   ],
   "doors": [
+    {
+      "id": "entry-door",
+      "connectionId": "entry",
+      "activation": "shot"
+    },
+    {
+      "id": "cache-panel",
+      "connectionId": "secret-access",
+      "activation": "shot",
+      "concealed": true
+    },
     {
       "id": "signal-door",
       "connectionId": "extraction-gate",

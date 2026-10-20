@@ -107,7 +107,7 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await page.keyboard.press('m'); await page.clock.fastForward(200);
   await expect(page.locator('#exploration-map')).toBeVisible();
   await expect(page.locator('canvas')).toHaveCount(2);
-  await expect(page.locator('#exploration-map')).toContainText('1 / 10 rooms');
+  await expect(page.locator('#exploration-map')).toContainText('1 / 11 rooms');
   await page.clock.runFor(100); await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('cockpit-map.png'), animations: 'disabled' });
   await page.keyboard.press('h'); await page.clock.fastForward(100);
@@ -157,6 +157,52 @@ const routes = [
   ['Nightfall Reactor', [[2, -20], 'r', [2, -24], [0, 24], [2, 0], [1, 16], 'r', [0, 53]]],
 ];
 
+test('development: Signal Breach concealed wall blocks flight, opens on a native shot and restores on restart', async ({ page }, testInfo) => {
+  test.setTimeout(180000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
+  await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await fly(page, 2, 0);
+  const read = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+  await page.keyboard.down('ArrowLeft');
+  try {
+    for (let tick = 0; tick < 70; tick++) {
+      const state = await read(), yaw = 2 * Math.atan2(state.quaternion[1], state.quaternion[3]);
+      if (yaw >= 1.55) break;
+      if (yaw < 1.4) await page.clock.fastForward(100); else await page.clock.runFor(16);
+    }
+  } finally { await page.keyboard.up('ArrowLeft'); }
+  const turned = await read(); expect(Math.abs(2 * Math.atan2(turned.quaternion[1], turned.quaternion[3]) - Math.PI / 2)).toBeLessThan(0.04);
+  await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('concealed-wall-closed.png'), animations: 'disabled' });
+  await page.keyboard.down('w');
+  for (let tick = 0; tick < 35; tick++) await page.clock.fastForward(100);
+  await page.keyboard.up('w');
+  const blocked = await read(); expect(blocked.position[0]).toBeGreaterThan(-9.05); expect(blocked.position[0]).toBeLessThan(-8.7);
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'arrival');
+  await page.keyboard.press('f');
+  for (let tick = 0; tick < 4; tick++) await page.clock.fastForward(100);
+  await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('concealed-wall-sliding.png'), animations: 'disabled' });
+  for (let tick = 0; tick < 8; tick++) await page.clock.fastForward(100);
+  await page.keyboard.down('w');
+  try {
+    await advanceUntil(page, async () => (await read()).position[0] < -13,
+      { ticks: 70, message: 'Opened hidden panel must permit flight into the repair alcove' });
+  } finally { await page.keyboard.up('w'); }
+  for (let tick = 0; tick < 20; tick++) await page.clock.fastForward(100);
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'repair-alcove');
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '2');
+  await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100%');
+  await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('hidden-repair-alcove.png'), animations: 'disabled' });
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').press('Enter'); await page.clock.fastForward(100);
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
+  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 80');
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'arrival');
+});
+
 test('development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input', async ({ page }, testInfo) => {
   test.setTimeout(300000);
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -164,6 +210,8 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await page.keyboard.press('f');
+  for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
   await fly(page, 2, -15);
   await advanceUntil(page, async () => parseInt(await page.locator('#health-percentage').textContent(), 10) < 100,
     { ticks: 100, message: 'The fighter must land an ordinary projectile hit' });
@@ -176,7 +224,7 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   }
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
   await expect(page.locator('#score-display')).toHaveText('100');
-  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 77');
+  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 76');
   // Read flight diagnostics only; all movement, fire and interaction use normal keys.
   for (const [axis, target] of [[2, 0], [1, 21], [2, -16]]) await fly(page, axis, target);
   await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'overhead-gallery');
@@ -203,6 +251,10 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
   // Production combat remains covered by the ordinary-fire victory/death suite.
   await advanceUntil(page, () => button(page, 'Neutralize drones (test)').isVisible(), { ticks: 10, message: 'Development mission controls must refresh before use' });
   await button(page, 'Neutralize drones (test)').press('Enter');
+  if (name === 'Signal Breach') {
+    await page.keyboard.press('f');
+    for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
+  }
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
   for (const step of route) {
     if (step === 'r') { await page.keyboard.press('r'); await page.clock.fastForward(100); }

@@ -96,11 +96,11 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 
 ### Campaign
 
-- **Signal Breach**: A ranged fighter covers the direct tunnel; use doorway cover or climb the blue overhead route. Restore an uplink and extract; the green maintenance loop holds repairs and a scout. Kills are optional.
+- **Signal Breach**: Shoot the marked entry door, use cover or the blue overhead route against a ranged fighter, and activate the uplink relay to open extraction. Explore the green loop and inspect wall seams for a hidden repair alcove. Kills are optional.
 - **Vector Foundry**: Follow a rising ramp, restore lift power and climb to extraction controls.
 - **Nightfall Reactor**: Clear two guards, restore coolant and shut down the reactor before upper extraction.
 
-Signal Breach has ten authored spaces; Vector Foundry and Nightfall Reactor have seven each. Missions include pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
+Signal Breach has eleven authored spaces; Vector Foundry and Nightfall Reactor have seven each. Missions include pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
 
 ### Practice and custom missions
 
@@ -201,6 +201,7 @@ The game uses Three.js/WebGL with shared wall materials, emissive markers and sh
 - Validated, portable JSON documents shared by the editor and runtime
 - Rooms, corridors, ramps, vertical shafts and loops with matching render/collision geometry
 - Multiple openings per face, relay-controlled doors and mission objectives
+- Sliding shot/relay doors and concealed wall panels in v8 documents; choose their controls/appearance in the editor's **Add or edit door…** dialog
 - Face colors and repeating surface patterns
 - Entire compact finite mission loaded together; campaign streaming is not implemented
 

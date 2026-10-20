@@ -168,7 +168,7 @@ export default class EditorViewport {
           if (object.name.startsWith('@solid/')) {
             const [, roomId, face] = object.name.split('/'); object.userData.roomId = roomId; object.userData.face = face; this.walls.push(object);
           } else {
-            const door = level.doors?.find(door => door.id === object.name), connection = door && document.connections.find(connection => connection.id === door.connectionId);
+            const door = level.doors?.find(door => door.id === (object.userData.doorId ?? object.name)), connection = door && document.connections.find(connection => connection.id === door.connectionId);
             if (connection) { object.userData.roomId = connection.a.roomId; object.userData.face = connection.a.port; object.userData.connectionId = connection.id; this.walls.push(object); }
           }
           for (const material of Array.isArray(object.material) ? object.material : [object.material]) {

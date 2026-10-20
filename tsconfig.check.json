@@ -38,6 +38,7 @@
     "src/js/core/levels/Campaign.js",
     "src/js/core/MissionObjective.js",
     "src/js/core/RelayController.js",
+    "src/js/core/SlidingDoor.js",
     "src/js/core/levels/document/LevelContent.js",
     "src/js/core/levels/document/RoomMath.js",
     "src/js/core/levels/document/RoomNavigation.js",

@@ -1143,7 +1143,8 @@ class UIManager {
     const relay = mission.requiredDeviceIds.size ? ` · Relays ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
         level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
-    const text = `${level.name.toUpperCase()} · ${status}${relay}${navigation ? ` · ${navigation}` : ''} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
+    const text = `${level.name.toUpperCase()} · ${status}${relay}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
     if (this.guideSummary) {
       const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size

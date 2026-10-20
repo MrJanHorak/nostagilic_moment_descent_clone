@@ -9,7 +9,7 @@
     "npm": ">=11.2.0 <12"
   },
   "scripts": {
-    "test": "node --test tests/startup.test.mjs tests/session.test.mjs tests/flight.test.mjs tests/arena.test.mjs tests/combat.test.mjs tests/metrics.test.mjs tests/settings.test.mjs tests/enemy-effects.test.mjs tests/level-document.test.mjs tests/room-navigation.test.mjs tests/relay-objective.test.mjs tests/browser-control.test.mjs tests/deep-relay.test.mjs tests/editor-document.test.mjs tests/level-document-v3.test.mjs tests/editor-ux.test.mjs tests/level-document-v4.test.mjs tests/level-document-v5.test.mjs tests/level-document-v6.test.mjs tests/editor-content-move.test.mjs tests/editor-connections.test.mjs tests/experience.test.mjs",
+    "test": "node --test tests/startup.test.mjs tests/session.test.mjs tests/flight.test.mjs tests/arena.test.mjs tests/combat.test.mjs tests/metrics.test.mjs tests/settings.test.mjs tests/enemy-effects.test.mjs tests/level-document.test.mjs tests/room-navigation.test.mjs tests/relay-objective.test.mjs tests/browser-control.test.mjs tests/deep-relay.test.mjs tests/editor-document.test.mjs tests/level-document-v3.test.mjs tests/editor-ux.test.mjs tests/level-document-v4.test.mjs tests/level-document-v5.test.mjs tests/level-document-v6.test.mjs tests/editor-content-move.test.mjs tests/editor-connections.test.mjs tests/experience.test.mjs tests/doors.test.mjs",
     "smoke": "node scripts/smoke-server.mjs",
     "dev": "vite",
     "build": "vite build",

@@ -56,7 +56,15 @@ export default function compileLevelDocument(input) {
     /** @type {[number, number, number]} */ const size = [0, 0, 0];
     size[frame.axis] = WALL_THICKNESS * 2;
     size[frame.u] = connection.openingSize[0]; size[frame.v] = connection.openingSize[1];
-    return Object.freeze({ ...door, solid: Object.freeze({ id: door.id, center: Object.freeze(frame.center), size: Object.freeze(size), color: 0xb66f20 }) });
+    const other = rooms.get(connection.b.roomId);
+    const front = room.surfaces?.[connection.a.port], back = other?.surfaces?.[connection.b.port];
+    const frontBase = MATERIALS[room.materialPreset][connection.a.port === 'negativeY' ? 'floor' : connection.a.port === 'positiveY' ? 'ceiling' : 'wall'];
+    const backBase = MATERIALS[other?.materialPreset ?? room.materialPreset][connection.b.port === 'negativeY' ? 'floor' : connection.b.port === 'positiveY' ? 'ceiling' : 'wall'];
+    return Object.freeze({ ...door, ...(document.formatVersion >= 8 ? { sliding: true, slideAxis: frame.u, normalAxis: frame.axis, direction: frame.direction,
+      reverseStyle: { color: back?.color ?? backBase, pattern: back?.pattern } } : {}),
+      solid: Object.freeze({ id: door.id, center: Object.freeze(frame.center), size: Object.freeze(size),
+        color: door.concealed ? front?.color ?? frontBase : 0x677b83,
+        ...(document.formatVersion < 8 ? { color: 0xb66f20 } : { pattern: door.concealed ? front?.pattern : 'panels' }) }) });
   }) : [];
   return Object.freeze({
     id: document.id, name: document.name, kind: 'arena', sourceDocument: document,

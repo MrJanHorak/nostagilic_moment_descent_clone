@@ -85,6 +85,7 @@ class ProjectileManager {
     if (projectile.faction === 'enemy') this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
     else this.removeProjectile(projectile);
     if (hit.kind === 'enemy' && projectile.faction === 'player') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
+    else if (hit.kind === 'wall' && projectile.faction === 'player') this.combatWorld.onWallHit?.(hit.target, projectile, hit.point);
     else if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
       gameState.takeDamage(projectile.power ?? 10);
       if (!this.session || this.session.phase === 'playing') effectsManager?.createExplosion(hit.point, 0xff0000, true, 1);
