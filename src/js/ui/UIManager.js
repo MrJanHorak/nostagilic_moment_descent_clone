@@ -1056,6 +1056,10 @@ class UIManager {
     guide.textContent = this.game.levelManager.currentLevel?.combat
       ? 'COMBAT TRAINING · Clear 2 drones · Click to capture mouse/fire pulse · Walls provide cover · Esc pause'
       : 'FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause';
+    this.guideDetails = document.createElement('span'); this.guideDetails.textContent = guide.textContent;
+    this.guideSummary = document.createElement('span'); this.guideSummary.id = 'cockpit-objective'; this.guideSummary.hidden = true;
+    this.guideSummary.textContent = this.game.levelManager.currentLevel?.combat ? 'COMBAT TRAINING · CLEAR DRONES' : 'FLIGHT TRAINING · CYAN DOORWAY';
+    guide.replaceChildren(this.guideDetails, this.guideSummary);
     Object.assign(guide.style, { position: 'fixed', left: '50%', transform: 'translateX(-50%)',
       bottom: this.game?.diagnostics.enabled ? '150px' : '24px', width: 'min(640px, 85vw)',
       padding: '10px 16px', background: '#001624dd', border: '1px solid #45e5ed',
@@ -1085,10 +1089,17 @@ class UIManager {
     const playing = this.game.session.phase === 'playing';
     this.navigationDisplay.update(this.gameState, this.game.spaceship, this.game.exploration,
       this.game.levelManager.interaction?.closedConnections ?? new Set(), playing, values.cameraView === 'cockpit', values.showHUD);
-    if (this.arenaGuide) {
+    if (this.arenaGuide && this.arenaGuide.dataset.view !== values.cameraView) {
       const cockpit = values.cameraView === 'cockpit';
+      this.arenaGuide.dataset.view = values.cameraView;
       Object.assign(this.arenaGuide.style, { bottom: cockpit ? 'auto' : this.game?.diagnostics.enabled ? '150px' : '24px',
-        top: cockpit ? '32px' : 'auto', fontSize: cockpit ? '12px' : '14px', width: cockpit ? 'min(700px, 72vw)' : 'min(640px, 85vw)' });
+        top: cockpit ? '16px' : 'auto', font: cockpit ? '12px/1.5 monospace' : '14px Arial, sans-serif',
+        padding: cockpit ? '6px 12px' : '10px 16px', width: cockpit ? 'fit-content' : 'min(640px, 85vw)', maxWidth: cockpit ? '78vw' : 'none',
+        background: cockpit ? '#0b171bd9' : '#001624dd', borderRadius: cockpit ? '2px' : '6px' });
+      if (this.guideSummary) this.guideSummary.hidden = !cockpit;
+      if (this.guideDetails) Object.assign(this.guideDetails.style, cockpit
+        ? { position: 'absolute', top: '0', left: '0', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)' }
+        : { position: 'static', width: 'auto', height: 'auto', overflow: 'visible', clipPath: 'none' });
     }
     const reticle = document.getElementById('aim-reticle');
     if (reticle) {
@@ -1105,7 +1116,16 @@ class UIManager {
       document.body.appendChild(this.shipStatus);
     }
     this.shipStatus.hidden = this.game.session.phase !== 'playing';
-    const text = `C · ${{ hud: 'HUD VIEW', external: 'EXTERNAL VIEW', cockpit: 'COCKPIT VIEW' }[values.cameraView]}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}\nM · EXPLORED MAP`;
+    const cockpit = values.cameraView === 'cockpit';
+    if (this.shipStatus.dataset.view !== values.cameraView) {
+      this.shipStatus.dataset.view = values.cameraView;
+      Object.assign(this.shipStatus.style, { top: cockpit ? 'auto' : '45%', bottom: cockpit ? '8px' : 'auto',
+        right: cockpit ? 'auto' : '16px', left: cockpit ? '50%' : 'auto', transform: cockpit ? 'translateX(-50%)' : 'none',
+        padding: cockpit ? '3px 8px' : '8px 12px', borderRight: cockpit ? 'none' : '2px solid #68c7d3',
+        fontSize: cockpit ? '10px' : '11px', background: cockpit ? '#0b171bc9' : '#061925bf' });
+    }
+    const text = cockpit ? `COCKPIT VIEW · C CAMERA · L LIGHTS ${values.headlights ? 'ON' : 'OFF'} · H HUD ${values.showHUD ? 'ON' : 'OFF'} · M MAP`
+      : `C · ${values.cameraView === 'hud' ? 'HUD VIEW' : 'EXTERNAL VIEW'}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}\nM · EXPLORED MAP`;
     if (this.shipStatus.textContent !== text) this.shipStatus.textContent = text;
   }
 
@@ -1124,7 +1144,13 @@ class UIManager {
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
         level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
     const text = `${level.name.toUpperCase()} · ${status}${relay}${navigation ? ` · ${navigation}` : ''} · Click/F fire · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
-    if (this.arenaGuide.textContent !== text) this.arenaGuide.textContent = text;
+    if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
+    if (this.guideSummary) {
+      const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size
+        ? `RELAYS ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : `DRONES ${mission.defeats.size}/${mission.requiredIds.size}`;
+      const summary = `${level.name.toUpperCase()} · ${objective}${device ? ` · R: ${device.label}` : ''}`;
+      if (this.guideSummary.textContent !== summary) this.guideSummary.textContent = summary;
+    }
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
   }
 
@@ -1136,6 +1162,7 @@ class UIManager {
     for (const element of this.transientElements) element.remove();
     this.transientElements.clear();
     this.arenaGuide = null;
+    this.guideDetails = this.guideSummary = null;
     this.mineGuide = null;
     this.hidePauseMenu();
     this.resultScreen?.remove();

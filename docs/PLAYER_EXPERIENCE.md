@@ -30,6 +30,16 @@ Cockpit verification: lint (65 modules), strict types, all 391 unit/simulation c
 
 Visually reviewed evidence: [cockpit 1280×800](progress/cockpit-view.png), [cockpit 960×540](progress/cockpit-compact.png), [expanded survey](progress/cockpit-map.png), and the [final two-case browser report](progress/cockpit-final-browser-check.json). No dependencies changed and no commit/push/deployment was performed.
 
+The subsequent industrial cockpit refinement replaces the three matching screens with a continuous beveled cowl, two recessed displays and a raised circular shield instrument. A segmented shield ring surrounds an original ship schematic, numerical strength and speed; a small local-velocity cue avoids implying a gravity horizon. The weapon display has original drawn silhouettes, a large ammunition count and a compact four-slot inventory. The navigation display combines the existing survey and ship-relative contact scanner.
+
+Flat canopy members, rubber seals, panel fasteners, vent slats, switch banks, a guarded red control and painted identification give the cabin a manufactured scale. Fasteners/vents use instancing and simple repeated parts share geometry. The visible stick responds to local attitude changes and the thrust lever to forward/reverse velocity. These are presentation animations, not clickable controls. Status lamps follow headlights, ammunition availability and shields; finite-ammo consumption briefly illuminates the cabin, and damage/critical shields drive red warning light. Camera, aiming and flight physics remain unchanged.
+
+Cockpit mode now uses a compact mission strip and a lower shortcut legend. The full mission guidance remains in the other views and the accessible document. H still blanks the instruments; M still expands the explored map. Broad cockpit shake, animated hands, interactive switches, glass reflections and world-light sampling are outside this pass.
+
+Refinement verification: `npm run verify` passes (66 checked runtime modules, all 391 unit/simulation cases and build). Seven targeted browser scenarios pass: camera/settings persistence, cockpit fire/map/compact layout, actual enemy-fire shield damage plus reset, Vector Foundry's vertical relay/extraction/replay route, ordinary victory/death/reboot/menu flow, ten restart resource cycles, and desktop/small-viewport settings. After the final hand-control clearance adjustment, lint/types/build and the two cockpit scenarios pass again. The [seven-case browser report](progress/cockpit-industrial-browser-check.json) and [final cockpit report](progress/cockpit-industrial-final-check.json) record these runs. This is functional software-rendering evidence; hardware frame-time acceptance remains open.
+
+Reviewed refinement images: [normal 1280×800](progress/cockpit-industrial.png), [compact 960×540](progress/cockpit-industrial-compact.png), [expanded map](progress/cockpit-industrial-map.png), and [critical shields under enemy fire](progress/cockpit-industrial-warning.png). No new dependencies or deployment.
+
 ## Campaign
 
 The mission library leads with three new authored v7 missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors.

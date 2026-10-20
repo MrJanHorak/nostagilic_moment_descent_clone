@@ -32,6 +32,7 @@
     "src/js/core/ShipView.js",
     "src/js/core/ExplorationMap.js",
     "src/js/ui/CockpitView.js",
+    "src/js/ui/CockpitInterior.js",
     "src/js/ui/NavigationDisplay.js",
     "src/js/core/MissionMusic.js",
     "src/js/core/levels/Campaign.js",

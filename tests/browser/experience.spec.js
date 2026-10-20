@@ -96,6 +96,8 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
   await expect(page.locator('#ship-view-status')).toContainText('COCKPIT VIEW');
   await expect(page.locator('#hud-container')).toHaveCSS('display', 'none');
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1');
+  expect((await page.locator('#arena-guide').boundingBox()).height).toBeLessThan(46);
   await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 80');
   await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
   await page.clock.fastForward(2200); await page.clock.runFor(100); await page.waitForTimeout(300);
@@ -118,6 +120,8 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await page.keyboard.press('c'); await page.clock.fastForward(100);
   await expect(page.locator('#ship-view-status')).toContainText('HUD VIEW');
   await expect(page.locator('#hud-container')).toHaveCSS('display', 'flex');
+  await expect(page.locator('#cockpit-objective')).toBeHidden();
+  await expect(page.locator('#arena-guide')).toContainText('Location: Blue Arrival');
   await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
   await page.keyboard.press('Escape'); await button(page, 'SETTINGS').press('Enter');
   const settings = page.getByRole('dialog', { name: 'GAME SETTINGS' });
@@ -126,6 +130,27 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await page.reload(); await button(page, 'SETTINGS').click();
   await expect(settings.getByLabel('Ship camera', { exact: true })).toHaveValue('cockpit');
 });
+test('production: cockpit follows enemy shield damage and resets on restart', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openClockedGame(page, 'http://127.0.0.1:5184/');
+  await page.locator('#select-level-btn').click(); await page.locator('.mission-library summary').click();
+  await button(page, 'Arena Escape').press('Enter'); await page.clock.fastForward(100);
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  await expect(page.locator('#cockpit-objective')).toHaveText('ARENA ESCAPE · DRONES 0/2');
+  await advanceUntil(page, async () => {
+    const shield = parseInt(await page.locator('#health-percentage').textContent(), 10);
+    if (shield <= 0) throw new Error('Ship died before the critical-shield checkpoint');
+    return shield <= 30;
+  }, { ticks: 900, message: 'Enemy fire must lower the live cockpit shield readout' });
+  const shield = await page.locator('#health-percentage').textContent();
+  await expect(page.locator('#cockpit-instruments')).toContainText(`Shield ${shield}`);
+  await page.clock.runFor(32); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('cockpit-shield-warning.png'), animations: 'disabled' });
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').press('Enter'); await page.clock.fastForward(200);
+  await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 40');
+  await expect(page.locator('#cockpit-objective')).toHaveText('ARENA ESCAPE · DRONES 0/2');
+});
+
 const routes = [
   ['Signal Breach', [[2, -32], [0, 20], [2, 0], [0, 0], [2, -30], 'r', [2, -56]]],
   ['Vector Foundry', [[2, -9], [1, 2], [2, -14], [1, 4], [2, -18], [1, 6], [2, -22], [1, 8], [2, -33], 'r', [2, -36], [1, 38], 'r', [0, 24]]],
