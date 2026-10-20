@@ -14,12 +14,21 @@ Useful further editor work includes top/front/side camera presets, selection iso
 
 ## Ship presentation
 
-- **C** switches HUD / first-person and external chase views.
+- **C** cycles HUD / first-person, external chase and immersive cockpit views.
+- **M** enlarges/closes the explored-volume map in any flight view. Flight remains active.
 - **L** toggles the two ship headlights.
 - **H** toggles flight HUD/reticle visibility. Mission objectives and the small shortcut/status legend remain visible.
 - **Settings** exposes all three options and persists them with existing mouse/audio preferences. Old settings files acquire defaults; invalid values are ignored. Shortcuts are inactive in settings and outside active flight.
 
-The external camera traces against the actual static/convex walls and closed doors and retracts before a surface. At very close range the external ship model hides to avoid filling the screen. The player transform, weapon origin, thrust/collision and ship-mounted headlights remain independent of camera placement. The external aiming marker projects the ship's forward wall-hit point. There is no orbit/free camera or physical cockpit mesh in this pass.
+The external camera traces against the actual static/convex walls and closed doors and retracts before a surface. At very close range the external ship model hides to avoid filling the screen. The player transform, weapon origin, thrust/collision and ship-mounted headlights remain independent of camera placement. The external aiming marker projects the ship's forward wall-hit point.
+
+October 20 follow-up: the third view adds a 3D canopy, perimeter ribs, console and three recessed instrument screens. Shields use the existing player-health value; the game does not have a second hull-health pool. Instruments show speed, a ship-relative 40-unit enemy scanner with height stems, selected weapon and all four inventory slots/ammo, plus a fixed isometric map of entered rooms. The cockpit renders in a separate depth pass so nearby walls cannot clip its frame. Screen textures refresh at 10 Hz; flight/rendering keep their existing cadence. H blanks screens and reticle but retains cabin geometry. Objectives move above the windshield. The existing first-person preference remains the default; all three views persist in Settings.
+
+Discovery uses the existing validated room graph and transformed corners, including affine ramps and vertical/rotated rooms. It reveals only entered rooms and links between them, tracks current room and ship heading, and colors closed links amber. M expands the same map in all views. Visits reset with a new attempt, and no level format changes are required. Maps are available for campaign and authored/imported documents; legacy practice fixtures without a source document show no survey. Radar is range-based and can detect enemies through walls. Map pan/orbit/zoom, destination selection and persistent exploration across attempts are future work.
+
+Cockpit verification: lint (65 modules), strict types, all 391 unit/simulation cases, production build and diff checks pass. Seven targeted browser cases passed together: view/settings persistence, cockpit instruments/fire/map, all three campaign flight/relay/extraction/replay routes, ten restart resource cycles, and settings at desktop/small viewport sizes. The final map DOM/layout cleanup was followed by passing cockpit and ordinary keyboard victory/death/reboot/menu cases (eight distinct browser scenarios across the runs). Campaign routes use the existing development drone-neutralization action; they verify navigation/progression rather than combat balance. Renderer diagnostics now include cabin resources and both render passes. No fresh hardware frame-time acceptance was performed; the existing large-chunk build warning remains.
+
+Visually reviewed evidence: [cockpit 1280×800](progress/cockpit-view.png), [cockpit 960×540](progress/cockpit-compact.png), [expanded survey](progress/cockpit-map.png), and the [final two-case browser report](progress/cockpit-final-browser-check.json). No dependencies changed and no commit/push/deployment was performed.
 
 ## Campaign
 

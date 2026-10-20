@@ -12,7 +12,7 @@ export interface UserPreferences {
   readonly musicVolume: number;
   readonly effectsVolume: number;
   readonly muted: boolean;
-  readonly cameraView: 'hud' | 'external';
+  readonly cameraView: 'hud' | 'external' | 'cockpit';
   readonly headlights: boolean;
   readonly showHUD: boolean;
 }
@@ -58,6 +58,7 @@ export interface InputGameActions {
   releasePointerLock(): void;
   interact?(): boolean;
   toggleShipOption?(option: 'cameraView' | 'headlights' | 'showHUD'): void;
+  toggleMap?(): void;
 }
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;

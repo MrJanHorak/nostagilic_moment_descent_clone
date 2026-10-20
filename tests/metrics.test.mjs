@@ -35,6 +35,16 @@ test('geometry allocation budget counts actual scene and shot cache identities o
   live.dispose(); cached.dispose(); material.dispose();
 });
 
+test('resource snapshot includes the persistent cockpit scene, sharing resource identities across passes', () => {
+  const scene = new THREE.Scene(), cabin = new THREE.Scene();
+  const geometry = new THREE.BoxGeometry(), material = new THREE.MeshBasicMaterial();
+  scene.add(new THREE.Mesh(geometry, material)); cabin.add(new THREE.Mesh(geometry, material), new THREE.HemisphereLight());
+  const resources = collectResources({ scene, cockpit: { scene: cabin } });
+  assert.equal(resources.objects, 5); assert.equal(resources.lights, 1);
+  assert.equal(resources.materials, 1); assert.equal(resources.sceneGeometries, 1); assert.equal(resources.geometryBudget, 1);
+  geometry.dispose(); material.dispose();
+});
+
 test('flight diagnostics publish each rendered observation while full metrics stay throttled', t => {
   const diagnostics = new RuntimeDiagnostics(true), attributes = new Map();
   diagnostics.panel = { setAttribute: (key, value) => attributes.set(key, value) };

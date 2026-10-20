@@ -40,7 +40,7 @@ A 3D zero-gravity shooter in the style of Descent, built with JavaScript and Thr
 
 ## Game Overview
 
-DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate finite connected mines with loops, ramps, vertical hatches and relay doors. Choose first-person or external ship view.
+DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate finite connected mines with loops, ramps, vertical hatches and relay doors. Choose first-person, external ship or immersive cockpit view.
 
 ### Game Mechanics
 
@@ -147,7 +147,10 @@ The collapsed **Practice & prototypes** section retains Flight Training Arena, A
 - **Left Click / F**: Shoot (F works without mouse capture; one shot per key press)
 - **ESC**: Pause game
 - **R**: Activate a visible relay within 2.5 units
-- **C / L / H**: Switch ship camera / toggle headlights / toggle flight HUD (also available in Settings)
+- **C**: Cycle first-person → external → immersive cockpit (also available in Settings)
+- **M**: Expand/close the explored-room map in any flight view; flight stays active
+- **L / H**: Toggle headlights / flight instruments (also available in Settings)
+- **1–4**: Select an unlocked weapon; cockpit screens show selection, ammo and locked slots
 - **Reboot / Replay buttons**: Restart after death or completion; restart during play from the pause menu
 
 ## Code Structure
@@ -182,6 +185,12 @@ The game is designed to be easily extendable. Check the [DEVELOPER_GUIDE.md](DEV
 - Extending the UI
 
 ## Technical Details
+
+### Cockpit and exploration
+
+The cockpit uses real 3D canopy ribs, a dashboard and three recessed live instrument screens: shields/speed/local contacts, weapon inventory/ammo, and an isometric survey of visited rooms. Its near-field render pass prevents walls from cutting through the cabin without changing flight physics or firing origins. H blanks the screens and reticle while retaining the cabin; mission objectives remain visible above the windshield.
+
+The automap shares the authored room/portal geometry, including rotated rooms, ramps and vertical shafts. Only entered rooms and connections between them appear. Mint marks the current room; white marks ship position/heading; amber dashed links mark closed doors between explored rooms. Discovery lasts for the current attempt and resets on replay or a new mission. It works in campaign and imported/editor missions; practice fixtures without room documents report no survey. The local contact scanner shows active enemies within 40 units relative to the ship, with height stems; it can detect contacts through walls. This first map is a fixed isometric survey, without pan/rotate/zoom or route planning.
 
 ### Renderer
 

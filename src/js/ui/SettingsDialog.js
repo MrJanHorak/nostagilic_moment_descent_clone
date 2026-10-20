@@ -41,10 +41,10 @@ export default class SettingsDialog {
       <p id="sensitivity-hint" class="settings-hint">0.25× slow · 1× default · 3× fast</p>
       <label><input id="invert-mouse-y" type="checkbox" aria-describedby="invert-hint"> Invert mouse Y</label>
       <p id="invert-hint" class="settings-hint">When enabled, moving the mouse up pitches the ship down.</p>
-      <label for="camera-view">Ship camera</label><select id="camera-view"><option value="hud">HUD / first person</option><option value="external">External chase camera</option></select>
+      <label for="camera-view">Ship camera</label><select id="camera-view"><option value="hud">HUD / first person</option><option value="external">External chase camera</option><option value="cockpit">Immersive cockpit</option></select>
       <label><input id="ship-headlights" type="checkbox"> Ship headlights</label>
       <label><input id="show-flight-hud" type="checkbox"> Show flight HUD</label>
-      <p class="settings-hint">During flight: C switches camera · L toggles headlights · H toggles HUD. Mission objectives stay visible.</p>
+      <p class="settings-hint">During flight: C cycles first person / external / cockpit · M expands the explored map · L toggles headlights · H toggles instruments. Mission objectives stay visible.</p>
       <label for="music-volume">Music volume <output id="music-volume-value" for="music-volume"></output></label>
       <input id="music-volume" type="range" min="0" max="100" step="1">
       <label for="effects-volume">Effects volume <output id="effects-volume-value" for="effects-volume"></output></label>

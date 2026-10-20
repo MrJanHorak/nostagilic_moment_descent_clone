@@ -24,7 +24,7 @@ function normalize(source, fallback = DEFAULT_SETTINGS) {
     musicVolume: volume('musicVolume' in record ? record.musicVolume : undefined, fallback.musicVolume),
     effectsVolume: volume('effectsVolume' in record ? record.effectsVolume : undefined, fallback.effectsVolume),
     muted: typeof muted === 'boolean' ? muted : fallback.muted,
-    cameraView: 'cameraView' in record && (record.cameraView === 'hud' || record.cameraView === 'external') ? record.cameraView : fallback.cameraView,
+    cameraView: 'cameraView' in record && (record.cameraView === 'hud' || record.cameraView === 'external' || record.cameraView === 'cockpit') ? record.cameraView : fallback.cameraView,
     headlights: 'headlights' in record && typeof record.headlights === 'boolean' ? record.headlights : fallback.headlights,
     showHUD: 'showHUD' in record && typeof record.showHUD === 'boolean' ? record.showHUD : fallback.showHUD,
   });

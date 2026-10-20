@@ -76,7 +76,7 @@ export function collectResources(game) {
   const materials = new Set();
   const geometries = new Set();
   let objects = 0, lights = 0;
-  game?.scene?.traverse(object => {
+  for (const scene of [game?.scene, game?.cockpit?.scene]) scene?.traverse(object => {
     objects++;
     if (object.isLight) lights++;
     if (object.geometry) geometries.add(object.geometry);

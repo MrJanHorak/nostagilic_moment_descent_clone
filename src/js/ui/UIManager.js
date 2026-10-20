@@ -2,6 +2,7 @@
 import SettingsDialog from './SettingsDialog.js';
 import MineGuide from '../core/levels/document/MineGuide.js';
 import createMissionSelect from './MissionSelect.js';
+import NavigationDisplay from './NavigationDisplay.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -18,6 +19,7 @@ class UIManager {
     };
 
     this.initHUD();
+    this.navigationDisplay = new NavigationDisplay();
   }
 
   initHUD() {
@@ -1079,6 +1081,15 @@ class UIManager {
     if (!values) return;
     const hud = document.getElementById('hud-container');
     if (hud) hud.style.visibility = values.showHUD ? 'visible' : 'hidden';
+    if (hud) hud.style.display = values.cameraView === 'cockpit' ? 'none' : 'flex';
+    const playing = this.game.session.phase === 'playing';
+    this.navigationDisplay.update(this.gameState, this.game.spaceship, this.game.exploration,
+      this.game.levelManager.interaction?.closedConnections ?? new Set(), playing, values.cameraView === 'cockpit', values.showHUD);
+    if (this.arenaGuide) {
+      const cockpit = values.cameraView === 'cockpit';
+      Object.assign(this.arenaGuide.style, { bottom: cockpit ? 'auto' : this.game?.diagnostics.enabled ? '150px' : '24px',
+        top: cockpit ? '32px' : 'auto', fontSize: cockpit ? '12px' : '14px', width: cockpit ? 'min(700px, 72vw)' : 'min(640px, 85vw)' });
+    }
     const reticle = document.getElementById('aim-reticle');
     if (reticle) {
       reticle.style.visibility = values.showHUD ? 'visible' : 'hidden';
@@ -1094,7 +1105,7 @@ class UIManager {
       document.body.appendChild(this.shipStatus);
     }
     this.shipStatus.hidden = this.game.session.phase !== 'playing';
-    const text = `C · ${values.cameraView === 'hud' ? 'HUD VIEW' : 'EXTERNAL VIEW'}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}`;
+    const text = `C · ${{ hud: 'HUD VIEW', external: 'EXTERNAL VIEW', cockpit: 'COCKPIT VIEW' }[values.cameraView]}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}\nM · EXPLORED MAP`;
     if (this.shipStatus.textContent !== text) this.shipStatus.textContent = text;
   }
 
@@ -1118,6 +1129,7 @@ class UIManager {
   }
 
   resetSessionUI() {
+    this.navigationDisplay?.reset();
     this.settingsDialog?.close(false);
     for (const timer of this.presentationTimers) clearTimeout(timer);
     this.presentationTimers.clear();

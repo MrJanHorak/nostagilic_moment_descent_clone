@@ -87,6 +87,45 @@ async function fly(page, axis, target) {
     }, { ticks: 30, message: 'Residual drift must settle before the next axis' });
   } finally { if (held) await page.keyboard.up(held); }
 }
+
+test('production: cockpit instruments, firing, map, view cycle and saved selection', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openClockedGame(page, 'http://127.0.0.1:5184/');
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  await expect(page.locator('#ship-view-status')).toContainText('COCKPIT VIEW');
+  await expect(page.locator('#hud-container')).toHaveCSS('display', 'none');
+  await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 80');
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
+  await page.clock.fastForward(2200); await page.clock.runFor(100); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('cockpit.png'), animations: 'disabled' });
+  await page.keyboard.press('f'); await page.clock.fastForward(300);
+  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 79');
+  await page.keyboard.press('m'); await page.clock.fastForward(200);
+  await expect(page.locator('#exploration-map')).toBeVisible();
+  await expect(page.locator('canvas')).toHaveCount(2);
+  await expect(page.locator('#exploration-map')).toContainText('1 / 7 rooms');
+  await page.clock.runFor(100); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('cockpit-map.png'), animations: 'disabled' });
+  await page.keyboard.press('h'); await page.clock.fastForward(100);
+  await expect(page.locator('#cockpit-instruments')).toBeHidden();
+  await page.keyboard.press('h'); await page.keyboard.press('m'); await page.clock.fastForward(100);
+  await expect(page.locator('canvas')).toHaveCount(1);
+  await page.setViewportSize({ width: 960, height: 540 }); await page.clock.fastForward(200);
+  await page.clock.fastForward(2200); await page.clock.runFor(100); await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('cockpit-compact.png'), animations: 'disabled' });
+  await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await expect(page.locator('#ship-view-status')).toContainText('HUD VIEW');
+  await expect(page.locator('#hud-container')).toHaveCSS('display', 'flex');
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await page.keyboard.press('Escape'); await button(page, 'SETTINGS').press('Enter');
+  const settings = page.getByRole('dialog', { name: 'GAME SETTINGS' });
+  await expect(settings.getByLabel('Ship camera', { exact: true })).toHaveValue('cockpit');
+  await page.keyboard.press('m'); await expect(page.locator('#exploration-map')).toBeHidden();
+  await page.reload(); await button(page, 'SETTINGS').click();
+  await expect(settings.getByLabel('Ship camera', { exact: true })).toHaveValue('cockpit');
+});
 const routes = [
   ['Signal Breach', [[2, -32], [0, 20], [2, 0], [0, 0], [2, -30], 'r', [2, -56]]],
   ['Vector Foundry', [[2, -9], [1, 2], [2, -14], [1, 4], [2, -18], [1, 6], [2, -22], [1, 8], [2, -33], 'r', [2, -36], [1, 38], 'r', [0, 24]]],
@@ -100,11 +139,13 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
   // Production combat remains covered by the ordinary-fire victory/death suite.
   await advanceUntil(page, () => button(page, 'Neutralize drones (test)').isVisible(), { ticks: 10, message: 'Development mission controls must refresh before use' });
   await button(page, 'Neutralize drones (test)').press('Enter');
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
   for (const step of route) {
     if (step === 'r') { await page.keyboard.press('r'); await page.clock.fastForward(100); }
     else await fly(page, step[0], step[1]);
   }
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
+  expect(Number(await page.locator('#cockpit-instruments').getAttribute('data-visited'))).toBeGreaterThan(1);
   await page.screenshot({ path: testInfo.outputPath(`${name.replaceAll(' ', '-').toLowerCase()}-complete.png`), fullPage: true });
   await button(page, 'REPLAY MISSION').press('Enter'); await page.clock.fastForward(100);
   await expect(page.locator('#health-percentage')).toHaveText('100%');
@@ -113,4 +154,5 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
   await expect(page.locator('#arena-guide')).toContainText('Relays 0/');
   const state = JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
   expect(state.position).toEqual([0, 0, 5]);
+  await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
 });

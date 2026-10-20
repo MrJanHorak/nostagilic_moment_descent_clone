@@ -14,6 +14,8 @@ import GameSession from '../src/js/core/GameSession.js';
 import RelayController from '../src/js/core/RelayController.js';
 import MissionObjective from '../src/js/core/MissionObjective.js';
 import disposeObject from '../src/js/utils/disposeObject.js';
+import ExplorationMap from '../src/js/core/ExplorationMap.js';
+import { toWorld } from '../src/js/core/levels/document/RoomMath.js';
 
 test('external camera retracts at a wall and leaves the flight/weapon pose and headlights fixed', () => {
   const ship = new Spaceship(), camera = new THREE.PerspectiveCamera(75, 1.6, 0.1, 1000);
@@ -32,6 +34,9 @@ test('external camera retracts at a wall and leaves the flight/weapon pose and h
   assert.equal(view.lights.parent, ship.group); assert(before.elements.every(Number.isFinite));
   view.apply({ cameraView: 'hud', headlights: true }); view.update([box]);
   assert.deepEqual(camera.position.toArray(), [0, 0, 0]); assert.equal(ship.model.visible, false); assert.equal(view.lights.visible, true);
+  view.apply({ cameraView: 'cockpit', headlights: true }); view.update([box]);
+  assert.deepEqual(camera.position.toArray(), [0, 0, 0]); assert.equal(ship.model.visible, false);
+  assert.deepEqual([ship.group.position.toArray(), ship.group.quaternion.toArray()], pose);
   disposeObject(ship.group);
 });
 
@@ -44,6 +49,29 @@ test('ship view preferences round-trip, reject malformed values and keep old sav
   settings.update({ cameraView: 'orbit', headlights: 'true', showHUD: 1 });
   assert.deepEqual(new UserSettings(() => storage).values, settings.values);
   assert.equal(settings.values.cameraView, 'external'); assert.equal(settings.values.headlights, false); assert.equal(settings.values.showHUD, false);
+  settings.update({ cameraView: 'cockpit' });
+  assert.equal(new UserSettings(() => storage).values.cameraView, 'cockpit');
+});
+
+test('survey discovers only entered rooms, retains visits and starts fresh per session', () => {
+  for (const level of createCampaign()) {
+    const document = level.sourceDocument, before = JSON.stringify(document), map = new ExplorationMap(document);
+    assert.equal(map.visited.size, 0);
+    for (const room of document.rooms) {
+      const position = new THREE.Vector3(...toWorld(room, [0, 0, 0]));
+      map.update(position);
+      assert.equal(map.current, room.id);
+      assert(map.visited.has(room.id));
+      const corners = map.outlines.get(room.id);
+      assert.equal(corners.length, 8);
+      assert(corners.flat().every(Number.isFinite));
+    }
+    assert.equal(map.visited.size, document.rooms.length);
+    map.update(new THREE.Vector3(9999, 9999, 9999));
+    assert.equal(map.current, null); assert.equal(map.visited.size, document.rooms.length);
+    assert.equal(new ExplorationMap(document).visited.size, 0);
+    assert.equal(JSON.stringify(document), before);
+  }
 });
 
 test('original music is deterministic stereo with bounded samples and a continuous, varying loop', () => {

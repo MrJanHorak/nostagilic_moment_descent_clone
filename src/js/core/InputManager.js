@@ -92,6 +92,7 @@ class InputManager {
       event.preventDefault?.(); this.game?.interact?.();
     }
     if (!event.repeat && this.gameState.session.phase === 'playing') {
+      if (event.code === 'KeyM') { event.preventDefault?.(); this.game?.toggleMap?.(); }
       const option = /** @type {const} */ ({ KeyC: 'cameraView', KeyL: 'headlights', KeyH: 'showHUD' });
       const key = /** @type {keyof typeof option} */ (event.code);
       if (option[key]) { event.preventDefault?.(); this.game?.toggleShipOption?.(option[key]); }

@@ -8,7 +8,7 @@ export default class ShipView {
   /** @param {import('../entities/Spaceship.js').default} ship @param {THREE.PerspectiveCamera} camera */
   constructor(ship, camera) {
     this.ship = ship; this.camera = camera;
-    /** @type {'hud' | 'external'} */ this.mode = 'hud';
+    /** @type {import('../contracts.js').UserPreferences['cameraView']} */ this.mode = 'hud';
     this.lights = new THREE.Group(); this.lights.name = 'shipHeadlights';
     for (const x of [-0.28, 0.28]) {
       const lamp = new THREE.SpotLight(0xd5efff, 3, 36, Math.PI / 6, 0.65, 1);
@@ -26,7 +26,7 @@ export default class ShipView {
   update(colliders = []) {
     const { ship, camera } = this;
     camera.quaternion.identity();
-    if (this.mode === 'hud') {
+    if (this.mode !== 'external') {
       camera.position.set(0, 0, 0); ship.model.visible = false;
       return new THREE.Vector3(0, 0, 0);
     }

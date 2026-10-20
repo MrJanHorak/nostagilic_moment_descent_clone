@@ -16,6 +16,8 @@ import MissionObjective from './core/MissionObjective.js';
 import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
 import ShipView from './core/ShipView.js';
+import ExplorationMap from './core/ExplorationMap.js';
+import CockpitView from './ui/CockpitView.js';
 import { createCaveParticles, updateCaveParticles } from './utils/effectsUtils.js';
 import { checkPlayerObstacleCollision } from './utils/collisionUtils.js';
 import { moveSphere } from './utils/sphereMovement.js';
@@ -35,6 +37,7 @@ export default class Game {
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
+    this.exploration = null;
     this.currentLevelIndex = 0;
     this.importedLevelIndex = null;
     this.isEndlessMode = true;
@@ -86,11 +89,13 @@ export default class Game {
     this.spaceship = new Spaceship();
     this.spaceship.attachCamera(this.camera);
     this.shipView = new ShipView(this.spaceship, this.camera);
+    this.cockpit = new CockpitView();
     this.shipView.apply(this.settings.values);
   }
 
   initRenderer() {
     this.renderer = new THREE.WebGLRenderer();
+    this.renderer.info.autoReset = false; // One frame may render world and cabin.
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.canvas = this.renderer.domElement;
     document.body.appendChild(this.canvas);
@@ -141,6 +146,7 @@ export default class Game {
     this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.mission = null;
+    this.exploration = null;
     this.inputManager?.clearKeys();
     this.releasePointerLock();
     this.audioManager.stopAllSounds();
@@ -197,6 +203,9 @@ export default class Game {
         this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
         if (this.levelManager.currentLevel.spawnRotation) this.spaceship.group.quaternion.fromArray(this.levelManager.currentLevel.spawnRotation);
       }
+      this.exploration = !endless && level.sourceDocument ? new ExplorationMap(level.sourceDocument) : null;
+      this.exploration?.update(this.spaceship.group.position);
+      if (this.cockpit) this.cockpit.lastUpdate = -Infinity;
       if (this.caveParticles) this.caveParticles.visible = this.levelManager.currentLevel?.kind !== 'arena';
       this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
       try { this.initializeAudio(); } catch (error) {
@@ -325,10 +334,13 @@ export default class Game {
 
   toggleShipOption(option) {
     const values = this.settings.values;
-    this.settings.update({ [option]: option === 'cameraView' ? values.cameraView === 'hud' ? 'external' : 'hud' : !values[option] });
+    const views = ['hud', 'external', 'cockpit'];
+    this.settings.update({ [option]: option === 'cameraView' ? views[(views.indexOf(values.cameraView) + 1) % views.length] : !values[option] });
     const current = this.settings.values;
-    this.uiManager?.showMessage(option === 'cameraView' ? `${current.cameraView === 'hud' ? 'HUD / first-person' : 'External'} view` : option === 'headlights' ? `Headlights ${current.headlights ? 'on' : 'off'}` : `HUD ${current.showHUD ? 'on' : 'off'} · H to toggle`, 1800, '#9ce5ed');
+    this.uiManager?.showMessage(option === 'cameraView' ? `${{ hud: 'HUD / first-person', external: 'External', cockpit: 'Cockpit' }[current.cameraView]} view` : option === 'headlights' ? `Headlights ${current.headlights ? 'on' : 'off'}` : `HUD ${current.showHUD ? 'on' : 'off'} · H to toggle`, 1800, '#9ce5ed');
   }
+
+  toggleMap() { this.uiManager.navigationDisplay.toggle(); }
 
   updateMission() {
     if (!this.mission || this.session.phase !== 'playing') return;
@@ -356,6 +368,7 @@ export default class Game {
       else this.spaceship.group.position.add(intended);
     }
     this.levelManager.updateLevel();
+    this.exploration?.update(this.spaceship.group.position);
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.enemyManager.updateEnemies(delta);
     if (this.session.phase !== 'playing') return;
@@ -394,7 +407,13 @@ export default class Game {
         const aim = this.shipView.update(this.levelManager.solidColliders);
         this.uiManager?.updateShipView?.(aim);
       }
+      this.renderer?.info?.reset();
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
+      if (this.settings.values.cameraView === 'cockpit' && ['playing', 'paused'].includes(this.session.phase)) {
+        this.cockpit.update(this.gameState, this.spaceship, this.exploration, this.enemyManager.enemies,
+          this.levelManager.interaction?.closedConnections ?? new Set(), this.session.timeMs);
+        this.cockpit.render(this.renderer, this.camera.aspect, this.settings.values.showHUD);
+      }
       this.diagnostics.recordFrame(this.gameState, this.diagnostics.enabled ? performance.now() - frameStart : 0);
     } catch (error) {
       this.diagnostics.reportError(error, 'Simulation/render');
