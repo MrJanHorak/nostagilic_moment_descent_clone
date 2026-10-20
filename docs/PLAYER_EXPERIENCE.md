@@ -40,6 +40,10 @@ Refinement verification: `npm run verify` passes (66 checked runtime modules, al
 
 Reviewed refinement images: [normal 1280×800](progress/cockpit-industrial.png), [compact 960×540](progress/cockpit-industrial-compact.png), [expanded map](progress/cockpit-industrial-map.png), and [critical shields under enemy fire](progress/cockpit-industrial-warning.png). No new dependencies or deployment.
 
+The next visual pass adds diagonal canopy supports and triangular side glazing, shallow instrument hoods, and an 18% smaller shield instrument. Shared deterministic paint/roughness maps give the shell and metal trim subtle surface variation. Cabin light takes a restrained tint from the current room's authored material and face colors; this approximates reflected color, rather than sampling live world lights or shadows.
+
+This pass passes lint, strict types (66 modules), production build, 17 targeted experience/metrics unit cases and both production cockpit browser scenarios (instruments/fire/map/view persistence, enemy damage/restart). Reviewed images: [1280×800](progress/cockpit-canopy.png) and [960×540](progress/cockpit-canopy-compact.png); [browser report](progress/cockpit-canopy-browser-check.json). No new dependencies. The [enemy and encounter review](ENEMY_AND_ENCOUNTER_REVIEW.md) records the campaign's current combat gaps and a proposed encounter sequence; it does not change AI or mission balance.
+
 ## Campaign
 
 The mission library leads with three new authored v7 missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors.

@@ -188,7 +188,7 @@ The game is designed to be easily extendable. Check the [DEVELOPER_GUIDE.md](DEV
 
 ### Cockpit and exploration
 
-The industrial cockpit uses a continuous beveled dashboard, recessed weapon/navigation screens and a central round shield instrument. It includes weapon silhouettes and large ammo readouts, shields/speed, a local contact scanner, an explored-room survey, modeled flight controls, panel fasteners, switches and warning lighting. The stick and thrust lever respond visually to flight; the switches are decorative. Its near-field render pass prevents walls from cutting through the cabin without changing flight physics or firing origins. H blanks the instruments and reticle while retaining the cabin; a compact mission strip remains above the windshield. See the [reviewed cockpit image](docs/progress/cockpit-industrial.png).
+The industrial cockpit uses a continuous beveled dashboard, recessed weapon/navigation screens and a central round shield instrument. Diagonal canopy supports, triangular side panes, instrument hoods, textured finishes and room-palette lighting frame the view. It includes weapon silhouettes and large ammo readouts, shields/speed, a local contact scanner, an explored-room survey, modeled flight controls, panel fasteners, switches and warning lighting. The stick and thrust lever respond visually to flight; the switches are decorative. Its near-field render pass prevents walls from cutting through the cabin without changing flight physics or firing origins. H blanks the instruments and reticle while retaining the cabin; a compact mission strip remains above the windshield. See the [reviewed cockpit image](docs/progress/cockpit-canopy.png).
 
 The automap shares the authored room/portal geometry, including rotated rooms, ramps and vertical shafts. Only entered rooms and connections between them appear. Mint marks the current room; white marks ship position/heading; amber dashed links mark closed doors between explored rooms. Discovery lasts for the current attempt and resets on replay or a new mission. It works in campaign and imported/editor missions; practice fixtures without room documents report no survey. The local contact scanner shows active enemies within 40 units relative to the ship, with height stems; it can detect contacts through walls. This first map is a fixed isometric survey, without pan/rotate/zoom or route planning.
 
@@ -226,6 +226,7 @@ Web Audio supplies synthesized effects and an original 40-second stereo mission 
 - Additional power-ups with unique effects
 - Further editor usability: camera presets, selection isolation and multi-selection
 - Campaign balance, pacing and presentation refinement
+- Distinct enemy roles and encounters using vertical flanks, loops and guarded supplies; see the [enemy and encounter review](docs/ENEMY_AND_ENCOUNTER_REVIEW.md)
 - Multiplayer mode
 - Mobile touch controls
 - VR support

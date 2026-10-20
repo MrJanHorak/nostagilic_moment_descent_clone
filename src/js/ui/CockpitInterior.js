@@ -1,11 +1,35 @@
 import * as THREE from 'three';
 
+/** Small deterministic surface maps; repeating parts share their material/texture.
+ * @param {number} color @param {boolean} [metal] */
+function finish(color, metal = false) {
+  const size = 128, paint = new Uint8Array(size * size * 4), rough = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const hash = ((x * 13 + y * 37) ^ (x * y * 3)) & 31;
+    const scuff = (y === 13 || y === 111) && x > 11 && x < 51;
+    const shade = metal ? 217 + (y * 7 % 19) + hash / 5 : scuff ? 247 : 229 + hash / 2;
+    const index = (y * size + x) * 4;
+    paint.set([shade, shade, shade, 255], index);
+    const textureRoughness = metal ? 155 + y % 4 * 14 : scuff ? 148 : 210 + hash;
+    rough.set([textureRoughness, textureRoughness, textureRoughness, 255], index);
+  }
+  const map = new THREE.DataTexture(paint, size, size), roughnessMap = new THREE.DataTexture(rough, size, size);
+  for (const texture of [map, roughnessMap]) {
+    texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.magFilter = THREE.LinearFilter;
+    texture.minFilter = THREE.LinearMipmapLinearFilter; texture.generateMipmaps = true; texture.needsUpdate = true;
+  }
+  map.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.MeshStandardMaterial({ color, map, roughnessMap, roughness: metal ? 0.65 : 0.95, metalness: metal ? 0.7 : 0.22 });
+  material.addEventListener('dispose', () => { map.dispose(); roughnessMap.dispose(); });
+  return material;
+}
+
 /** Shared hard-surface cabin parts. The cabin has no collision or input authority. */
 export default class CockpitInterior {
   constructor() {
     this.group = new THREE.Group(); this.group.name = 'industrialCockpit';
-    const shell = new THREE.MeshStandardMaterial({ color: 0x45494a, roughness: 0.76, metalness: 0.25 });
-    const edge = new THREE.MeshStandardMaterial({ color: 0x737974, roughness: 0.45, metalness: 0.65 });
+    const shell = finish(0x555c5c);
+    const edge = finish(0x8a9290, true);
     const rubber = new THREE.MeshStandardMaterial({ color: 0x12191c, roughness: 0.95 });
     const recess = new THREE.MeshStandardMaterial({ color: 0x071015, roughness: 0.8 });
     const amber = new THREE.MeshBasicMaterial({ color: 0xb98c42 });
@@ -34,10 +58,16 @@ export default class CockpitInterior {
     const apron = casework([[-1.65, -1.28], [-0.53, -1.22], [0, -1.32], [0.53, -1.22], [1.65, -1.28], [1.46, -1.62], [-1.46, -1.62]], 0.16, rubber);
     apron.position.z = -1.48;
     for (const side of [-1, 1]) {
-      // Flat structural members and dark seals read as manufactured canopy frames.
-      const a = [side * 1.68, -0.75, -1.87], b = [side * 2.18, 1.8, -2.55];
-      beam(a, b, 0.13, rubber); beam(a, b, 0.082, edge);
-      beam(b, [side * 0.68, 1.45, -1.9], 0.105);
+      // Inward lower pillars define a forward trapezoid and two triangular side panes.
+      const a = [side * 1.17, -0.43, -1.94], b = [side * 2.65, 1.8, -2.6], outer = [side * 1.94, -0.48, -1.79];
+      beam(a, b, 0.105, rubber); beam(a, b, 0.061, edge);
+      beam(outer, b, 0.07, rubber); beam(a, outer, 0.065, shell);
+      beam(b, [side * 0.68, 1.45, -1.9], 0.085);
+      // Very faint glass only in the side facets; the central sight line stays clear.
+      const glassGeometry = new THREE.BufferGeometry();
+      glassGeometry.setAttribute('position', new THREE.Float32BufferAttribute([...a, ...b, ...outer], 3));
+      const glass = new THREE.Mesh(glassGeometry, new THREE.MeshBasicMaterial({ color: 0xa2c9d2, transparent: true, opacity: 0.025, depthWrite: false, side: THREE.DoubleSide }));
+      this.group.add(glass);
       beam([side * 1.76, -0.48, -1.93], [side * 0.48, -0.43, -1.95], 0.065, rubber);
       box([0.26, 0.55, 0.9], [side * 1.64, -1.14, -1.26], shell);
       box([0.21, 0.028, 0.62], [side * 1.64, -0.85, -1.26], rubber);
@@ -51,6 +81,9 @@ export default class CockpitInterior {
         const stripe = box([0.055, 0.018, 0.012], [side * (1.48 + i * 0.06), -0.53, -1.59], amber); stripe.rotation.z = -0.4;
       }
       box([0.15, 0.045, 0.08], [side * 1.48, -0.39, -1.92], edge);
+      // Shallow overhangs shade the instrument recesses without covering the text.
+      const hood = box([1.12, 0.045, 0.36], [side * 1.02, -0.36, -1.92], shell); hood.rotation.x = -0.12;
+      box([1.06, 0.012, 0.3], [side * 1.02, -0.39, -1.92], rubber);
     }
     beam([-0.68, 1.45, -1.9], [0.68, 1.45, -1.9], 0.09);
 
@@ -67,6 +100,8 @@ export default class CockpitInterior {
     const rim = new THREE.Mesh(new THREE.TorusGeometry(0.354, 0.022, 4, 48), edge); rim.position.z = 0.07; this.gauge.add(rim);
     const seal = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.012, 4, 48), rubber); seal.position.z = 0.083; this.gauge.add(seal);
     bolts([[-0.27, 0.27, 0.09], [0.27, 0.27, 0.09], [-0.27, -0.27, 0.09], [0.27, -0.27, 0.09]], this.gauge);
+    this.gauge.scale.setScalar(0.82);
+    this.gauge.position.y = -0.8;
 
     // Painted labels and tactile switch banks keep the operator's scale visible.
     const labels = document.createElement('canvas'); labels.width = 512; labels.height = 96;

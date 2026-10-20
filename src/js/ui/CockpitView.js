@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { drawExploration } from '../core/ExplorationMap.js';
 import CockpitInterior from './CockpitInterior.js';
+import { MATERIALS } from '../core/levels/document/LevelContent.js';
 
 /** Near-field presentation only; the flight camera and weapon origin stay fixed. */
 export default class CockpitView {
@@ -8,8 +9,8 @@ export default class CockpitView {
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, 1, 0.05, 20);
     this.interior = new CockpitInterior(); this.cabin = this.interior.group; this.scene.add(this.cabin);
-    this.scene.add(new THREE.HemisphereLight(0xa4bdca, 0x24221e, 1.7));
-    const lamp = new THREE.DirectionalLight(0xffe0b9, 2.6); lamp.position.set(-1, 2, 3); this.scene.add(lamp);
+    this.ambient = new THREE.HemisphereLight(0xa4bdca, 0x24221e, 1.7); this.scene.add(this.ambient);
+    this.keyLight = new THREE.DirectionalLight(0xffe0b9, 2.6); this.keyLight.position.set(-1, 2, 3); this.scene.add(this.keyLight);
     this.warningLight = new THREE.PointLight(0xff4f29, 0, 4, 2); this.warningLight.position.set(0, -0.15, -1.1); this.scene.add(this.warningLight);
     this.weaponLight = new THREE.PointLight(0x8adeff, 0, 4, 2); this.weaponLight.position.set(-0.9, -0.3, -1.2); this.scene.add(this.weaponLight);
     const screen = (/** @type {THREE.Group} */ mount, /** @type {number} */ width, /** @type {number} */ height, round = false) => {
@@ -38,6 +39,14 @@ export default class CockpitView {
       this.lastWeapon = state.currentWeapon; this.lastAmmo = state.weaponInventory[state.currentWeapon].ammo; this.attitude.copy(ship.group.quaternion);
     }
     this.lastUpdate = time;
+    // Approximate room bounce from authored surface colors, without another world render.
+    const room = map?.current ? map.navigation.rooms.get(map.current)?.room : null;
+    const tint = new THREE.Color(room ? MATERIALS[room.materialPreset].wall : 0x647883);
+    let samples = 1;
+    for (const face of Object.values(room?.surfaces ?? {})) if (typeof face.color === 'number') tint.lerp(new THREE.Color(face.color), 1 / ++samples);
+    this.ambient.color.set(0xa4bdca).lerp(tint, 0.28);
+    this.ambient.groundColor.set(0x24221e).lerp(tint, 0.3);
+    this.keyLight.color.set(0xffe0b9).lerp(tint, 0.16);
     const [weapons, systems, survey] = this.screens.map(screen => screen.ctx);
     for (const ctx of [weapons, systems, survey]) {
       ctx.fillStyle = '#071316'; ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
