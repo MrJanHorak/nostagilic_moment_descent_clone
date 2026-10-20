@@ -1,6 +1,6 @@
-# Shared level document — format versions 1–8
+# Shared level document — format versions 1–9
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. All eight versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. Version 9 adds lava contact hazards and animated safe water surfaces. All nine versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
 The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
 
@@ -10,7 +10,7 @@ All base fields below are required. The version-3 extension below describes its 
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, `7` for shared/multiple openings, or `8` for sliding/shot/concealed doors; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, `7` for shared/multiple openings, `8` for sliding/shot/concealed doors, or `9` for lava/water; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -203,15 +203,23 @@ Marked doors use amber seam markings/shot indicators. Concealed doors omit those
 
 Progression treats a shot door adjacent to a reachable room as openable, then solves relay reachability as before. This establishes geometric progression, not ammunition sufficiency or combat balance. Provide reachable ammunition and test routes through normal firing. The editor's **Add or edit door…** dialog supports marked/concealed appearance, **Shoot door to open**, a new near-spawn relay, or a placed relay. New door controls opt the document into v8; Undo restores the exact previous version, and later opening/style/resize edits preserve v8. See [Signal Breach](../src/js/core/levels/documents/signal-breach.v8.json) for the first playable example.
 
+## Version 9: lava and water surfaces
+
+V9 retains v8 geometry, doors, limits and objectives. A room face may use `"pattern": "lava"` or `"pattern": "water"` in its existing `{color, pattern}` style. The color remains the base material tint; lava has warm emission and moving cracks, water has cool emission and moving ripples. Selecting either style in the editor upgrades a copy to v9. Undo restores the earlier version; door, room and connection edits preserve v9.
+
+Both styles remain solid wall panels. Water is safe to touch and cannot be submerged into. Lava damages the player for 6 points on contact, at most once per 500 simulation milliseconds across all lava panels. The contact tolerance is 0.02 units beyond the physical player sphere, covering collision skin. Seams and rapid re-entry cannot stack hits; long frames apply at most one hit. Actual panel/convex collision geometry determines contact, so opening interiors stay harmless. Door leaves are excluded even when concealed using a lava/water face pattern. Pause freezes animation and exposure; a fresh attempt resets exposure with the world.
+
+V1–8 reject lava/water pattern names. The existing `hazard` pattern remains decorative stripes with no damage. V9 adds no fluid volumes, physics changes, light sources, entities or objective types. See the campaign [Vector Foundry](../src/js/core/levels/documents/vector-foundry.v9.json) and [Nightfall Reactor](../src/js/core/levels/documents/nightfall-reactor.v9.json) examples and [environment roadmap](ENVIRONMENT_AND_MISSION_ROADMAP.md).
+
 ## Limits and compatibility
 
 | Limit | Value |
 | --- | ---: |
 | Rooms / connections / entities, v1–5 | 64 / 128 / 256 |
-| Rooms / connections / entities, v6–8 | 256 / 512 / 256 |
+| Rooms / connections / entities, v6–9 | 256 / 512 / 256 |
 | Parsed JSON text | 1,000,000 UTF-16 code units |
 | Validated tree nodes / nesting depth | 50,000 / 16 |
-| Connections per face, v1–6 / v7–8 | 1 / 8 |
+| Connections per face, v1–6 / v7–9 | 1 / 8 |
 | Reported diagnostics | 100 |
 | Coordinate component magnitude | 4,096 |
 

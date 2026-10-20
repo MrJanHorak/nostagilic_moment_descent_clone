@@ -12,6 +12,7 @@ export default function buildArena(level) {
   group.name = level.id;
   /** @type {{id: string, box: THREE.Box3, convex?: import('../contracts.js').ConvexHull}[]} */
   const colliders = [];
+  /** @type {import('./SurfaceEnvironment.js').EnvironmentSurface[]} */ const surfaces = [];
   const materialFor = surfaceMaterials();
   try {
     for (const definition of [...level.solids, ...(level.doors ?? []).filter(door => !door.sliding).map(door => door.solid)]) {
@@ -30,7 +31,10 @@ export default function buildArena(level) {
       if (!definition.vertices) mesh.position.copy(center);
       group.add(mesh);
       const convex = definition.vertices ? convexHull(definition.vertices) : undefined;
-      colliders.push({ id: definition.id, box: convex?.box ?? new THREE.Box3().setFromCenterAndSize(center, size), ...(convex ? { convex } : {}) });
+      const collider = { id: definition.id, box: convex?.box ?? new THREE.Box3().setFromCenterAndSize(center, size), ...(convex ? { convex } : {}) };
+      colliders.push(collider);
+      // Relay/shot doors stay physical doors, even when disguised as a fluid face.
+      if (level.solids.includes(definition) && (definition.pattern === 'lava' || definition.pattern === 'water')) surfaces.push({ kind: definition.pattern, collider, material: mesh.material });
     }
     for (const door of level.doors ?? []) if (door.sliding) buildSlidingDoor(group, colliders, door, materialFor);
     group.add(new THREE.HemisphereLight(0xe4f4ff, 0x394455, 2));
@@ -65,7 +69,7 @@ export default function buildArena(level) {
 
     if (level.rendering?.trainingDecorations === false) {
       group.updateMatrixWorld(true);
-      return { group, colliders };
+      return { group, colliders, surfaces };
     }
     // Flush frame markings: decorative strips stay outside the traversable opening.
     const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x45e5ed });
@@ -82,7 +86,7 @@ export default function buildArena(level) {
       }
     }
     group.updateMatrixWorld(true);
-    return { group, colliders };
+    return { group, colliders, surfaces };
   } catch (error) {
     disposeObject(group);
     throw error;

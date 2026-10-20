@@ -51,8 +51,8 @@ The mission library leads with three authored shared-document missions. The main
 | Mission | Layout and objective |
 | --- | --- |
 | Signal Breach | Eleven spaces, a shot-open entry door, concealed repair alcove, ranged fighter on the direct approach, blue overhead route and optional green maintenance loop with a scout. Restore the uplink and unlock the sliding extraction gate. Kills are optional. |
-| Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft and side cache. Restore lift power, climb and activate extraction controls. |
-| Nightfall Reactor | Seven spaces, a lower loop, reserve supplies and upper control room. Defeat two guards, activate coolant bypass/shutdown relays, then extract. |
+| Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft, lava in the upper works and side cache. Restore lift power, climb and activate extraction controls. |
+| Nightfall Reactor | Seven spaces, safe coolant water, reactor lava, a lower loop, reserve supplies and upper control room. Defeat two guards, activate coolant bypass/shutdown relays, then extract. |
 
 The first encounter pass expands Signal Breach from seven spaces to ten. The fighter takes three normal pulse hits; arrival starts outside its pursuit/fire range, and the arrival doorway provides sightline cover. Two ceiling shafts connect a hazard-marked blue overhead gallery to the signal hall, while the green maintenance scout stays hidden from spawn. The briefing explains the choices. AI, global enemy values and relay/exit requirements are unchanged.
 
@@ -71,6 +71,18 @@ Reviewed door evidence: [marked entry](progress/doors-marked-entry.png), [concea
 The old Level1/Level2/Level3/ExampleLevel finite segment blueprints are retired from the catalog and source. The old finite-level guide is replaced. The proven flight/combat arenas and Mine Link, Relay Gate and Deep Relay fixtures remain in the optional **Practice & prototypes** section. Endless mode is no longer offered in the mission library; the internal segment generator remains for existing diagnostics/tests. New missions are finite shared-document geometry, not that generator.
 
 The layouts validate, but final encounter balance and mission pacing still benefit from player feedback. They use distinct color/pattern landmarks and real openings/doors rather than legacy segment geometry. Ship silhouette/colors and engine emissive material have also been updated for the external view.
+
+## Fighter attack readability
+
+The next combat pass gives fighters a 650 ms wind-up and 850 ms recovery. A partial amber ring grows at the cannon, the weapon braces forward, and a short synthesized rising double chirp warns of the shot. Release briefly flashes the ring/weapon white; the ring and wings cool blue during recovery. Fighters stop advancing while charging/recovering, so the player can recognize a committed attack and reposition. The existing 2–3 second post-shot interval is retained (the warning occupies its final 650 ms); initial and newly reacquired targets always receive a full warning before a shot.
+
+Losing sight, range or firing alignment cancels the charge. Reacquisition does not bank partial charge or release an overdue shot. Pause freezes simulation timing; long frames cannot produce catch-up volleys. Death/restart leaves no scheduled attacks. Existing navigation, last-seen memory and physical walls/doors still constrain pursuit and firing. The charge sound uses the existing effects mixer/mute/pause controls and distance attenuation; it is a short clip, not a looping source. Visual cues use one original ring mesh and existing materials/weapon parts, with no extra lights, full-screen flashes or change to the player camera.
+
+This applies to fighters in authored missions, practice and the internal legacy mode. Fighter placements, health, damage values and player weapons are unchanged. Bounded lateral fighter movement remains later work. The next pass adds a scout warning/lunge/withdraw cycle and authored lava/water surfaces; see [environments and mission variety](ENVIRONMENT_AND_MISSION_ROADMAP.md) for current behavior, limits and the proposed mission roadmap.
+
+Verification: `npm run verify` passes (69 linted runtime modules, strict types, all 416 unit/simulation cases and production build). New cases cover exact warning/recovery boundaries, first-contact/reacquisition delay, cancellation behind new cover, real projectile damage, braced movement, pause/death/reset, reentrant audio callbacks, long-frame behavior, non-accumulating presentation and finite deterministic chirps. Existing normal pulse combat still defeats the fighter in three hits; its regression now waits for actual projectile travel to the braced enemy.
+
+Four browser scenarios pass: both production cockpit checks; Signal Breach's ordinary-input charge/flash/recovery, real shield damage, three-shot kill, overhead route, relay/extraction and replay; and the production keyboard victory/replay/enemy-fire death/reboot/menu scenario. The native campaign test reads development attack-phase feedback to observe the cycle, without setting enemy/player state or using the neutralize control. Reviewed evidence: [charge warning](progress/fighter-windup.png), [shot release](progress/fighter-fire.png), [recovery](progress/fighter-recovery.png), and the [four-case browser report](progress/fighter-attack-browser-check.json). Final sound mixing/player balance and hardware frame-time acceptance remain open; there are no new dependencies or deployment.
 
 ## Music
 

@@ -373,7 +373,7 @@ test('a reset during scene publication cancels the pending spawn and releases it
 
 test('ram damage that starts a replacement run cannot destroy or advance that run using the old frame', t => {
   const { manager, state } = managerFixture(t);
-  const oldEnemy = manager.spawnEnemy(v(0, 0, 0.1), 'scout'); let replacement;
+  const oldEnemy = manager.spawnEnemy(v(0, 0, 0.1), 'fighter'); let replacement;
   t.mock.method(state, 'takeDamage', () => {
     manager.resetLevel(); state.session.end(); state.session.begin(); state.session.transition('playing');
     replacement = manager.spawnEnemy(v(0, 0, 15), 'fighter');

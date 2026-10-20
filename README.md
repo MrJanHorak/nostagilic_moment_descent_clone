@@ -4,6 +4,8 @@
 
 **Try the designer:** run `npm run dev` and open `/editor.html`, or choose **LEVEL DESIGNER** from the main menu. Click a wall/item to select it; right-click to style a face, edit an opening/door or place content at that point. Right-drag still pans; Shift+F10 or **Actions** opens the keyboard menu. Use **Playtest level** for first-person flight, then Esc and **Return to editor**. Drafts save locally and offer Restore/Discard on reload; export JSON for a portable backup. See [the UX/authoring guide](docs/progress/M4_DESIGNER_UX.md).
 
+**Lava, water and scout attacks:** Vector Foundry and Nightfall Reactor now include animated lava floors; Nightfall also has safe coolant water. Fly above lava to avoid shield damage. In the editor, choose a face and **lava** or **water** under **Surface pattern** to author these in format v9. These are solid surfaces; submerged flight is future work. Scouts warn, lunge in a committed direction, then retreat/recover for return fire. See [the environment and mission roadmap](docs/ENVIRONMENT_AND_MISSION_ROADMAP.md).
+
 **Close loops and add doors:** right-click an end/wall → **Connect to existing room…**. Use **Fit corridor end to target** when a corridor stops short or penetrates the target, or **Snap separate branch** for a disconnected piece. **Full shared opening** uses the mutual clear wall area. You can attach/join separate passages on different areas of a large wall. Right-click its cyan frame → **Add or edit relay door…**, choose an existing relay or **Create relay near player spawn**, then use R nearby in Playtest. See [the loop/door guide](docs/progress/M4_LOOPS_AND_SHARED_OPENINGS.md) for format v7 and bounds.
 
 **Move an item:** select its marker or Mission content entry, then choose **Move** or **Move selected item**. Drag the axes; white/red feedback shows whether the placement fits. Release applies one undoable move, and Esc cancels. It stays in its room and preserves heading/objective/door links. Room rotation/stretch tools are disabled until you select a room again. See [the movement guide](docs/progress/M4_CONTENT_MOVEMENT.md).
@@ -49,7 +51,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 - **Dynamic Lighting**: Advanced lighting system that brings the cave environment to life
 - **Enemy AI**: Five distinct enemy types with unique behaviors and attack patterns:
   - **Scouts**: Fast but fragile reconnaissance ships
-  - **Fighters**: Balanced combat ships with moderate firepower
+  - **Fighters**: Ranged guards with an amber charge warning, firing flash and blue recovery cue
   - **Bombers**: Heavy ships that deploy explosives
   - **Destroyers**: Heavily armored ships with devastating weaponry
   - **Bosses**: Massive command ships with multiple attack patterns
@@ -77,7 +79,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 - Spatial audio for immersive gameplay
 - Multiple enemy types with unique behaviors:
   - **Scouts**: Fast, agile ships with basic attacks
-  - **Fighters**: Balanced ships with moderate firepower
+  - **Fighters**: Brace for a visible/audible wind-up, fire, then expose a brief recovery window
   - **Bombers**: Slow but powerful ships with explosive weapons
   - **Destroyers**: Heavy ships with strong armor and high damage
   - **Bosses**: End-level enemies with complex attack patterns and high health

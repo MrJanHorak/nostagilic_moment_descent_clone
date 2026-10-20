@@ -1,5 +1,6 @@
 // Audio management system for the game
 import createMissionMusic from './MissionMusic.js';
+import createAttackWarningSound from './AttackWarningSound.js';
 export default class AudioManager {
   constructor() {
     this.sounds = {};
@@ -46,7 +47,7 @@ export default class AudioManager {
       // synchronously so the first click works without failed fetches or a race.
       for (const id of [
         'shoot', 'explosion', 'powerup', 'playerDamage', 'gameOver',
-        'engine', 'backgroundMusic', 'menuSelect', 'healSound',
+        'engine', 'backgroundMusic', 'menuSelect', 'healSound', 'enemyCharge',
       ]) {
         this.createSynthesizedSound(id);
       }
@@ -145,6 +146,9 @@ export default class AudioManager {
     let buffer;
 
     switch (id) {
+      case 'enemyCharge':
+        buffer = createAttackWarningSound(ctx);
+        break;
       case 'shoot':
         buffer = this.createSynthesizedShootSound();
         break;

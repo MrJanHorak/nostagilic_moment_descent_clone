@@ -27,7 +27,7 @@ function contact(position, radius, box) {
 }
 
 /** @param {THREE.Vector3} position @param {number} radius @param {import('../contracts.js').SolidCollider} collider */
-function solidContact(position, radius, collider) {
+export function solidContact(position, radius, collider) {
   return 'convex' in collider && collider.convex ? convexContact(position, radius, collider.convex) : contact(position, radius, 'box' in collider ? collider.box : collider);
 }
 

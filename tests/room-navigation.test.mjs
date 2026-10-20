@@ -180,17 +180,19 @@ test('an alerted fighter waits when every connecting portal is too small for its
 });
 
 for (const [name, target] of [['doorway', v(8, 0, 0)], ['hatch', v(16, 6, 0)]]) {
-  test(`a scout can finish its approach and ram a player hovering in a ${name}`, t => {
+  test(`a scout can finish its approach and strike a player hovering in a ${name}`, t => {
     const { manager, state, player } = fixture(t); manager.updateEnemies(0);
     const scout = manager.enemies.find(enemy => enemy.type.name === 'scout');
     manager.removeEnemy(manager.enemies.findIndex(enemy => enemy.type.name === 'fighter'));
     player.position.copy(target); manager.hitEnemy(scout, { power: 1 }, scout.mesh.position);
     const defeats = []; manager.onEnemyDefeated = (id, cause) => defeats.push([id, cause]);
-    for (let frame = 0; frame < 1800 && scout.isActive; frame++) {
+    for (let frame = 0; frame < 1800 && state.playerHealth === 100; frame++) {
       state.session.advance(1 / 60); manager.updateEnemies(1 / 60);
+      noWallOverlap(scout, manager.levelManager.solidColliders);
     }
-    assert.equal(scout.isActive, false, 'interior clamping must not strand the scout outside ram range');
-    assert.deepEqual(defeats, [['mine:scout', 'ram']]);
+    assert.equal(scout.isActive, true, 'a strike leaves the scout alive for return fire');
+    assert.equal(scout.scoutAttack.phase, 'recover', 'interior clamping must not strand the scout outside strike range');
+    assert.deepEqual(defeats, []);
     assert.equal(state.playerHealth, 95); assert.equal(state.score, 0);
   });
 }

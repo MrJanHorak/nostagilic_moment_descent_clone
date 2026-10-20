@@ -47,6 +47,15 @@ class FighterMeshBuilder {
     weaponMesh.position.set(0, 0, enemyType.size * 1.2);
     body.add(weaponMesh);
 
+    // A front-facing partial ring expands while charging, flashes on release,
+    // then cools blue. Its envelope remains inside the existing wing/trail body.
+    const chargeRing = new THREE.Mesh(
+      new THREE.TorusGeometry(enemyType.size * 0.75, enemyType.size * 0.08, 6, 24, Math.PI * 1.5),
+      new THREE.MeshBasicMaterial({ color: 0xffc34f })
+    );
+    chargeRing.name = 'fighter_charge_ring'; chargeRing.position.z = enemyType.size * 1.72;
+    chargeRing.visible = false; body.add(chargeRing);
+
     // ===== ENGINE GLOW =====
     const engineGeometry = new THREE.SphereGeometry(
       enemyType.size * 0.3,

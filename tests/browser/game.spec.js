@@ -148,16 +148,27 @@ test('production: keyboard mission victory, replay, enemy-fire death, reboot and
   await expect(page.locator('#score-display')).toHaveText('100');
   await expect(page.locator('#weapon-slot-1')).toContainText('35');
 
-  // Fly toward the exit; the scout pursues and rams. No state injection or test controls.
-  await holdUntil(page, 'w', () => advanceAliveUntil(page, hud => hud.enemies === 'ENEMIES: 2/2',
-    'Forward flight must let the pursuing scout ram and finish the encounter'));
+  // Meet the scout at the doorway, then sweep the forward arc with native
+  // keyboard aim/fire. Its strike no longer suicides or grants objective credit.
+  await holdUntil(page, 'w', async () => { for (let i = 0; i < 23; i++) await page.clock.fastForward(100); });
+  for (let i = 0; i < 25; i++) await page.clock.fastForward(100);
+  for (const [key, ticks] of [['ArrowLeft', 8], ['ArrowRight', 16], ['ArrowLeft', 8]]) {
+    await holdUntil(page, key, async () => {
+      for (let tick = 0; tick < ticks; tick++) {
+        if (await page.locator('#enemy-count-display').textContent() !== 'ENEMIES: 2/2') await page.keyboard.press('f');
+        await page.clock.runFor(100);
+      }
+    });
+  }
+  await advanceAliveUntil(page, hud => hud.enemies === 'ENEMIES: 2/2', 'Native pulse fire must defeat the pursuing scout');
+  await holdUntil(page, 'w', () => advanceAliveUntil(page, hud => hud.result === 'MISSION COMPLETE', 'Forward flight through the cleared exit must complete the mission'));
   const victory = page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true });
   if (!await victory.isVisible()) {
     // At the far wall the player can be beyond the trigger; backing up crosses it.
     await holdUntil(page, 's', () => advanceAliveUntil(page, hud => hud.result === 'MISSION COMPLETE',
       'Backing through the cleared exit must complete the mission'));
   }
-  await expect(page.locator('#score-display')).toHaveText('1100');
+  await expect(page.locator('#score-display')).toHaveText('1150');
   await testInfo.attach('production-victory', { body: await page.screenshot(), contentType: 'image/png' });
   await button(page, 'REPLAY MISSION').press('Enter');
   await expect(page.locator('#health-percentage')).toHaveText('100%');

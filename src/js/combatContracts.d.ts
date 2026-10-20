@@ -22,6 +22,20 @@ export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   collisionRadius: number;
   lastFireTime: number;
   fireRate: number;
+  fighterAttack?: FighterAttackState;
+  scoutAttack?: ScoutAttackState;
+}
+export interface FighterAttackState {
+  phase: 'idle' | 'windup' | 'recover';
+  since: number;
+  readyAt: number;
+  firedAt: number;
+}
+export interface ScoutAttackState {
+  phase: 'approach' | 'windup' | 'lunge' | 'recover';
+  since: number;
+  readyAt: number;
+  direction: Vector3;
 }
 export interface EnemyInstance extends EnemyCombatTarget {
   readonly mesh: Group;

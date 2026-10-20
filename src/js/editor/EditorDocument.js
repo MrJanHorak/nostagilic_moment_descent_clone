@@ -41,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -360,6 +360,7 @@ export default class EditorDocument {
     this.room(roomId);
     this.change(draft => {
       modernize(draft);
+      if (pattern === 'lava' || pattern === 'water') Object.assign(draft, { formatVersion: 9 });
       const room = draft.rooms.find(room => room.id === roomId); if (!room) return;
       room.surfaces ??= {};
       for (const key of face === 'all' ? FACES : [face]) room.surfaces[key] = { color, pattern };
@@ -516,7 +517,7 @@ export default class EditorDocument {
         if (deviceId !== '@shot' && !modern.devices.some(device => device.id === deviceId)) throw new Error('Select the relay that unlocks this door.');
         if (modern.doors.length >= 16) throw new Error('Door limit reached (16).');
         const concealed = options.concealed ?? previous?.concealed;
-        if (deviceId === '@shot' || concealed !== undefined || options.sliding) Object.assign(modern, { formatVersion: 8 });
+        if (deviceId === '@shot' || concealed !== undefined || options.sliding) Object.assign(modern, { formatVersion: Math.max(8, modern.formatVersion) });
         modern.doors.push({ id: previous?.id ?? nextId(draft, 'door'), connectionId,
           ...(deviceId === '@shot' ? { activation: 'shot' } : { deviceId }), ...(concealed !== undefined ? { concealed } : {}) });
       }

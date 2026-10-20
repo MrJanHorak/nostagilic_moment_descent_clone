@@ -190,8 +190,10 @@ test('Signal Breach: the guard fires real damaging projectiles, takes three norm
   for (let frame = 0; frame < 600 && state.playerHealth === 100; frame++) tick();
   assert.equal(state.playerHealth, 90, 'a waiting player must experience the ranged threat');
   for (let shot = 1; shot <= 3; shot++) {
+    const before = fighter.health;
     shots.fireProjectile(state, { requirePointerLock: false });
-    for (let frame = 0; frame < 45; frame++) tick();
+    for (let frame = 0; frame < 120 && fighter.isActive && fighter.health === before; frame++) tick();
+    assert(fighter.health < before, 'wait for the normal projectile travel time to the braced fighter');
     assert.equal(fighter.isActive, shot < 3);
   }
   assert.equal(state.weaponInventory.pulse.ammo, 77);

@@ -376,6 +376,11 @@ export default class Game {
       else this.spaceship.group.position.add(intended);
     }
     this.levelManager.updateLevel();
+    const environment = this.levelManager.environment?.update(this.session, this.spaceship.group.position, this.spaceship.radius);
+    if (environment?.entered) this.uiManager.showMessage(environment.entered === 'lava'
+      ? 'LAVA CONTACT · Move clear of the surface' : 'WATER / COOLANT · Surface contact', 1800, environment.entered === 'lava' ? '#ff9944' : '#70dce8');
+    if (environment?.damage) this.gameState.takeDamage(environment.damage);
+    if (this.session.id !== generation || this.session.phase !== 'playing') return;
     this.exploration?.update(this.spaceship.group.position);
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.enemyManager.updateEnemies(delta);

@@ -6,7 +6,7 @@ export type Rotation = readonly [number, number, number, number];
 export type Face = 'negativeX' | 'positiveX' | 'negativeY' | 'positiveY' | 'negativeZ' | 'positiveZ';
 export type MaterialPreset = 'industrial-blue' | 'industrial-red' | 'industrial-green';
 export type PickupType = 'health' | 'pulseAmmo';
-export type SurfacePattern = 'plain' | 'grid' | 'panels' | 'hazard';
+export type SurfacePattern = 'plain' | 'grid' | 'panels' | 'hazard' | 'lava' | 'water';
 export interface SurfaceStyle { readonly color: number; readonly pattern: SurfacePattern }
 export interface RoomDocument {
   readonly id: string;
@@ -60,6 +60,8 @@ export type LevelDocument = LevelDocumentBase & (
   | { readonly formatVersion: 7; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 8; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
+  | { readonly formatVersion: 9; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }

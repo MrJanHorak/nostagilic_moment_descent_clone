@@ -1,0 +1,51 @@
+{
+  "date": "2026-10-20",
+  "verification": {
+    "unitAndSimulationTests": 429,
+    "lintedRuntimeModules": 71,
+    "types": "passed",
+    "build": "passed",
+    "diffCheck": "passed"
+  },
+  "browser": {
+    "engine": "Chromium / SwiftShader",
+    "viewport": "1280x800 for environment visuals",
+    "retries": 0,
+    "checks": [
+      {
+        "title": "designer: lava and water face styles export as v9 with undo and import support",
+        "status": "passed",
+        "durationMs": 1632
+      },
+      {
+        "title": "development: campaign Vector Foundry route, relays, extraction and replay",
+        "status": "passed",
+        "durationMs": 86324
+      },
+      {
+        "title": "development: campaign Nightfall Reactor route, relays, extraction and replay",
+        "status": "passed",
+        "durationMs": 87527
+      },
+      {
+        "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+        "status": "passed",
+        "durationMs": 34738
+      },
+      {
+        "title": "development: scout warning and recovery, water contact, lava damage, pause and restart with native flight",
+        "status": "passed",
+        "durationMs": 130101
+      }
+    ]
+  },
+  "notes": [
+    "Five scenarios passed across targeted runs. Existing routes isolate progression using the labeled development neutralize control; scout attack and surface contact use native flight and production combat uses native aim/fire.",
+    "Earlier harness assumptions were corrected: measure shield delta at the observed strike, descend until physical lava contact rather than a tolerant position target, render after Continue before reading diagnostics, and kill scouts with weapons rather than relying on contact suicide.",
+    "Water is an animated solid surface, with no submerged-volume physics. No fresh hardware frame-time acceptance is claimed."
+  ],
+  "images": [
+    "coolant-water.png",
+    "reactor-lava.png"
+  ]
+}

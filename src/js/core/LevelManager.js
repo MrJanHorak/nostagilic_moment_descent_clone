@@ -9,6 +9,7 @@ import createMineLinkLevel from './levels/MineLink.js';
 import createRelayGateLevel from './levels/RelayGate.js';
 import createDeepRelayLevel from './levels/DeepRelay.js';
 import buildArena from './ArenaGeometry.js';
+import SurfaceEnvironment from './SurfaceEnvironment.js';
 
 class LevelManager {
   constructor(scene, playerTransform) {
@@ -42,6 +43,7 @@ class LevelManager {
     this.obstacles = []; // Level system properties
     this.solidColliders = [];
     this.interaction = null;
+    this.environment = null;
     this.levels = [
       createFlightArena(),
       createCombatArena(),
@@ -272,6 +274,7 @@ class LevelManager {
   clearLevel() {
     this.interaction?.retire();
     this.interaction = null;
+    this.environment = null;
     // Remove all segments and obstacles
     for (const segment of new Set([...this.levelSegments, ...this.segmentMap.values()])) this.removeSegment(segment);
     this.levelSegments = [];
@@ -287,10 +290,11 @@ class LevelManager {
   initLevel(preparedWorld = null) {
     if (!this.isEndless && !this.currentLevel) this.currentLevel = this.levels[this.currentLevelIndex];
     if (!this.isEndless && this.currentLevel?.kind === 'arena') {
-      const { group, colliders } = preparedWorld ?? buildArena(this.currentLevel);
+      const { group, colliders, surfaces } = preparedWorld ?? buildArena(this.currentLevel);
       if (preparedWorld) preparedWorld.claimed = true;
       this.levelSegments = [group];
       this.solidColliders = colliders;
+      this.environment = new SurfaceEnvironment(surfaces ?? []);
       this.scene.add(group);
       return;
     }

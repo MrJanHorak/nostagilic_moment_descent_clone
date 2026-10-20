@@ -157,6 +157,49 @@ const routes = [
   ['Nightfall Reactor', [[2, -20], 'r', [2, -24], [0, 24], [2, 0], [1, 16], 'r', [0, 53]]],
 ];
 
+test('development: scout warning and recovery, water contact, lava damage, pause and restart with native flight', async ({ page }, testInfo) => {
+  test.setTimeout(300000);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
+  await page.locator('#select-level-btn').click(); await button(page, 'Nightfall Reactor').press('Enter'); await page.clock.fastForward(100);
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  const read = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+  await fly(page, 2, -18);
+  await advanceUntil(page, async () => (await read()).scouts.some(enemy => enemy.phase === 'windup'), { ticks: 120, message: 'Visible scout must warn before striking' });
+  const beforeStrike = parseInt(await page.locator('#health-percentage').textContent(), 10);
+  await page.screenshot({ path: testInfo.outputPath('scout-windup.png'), animations: 'disabled' });
+  await advanceUntil(page, async () => (await read()).scouts.some(enemy => enemy.phase === 'recover'), { ticks: 35, message: 'Committed scout strike must enter recovery' });
+  await expect(page.locator('#health-percentage')).toHaveText(`${beforeStrike - 5}%`);
+  await page.screenshot({ path: testInfo.outputPath('scout-recovery.png'), animations: 'disabled' });
+  // Isolate surface/progression checks after exercising the real scout attack.
+  await button(page, 'Neutralize drones (test)').press('Enter');
+  await fly(page, 1, -7);
+  expect((await read()).surfaceContact).toBe('water');
+  const waterHealth = await page.locator('#health-percentage').textContent();
+  for (let i = 0; i < 12; i++) await page.clock.fastForward(100);
+  await expect(page.locator('#health-percentage')).toHaveText(waterHealth);
+  await page.screenshot({ path: testInfo.outputPath('coolant-water.png'), animations: 'disabled' });
+  await fly(page, 1, 0); await fly(page, 2, -20); await page.keyboard.press('r');
+  await fly(page, 2, -24); await fly(page, 0, 24); await fly(page, 1, -4);
+  await page.screenshot({ path: testInfo.outputPath('reactor-lava.png'), animations: 'disabled' });
+  await page.keyboard.down('ShiftLeft');
+  try {
+    await advanceUntil(page, async () => (await read()).surfaceContact === 'lava', { ticks: 60, message: 'Descending onto the lava must reach physical contact' });
+  } finally { await page.keyboard.up('ShiftLeft'); }
+  expect(parseInt(await page.locator('#health-percentage').textContent(), 10)).toBeLessThan(parseInt(waterHealth, 10));
+  await page.keyboard.press('Escape'); const paused = await page.locator('#health-percentage').textContent();
+  for (let i = 0; i < 15; i++) await page.clock.fastForward(100);
+  await expect(page.locator('#health-percentage')).toHaveText(paused);
+  await button(page, 'CONTINUE').press('Enter'); await page.clock.fastForward(100); await fly(page, 1, 0);
+  const safe = await page.locator('#health-percentage').textContent();
+  for (let i = 0; i < 12; i++) await page.clock.fastForward(100);
+  await expect(page.locator('#health-percentage')).toHaveText(safe);
+  await page.keyboard.press('Escape'); await button(page, 'RESTART MISSION').press('Enter'); await page.clock.fastForward(100);
+  await expect(page.locator('#health-percentage')).toHaveText('100%');
+  expect((await read()).surfaceContact).toBe(null); expect((await read()).position).toEqual([0, 0, 5]);
+  await testInfo.attach('environment-check', { body: JSON.stringify({ waterHealth, lavaHealth: paused, safeHealth: safe, restart: await read() }), contentType: 'application/json' });
+});
+
 test('development: Signal Breach concealed wall blocks flight, opens on a native shot and restores on restart', async ({ page }, testInfo) => {
   test.setTimeout(180000);
   await page.setViewportSize({ width: 1280, height: 800 });
@@ -213,14 +256,38 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   await page.keyboard.press('f');
   for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
   await fly(page, 2, -15);
-  await advanceUntil(page, async () => parseInt(await page.locator('#health-percentage').textContent(), 10) < 100,
+  const attack = async () => {
+    const state = JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
+    return { time: state.timeMs, fighter: state.fighters.find(enemy => enemy.id === 'hall-fighter') };
+  };
+  await advanceUntil(page, async () => {
+    const { time, fighter } = await attack();
+    return fighter?.phase === 'windup' && time - fighter.since >= 300 && time - fighter.since < 550;
+  }, { ticks: 100, message: 'The fighter must visibly warn before firing' });
+  const charge = await attack(), shieldBeforeRelease = parseInt(await page.locator('#health-percentage').textContent(), 10);
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('fighter-windup.png'), animations: 'disabled' });
+  await advanceUntil(page, async () => {
+    const { time, fighter } = await attack();
+    return fighter?.phase === 'recover' && fighter.firedAt >= charge.fighter.since + 650 && time - fighter.firedAt < 120;
+  }, { ticks: 15, message: 'A full wind-up must release one shot with a firing flash' });
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('fighter-fire.png'), animations: 'disabled' });
+  await advanceUntil(page, async () => {
+    const { time, fighter } = await attack();
+    return fighter?.phase === 'recover' && time - fighter.since >= 200 && time - fighter.since < 700;
+  }, { ticks: 10, message: 'Firing must expose a visible recovery window' });
+  await page.waitForTimeout(300);
+  await page.screenshot({ path: testInfo.outputPath('fighter-recovery.png'), animations: 'disabled' });
+  await advanceUntil(page, async () => parseInt(await page.locator('#health-percentage').textContent(), 10) < shieldBeforeRelease,
     { ticks: 100, message: 'The fighter must land an ordinary projectile hit' });
   expect(parseInt(await page.locator('#health-percentage').textContent(), 10)).toBeGreaterThan(0);
+  expect(parseInt(await page.locator('#health-percentage').textContent(), 10)).toBeLessThan(shieldBeforeRelease);
   await page.clock.runFor(32); await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('signal-ranged-encounter.png'), animations: 'disabled' });
   for (let shot = 0; shot < 3; shot++) {
     await page.keyboard.press('f');
-    for (let tick = 0; tick < 12; tick++) await page.clock.fastForward(100);
+    for (let tick = 0; tick < 18; tick++) await page.clock.fastForward(100);
   }
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
   await expect(page.locator('#score-display')).toHaveText('100');

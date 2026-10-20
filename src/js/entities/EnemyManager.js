@@ -10,6 +10,8 @@ import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
 import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
 import RoomNavigation from '../core/levels/document/RoomNavigation.js';
+import { createFighterAttack, advanceFighterAttack, fighterCommitted, presentFighterAttack } from './FighterAttack.js';
+import { createScoutAttack, updateScoutAttack } from './ScoutAttack.js';
 
 /** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
  * route: THREE.Vector3[] | null, waypoint: number, revision: number}} MinePursuit */
@@ -79,10 +81,11 @@ class EnemyManager {
    * @param {number} delta @param {boolean} visible */
   updateArenaEnemy(enemy, delta, visible) {
     const direction = this.playerTransform.position.clone().sub(enemy.mesh.position);
-    const pursue = visible && direction.length() < 30 && (enemy.type.name === 'scout' || direction.length() > 8);
+    const committed = fighterCommitted(enemy);
+    const pursue = !committed && visible && direction.length() < 30 && (enemy.type.name === 'scout' || direction.length() > 8);
     // Legacy type speeds are units/frame at 60 Hz. Keep stored velocity in that convention.
     const desired = pursue ? direction.normalize().multiplyScalar(enemy.type.speed) : new THREE.Vector3();
-    if (!visible) enemy.velocity.set(0, 0, 0); // No tracking through opaque walls.
+    if (!visible || committed) enemy.velocity.set(0, 0, 0); // No tracking through opaque walls; brace during an attack.
     else enemy.velocity.lerp(desired, 1 - Math.pow(0.95, delta * 60));
     const worldVelocity = enemy.velocity.clone().multiplyScalar(60);
     moveSphere(enemy.mesh.position, worldVelocity, delta, this.levelManager?.solidColliders ?? [], enemy.collisionRadius);
@@ -135,7 +138,7 @@ class EnemyManager {
     }
     const target = pursuit.route?.[pursuit.waypoint];
     enemy.velocity.set(0, 0, 0);
-    const holdRange = visible && distance < 8 && enemy.type.name !== 'scout';
+    const holdRange = fighterCommitted(enemy) || visible && distance < 8 && enemy.type.name !== 'scout';
     if (target && !holdRange && delta > 0) {
       const travel = target.clone().sub(enemy.mesh.position);
       const speed = Math.min(enemy.type.speed * 60, travel.length() / delta);
@@ -195,6 +198,8 @@ class EnemyManager {
 
     this.enemies.push(enemy);
     enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
+    if (enemy.type.name === 'fighter') enemy.fighterAttack = createFighterAttack(enemy.lastFireTime, enemy.fireRate);
+    if (enemy.type.name === 'scout') enemy.scoutAttack = createScoutAttack(enemy.lastFireTime);
     return enemy;
   }
 
@@ -485,7 +490,17 @@ class EnemyManager {
       );
 
       // Apply enemy type-specific movement
-      if (arena && this.mineNavigation) this.updateMineEnemy(enemy, delta, visible);
+      const scout = enemy.type.name === 'scout' ? updateScoutAttack(enemy, this.playerTransform.position, PLAYER_RADIUS,
+        this.levelManager?.solidColliders ?? [], currentTime, delta, visible) : null;
+      if (scout?.warning && this.audioManager?.initialized) {
+        try { this.audioManager.playSound('enemyCharge', { volume: 0.18 }); }
+        catch (error) { console.warn('Unable to play scout warning:', error); }
+      }
+      if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
+      if (scout?.hit) this.gameState.takeDamage(enemy.type.damage);
+      if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
+      if (scout?.handled) { /* Movement and aim belong to the committed strike. */ }
+      else if (arena && this.mineNavigation) this.updateMineEnemy(enemy, delta, visible);
       else if (arena) this.updateArenaEnemy(enemy, delta, visible);
       else if (distanceToPlayer < 30) {
         // Get direction to player
@@ -495,7 +510,8 @@ class EnemyManager {
           .normalize();
 
         // Apply movement patterns based on enemy type
-        let movementSpeed = enemy.type.speed;
+        let movementSpeed = fighterCommitted(enemy) ? 0 : enemy.type.speed;
+        if (fighterCommitted(enemy)) enemy.velocity.set(0, 0, 0);
 
         // Apply behavior modifications based on enemy type
         switch (enemy.type.name) {
@@ -567,7 +583,7 @@ class EnemyManager {
 
       // Check collision with player
       const collisionDistance = arena ? enemy.collisionRadius + PLAYER_RADIUS : enemy.type.size * 2;
-      if (!this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
+      if (enemy.type.name !== 'scout' && !this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
         // Player takes damage
         this.gameState.takeDamage(enemy.type.damage);
         if (!this.isCurrent(generation, sessionId)) return;
@@ -584,6 +600,11 @@ class EnemyManager {
       }
 
       if (!enemy.isActive || this.gameState.session.phase !== 'playing') continue;
+      if (enemy.type.name === 'fighter') {
+        this.updateFighterAttack(enemy, currentTime);
+        if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
+        continue;
+      }
       // Handle enemy firing projectiles
       if (
         enemy.type.name !== 'scout' &&
@@ -654,6 +675,23 @@ class EnemyManager {
       this.gameState,
       this.effectsManager
     );
+  }
+
+  /** @param {import('../combatContracts.js').EnemyInstance} enemy @param {number} now */
+  updateFighterAttack(enemy, now) {
+    enemy.fighterAttack ??= createFighterAttack(now, enemy.fireRate);
+    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position), distance = direction.length();
+    const eligible = distance < getEnemyFiringRange('fighter') && this.canSeePlayer(enemy)
+      && enemy.mesh.getWorldDirection(new THREE.Vector3()).dot(direction.normalize()) > 0;
+    const event = advanceFighterAttack(enemy.fighterAttack, now, eligible, enemy.fireRate);
+    presentFighterAttack(enemy, now); enemy.mesh.updateMatrixWorld(true); enemy.collider.setFromObject(enemy.mesh);
+    if (event === 'charge' && this.audioManager?.initialized) {
+      try { this.audioManager.playSound('enemyCharge', { volume: 0.22 * Math.max(0.25, 1 - distance / 30) }); }
+      catch (error) { console.warn('Unable to play enemy warning:', error); }
+    } else if (event === 'fire') {
+      enemy.lastFireTime = now; enemy.fireRate = 2000 + Math.random() * 1000;
+      this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform);
+    }
   }
 
   /** @private @param {number} generation @param {number} sessionId */

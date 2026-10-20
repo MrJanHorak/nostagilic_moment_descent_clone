@@ -316,6 +316,9 @@ test('hidden enemies neither track nor fire; visible fighters pursue and fire af
   fighter.mesh.position.set(0, 0, -14);
   for (let i = 0; i < 30; i++) game.updateSimulation(1 / 60);
   assert.ok(fighter.mesh.position.z > -14);
+  assert.equal(fighter.fighterAttack.phase, 'windup');
+  assert.equal(game.enemyManager.projectileManager.enemyProjectiles.length, 0, 'reacquisition requires the full warning');
+  for (let i = 0; i < 30; i++) game.updateSimulation(1 / 60);
   assert.ok(game.enemyManager.projectileManager.enemyProjectiles.length > 0);
 });
 
@@ -433,17 +436,18 @@ test('locked exit and direct completion cannot bypass the objective; marker unlo
   game.updateSimulation(1); assert.equal(game.gameState.score, 1150);
 });
 
-test('ramming neutralizes a required drone without kill points or kill statistics', (t) => {
+test('a scout strike damages once, survives recovery, and still requires a weapon kill for the objective', (t) => {
   const game = fixture(t), scout = game.enemyManager.enemies.find(e => e.type.name === 'scout');
   game.spaceship.group.position.copy(scout.mesh.position).add(v(0, 0, 1));
-  game.updateSimulation(1 / 60);
-  assert.equal(scout.isActive, false);
-  assert.equal(game.mission.defeats.get('combat:scout'), 'ram');
+  for (let frame = 0; frame < 120 && game.gameState.playerHealth === 100; frame++) game.updateSimulation(1 / 60);
+  assert.equal(scout.isActive, true);
+  assert.equal(scout.scoutAttack.phase, 'recover');
+  assert.equal(game.mission.defeats.has('combat:scout'), false);
   assert.equal(game.gameState.score, 0); assert.equal(game.gameState.enemyKills.scout, 0);
   assert.equal(game.gameState.playerHealth, 95);
   clearWithShots(game); assert.equal(game.mission.ready, true);
   game.spaceship.group.position.copy(game.mission.exitPosition); game.updateSimulation(1 / 60);
-  assert.equal(game.session.phase, 'completed'); assert.equal(game.gameState.score, 1100);
+  assert.equal(game.session.phase, 'completed'); assert.equal(game.gameState.score, 1150);
 });
 
 test('ordinary enemy cleanup neither advances objective nor awards points; fatal ramming cannot unlock the exit', (t) => {
@@ -453,7 +457,7 @@ test('ordinary enemy cleanup neither advances objective nor awards points; fatal
   const scout = game.enemyManager.enemies[0];
   game.gameState.playerHealth = 1;
   game.spaceship.group.position.copy(scout.mesh.position).add(v(0, 0, 1));
-  game.updateSimulation(1 / 60);
+  for (let frame = 0; frame < 120 && game.session.phase === 'playing'; frame++) game.updateSimulation(1 / 60);
   assert.equal(game.session.phase, 'dead'); assert.equal(game.mission.ready, false);
   assert.equal(game.mission.defeats.size, 0);
   game.restartGame(); game.updateSimulation(1 / 60);

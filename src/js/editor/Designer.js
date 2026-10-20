@@ -82,7 +82,7 @@ host.innerHTML = `
       </section>
       <section><h2>Face appearance</h2>
         <label>Wall face<select id="surface-face"></select></label><label>Face color<input id="surface-color" type="color" value="#405a6b" /></label>
-        <label>Repeating pattern<select id="surface-pattern"></select></label><button id="apply-surface">Apply face style</button><button id="reset-surface">Reset face to preset</button>
+        <label>Surface pattern<select id="surface-pattern"></select></label><p>Lava damages on contact. Water is a safe animated surface. Both remain solid; fly above them.</p><button id="apply-surface">Apply face style</button><button id="reset-surface">Reset face to preset</button>
         <p>Use Solid cutaway or Playtest to see surfaces. Custom image uploads are not included yet.</p>
         <p id="wall-connection-help"></p><button id="join-wall">Connect this face to an existing room…</button>
       </section>
@@ -243,7 +243,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${room.id}` : `${room.id} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   element('rooms').replaceChildren(...model.document.rooms.map(room => {

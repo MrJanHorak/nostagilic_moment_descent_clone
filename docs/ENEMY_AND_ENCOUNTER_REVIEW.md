@@ -1,6 +1,6 @@
 # Enemy and encounter design review
 
-October 20, 2026. Assessment of the authored campaign and current runtime, followed by proposed work. The first ranged encounter and overhead route are now implemented in Signal Breach. Further behavior and mission recommendations remain proposed.
+October 20, 2026. Assessment of the authored campaign and current runtime, followed by proposed work. Signal Breach now includes the first ranged encounter, overhead route and sliding/hidden doors; fighters have a visible/audible wind-up and recovery cycle. Further behavior and mission recommendations remain proposed.
 
 ## What is actually in the campaign
 
@@ -10,7 +10,7 @@ October 20, 2026. Assessment of the authored campaign and current runtime, follo
 | Vector Foundry | 7 / 6 | 1 scout in optional coolant cache | None | Pulse ammo, repair |
 | Nightfall Reactor | 7 / 7 | 2 scouts in coolant works/reactor | Both scouts | Two ammo and two repair pickups |
 
-All three use pulse damage 10. Scout health is 10: a normal pulse hit defeats a scout. Scouts pursue and inflict contact damage; they are excluded from projectile firing and are destroyed on contact. The new Signal Breach fighter has 25 health and takes three normal pulse hits. Before this encounter pass, the campaign had only four scouts across 21 rooms; the ranged fighter/scout Arena Escape was separate practice content.
+All three use pulse damage 10. Scout health is 10: a normal pulse hit defeats a scout. Scouts pursue, warn, commit to a straight strike and recover/withdraw; one strike deals 5 damage and leaves the scout alive for return fire. They do not fire projectiles or suicide on contact. The Signal Breach fighter has 25 health and takes three normal pulse hits. Before the encounter passes, the campaign had only four scouts across 21 rooms; the ranged fighter/scout Arena Escape was separate practice content.
 
 The runtime contains five distinct visual models, health/speed/damage values, firing ranges and weapon patterns. Authored-mine movement already respects physical walls/closed doors and routes through portals toward a last observed position. Ranged types share the broad approach/hold-within-eight-units behavior; scouts continue closing. This is a useful navigation foundation, but not yet a varied tactical roster. Campaign geometry supports loops, vertical routes, affine ramps and optional supply spaces. Vector Foundry's graph is a tree; Signal Breach now has two independent graph cycles and Nightfall has one.
 
@@ -39,13 +39,17 @@ The original manual describes keyed/hidden doors, energy centers, robot generato
 | Role | First useful behavior | Encounter purpose |
 | --- | --- | --- |
 | Scout / rusher | Recognizable approach sound and wind-up; later, a bounded strike/withdraw cycle | Dislodge a player who stays in one firing position |
-| Fighter / ranged guard | Use existing ranged fighter first; later add bounded lateral movement and visible burst/recovery phases | Teach strafing, peeking and fighting across a doorway |
+| Fighter / ranged guard | Implemented: charge warning, one shot and recovery while braced; next add bounded lateral repositioning between attacks | Teach strafing, peeking and fighting across a doorway |
 | Bomber / area denial | Slow, clearly signaled explosives with a recovery window | Make the player change altitude or leave cover |
 | Destroyer / anchor | Guard an authored location, turn slowly and expose attack/recovery windows | Create a route-choice problem around a defended sight line |
 
 Introduce roles individually before combining them. Distinguish them by silhouette, motion, attack sound and projectile pattern as well as color. Mining-machine identities (forks, drill heads, rotating tool mounts) would fit the setting and communicate function. Bosses can follow once the regular roster produces interesting encounters.
 
 Retain collision and sight/memory guarantees. Dodging should require local perception, have a reaction delay and limited duration, and avoid walls/closed doors. A robot should not evade every shot perfectly or track an unseen player through walls. New behavior needs deterministic tests for warning/attack/recovery timing and route safety.
+
+The implemented fighter cycle now braces during a 650 ms amber charge warning, emits one shot with a short white cannon/ring flash, then cools blue for 850 ms. A short synthesized chirp warns once per charge. Lost visibility/range/alignment cancels the shot; returning to sight requires a fresh full wind-up. The existing 2–3 second firing interval and 10-damage projectile are retained. The warning is part of that interval, rather than a new health or damage tier. Pause freezes it and no scheduled attack survives death/restart. This gives the doorway/vertical route a readable attack window before adding lateral tactics.
+
+The pass passes lint/types, all 416 unit/simulation cases and build, plus four browser cases including ordinary-input cue/shot/recovery capture, combat, extraction/replay, and production victory/death/reboot. See [player-experience verification](PLAYER_EXPERIENCE.md#fighter-attack-readability) and the [browser report](progress/fighter-attack-browser-check.json).
 
 ## A concrete next encounter sequence
 
@@ -63,7 +67,7 @@ Keep quiet travel, a supply/recovery beat, and a landmark between demanding figh
 ## Suggested build order
 
 1. **Implemented:** a ranged fighter encounter, doorway cover and an overhead approach in Signal Breach. Continue measuring damage taken, ammo expenditure and fallback use during player feedback.
-2. Give fighter/scout attacks clear cues and recovery, then add bounded lateral movement or strike/withdraw behavior with simulation tests.
+2. **Attack cues implemented:** fighter wind-up/single shot/recovery and scout warning/committed lunge/withdrawal. Next add bounded fighter repositioning with wall/door safety checks. See [environments and mission variety](ENVIRONMENT_AND_MISSION_ROADMAP.md) for the scout contract and lava/water pass.
 3. Author one mixed encounter around a loop and vertical approach; test ordinary input/fire and restart, not only the development neutralize action.
 4. Add one new mission mechanic (for example, reactor-triggered timed escape), with portable document validation and editor authoring.
 

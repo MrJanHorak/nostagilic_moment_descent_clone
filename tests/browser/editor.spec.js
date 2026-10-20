@@ -4,6 +4,22 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import compileLevelDocument from '../../src/js/core/levels/document/compileLevelDocument.js';
 
+test('designer: lava and water face styles export as v9 with undo and import support', async ({ page }, testInfo) => {
+  await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
+  await page.getByRole('button', { name: 'All properties', exact: true }).click();
+  await page.locator('#surface-face').selectOption('negativeY'); await page.locator('#surface-pattern').selectOption('lava');
+  await page.locator('#apply-surface').click(); await expect(page.locator('#format-version')).toContainText('Format 9');
+  await page.getByRole('button', { name: 'Undo', exact: true }).click(); await expect(page.locator('#format-version')).toContainText('Format 1');
+  await page.getByRole('button', { name: 'Redo', exact: true }).click();
+  await page.locator('#surface-face').selectOption('positiveY'); await page.locator('#surface-pattern').selectOption('water'); await page.locator('#apply-surface').click();
+  const downloadEvent = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export JSON' }).click();
+  const path = testInfo.outputPath('fluid-surfaces.v9.json'); await (await downloadEvent).saveAs(path);
+  const exported = JSON.parse(await readFile(path, 'utf8'));
+  expect(exported.formatVersion).toBe(9); expect(exported.rooms[0].surfaces.negativeY.pattern).toBe('lava'); expect(exported.rooms[0].surfaces.positiveY.pattern).toBe('water');
+  expect(compileLevelDocument(exported).solids.filter(solid => ['lava', 'water'].includes(solid.pattern))).toHaveLength(2);
+  await page.locator('#file').setInputFiles(path); await expect(page.locator('#validation-title')).toContainText('Valid level');
+});
+
 test('designer: assemble three spaces, undo invalid edit, export and reload production JSON', async ({ page }, testInfo) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
