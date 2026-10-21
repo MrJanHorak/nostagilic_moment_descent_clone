@@ -1,6 +1,7 @@
 /** @param {readonly {name: string, campaignOrder?: number, briefing?: string}[]} levels
- * @param {(index: number) => void} choose @param {() => void} back */
-export default function createMissionSelect(levels, choose, back) {
+ * @param {(index: number) => void} choose @param {() => void} back
+ * @param {{userLevels?: () => void, hiddenIndex?: number | null}} [options] */
+export default function createMissionSelect(levels, choose, back, options = {}) {
   const root = document.createElement('div'); root.className = 'mission-library'; root.setAttribute('role', 'dialog');
   root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'mission-library-title');
   const style = document.createElement('style');
@@ -26,9 +27,13 @@ export default function createMissionSelect(levels, choose, back) {
   const title = document.createElement('h1'); title.id = 'mission-library-title'; title.textContent = 'SELECT MISSION';
   const help = document.createElement('p'); help.textContent = 'Authored missions: find the route, restore systems, and get out. C: camera · L: lights · H: HUD.';
   article.append(eyebrow, title, help);
+  if (options.userLevels) {
+    const userLevels = document.createElement('button'); userLevels.textContent = 'MY LEVELS'; userLevels.onclick = options.userLevels; article.append(userLevels);
+  }
   const practice = document.createElement('details'), summary = document.createElement('summary');
   summary.textContent = 'Practice & prototypes'; practice.append(summary);
   for (const [index, level] of levels.entries()) {
+    if (index === options.hiddenIndex) continue;
     const button = document.createElement('button'); button.textContent = level.name; button.onclick = () => choose(index);
     if (level.campaignOrder) {
       const card = document.createElement('section'); card.className = 'mission-card';

@@ -13,6 +13,16 @@ import { animateEnemy } from '../src/js/entities/EnemyAnimations.js';
 
 const v = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 
+test('clearing during a legacy hit light scene attachment leaves no stale effect', () => {
+  const scene = new THREE.Scene(), effects = new EffectsManager(scene);
+  scene.addEventListener('childadded', event => { if (event.child instanceof THREE.Light) effects.clear(); });
+  effects.createHitEffect(v()); effects.update(0);
+  assert.equal(effects.hitEffects.length, 0);
+  assert.equal(effects.activeHitLights.length, 0);
+  assert.equal(scene.children.length, 0);
+  effects.dispose();
+});
+
 function managerFixture(t, audio = null) {
   const state = new GameState(), scene = new THREE.Scene(), player = new THREE.Group();
   state.session.begin(); state.session.transition('playing');
@@ -42,7 +52,7 @@ test('every enemy builder produces a finite combat body, with preserved light po
     let lights = 0, defaultLights = 0, meshes = 0;
     enemy.mesh.traverse(child => { lights += child instanceof THREE.Light; meshes += child instanceof THREE.Mesh; });
     other.mesh.traverse(child => { defaultLights += child instanceof THREE.Light; });
-    assert.equal(lights, 1); assert.ok(defaultLights >= lights); assert.ok(meshes > 0);
+    assert.equal(lights, 0); assert.ok(defaultLights > lights); assert.ok(meshes > 0);
     if (definition.name === 'scout' || definition.name === 'fighter') assert.ok(defaultLights > lights);
     assert.notEqual(materialOf(enemy), materialOf(other));
   }

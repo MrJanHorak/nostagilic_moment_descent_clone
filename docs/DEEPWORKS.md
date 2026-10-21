@@ -41,6 +41,8 @@ For precise placement, right-click a free wall area and **Attach corridor at thi
 
 ## Appearance and visibility
 
+The [combat performance fix](DEEPWORKS_COMBAT_PERFORMANCE.md) keeps campaign lighting stable during shooting, robot destruction and pickup collection. Bullets, robot details and pickups retain emissive glow; impacts/explosions retain particles and meshes. Their individual point lights no longer illuminate surrounding walls. Local hardware captures reduced the worst firing frame from 967 ms to 17 ms.
+
 Panel materials now have bolts, seams, deterministic surface grain, metallic response and subtle bump relief. Recessed ceiling fixtures provide visible construction depth and luminous strips without adding a dynamic light to every room. Existing headlights provide directional illumination. This is an incremental procedural art pass, not a complete lighting/art replacement; shadows, baked indirect light, localized grime/decals and authored machinery remain useful later work.
 
 Descent traversed connected segments and built portal viewing windows rather than treating every mine surface as equally visible; its [released renderer source](https://github.com/videogamepreservation/descent/blob/master/MAIN/RENDER.C) contains the segment render-list and window logic. Previously this project kept the finite mine resident and relied on ordinary Three.js object frustum culling. It now additionally computes conservative room visibility through projected opening windows, starting at the actual camera room.

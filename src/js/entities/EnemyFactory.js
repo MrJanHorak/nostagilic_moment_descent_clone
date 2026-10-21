@@ -53,8 +53,8 @@ class EnemyFactory {
       const meshBuilder = this.meshBuilders[enemyType.name];
       meshBuilder.buildMesh(body, enemyType);
 
-      // Emissive engine/eye meshes remain visible. Finite arenas use one shared fill
-      // per enemy instead of separate engine, eye and antenna illumination.
+      // Emissive engine/eye meshes remain visible. Finite arenas add no actor
+      // lights, so encountering/killing a robot cannot change shader variants.
       if (!accentLights) {
         /** @type {THREE.Light[]} */
         const lights = [];
@@ -110,9 +110,11 @@ class EnemyFactory {
       });
 
       // Add a point light attached to enemy for better visibility
-      const enemyLight = new THREE.PointLight(enemyType.color, 0.6, 5);
-      enemyLight.position.set(0, 0, 0);
-      body.add(enemyLight);
+      if (accentLights) {
+        const enemyLight = new THREE.PointLight(enemyType.color, 0.6, 5);
+        enemyLight.position.set(0, 0, 0);
+        body.add(enemyLight);
+      }
 
       this.scene.add(body);
       return enemy;

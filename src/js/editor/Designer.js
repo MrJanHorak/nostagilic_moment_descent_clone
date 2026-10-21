@@ -13,6 +13,8 @@ import sample from '../core/levels/documents/signal-breach.v8.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';
 import EditorDraftStore from './EditorDraftStore.js';
+import UserLevelLibrary from '../core/UserLevelLibrary.js';
+import { serializeLevelDocument } from '../core/levels/document/validateLevelDocument.js';
 import { faceLabel } from './EditorPicking.js';
 import { validationTarget } from './ValidationNavigation.js';
 
@@ -24,6 +26,7 @@ host.innerHTML = `
     <nav aria-label="Document controls">
       <button id="new">New mine</button><button id="sample">Open example</button><button id="deepworks">Open Deepworks</button>
       <button id="import">Import JSON</button><button id="export" class="primary">Export JSON</button>
+      <button id="save-library">Save to My Levels</button><button id="save-library-copy" hidden>Save a copy</button>
       <button id="playtest">Playtest level</button>
       <button id="escape-settings">Reactor escape…</button>
       <a href="/">Back to game</a>
@@ -148,6 +151,24 @@ for (const key of ['position', 'size', 'place-position', 'content-position']) {
 }
 
 let model = new EditorDocument();
+const userLevels = new UserLevelLibrary();
+let libraryKey = new URLSearchParams(location.search).get('level');
+/** @type {string | null} */ let librarySnapshot = null;
+let libraryNotice = '';
+if (libraryKey) {
+  const entry = userLevels.get(libraryKey);
+  if (entry) { model = new EditorDocument(entry.document); librarySnapshot = serializeLevelDocument(entry.document); }
+  else { libraryKey = null; libraryNotice = 'This saved level could not be opened. Import a JSON backup or return to My Levels.'; }
+}
+/** @param {string | null} key */
+function linkLibrary(key) {
+  libraryKey = key;
+  if (!key) librarySnapshot = null;
+  const url = new URL(location.href);
+  if (key && userLevels.persistent) url.searchParams.set('level', key); else url.searchParams.delete('level');
+  history.replaceState(null, '', url);
+  element('save-library-copy').hidden = !key;
+}
 for (const key of ['build', 'scene']) element(`toggle-${key}`).onclick = () => {
   const panel = element(`${key}-panel`); panel.hidden = !panel.hidden;
   element(`toggle-${key}`).setAttribute('aria-pressed', String(!panel.hidden));
@@ -296,6 +317,8 @@ function refresh(rebuild = true) {
   const result = model.validation;
   element('validation-title').textContent = result.valid ? 'Valid level · Ready to export' : `${result.errors.length} validation issue(s) · Export blocked · Outline preview`;
   button('export').disabled = !result.valid;
+  button('save-library').disabled = !result.valid;
+  button('save-library-copy').disabled = !result.valid;
   button('playtest').disabled = !result.valid;
   const overlappingIds = overlappingRoomIds(model.document.rooms), overlaps = model.document.rooms.filter(room => overlappingIds.has(room.id));
   element('geometry-status').textContent = overlaps.length ? `OVERLAP: ${overlaps.map(room => room.id).join(', ')}. Red rooms intersect; this does not create an opening. Preview and playtest are blocked until fixed.`
@@ -453,10 +476,10 @@ input('name').onchange = () => perform(() => {
   model.change(draft => { draft.name = name; });
 });
 const mayReplace = () => !model.dirty || window.confirm('Discard the current unsaved changes? Export JSON first to keep a backup.');
-element('new').onclick = () => { if (mayReplace()) { perform(() => { model = new EditorDocument(createDocument()); selectedId = model.document.rooms[0].id; }); viewport.frame(); } };
-element('deepworks').onclick = () => { if (mayReplace()) perform(() => { model.import(JSON.stringify(deepworks)); selectedId = model.document.rooms[0].id; selectedContentId = '@spawn'; }); viewport.frame(); };
+element('new').onclick = () => { if (mayReplace()) { perform(() => { model = new EditorDocument(createDocument()); linkLibrary(null); selectedId = model.document.rooms[0].id; }); viewport.frame(); } };
+element('deepworks').onclick = () => { if (mayReplace()) perform(() => { model.import(JSON.stringify(deepworks)); linkLibrary(null); selectedId = model.document.rooms[0].id; selectedContentId = '@spawn'; }); viewport.frame(); };
 element('sample').onclick = () => {
-  if (mayReplace()) perform(() => { model.import(JSON.stringify(sample)); selectedId = model.document.rooms[0].id; });
+  if (mayReplace()) perform(() => { model.import(JSON.stringify(sample)); linkLibrary(null); selectedId = model.document.rooms[0].id; });
   viewport.frame();
 };
 element('import').onclick = () => input('file').click();
@@ -467,7 +490,7 @@ input('file').onchange = async () => {
     const text = await file.text();
     // Validate before asking to discard anything; import itself is transactional.
     const candidate = new EditorDocument(); candidate.import(text);
-    if (mayReplace()) perform(() => { model = candidate; selectedId = model.document.rooms[0].id; });
+    if (mayReplace()) perform(() => { model = candidate; linkLibrary(null); selectedId = model.document.rooms[0].id; });
     viewport.frame();
   } catch (error) { report(error); }
   finally { input('file').value = ''; }
@@ -480,11 +503,23 @@ element('export').onclick = () => {
     model.markSaved(); refresh(false); saveDraft(); element('notice').textContent = 'JSON exported. Keep this file as your portable backup.';
   } catch (error) { report(error); }
 };
+/** @param {boolean} asCopy */
+function saveToLibrary(asCopy) {
+  try {
+    const entry = userLevels.save(model.export(), asCopy ? null : libraryKey, asCopy ? null : librarySnapshot);
+    librarySnapshot = serializeLevelDocument(entry.document); linkLibrary(entry.key);
+    if (userLevels.persistent) model.markSaved();
+    refresh(false); saveDraft();
+    element('notice').textContent = `${userLevels.persistent ? 'Saved to My Levels.' : 'Not saved to My Levels.'} ${userLevels.status}`;
+  } catch (error) { report(error); }
+}
+element('save-library').onclick = () => saveToLibrary(false);
+element('save-library-copy').onclick = () => saveToLibrary(true);
 window.addEventListener('beforeunload', event => { if (model.dirty) { event.preventDefault(); event.returnValue = ''; } });
 window.addEventListener('pagehide', event => { if (!event.persisted) { menu?.dispose(); viewport.dispose(); } });
 element('restore-draft').onclick = () => {
   if (!drafts.pending || !mayReplace()) return;
-  try { model.restoreDraft(drafts.pending.document); drafts.restored(); selectedId = model.document.rooms[0].id; selectedFace = null; selectionKind = 'room'; setInspector('room'); refresh(); saveDraft(); viewport.frame(); }
+  try { model.restoreDraft(drafts.pending.document); linkLibrary(null); drafts.restored(); selectedId = model.document.rooms[0].id; selectedFace = null; selectionKind = 'room'; setInspector('room'); refresh(); saveDraft(); viewport.frame(); }
   catch (error) { report(error); }
 };
 element('discard-draft').onclick = () => { if (drafts.discard() && model.dirty) saveDraft(); refreshDraftStatus(); };
@@ -522,3 +557,5 @@ window.addEventListener('keydown', event => {
   } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'f') { event.preventDefault(); viewport.frame(true); }
 });
 setInspector('room'); refreshDraftStatus(); refresh(); viewport.frame();
+element('save-library-copy').hidden = !libraryKey;
+if (libraryNotice) element('notice').textContent = libraryNotice;

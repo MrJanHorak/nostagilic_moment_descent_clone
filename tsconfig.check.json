@@ -29,6 +29,8 @@
     "src/js/core/GameSession.js",
     "src/js/core/SimulationStepper.js",
     "src/js/core/UserSettings.js",
+    "src/js/core/UserLevelLibrary.js",
+    "src/js/ui/UserLevels.js",
     "src/js/core/ShipView.js",
     "src/js/core/ExplorationMap.js",
     "src/js/ui/CockpitView.js",

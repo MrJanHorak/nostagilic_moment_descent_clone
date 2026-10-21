@@ -2,6 +2,8 @@
 import SettingsDialog from './SettingsDialog.js';
 import MineGuide from '../core/levels/document/MineGuide.js';
 import createMissionSelect from './MissionSelect.js';
+import createUserLevels from './UserLevels.js';
+import UserLevelLibrary from '../core/UserLevelLibrary.js';
 import NavigationDisplay from './NavigationDisplay.js';
 
 class UIManager {
@@ -641,6 +643,11 @@ class UIManager {
       designerLink.id = 'level-designer-link';
       Object.assign(designerLink.style, { display: 'block', color: '#8bdeef', textAlign: 'center', margin: '14px auto', position: 'relative', zIndex: '2' });
       startScreen.firstElementChild.appendChild(designerLink);
+      const myLevelsButton = document.createElement('button');
+      myLevelsButton.id = 'my-levels-btn'; myLevelsButton.textContent = 'MY LEVELS';
+      Object.assign(myLevelsButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#dcf8ff', background: '#24485c', border: '1px solid #5e9cae', borderRadius: '5px', font: '16px system-ui', cursor: 'pointer' });
+      myLevelsButton.onclick = () => this.game.showUserLevels();
+      startScreen.firstElementChild.appendChild(myLevelsButton);
       const settingsButton = this.createSettingsButton();
       Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
       startScreen.querySelector('.title-container').appendChild(settingsButton);
@@ -717,7 +724,16 @@ class UIManager {
   createLevelSelect(game) {
     this.levelSelectMenu?.remove();
     this.levelSelectMenu = createMissionSelect(game.levelManager.levels,
-      index => game.startSession({ endless: false, levelIndex: index }), () => game.showMainMenu());
+      index => game.startSession({ endless: false, levelIndex: index }), () => game.showMainMenu(),
+      { userLevels: () => game.showUserLevels(), hiddenIndex: game.importedLevelIndex });
+    document.body.appendChild(this.levelSelectMenu);
+    this.levelSelectMenu.querySelector('button')?.focus();
+    return this.levelSelectMenu;
+  }
+  createUserLevels(game) {
+    this.levelSelectMenu?.remove();
+    this.userLevelLibrary ??= new UserLevelLibrary();
+    this.levelSelectMenu = createUserLevels(document => game.startLevelDocument(document), () => game.showMainMenu(), this.userLevelLibrary);
     document.body.appendChild(this.levelSelectMenu);
     this.levelSelectMenu.querySelector('button')?.focus();
     return this.levelSelectMenu;

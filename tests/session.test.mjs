@@ -13,6 +13,7 @@ import PowerUpManager from '../src/js/entities/PowerUpManager.js';
 import ProjectileManager from '../src/js/entities/ProjectileManager.js';
 import AudioManager from '../src/js/core/AudioManager.js';
 import UIManager from '../src/js/ui/UIManager.js';
+import { createDocument } from '../src/js/editor/EditorDocument.js';
 
 function globalForTest(t, key, value) {
   const before = Object.getOwnPropertyDescriptor(globalThis, key);
@@ -86,6 +87,27 @@ test('session clock freezes while paused and rejects invalid transitions', () =>
   session.advance(0.5);
   assert.equal(called, 1);
   assert.throws(() => session.transition('loading'), /Invalid session transition/);
+});
+
+test('custom levels complete and replay independently without entering the built-in campaign', t => {
+  const { game, results } = fixture(t);
+  assert.equal(game.startLevelDocument(createDocument()), true);
+  const index = game.currentLevelIndex;
+  // Completion is driven through the same objective overlap as ordinary flight.
+  game.spaceship.group.position.copy(game.mission.exitPosition);
+  game.updateSimulation(1 / 60);
+  assert.equal(game.session.phase, 'completed');
+  assert.equal(results.at(-1), false, 'a standalone custom level must not offer Next Mission');
+  assert.equal(game.nextMission(), false);
+  assert.equal(game.restartLevel(), true);
+  assert.equal(game.currentLevelIndex, index); assert.equal(game.session.phase, 'playing');
+  assert.equal(game.gameState.score, 0);
+  game.levelManager.levels[0] = { ...game.levelManager.levels[0], campaignOrder: 1 };
+  game.levelManager.levels[1] = { ...game.levelManager.levels[1], campaignOrder: 2 };
+  game.startSession({ endless: false, levelIndex: 0 });
+  assert.equal(game.nextMissionIndex(), 1);
+  game.startSession({ endless: false, levelIndex: 1 });
+  assert.equal(game.nextMissionIndex(), -1, 'the last built-in mission must not advance into the custom slot');
 });
 
 test('ending a session invalidates its due callbacks, including during dispatch', () => {

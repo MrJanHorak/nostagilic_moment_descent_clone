@@ -54,6 +54,67 @@ function shot(game, start, velocity, power = 5, options = {}) {
   return projectile;
 }
 
+function lightCount(root) {
+  let count = 0;
+  root.traverse(object => { if (object instanceof THREE.Light) count++; });
+  return count;
+}
+
+test('Deepworks shooting, impacts, robot deaths and pickup removal keep the scene light count stable', t => {
+  const game = fixture(t);
+  const levelIndex = game.levelManager.levels.findIndex(level => level.id === 'asterion-deepworks');
+  assert.ok(levelIndex >= 0);
+  game.scene.add(game.spaceship.group, new THREE.AmbientLight());
+  game.startSession({ endless: false, levelIndex });
+  game.updateSimulation(1 / 60);
+  assert.equal(game.enemyManager.enemies.length, 7);
+  assert.ok(game.powerUpManager.powerups.length > 0);
+  const baseline = lightCount(game.scene);
+  assert.ok(baseline > 0, 'environment/ship illumination must remain');
+  game.projectileManager.setCanvas({});
+  const ammo = game.gameState.weaponInventory.pulse.ammo;
+  for (let i = 0; i < 20; i++) {
+    game.projectileManager.fireProjectile(game.gameState, { requirePointerLock: false });
+    assert.ok(game.projectileManager.projectiles.length > 0);
+    assert.ok(game.projectileManager.projectiles.every(projectile => projectile.mesh.material.emissiveIntensity > 0));
+    assert.equal(lightCount(game.scene), baseline, 'a shot must not change the lighting shader variant');
+    for (let step = 0; step < 8; step++) game.updateSimulation(0.05);
+    assert.equal(lightCount(game.scene), baseline, 'shot retirement must not change the lighting variant');
+  }
+  assert.equal(game.gameState.weaponInventory.pulse.ammo, ammo - 20);
+  const enemy = game.enemyManager.enemies[0];
+  game.enemyManager.hitEnemy(enemy, { power: 1000 }, enemy.mesh.position.clone());
+  const effects = game.enemyManager.effectsManager;
+  effects.update(0);
+  assert.equal(game.enemyManager.enemies.length, 6);
+  assert.ok(effects.hitEffects[0].particleSystem instanceof THREE.Points, 'impact sparks remain visible');
+  assert.ok(effects.explosionEffects[0].mesh instanceof THREE.Mesh, 'robot explosion remains visible');
+  assert.equal(lightCount(game.scene), baseline, 'robot removal and explosion must not change lights');
+  game.powerUpManager.clear();
+  assert.equal(lightCount(game.scene), baseline, 'pickup removal must not change lights');
+  for (let step = 0; step < 20; step++) game.updateSimulation(0.05);
+  assert.equal(effects.hitEffects.length, 0); assert.equal(effects.explosionEffects.length, 0);
+  assert.equal(effects.activeHitLights.length + effects.activeExplosionLights.length, 0);
+  game.startSession({ endless: false, levelIndex }); game.updateSimulation(1 / 60);
+  assert.equal(lightCount(game.scene), baseline);
+  assert.equal(game.enemyManager.enemies.length, 7);
+  assert.equal(game.gameState.weaponInventory.pulse.ammo, ammo);
+});
+
+test('lighting policy restores legacy effects and shots when leaving a finite mission', t => {
+  const game = fixture(t);
+  assert.equal(game.enemyManager.effectsManager.dynamicLights, false);
+  assert.equal(shot(game, v(), v()).light, undefined);
+  game.startSession({ endless: true });
+  assert.equal(game.enemyManager.effectsManager.dynamicLights, true);
+  assert.ok(shot(game, v(), v()).light instanceof THREE.PointLight);
+  game.enemyManager.effectsManager.createHitEffect(v());
+  assert.equal(game.enemyManager.effectsManager.activeHitLights.length, 1);
+  game.startSession({ endless: false, levelIndex: 1 });
+  assert.equal(game.enemyManager.effectsManager.activeHitLights.length, 0);
+  assert.equal(shot(game, v(), v()).light, undefined);
+});
+
 function hostile(game, start, velocity, power = 10) {
   const manager = game.enemyManager.projectileManager;
   const enemy = game.enemyManager.enemies[0];
@@ -163,7 +224,7 @@ test('object disposal handles meshes and points, deduplicates shared resources a
   keptGeometry.dispose(); keptMaterial.dispose();
 });
 
-test('finite arena keeps one light per enemy without losing emissive model geometry', t => {
+test('finite arena keeps emissive robot geometry without actor lights', t => {
   const game = fixture(t);
   assert.equal(game.enemyManager.enemies.length, 2);
   for (const enemy of game.enemyManager.enemies) {
@@ -172,7 +233,7 @@ test('finite arena keeps one light per enemy without losing emissive model geome
       if (child.isLight) lights++;
       if (child.isMesh && child.material.emissive?.getHex()) emissiveMeshes++;
     });
-    assert.equal(lights, 1);
+    assert.equal(lights, 0);
     assert.ok(emissiveMeshes > 0);
   }
 });
@@ -189,7 +250,7 @@ test('light reduction preserves meshes, colliders and body clearance; default fa
       return { lights, meshes };
     };
     assert.equal(counts(full).lights, fullLights);
-    assert.equal(counts(reduced).lights, 1);
+    assert.equal(counts(reduced).lights, 0);
     assert.equal(counts(full).meshes, counts(reduced).meshes);
     assert.ok(full.collider.equals(reduced.collider));
     assert.equal(full.collisionRadius, reduced.collisionRadius);

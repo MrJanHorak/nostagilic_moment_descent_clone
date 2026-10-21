@@ -16,6 +16,8 @@ class EffectsManager {
     this.session = session;
     this.elapsedMs = 0;
     this.disposed = false;
+    // Finite arenas disable transient illumination to keep shader variants stable.
+    this.dynamicLights = true;
     /** @private */
     this.clearing = false;
     /** @private */
@@ -37,14 +39,17 @@ class EffectsManager {
   /** @param {THREE.Vector3} position */
   createHitEffect(position) {
     this.assertUsable();
-    const flash = this.objectPool.getFromPool('hitLight') || new THREE.PointLight(0xffff00, 1.5, 4);
-    flash.position.copy(position);
-    flash.visible = true;
-    flash.intensity = 1.5;
-    this.lightDeadlines.set(flash, this.now() + 100);
-    this.activeHitLights.push(flash);
+    let flash;
+    if (this.dynamicLights) {
+      flash = this.objectPool.getFromPool('hitLight') || new THREE.PointLight(0xffff00, 1.5, 4);
+      flash.position.copy(position);
+      flash.visible = true;
+      flash.intensity = 1.5;
+      this.lightDeadlines.set(flash, this.now() + 100);
+      this.activeHitLights.push(flash);
+    }
     this.hitEffects.push({ position: position.clone(), createdAt: this.now(), duration: 300 });
-    this.scene.add(flash);
+    if (flash) this.scene.add(flash);
   }
 
   /** @param {THREE.Vector3} position
@@ -54,15 +59,17 @@ class EffectsManager {
   createExplosion(position, color, isExplosive = false, explosionRadius = 1.0) {
     this.assertUsable();
     const generation = this.generation;
-    const light = this.objectPool.getFromPool('explosionLight') || new THREE.PointLight();
-    light.color.set(color);
-    light.intensity = 1.5;
-    light.distance = isExplosive ? 4.0 : 1.5;
-    light.position.copy(position);
-    light.visible = true;
-    this.lightDeadlines.set(light, this.now() + 200);
-    this.activeExplosionLights.push(light);
-    this.scene.add(light);
+    if (this.dynamicLights) {
+      const light = this.objectPool.getFromPool('explosionLight') || new THREE.PointLight();
+      light.color.set(color);
+      light.intensity = 1.5;
+      light.distance = isExplosive ? 4.0 : 1.5;
+      light.position.copy(position);
+      light.visible = true;
+      this.lightDeadlines.set(light, this.now() + 200);
+      this.activeExplosionLights.push(light);
+      this.scene.add(light);
+    }
     if (generation !== this.generation) return;
 
     if (isExplosive) {

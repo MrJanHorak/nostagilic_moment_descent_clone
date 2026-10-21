@@ -1,0 +1,190 @@
+{
+  "capturedAt": "2026-10-21T17:16:00.393Z",
+  "requestedRenderer": "hardware",
+  "viewport": {
+    "width": 1280,
+    "height": 720
+  },
+  "scenarios": [
+    {
+      "scenario": "idle",
+      "elapsedMs": 10536,
+      "frames": 496,
+      "p50Ms": 16.699999999999818,
+      "p95Ms": 49.900000000001455,
+      "maxMs": 66.70000000000073,
+      "over100ms": 0,
+      "before": {
+        "resources": {
+          "geometries": 205,
+          "textures": 11,
+          "programs": 18,
+          "calls": 265,
+          "triangles": 8548,
+          "points": 0,
+          "objects": 1068,
+          "lights": 26,
+          "materials": 766,
+          "sceneGeometries": 882,
+          "geometryBudget": 896,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "position": [
+          0,
+          0,
+          12
+        ],
+        "enemies": 7,
+        "shots": 0,
+        "phase": "playing"
+      },
+      "after": {
+        "resources": {
+          "geometries": 205,
+          "textures": 11,
+          "programs": 18,
+          "calls": 265,
+          "triangles": 8548,
+          "points": 0,
+          "objects": 1068,
+          "lights": 26,
+          "materials": 766,
+          "sceneGeometries": 882,
+          "geometryBudget": 896,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "position": [
+          0,
+          0,
+          12
+        ],
+        "enemies": 7,
+        "shots": 0,
+        "phase": "playing"
+      }
+    },
+    {
+      "scenario": "fire",
+      "elapsedMs": 13529,
+      "frames": 376,
+      "p50Ms": 16.69999999999891,
+      "p95Ms": 49.899999999999636,
+      "maxMs": 966.6999999999989,
+      "over100ms": 8,
+      "before": {
+        "resources": {
+          "geometries": 157,
+          "textures": 11,
+          "programs": 15,
+          "calls": 265,
+          "triangles": 8548,
+          "points": 0,
+          "objects": 1068,
+          "lights": 26,
+          "materials": 766,
+          "sceneGeometries": 882,
+          "geometryBudget": 896,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "position": [
+          0,
+          0,
+          12
+        ],
+        "enemies": 7,
+        "shots": 0,
+        "phase": "playing"
+      },
+      "after": {
+        "resources": {
+          "geometries": 162,
+          "textures": 11,
+          "programs": 40,
+          "calls": 273,
+          "triangles": 8996,
+          "points": 12,
+          "objects": 1080,
+          "lights": 30,
+          "materials": 774,
+          "sceneGeometries": 887,
+          "geometryBudget": 900,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "position": [
+          0,
+          0,
+          12
+        ],
+        "enemies": 7,
+        "shots": 4,
+        "phase": "playing"
+      }
+    },
+    {
+      "scenario": "encounter",
+      "elapsedMs": 13975,
+      "frames": 683,
+      "p50Ms": 16.699999999999818,
+      "p95Ms": 33.399999999999636,
+      "maxMs": 533.4000000000005,
+      "over100ms": 1,
+      "before": {
+        "resources": {
+          "geometries": 37,
+          "textures": 10,
+          "programs": 15,
+          "calls": 107,
+          "triangles": 4318,
+          "points": 0,
+          "objects": 1044,
+          "lights": 20,
+          "materials": 754,
+          "sceneGeometries": 870,
+          "geometryBudget": 884,
+          "effectLights": 0,
+          "pooledEffects": 0
+        },
+        "position": [
+          -48,
+          0,
+          -44
+        ],
+        "enemies": 7,
+        "shots": 0,
+        "phase": "playing"
+      },
+      "after": {
+        "resources": {
+          "geometries": 34,
+          "textures": 10,
+          "programs": 26,
+          "calls": 98,
+          "triangles": 3614,
+          "points": 0,
+          "objects": 1032,
+          "lights": 19,
+          "materials": 746,
+          "sceneGeometries": 862,
+          "geometryBudget": 876,
+          "effectLights": 0,
+          "pooledEffects": 4
+        },
+        "position": [
+          -48,
+          0,
+          -44
+        ],
+        "enemies": 6,
+        "shots": 0,
+        "phase": "playing"
+      }
+    }
+  ],
+  "errors": [],
+  "gpu": "ANGLE (Intel, Intel(R) UHD Graphics (0x00009A60) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "status": "complete"
+}

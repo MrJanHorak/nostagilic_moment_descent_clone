@@ -4,9 +4,13 @@
 
 **Try the designer:** run `npm run dev` and open `/editor.html`, or choose **LEVEL DESIGNER** from the main menu. Click a wall/item to select it; right-click to style a face, edit an opening/door or place content at that point. Right-drag still pans; Shift+F10 or **Actions** opens the keyboard menu. Use **Playtest level** for first-person flight, then Esc and **Return to editor**. Drafts save locally and offer Restore/Discard on reload; export JSON for a portable backup. See [the UX/authoring guide](docs/progress/M4_DESIGNER_UX.md).
 
+**Play and share your own levels:** open **MY LEVELS** from the main menu or mission selector to import, play, rename, export or delete a level. The designer's **Save to My Levels** adds the current mine; opening it from the library lets you update it or **Save a copy**. Levels stay in this browser; export JSON for a portable backup. See [the user level guide](docs/USER_LEVELS.md).
+
 **Lava, water and scout attacks:** Vector Foundry and Nightfall Reactor now include animated lava floors; Nightfall also has safe coolant water. Fly above lava to avoid shield damage. In the editor, choose a face and **lava** or **water** under **Surface pattern** to author these in format v9. These are solid surfaces; submerged flight is future work. Scouts warn, lunge in a committed direction, then retreat/recover for return fire. See [the environment and mission roadmap](docs/ENVIRONMENT_AND_MISSION_ROADMAP.md).
 
 **Reactor escape:** Nightfall's shutdown starts a 60-second return to the arrival exit through the lift and lower loop. Clear required guards and other relays first. A visible timer stays on with the HUD hidden, freezes on pause and resets on replay. Use **Reactor escape…** in the designer to configure a trigger relay and 10–600 seconds in format v10. See [the reactor guide](docs/REACTOR_ESCAPE.md).
+
+**Deepworks combat performance:** campaign shots, effects, robots and pickups now retain emissive visuals without changing the scene's light count. This removes the reproduced combat shader stalls. See [the hardware comparison and profiling command](docs/DEEPWORKS_COMBAT_PERFORMANCE.md).
 
 **Close loops and add doors:** right-click an end/wall → **Connect to existing room…**. Use **Fit corridor end to target** when a corridor stops short or penetrates the target, or **Snap separate branch** for a disconnected piece. **Full shared opening** uses the mutual clear wall area. You can attach/join separate passages on different areas of a large wall. Right-click its cyan frame → **Add or edit relay door…**, choose an existing relay or **Create relay near player spawn**, then use R nearby in Playtest. See [the loop/door guide](docs/progress/M4_LOOPS_AND_SHARED_OPENINGS.md) for format v7 and bounds.
 

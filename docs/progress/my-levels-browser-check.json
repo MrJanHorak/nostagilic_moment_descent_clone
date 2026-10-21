@@ -1,0 +1,74 @@
+{
+  "capturedAt": "2026-10-21T22:10:48.710Z",
+  "scope": "My Levels production functional checks; software rendering",
+  "verification": {
+    "command": "npm run verify",
+    "passed": true,
+    "unitTests": 476,
+    "lintModules": 78
+  },
+  "browser": {
+    "command": "npx playwright test --project=production --grep \"My Levels|designer saves and opens library|blocked saving leaves custom|new campaign is primary|settings persist, reset|assemble three spaces\"",
+    "tests": [
+      {
+        "title": "designer: assemble three spaces, undo invalid edit, export and reload production JSON",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1962
+          }
+        ]
+      },
+      {
+        "title": "production: new campaign is primary; camera, headlights and HUD persist and settings isolate shortcuts",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 5454
+          }
+        ]
+      },
+      {
+        "title": "production: settings persist, reset, remain isolated while paused, and fit a small viewport",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 6156
+          }
+        ]
+      },
+      {
+        "title": "production: My Levels imports, persists, plays to completion, replays, renames, exports and deletes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3202
+          }
+        ]
+      },
+      {
+        "title": "production: designer saves and opens library levels, protects another tab and saves an independent copy",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 3096
+          }
+        ]
+      },
+      {
+        "title": "production: blocked saving leaves custom levels playable and exportable with an explicit temporary warning",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 2381
+          }
+        ]
+      }
+    ]
+  },
+  "screenshots": [
+    "my-levels-library.png",
+    "my-levels-mobile.png",
+    "my-levels-editor-save.png"
+  ]
+}

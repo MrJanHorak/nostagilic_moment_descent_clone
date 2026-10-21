@@ -168,9 +168,10 @@ class ProjectileManager {
       velocity.z += (Math.random() - 0.5) * 0.1;
     }
 
-    // Add point light for visual enhancement
-    const light = new THREE.PointLight(color, 0.7, 2);
-    projectile.add(light);
+    // A changing light count recompiles every lit material in the mine.
+    // Finite arenas retain emissive bullets/trails without per-shot lighting.
+    const light = this.combatWorld.transientLights === false ? undefined : new THREE.PointLight(color, 0.7, 2);
+    if (light) projectile.add(light);
 
     // Create projectile data object
     /** @type {import('../combatContracts.js').PlayerProjectile} */

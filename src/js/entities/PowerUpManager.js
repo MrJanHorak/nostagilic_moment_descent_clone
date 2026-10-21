@@ -248,10 +248,12 @@ class PowerUpManager {
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     powerupGroup.add(ring);
 
-    // Point light to make it glow
-    const pointLight = new THREE.PointLight(powerupType.color, 1, 3);
-    pointLight.position.set(0, 0, 0);
-    powerupGroup.add(pointLight);
+    // Emissive core/ring provide the glow in finite arenas. Adding/collecting
+    // a pickup must not recompile the entire mine's lighting shaders.
+    if (this.levelManager?.currentLevel?.kind !== 'arena') {
+      const pointLight = new THREE.PointLight(powerupType.color, 1, 3);
+      powerupGroup.add(pointLight);
+    }
 
     return powerupGroup;
   }

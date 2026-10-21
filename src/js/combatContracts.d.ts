@@ -112,7 +112,7 @@ export interface PlayerProjectile extends ProjectileBase {
   unstable: boolean;
   penetrating: boolean;
   acceleration: number;
-  light: PointLight;
+  light?: PointLight;
   pulseData?: { originalScale: number; pulseSpeed: number; pulseAmount: number; baseOpacity: number; lastPulse: number };
 }
 export interface EnemyProjectile extends ProjectileBase {
@@ -122,6 +122,8 @@ export interface EnemyProjectile extends ProjectileBase {
 }
 export type Projectile = PlayerProjectile | EnemyProjectile;
 export interface CombatWorld {
+  /** Finite mines keep illumination stable; emissive shot meshes/trails remain. */
+  readonly transientLights?: boolean;
   getColliders?(): readonly SolidCollider[];
   getTargets?(): readonly EnemyCombatTarget[];
   getRules?(): { readonly pulseDamage: number } | null | undefined;

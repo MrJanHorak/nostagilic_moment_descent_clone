@@ -185,6 +185,8 @@ export default class Game {
         this.levelManager.initEndlessLevel();
       } else this.levelManager.loadLevel(levelIndex, preparedWorld);
       const level = this.levelManager.currentLevel;
+      const transientLights = endless || level.kind !== 'arena';
+      if (this.enemyManager.effectsManager) this.enemyManager.effectsManager.dynamicLights = transientLights;
       this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
         level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
@@ -196,6 +198,7 @@ export default class Game {
         if (this.session.phase === 'playing') this.mission?.recordDefeat(id, cause);
       };
       this.projectileManager.setCombatWorld?.({
+        transientLights,
         getColliders: () => this.levelManager.solidColliders,
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
@@ -320,15 +323,29 @@ export default class Game {
     this.audioManager.stopAllSounds();
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.updateHUD();
-    this.uiManager.showCompletion(this.currentLevelIndex + 1 < this.levelManager.levels.length);
+    this.uiManager.showCompletion(this.nextMissionIndex() !== -1);
     return true;
   }
 
   nextMission() {
     if (this.session.phase !== 'completed') return false;
-    const next = this.currentLevelIndex + 1;
-    if (next >= this.levelManager.levels.length) return false;
+    const next = this.nextMissionIndex();
+    if (next === -1) return false;
     return this.startSession({ endless: false, levelIndex: next });
+  }
+
+  nextMissionIndex() {
+    if (this.currentLevelIndex === this.importedLevelIndex) return -1;
+    const level = this.levelManager.levels[this.currentLevelIndex];
+    if (level?.campaignOrder) return this.levelManager.levels.findIndex(candidate => candidate.campaignOrder === level.campaignOrder + 1);
+    const next = this.currentLevelIndex + 1;
+    return next < this.levelManager.levels.length && next !== this.importedLevelIndex ? next : -1;
+  }
+
+  showUserLevels() {
+    this.endSession();
+    this.uiManager.hideStartScreen();
+    this.uiManager.createUserLevels(this);
   }
 
   showLevelSelection() {
