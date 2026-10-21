@@ -1,0 +1,29 @@
+{
+  "formatVersion": 7,
+  "id": "fighter-proving-ground",
+  "name": "Fighter Proving Ground",
+  "rooms": [
+    { "id": "sparring-floor", "prefab": "box-room", "position": [0, 0, 0], "size": [24, 16, 24], "yaw": 0, "materialPreset": "industrial-blue", "surfaces": { "negativeY": { "color": 2637375, "pattern": "grid" }, "negativeZ": { "color": 7109419, "pattern": "panels" } } },
+    { "id": "east-gallery", "prefab": "box-room", "position": [18, 0, 0], "size": [12, 16, 24], "yaw": 0, "materialPreset": "industrial-green", "surfaces": { "negativeY": { "color": 2637375, "pattern": "grid" } } },
+    { "id": "north-link", "prefab": "box-room", "position": [18, 0, -18], "size": [12, 16, 12], "yaw": 0, "materialPreset": "industrial-green" },
+    { "id": "north-bay", "prefab": "box-room", "position": [0, 0, -18], "size": [24, 16, 12], "yaw": 0, "materialPreset": "industrial-red", "surfaces": { "negativeY": { "color": 7109419, "pattern": "panels" } } }
+  ],
+  "connections": [
+    { "id": "floor-gallery", "a": { "roomId": "sparring-floor", "port": "positiveX" }, "b": { "roomId": "east-gallery", "port": "negativeX" }, "openingSize": [8, 8] },
+    { "id": "gallery-link", "a": { "roomId": "east-gallery", "port": "negativeZ" }, "b": { "roomId": "north-link", "port": "positiveZ" }, "openingSize": [8, 8] },
+    { "id": "link-bay", "a": { "roomId": "north-link", "port": "negativeX" }, "b": { "roomId": "north-bay", "port": "positiveX" }, "openingSize": [8, 8] },
+    { "id": "bay-floor", "a": { "roomId": "north-bay", "port": "positiveZ" }, "b": { "roomId": "sparring-floor", "port": "negativeZ" }, "openingSize": [8, 8] }
+  ],
+  "playerSpawn": { "roomId": "sparring-floor", "position": [0, 0, 8], "rotation": [0, 0, 0, 1] },
+  "entities": [
+    { "id": "drill:floor-fighter", "kind": "enemy", "type": "fighter", "roomId": "sparring-floor", "position": [0, 0, -4] },
+    { "id": "drill:bay-fighter", "kind": "enemy", "type": "fighter", "roomId": "north-bay", "position": [6, 3, 0] },
+    { "id": "drill:repair", "kind": "pickup", "type": "health", "roomId": "east-gallery", "position": [0, -3, 6] },
+    { "id": "drill:ammo", "kind": "pickup", "type": "pulseAmmo", "roomId": "north-link", "position": [0, -3, 0] },
+    { "id": "drill:exit", "kind": "exit", "roomId": "sparring-floor", "position": [-8, 0, 8], "radius": 1.5 }
+  ],
+  "devices": [],
+  "doors": [],
+  "mission": { "type": "relay-clear-and-exit", "requiredEnemyIds": ["drill:floor-fighter", "drill:bay-fighter"], "requiredDeviceIds": [], "exitId": "drill:exit" },
+  "combat": { "pulseDamage": 5, "initialPulseAmmo": 80, "maxPulseAmmo": 120 }
+}

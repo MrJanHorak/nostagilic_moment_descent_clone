@@ -28,11 +28,11 @@ The library re-reads saved data before mutations. If another tab changed or dele
 
 ## Next steps
 
-This is the first step toward user campaigns. Campaign ordering, briefings, campaign bundle import/export and saved campaign progression are not implemented yet. The next gameplay priority is a more mobile fighter with a compact combat test level, followed by difficulty and encounter tuning.
+This is the first step toward user campaigns. Campaign ordering, briefings, campaign bundle import/export and saved campaign progression are not implemented yet. [Mobile fighters and their proving ground](FIGHTER_MOVEMENT.md) are the next gameplay addition; difficulty and encounter tuning follow.
 
 ## Verification
 
-`npm run verify` covers scoped lint/type checks, 476 unit/simulation tests and the production build. New library checks cover persistence, snapshots, duplicate IDs, invalid imports, old/current documents, bounded capacity, storage failure, cross-tab saves/deletions and standalone completion/replay routing.
+The My Levels checkpoint passed scoped lint/type checks, 476 unit/simulation tests and the production build through `npm run verify`. New library checks cover persistence, snapshots, duplicate IDs, invalid imports, old/current documents, bounded capacity, storage failure, cross-tab saves/deletions and standalone completion/replay routing.
 
 Production browser coverage is in `tests/browser/user-levels.spec.js`: import/reload/play/complete/replay/rename/export/delete; save/open/update/copy through the editor and a second tab; and temporary play/export plus editor unsaved state when saving is blocked. It uses actual file inputs, menus, keyboard flight, downloads and reloads. It is functional coverage, not a new hardware performance measurement.
 

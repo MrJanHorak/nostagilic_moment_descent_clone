@@ -1,6 +1,7 @@
 import { test as base, expect } from '@playwright/test';
 import { openClockedGame, advanceUntil } from '../helpers/browser-clock.mjs';
 import { FlightController } from '../helpers/browser-flight.mjs';
+import { aimAt, faceForward, readFlight } from '../helpers/browser-aim.mjs';
 
 const test = base.extend({
   cleanBrowser: [async ({ page }, use) => {
@@ -39,7 +40,7 @@ test('production: new campaign is primary; camera, headlights and HUD persist an
   await page.locator('#select-level-btn').click();
   for (const title of ['Signal Breach', 'Vector Foundry', 'Nightfall Reactor']) await expect(button(page, title)).toBeVisible();
   await expect(button(page, 'Arena Escape')).toBeHidden(); await expect(page.getByRole('button', { name: /Legacy level/ })).toHaveCount(0);
-  await expect(page.locator('.mission-library details button')).toHaveCount(5);
+  await expect(page.locator('.mission-library details button')).toHaveCount(6);
   await expect(button(page, 'ENDLESS MODE')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('new-mission-library.png'), fullPage: true });
   await button(page, 'Signal Breach').press('Enter'); await page.clock.fastForward(100);
@@ -81,6 +82,7 @@ async function fly(page, axis, target) {
       if (next !== held) { if (held) await page.keyboard.up(held); if (next) await page.keyboard.down(next); held = next; }
       return false;
     }, { ticks: 420, message: `Axis ${axis} did not reach ${target}: ${JSON.stringify(last)}` });
+    if (held) { await page.keyboard.up(held); held = null; }
     await advanceUntil(page, async () => {
       const state = JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
       return state.phase === 'completed' || state.speed < 0.02;
@@ -248,7 +250,7 @@ test('development: Signal Breach concealed wall blocks flight, opens on a native
 
 test('development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input', async ({ page }, testInfo) => {
   test.setTimeout(300000);
-  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.setViewportSize({ width: 960, height: 540 });
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
@@ -285,13 +287,14 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   expect(parseInt(await page.locator('#health-percentage').textContent(), 10)).toBeLessThan(shieldBeforeRelease);
   await page.clock.runFor(32); await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('signal-ranged-encounter.png'), animations: 'disabled' });
-  for (let shot = 0; shot < 3; shot++) {
-    await page.keyboard.press('f');
-    for (let tick = 0; tick < 18; tick++) await page.clock.fastForward(100);
-  }
+  await advanceUntil(page, async () => (await readFlight(page)).fighters.find(enemy => enemy.id === 'hall-fighter')?.phase === 'windup', { ticks: 100 });
+  await aimAt(page, state => state.fighters.find(enemy => enemy.id === 'hall-fighter')?.position);
+  for (let shot = 0; shot < 3; shot++) await page.keyboard.press('f');
+  for (let tick = 0; tick < 18; tick++) await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
   await expect(page.locator('#score-display')).toHaveText('100');
   await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 76');
+  await faceForward(page);
   // Read flight diagnostics only; all movement, fire and interaction use normal keys.
   for (const [axis, target] of [[2, 0], [1, 21], [2, -16]]) await fly(page, axis, target);
   await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-room', 'overhead-gallery');

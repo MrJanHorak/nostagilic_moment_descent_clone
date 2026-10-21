@@ -45,7 +45,8 @@ export default class RuntimeDiagnostics {
         .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.scoutAttack?.phase ?? 'approach', since: enemy.scoutAttack?.since ?? 0 })),
       fighters: gameState.game?.enemyManager?.enemies.filter(enemy => enemy.type.name === 'fighter' && enemy.isActive).slice(0, 16)
         .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.fighterAttack?.phase ?? 'idle',
-          since: enemy.fighterAttack?.since ?? 0, firedAt: Number.isFinite(enemy.fighterAttack?.firedAt) ? enemy.fighterAttack.firedAt : null })),
+          since: enemy.fighterAttack?.since ?? 0, firedAt: Number.isFinite(enemy.fighterAttack?.firedAt) ? enemy.fighterAttack.firedAt : null,
+          position: enemy.mesh.position.toArray(), motion: enemy.fighterMovement?.mode ?? 'route', decisions: enemy.fighterMovement?.decisions ?? 0 })),
       speed: ship?.velocity.length() ?? 0,
     }));
   }

@@ -12,9 +12,10 @@ import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
 import RoomNavigation from '../core/levels/document/RoomNavigation.js';
 import { createFighterAttack, advanceFighterAttack, fighterCommitted, presentFighterAttack } from './FighterAttack.js';
 import { createScoutAttack, updateScoutAttack } from './ScoutAttack.js';
+import updateFighterMovement from './FighterMovement.js';
 
 /** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
- * route: THREE.Vector3[] | null, waypoint: number, revision: number}} MinePursuit */
+ * route: THREE.Vector3[] | null, waypoint: number, revision: number, tactical: boolean}} MinePursuit */
 
 class EnemyManager {
   /** @param {THREE.Scene} scene
@@ -98,7 +99,7 @@ class EnemyManager {
   minePursuit(enemy) {
     let pursuit = this.minePursuits.get(enemy);
     if (!pursuit) {
-      pursuit = { lastSeen: null, goalRoom: undefined, route: null, waypoint: 0, revision: -1 };
+      pursuit = { lastSeen: null, goalRoom: undefined, route: null, waypoint: 0, revision: -1, tactical: false };
       this.minePursuits.set(enemy, pursuit);
     }
     return pursuit;
@@ -112,6 +113,12 @@ class EnemyManager {
     if (!navigation) return;
     const pursuit = this.minePursuit(enemy);
     const distance = enemy.mesh.position.distanceTo(this.playerTransform.position);
+    const enemyRoom = enemy.type.name === 'fighter' && visible ? navigation.roomAt(enemy.mesh.position) : null;
+    const tactical = enemyRoom !== null && distance < getEnemyFiringRange('fighter') && enemyRoom === navigation.roomAt(this.playerTransform.position);
+    // A local dodge leaves the old route's starting waypoint behind. Rebuild
+    // once on returning to navigation, rather than backtracking or replanning every frame.
+    if (pursuit.tactical && !tactical) pursuit.goalRoom = undefined;
+    pursuit.tactical = tactical;
     if (visible && distance < 30) {
       if (pursuit.lastSeen) pursuit.lastSeen.copy(this.playerTransform.position);
       else pursuit.lastSeen = this.playerTransform.position.clone();
@@ -139,7 +146,8 @@ class EnemyManager {
     const target = pursuit.route?.[pursuit.waypoint];
     enemy.velocity.set(0, 0, 0);
     const holdRange = fighterCommitted(enemy) || visible && distance < 8 && enemy.type.name !== 'scout';
-    if (target && !holdRange && delta > 0) {
+    if (tactical) updateFighterMovement(enemy, this.playerTransform.position, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta);
+    else if (target && !holdRange && delta > 0) {
       const travel = target.clone().sub(enemy.mesh.position);
       const speed = Math.min(enemy.type.speed * 60, travel.length() / delta);
       const velocity = travel.normalize().multiplyScalar(speed);

@@ -6,6 +6,8 @@
 
 **Play and share your own levels:** open **MY LEVELS** from the main menu or mission selector to import, play, rename, export or delete a level. The designer's **Save to My Levels** adds the current mine; opening it from the library lets you update it or **Save a copy**. Levels stay in this browser; export JSON for a portable backup. See [the user level guide](docs/USER_LEVELS.md).
 
+**Mobile fighters:** guards in authored mines now strafe, change height and maintain firing distance between attacks. Their amber warnings and blue recovery windows remain opportunities to counterattack. Try **SELECT MISSION → Practice & prototypes → Fighter Proving Ground**, a four-room loop with two fighters and a flank route. See [the fighter guide](docs/FIGHTER_MOVEMENT.md).
+
 **Lava, water and scout attacks:** Vector Foundry and Nightfall Reactor now include animated lava floors; Nightfall also has safe coolant water. Fly above lava to avoid shield damage. In the editor, choose a face and **lava** or **water** under **Surface pattern** to author these in format v9. These are solid surfaces; submerged flight is future work. Scouts warn, lunge in a committed direction, then retreat/recover for return fire. See [the environment and mission roadmap](docs/ENVIRONMENT_AND_MISSION_ROADMAP.md).
 
 **Reactor escape:** Nightfall's shutdown starts a 60-second return to the arrival exit through the lift and lower loop. Clear required guards and other relays first. A visible timer stays on with the HUD hidden, freezes on pause and resets on replay. Use **Reactor escape…** in the designer to configure a trigger relay and 10–600 seconds in format v10. See [the reactor guide](docs/REACTOR_ESCAPE.md).

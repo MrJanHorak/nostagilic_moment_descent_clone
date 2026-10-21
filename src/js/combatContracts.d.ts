@@ -23,6 +23,7 @@ export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   lastFireTime: number;
   fireRate: number;
   fighterAttack?: FighterAttackState;
+  fighterMovement?: FighterMovementState;
   scoutAttack?: ScoutAttackState;
 }
 export interface FighterAttackState {
@@ -30,6 +31,15 @@ export interface FighterAttackState {
   since: number;
   readyAt: number;
   firedAt: number;
+}
+export interface FighterMovementState {
+  target: Vector3;
+  nextDecisionAt: number;
+  interval: number;
+  side: number;
+  lift: number;
+  decisions: number;
+  mode: 'hold' | 'brace' | 'blocked' | 'approach' | 'retreat' | 'strafe';
 }
 export interface ScoutAttackState {
   phase: 'approach' | 'windup' | 'lunge' | 'recover';

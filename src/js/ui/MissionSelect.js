@@ -40,7 +40,10 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
       const number = document.createElement('div'); number.className = 'eyebrow'; number.textContent = `MISSION ${String(level.campaignOrder).padStart(2, '0')}`;
       const briefing = document.createElement('p'); briefing.textContent = level.briefing ?? '';
       card.append(number, button, briefing); article.append(card);
-    } else practice.append(button);
+    } else {
+      practice.append(button);
+      if (level.briefing) { const briefing = document.createElement('p'); briefing.textContent = level.briefing; practice.append(briefing); }
+    }
   }
   const returnButton = document.createElement('button'); returnButton.textContent = 'RETURN TO MAIN MENU'; returnButton.onclick = back;
   article.append(practice, returnButton); root.append(style, article);
