@@ -1,0 +1,128 @@
+{
+  "recordedLocalDate": "2026-10-21",
+  "feature": "Deepworks, destructible reactor objectives, same-wall editor connections and conservative portal visibility",
+  "implementationCommit": "2262f1a",
+  "verification": {
+    "command": "npm run verify",
+    "unitAndSimulationTests": 463,
+    "passed": true,
+    "lintedRuntimeModules": 76,
+    "strictTypes": true,
+    "productionBuild": true,
+    "diffCheck": true
+  },
+  "browser": {
+    "cases": [
+      {
+        "title": "production: editor reactor integrity, destruction-triggered countdown, pause, restart and escape",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 11696
+          }
+        ]
+      },
+      {
+        "title": "production: Attach corridor creates two usable same-wall doorways and Deepworks opens in the editor",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 1285
+          }
+        ]
+      },
+      {
+        "title": "development: Deepworks portal visibility, loop route, native reactor destruction and timed return",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 160680
+          }
+        ]
+      },
+      {
+        "title": "production: cockpit instruments, firing, map, view cycle and saved selection",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 7576
+          }
+        ]
+      },
+      {
+        "title": "production: author a force field, shoot and collide, pause, restart, disable its relay and extract",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 20486
+          }
+        ]
+      },
+      {
+        "title": "production: editor reactor countdown authoring, timeout, reboot and native timed escape",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 21993
+          }
+        ]
+      }
+    ],
+    "stats": {
+      "startTime": "2026-10-21T00:19:44.654Z",
+      "duration": 227381.44900000002,
+      "expected": 6,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "renderer": "Chromium SwiftShader",
+    "input": "Ordinary keyboard/UI controls. The large-mine route uses the existing labeled development action to clear drones, isolating navigation and objective progression; reactor destruction uses native F shots.",
+    "viewport": "1280x800 review checkpoints; 640x400 during long flights.",
+    "limitations": [
+      "Functional checks do not establish encounter balance or hardware FPS.",
+      "Two earlier full-mine walkthrough attempts were stopped to adjust the slow test pilot and software-rendering resolution.",
+      "Initial post-resize captures could be blank. The capture helper now waits for native resize and further frames; escape map and focused vault images were reviewed."
+    ],
+    "additionalVisualCases": [
+      {
+        "title": "production: Deepworks vault cockpit repaints after viewport changes",
+        "results": [
+          {
+            "status": "passed",
+            "durationMs": 4966
+          }
+        ]
+      }
+    ],
+    "distinctPassedScenarios": 7,
+    "captureRecheck": {
+      "nativeWalkthroughRepeated": true,
+      "nativeRecord": "deepworks-capture-run.json",
+      "focusedVaultFixture": "Authored Deepworks geometry and reactor, with guards and locks removed to permit a vault spawn. Ordinary campaign route and reactor destruction were verified separately.",
+      "resolutionFix": "Await native resize delivery, advance mocked animation frames again, then allow GPU presentation to settle."
+    }
+  },
+  "rendering": {
+    "initial": {
+      "visibleRooms": 5,
+      "totalRooms": 48,
+      "culledStaticMeshes": 638
+    },
+    "atExtraction": {
+      "visibleRooms": 3,
+      "totalRooms": 48,
+      "culledStaticMeshes": 678
+    },
+    "scope": "Static room meshes/fixtures/doors/fields/relays/reactors/exits. All collision and AI remain resident; dynamic actors keep existing render behavior."
+  },
+  "evidence": [
+    "deepworks-concourse.png",
+    "deepworks-editor.png",
+    "destructible-reactor-cockpit.png",
+    "deepworks-escape-map.png",
+    "deepworks-extracted.png",
+    "deepworks-vault-visual.png"
+  ],
+  "documentation": "../DEEPWORKS.md"
+}

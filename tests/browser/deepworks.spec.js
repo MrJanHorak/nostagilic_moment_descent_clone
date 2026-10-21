@@ -11,6 +11,33 @@ const test = base.extend({ cleanBrowser: [async ({ page }, use) => {
 }, { auto: true }] });
 const button = (page, name) => page.getByRole('button', { name, exact: true });
 
+async function settleViewport(page, width, height) {
+  await page.setViewportSize({ width, height });
+  // Native resize may clear the canvas after mocked RAF has already run.
+  await page.waitForTimeout(150); await page.clock.runFor(100);
+  await page.waitForTimeout(150); await page.clock.runFor(100);
+  await page.waitForTimeout(150);
+}
+
+test('production: Deepworks vault cockpit repaints after viewport changes', async ({ page }, info) => {
+  const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
+  const doc = JSON.parse(await readFile('src/js/core/levels/documents/asterion-deepworks.v12.json', 'utf8'));
+  // Visual fixture retains the mine/core but removes guards and locks for a
+  // vault spawn. The full ordinary-input campaign route is tested below.
+  doc.playerSpawn = { roomId: 'reactor-vault', position: [0, 0, 6], rotation: [0, 0, 0, 1] };
+  doc.doors = []; doc.entities = doc.entities.filter(e => e.kind !== 'enemy'); doc.mission.requiredEnemyIds = [];
+  const model = new EditorDocument(doc);
+  await page.goto('http://127.0.0.1:5184/editor.html');
+  await page.locator('#file').setInputFiles({ name: 'vault-visual.json', mimeType: 'application/json', buffer: Buffer.from(model.export()) });
+  await expect(page.locator('#format-version')).toContainText('Format 12'); await page.clock.pauseAt(start + 3600000);
+  await button(page, 'Playtest level').click(); const frame = page.frameLocator('iframe[title="Mission playtest"]');
+  await button(frame, 'Start playtest').press('Enter'); await page.clock.fastForward(100);
+  await page.keyboard.press('c'); await page.keyboard.press('c');
+  await settleViewport(page, 640, 400); await settleViewport(page, 1280, 800);
+  await expect(frame.locator('#cockpit-objective')).toContainText('CORE 150/150');
+  await page.screenshot({ path: info.outputPath('deepworks-vault-visual.png'), animations: 'disabled' });
+});
+
 test('production: editor reactor integrity, destruction-triggered countdown, pause, restart and escape', async ({ page }, info) => {
   test.setTimeout(180000); await page.setViewportSize({ width: 1280, height: 800 });
   const start = Date.UTC(2026, 0, 1); await page.clock.install({ time: start });
@@ -93,17 +120,19 @@ test('development: Deepworks portal visibility, loop route, native reactor destr
     else await fly(page, step[0], step[1]);
   }
   await expect(page.locator('#cockpit-objective')).toContainText('SYSTEMS 3/4'); await expect(page.locator('#escape-countdown')).toBeHidden();
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.clock.fastForward(100);
+  await settleViewport(page, 1280, 800);
   await page.screenshot({ path: info.outputPath('deepworks-reactor-vault.png'), animations: 'disabled' });
   await page.setViewportSize({ width: 640, height: 400 });
   for (let i = 0; i < 15; i++) { await page.keyboard.press('f'); for (let tick = 0; tick < 8; tick++) await page.clock.fastForward(100); }
   await expect(page.locator('#escape-countdown')).toBeVisible(); await expect(page.locator('#cockpit-objective')).toContainText('EXIT READY');
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.keyboard.press('m'); await page.clock.fastForward(100); await page.screenshot({ path: info.outputPath('deepworks-escape-map.png'), animations: 'disabled' }); await page.keyboard.press('m');
+  await settleViewport(page, 1280, 800); await page.keyboard.press('m'); await page.clock.runFor(100);
+  for (let tick = 0; tick < 32; tick++) await page.clock.fastForward(100);
+  await page.waitForTimeout(100); await page.screenshot({ path: info.outputPath('deepworks-escape-map.png'), animations: 'disabled' }); await page.keyboard.press('m');
   await page.setViewportSize({ width: 640, height: 400 });
   for (const [axis, target] of [[0, 12], [2, 0], [0, 0], [2, 52]]) await fly(page, axis, target);
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
   const finished = await snapshot(); await writeFile(info.outputPath('deepworks-render-stats.json'), JSON.stringify({ initial: initial.visibility, finished: finished.visibility }, null, 2));
-  await page.setViewportSize({ width: 1280, height: 800 }); await page.clock.fastForward(100);
+  await settleViewport(page, 1280, 800);
   await page.screenshot({ path: info.outputPath('deepworks-extracted.png'), animations: 'disabled' });
   await button(page, 'REPLAY MISSION').press('Enter'); await page.clock.fastForward(100); await expect(page.locator('#escape-countdown')).toBeHidden();
   await expect(page.locator('#cockpit-objective')).toContainText('CORE 150/150');

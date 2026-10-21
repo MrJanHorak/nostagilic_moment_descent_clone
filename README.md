@@ -49,7 +49,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 ### Game Mechanics
 
 - **Zero Gravity Movement**: Full 6 degrees of freedom movement with your spaceship
-- **Missions and practice**: Three authored campaign missions plus optional training/prototype fixtures
+- **Missions and practice**: Four authored campaign missions plus optional training/prototype fixtures
 - **Dynamic Lighting**: Advanced lighting system that brings the cave environment to life
 - **Enemy AI**: Five distinct enemy types with unique behaviors and attack patterns:
   - **Scouts**: Fast but fragile reconnaissance ships
@@ -104,7 +104,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 - **Vector Foundry**: Follow a rising ramp, restore lift power and climb to extraction controls.
 - **Nightfall Reactor**: Clear two guards, restore coolant and shut down the reactor before upper extraction.
 
-Signal Breach has eleven authored spaces; Vector Foundry and Nightfall Reactor have seven each. Missions include pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
+Signal Breach has eleven authored spaces; Vector Foundry and Nightfall Reactor have seven each; Asterion Deepworks adds forty-eight spaces and nine independent loops. Missions include pickups, color/pattern landmarks and relay-controlled doors. Select missions individually or advance after completion. The main Start button begins Signal Breach.
 
 ### Practice and custom missions
 
