@@ -244,3 +244,5 @@ Web Audio supplies synthesized effects and an original 40-second stereo mission 
 - Inspired by the classic game Descent
 
 Relay-controlled [force fields](docs/FORCE_FIELDS.md) now guard Vector Foundry’s lift. Cyan membranes absorb shots and stop ships until their control relay is activated with R. The editor supports field authoring, and the survey map marks discovered fields and controls.
+
+[Asterion Deepworks](docs/DEEPWORKS.md) adds 48 spaces, nine loops, three hidden stores and a destructible reactor with timed extraction. Choose it in Mission Select or Open Deepworks in the designer. Reactors have editable integrity and can control gates/countdowns. The editor now places additional corridors on an already used wall, and finite mines use conservative portal visibility plus procedural panel relief and recessed fixtures.

@@ -1143,9 +1143,12 @@ class UIManager {
     const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
       : `${mission.requiredIds.size ? `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size}` : 'Reach extraction'} · Exit locked (amber ring ${destination})`;
     const device = this.game.levelManager.interaction?.nearest(this.game.spaceship.group.position);
-    const relay = mission.requiredDeviceIds.size ? ` · Relays ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
+    const reactors = interaction?.reactors ?? [];
+    const reactorStatus = reactors.filter(core => core.health > 0).map(core => ` · CORE ${core.health}/${core.device.health ?? 100}`).join('');
+    const systemName = reactors.length ? 'Systems' : 'Relays';
+    const relay = mission.requiredDeviceIds.size ? ` · ${systemName} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
       (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
-        level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
+        level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : reactors.length ? ' · Cyan: R activates · Orange reactor: shoot the core' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
     const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
     const remaining = mission.remainingEscapeMs(this.game.session.timeMs);
     const escapeHint = mission.definition.escape && remaining === null ? ' · Reactor control starts the escape countdown after other objectives are clear' : '';
@@ -1159,12 +1162,12 @@ class UIManager {
         this.guideEscape.style.color = seconds <= 10 ? '#ff7777' : '#ffce77';
       }
     }
-    const text = `${level.name.toUpperCase()} · ${status}${relay}${escapeHint}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const text = `${level.name.toUpperCase()} · ${status}${relay}${reactorStatus}${escapeHint}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
     if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
     if (this.guideSummary) {
       const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size
-        ? `RELAYS ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : `DRONES ${mission.defeats.size}/${mission.requiredIds.size}`;
-      const summary = `${level.name.toUpperCase()} · ${objective}${device ? ` · R: ${device.label}` : ''}`;
+        ? `${systemName.toUpperCase()} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : `DRONES ${mission.defeats.size}/${mission.requiredIds.size}`;
+      const summary = `${level.name.toUpperCase()} · ${objective}${reactorStatus}${device ? ` · R: ${device.label}` : ''}`;
       if (this.guideSummary.textContent !== summary) this.guideSummary.textContent = summary;
     }
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';

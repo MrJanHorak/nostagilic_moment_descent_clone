@@ -97,3 +97,7 @@ The new campaign route tests use the existing labeled development action to neut
 ## Relay force fields
 
 Vector Foundry now uses a cyan energy field at its lower lift hatch. Its nearby Lift field control disables it with R; the extraction gate remains a sliding door. Fields absorb shots and stop ships without contact damage. Discovered fields and controls appear on the cockpit survey and M map, turning green after shutdown. The editor supports conversion between fields and sliding/concealed doors, undo, export/import and playtest. See [rules and authoring](FORCE_FIELDS.md).
+
+## Deepworks, destructible reactors and room visibility
+
+The fourth mission, Asterion Deepworks, contains 48 spaces, nine loops, three hidden stores and every current editor element family. A shootable reactor completes a system objective, controls linked gates and can start the existing escape countdown. Integrity is editable in the designer, and Open Deepworks loads the larger mine. Older Attach/Connect model controls now handle another offset passage on a used wall. Recessed fixtures and procedural metallic panel relief improve construction detail; conservative portal windows skip static meshes outside visible connected rooms. See [the complete guide](DEEPWORKS.md) for routes, authoring, rendering scope and verification.

@@ -9,6 +9,7 @@ import createMineLinkLevel from './levels/MineLink.js';
 import createRelayGateLevel from './levels/RelayGate.js';
 import createDeepRelayLevel from './levels/DeepRelay.js';
 import buildArena from './ArenaGeometry.js';
+import PortalVisibility from './PortalVisibility.js';
 import SurfaceEnvironment from './SurfaceEnvironment.js';
 
 class LevelManager {
@@ -44,6 +45,7 @@ class LevelManager {
     this.solidColliders = [];
     this.interaction = null;
     this.environment = null;
+    this.visibility = null;
     this.levels = [
       createFlightArena(),
       createCombatArena(),
@@ -275,6 +277,7 @@ class LevelManager {
     this.interaction?.retire();
     this.interaction = null;
     this.environment = null;
+    this.visibility = null;
     // Remove all segments and obstacles
     for (const segment of new Set([...this.levelSegments, ...this.segmentMap.values()])) this.removeSegment(segment);
     this.levelSegments = [];
@@ -295,6 +298,7 @@ class LevelManager {
       this.levelSegments = [group];
       this.solidColliders = colliders;
       this.environment = new SurfaceEnvironment(surfaces ?? []);
+      this.visibility = this.currentLevel.sourceDocument ? new PortalVisibility(this.currentLevel.sourceDocument, group) : null;
       this.scene.add(group);
       return;
     }

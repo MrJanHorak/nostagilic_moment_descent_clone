@@ -73,7 +73,7 @@ export default function compileLevelDocument(input) {
     rendering: Object.freeze({ enemyAccentLights: false, trainingDecorations: false }),
     solids: Object.freeze(solids), combat: document.combat,
     ...(document.formatVersion !== 1 ? { doors: Object.freeze(doors),
-      devices: Object.freeze(document.devices.map(device => Object.freeze({ id: device.id, label: device.label, position: Object.freeze(world(device)) }))) } : {}),
+      devices: Object.freeze(document.devices.map(device => Object.freeze({ id: device.id, label: device.label, ...(device.kind ? { kind: device.kind, health: device.health } : {}), position: Object.freeze(world(device)) }))) } : {}),
     enemySpawns: Object.freeze(document.entities.filter(entity => entity.kind === 'enemy').map(entity => Object.freeze({
       id: entity.id, enemyType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),

@@ -41,14 +41,14 @@ function occupied(document, roomId, port) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -122,7 +122,7 @@ export default class EditorDocument {
         const rotation = candidate.document.playerSpawn.rotation;
         const yaw = (Math.round(2 * Math.atan2(rotation[1], rotation[3]) * 180 / Math.PI / 90) * 90 + 360) % 360;
         candidate.updateContent(id, roomId, position, false, yaw);
-      } else id = candidate.addContent(roomId, kind === 'enemy' ? 'enemy' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? type : kind, position);
+      } else id = candidate.addContent(roomId, kind === 'enemy' ? 'enemy' : kind === 'reactor' ? 'reactor' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? type : kind, position);
     });
     return id;
   }
@@ -256,12 +256,22 @@ export default class EditorDocument {
     });
   }
   /** Attach creates room + connection atomically, including vertical hatches.
-   * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] @param {number[]} [point] */
+   * @param {string} roomId @param {Face} face @param {Room['prefab']} prefab @param {number[]} [endOffset] @param {number[]} [point] @returns {string} */
   attachRoom(roomId, face, prefab, endOffset = [0, 8], point) {
     if (this.document.rooms.length >= EXPANDED_LIMITS.rooms) throw new Error('Room limit reached (256).');
     const source = this.room(roomId);
     if (!connectableFace(source, face)) throw new Error('Sloped side faces stay solid. Continue from a corridor end face.');
-    if (!FACES.includes(face) || occupied(this.document, roomId, face) && !point) throw new Error('Choose an unused attachment port, or right-click another area of this wall.');
+    if (!FACES.includes(face)) throw new Error('Choose a wall.');
+    if (occupied(this.document, roomId, face) && !point) {
+      const frame = portFrame(source, face), span = prefab === 'box-room' ? 16 : 8;
+      const offsets = [0, ...Array.from({ length: 16 }, (_, i) => (i % 2 ? -1 : 1) * Math.ceil((i + 1) / 2) * span)];
+      for (const u of offsets) for (const v of offsets) {
+        if (Math.abs(u) + span / 2 > frame.width / 2 || Math.abs(v) + (prefab === 'box-room' ? 6 : 4) > frame.height / 2) continue;
+        const world = [...frame.center]; world[frame.u] += u; world[frame.v] += v;
+        try { return this.attachRoom(roomId, face, prefab, endOffset, toLocal(source, world)); } catch { /* Try the next clear rectangle without changing history. */ }
+      }
+      throw new Error('No clear space for another attachment on this wall. Enlarge it, or right-click a free area to place precisely.');
+    }
     const frame = portFrame(source, face), id = nextId(this.document, 'room');
     /** @type {Room} */ const room = { id, prefab, position: [0, 0, 0], size: prefab === 'box-room' ? [16, 12, 16] : [8, 8, 16], yaw: 0, materialPreset: source.materialPreset };
     // Corridors run along the selected world axis, including vertical shafts.
@@ -297,7 +307,9 @@ export default class EditorDocument {
   /** @param {string} aId @param {Face} portA @param {string} bId @param {Face} portB */
   connect(aId, portA, bId, portB) {
     if (this.document.connections.length >= EXPANDED_LIMITS.connections) throw new Error('Connection limit reached (512).');
-    const connection = connectionFor(this.document, this.room(aId), portA, this.room(bId), portB);
+    const a = this.room(aId), b = this.room(bId);
+    if (occupied(this.document, aId, portA) || occupied(this.document, bId, portB) || distance(portFrame(a, portA).center, portFrame(b, portB).center) > 1e-6) return this.connectFaces(aId, portA, bId, portB);
+    const connection = connectionFor(this.document, a, portA, b, portB);
     this.change(draft => { if (draft.connections.length >= LIMITS.connections) { modernize(draft); if (draft.formatVersion < 6) Object.assign(draft, { formatVersion: 6 }); } draft.connections.push(connection); });
   }
 
@@ -450,7 +462,7 @@ export default class EditorDocument {
     return 'kind' in value ? value : { ...value, kind: 'relay' };
   }
 
-  /** @param {string} roomId @param {'enemy' | 'pickup' | 'relay'} kind @param {string} type @param {number[]} position */
+  /** @param {string} roomId @param {'enemy' | 'pickup' | 'relay' | 'reactor'} kind @param {string} type @param {number[]} position */
   addContent(roomId, kind, type, position) {
     this.room(roomId);
     if (position.length !== 3 || !position.every(value => Number.isFinite(value) && Math.abs(value) <= 4096)) throw new Error('Enter finite room-local coordinates.');
@@ -460,14 +472,21 @@ export default class EditorDocument {
     const id = nextId(this.document, kind);
     this.change(draft => {
       const local = /** @type {[number, number, number]} */ ([...position]);
-      if (kind === 'relay') {
+      if (kind === 'relay' || kind === 'reactor') {
         const modern = modernize(draft); if (modern.devices.length >= 16) throw new Error('Relay limit reached (16).');
-        modern.devices.push({ id, label: id, roomId, position: local }); modern.mission.requiredDeviceIds.push(id);
+        if (kind === 'reactor') Object.assign(modern, { formatVersion: 12 });
+        modern.devices.push({ id, label: kind === 'reactor' ? 'Destroy reactor' : id, roomId, position: local, ...(kind === 'reactor' ? { kind, health: 100 } : {}) }); modern.mission.requiredDeviceIds.push(id);
       } else if (kind === 'enemy') {
         draft.entities.push({ id, kind, roomId, position: local, type: /** @type {import('../contracts.js').EnemyType} */ (type) }); draft.mission.requiredEnemyIds.push(id);
       } else draft.entities.push({ id, kind, roomId, position: local, type: /** @type {import('../levelDocument.js').PickupType} */ (type) });
     });
     return id;
+  }
+
+  /** @param {string} id @param {number} health */
+  setReactorIntegrity(id, health) {
+    if (this.content(id).kind !== 'reactor' || !Number.isInteger(health) || health < 10 || health > 1000) throw new Error('Reactor integrity must be a whole number from 10 to 1000.');
+    this.change(draft => { if (draft.formatVersion !== 1) { const device = draft.devices.find(device => device.id === id); if (device) device.health = health; } });
   }
 
   /** @param {string} id @param {string} roomId @param {number[]} position @param {boolean} required @param {number} [yaw] */
@@ -535,7 +554,7 @@ export default class EditorDocument {
         const forceField = options.forceField ?? previous?.kind === 'force-field';
         if (forceField && (deviceId === '@shot' || options.concealed === true)) throw new Error('Force fields require a relay and cannot be concealed.');
         const concealed = forceField ? false : options.concealed ?? previous?.concealed;
-        if (forceField) Object.assign(modern, { formatVersion: 11 });
+        if (forceField) Object.assign(modern, { formatVersion: Math.max(11, modern.formatVersion) });
         if (deviceId === '@shot' || concealed !== undefined || options.sliding) Object.assign(modern, { formatVersion: Math.max(8, modern.formatVersion) });
         modern.doors.push({ id: previous?.id ?? nextId(draft, 'door'), connectionId,
           ...(deviceId === '@shot' ? { activation: 'shot' } : { deviceId }), ...(forceField ? { kind: 'force-field' } : {}), ...(concealed !== undefined ? { concealed } : {}) });

@@ -33,7 +33,7 @@ export type EntityDocument = Placement & (
   | { readonly id: string; readonly kind: 'pickup'; readonly type: PickupType }
   | { readonly id: string; readonly kind: 'exit'; readonly radius: number }
 );
-export interface DeviceDocument extends Placement { readonly id: string; readonly label: string }
+export interface DeviceDocument extends Placement { readonly id: string; readonly label: string; readonly kind?: 'reactor'; readonly health?: number }
 export interface DoorDocument { readonly id: string; readonly connectionId: string; readonly deviceId?: string; readonly activation?: 'shot'; readonly concealed?: boolean; readonly kind?: 'force-field' }
 interface LevelDocumentBase {
   readonly id: string;
@@ -63,7 +63,7 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 9; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
-  | { readonly formatVersion: 10 | 11; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+  | { readonly formatVersion: 10 | 11 | 12; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
@@ -83,6 +83,6 @@ export interface ArenaLevel {
   readonly mission?: MissionDefinition;
   readonly combat?: LevelDocument['combat'];
   readonly sourceDocument?: LevelDocument;
-  readonly devices?: readonly { readonly id: string; readonly label: string; readonly position: Vec3 }[];
+  readonly devices?: readonly { readonly id: string; readonly label: string; readonly kind?: 'reactor'; readonly health?: number; readonly position: Vec3 }[];
   readonly doors?: readonly (DoorDocument & { readonly solid: SolidDefinition; readonly sliding?: boolean; readonly slideAxis?: number; readonly reverseStyle?: { readonly color: number; readonly pattern?: SurfacePattern }; readonly normalAxis?: number; readonly direction?: number })[];
 }

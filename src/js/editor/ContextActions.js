@@ -97,6 +97,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
     ], values => place('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type)), 'Place enemy', values => preview('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type))) },
     { label: 'Place health here', preview: () => preview('health'), action: () => place('health') },
     { label: 'Place ammo here', preview: () => preview('pulseAmmo'), action: () => place('pulseAmmo') },
+    { label: 'Place reactor here', action: () => place('reactor'), preview: () => preview('reactor') },
     { label: 'Place relay here', preview: () => preview('relay'), action: () => place('relay') },
     { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
     { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },

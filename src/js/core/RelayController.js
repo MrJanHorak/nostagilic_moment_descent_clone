@@ -21,6 +21,8 @@ export default class RelayController {
     this.sessionId = session.id;
     this.retired = false;
     this.fieldTime = 0;
+    this.reactors = this.devices.filter(device => device.kind === 'reactor').map(device => ({ device, health: device.health ?? 100,
+      collider: colliders.find(value => 'id' in value && value.id === device.id), mesh: root.children.find(child => child.name === device.id) }));
     /** @type {ShaderMaterial[]} */ this.fieldMaterials = [];
     for (const door of this.doors) if (door.kind === 'force-field') {
       root.children.find(child => child.name === door.id)?.traverse(child => {
@@ -66,6 +68,24 @@ export default class RelayController {
     return { id: slide.door.id, concealed: !!slide.door.concealed };
   }
 
+  /** Player shots use the actual swept collider. Enemy fire and R never invoke
+   * this path. Interlocked cores absorb shots without accumulating damage.
+   * @param {import('../contracts.js').SolidCollider} collider @param {number} damage
+   * @param {(id: string) => boolean} [allowed] */
+  hitReactor(collider, damage, allowed = () => true) {
+    if (!this.isLive() || !Number.isFinite(damage) || damage <= 0) return null;
+    const reactor = this.reactors.find(value => value.collider === collider && value.health > 0);
+    if (!reactor) return null;
+    if (!allowed(reactor.device.id)) return { ...reactor.device, health: reactor.health, destroyed: false, blocked: true };
+    reactor.health = Math.max(0, reactor.health - damage);
+    if (!reactor.health) {
+      this.activate(reactor.device);
+      if (reactor.mesh) reactor.mesh.visible = false;
+      const index = this.colliders.indexOf(collider); if (index !== -1) this.colliders.splice(index, 1);
+    }
+    return { ...reactor.device, health: reactor.health, destroyed: !reactor.health, blocked: false };
+  }
+
   /** Simulation time controls both the panels and their collision. Navigation
    * remains closed until the passage is fully clear; pause freezes the motion.
    * @param {number} delta */
@@ -98,7 +118,7 @@ export default class RelayController {
     /** @type {(typeof this.devices)[number] | null} */ let nearest = null;
     for (const device of this.devices) {
       const squared = position.distanceToSquared(device.position);
-      if (!this.activatedIds.has(device.id) && squared <= distance && hasLineOfSight(position, device.position, this.colliders)) {
+      if (device.kind !== 'reactor' && !this.activatedIds.has(device.id) && squared <= distance && hasLineOfSight(position, device.position, this.colliders)) {
         nearest = device; distance = squared;
       }
     }
@@ -109,6 +129,12 @@ export default class RelayController {
   tryActivate(position) {
     const device = this.nearest(position);
     if (!device) return null;
+    this.activate(device);
+    return { id: device.id, label: device.label };
+  }
+
+  /** @param {(typeof this.devices)[number]} device */
+  activate(device) {
     // Commit the unlock before publishing; sliding panels clear in simulation.
     this.activatedIds.add(device.id);
     for (const door of this.doors) if (door.deviceId === device.id) this.open(door);
@@ -116,6 +142,5 @@ export default class RelayController {
       if (child instanceof Mesh && child.material instanceof MeshBasicMaterial) child.material.color.setHex(0x45ff96);
     });
     this.revision++;
-    return { id: device.id, label: device.label };
   }
 }

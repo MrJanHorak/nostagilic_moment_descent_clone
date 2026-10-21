@@ -50,7 +50,7 @@ test('overlapping attachments and occupied ports fail atomically', () => {
   model.attachRoom(northEast, 'negativeX', 'box-room');
   const before = model.export(), history = model.past.length;
   assert.throws(() => model.attachRoom('room-1', 'negativeZ', 'box-room'), /overlap/);
-  assert.throws(() => model.attachRoom('room-1', 'positiveX', 'box-room'), /unused/);
+  assert.throws(() => model.attachRoom('room-1', 'positiveX', 'box-room'), /No clear space/);
   assert.equal(model.export(), before); assert.equal(model.past.length, history);
   // Close the square using existing aligned ports instead of placing a duplicate.
   model.connect('room-4', 'positiveZ', 'room-1', 'negativeZ');
@@ -61,7 +61,7 @@ test('overlapping attachments and occupied ports fail atomically', () => {
 test('misaligned connection attempts preserve history and report an actionable error', () => {
   const model = new EditorDocument(); const id = model.attachRoom('room-1', 'negativeZ', 'box-room');
   const before = model.export();
-  assert.throws(() => model.connect('room-1', 'positiveX', id, 'negativeX'), /same center/);
+  assert.throws(() => model.connect('room-1', 'positiveX', id, 'negativeX'), /shared area/);
   assert.equal(model.export(), before);
 });
 

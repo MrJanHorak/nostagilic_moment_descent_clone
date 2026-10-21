@@ -208,10 +208,10 @@ export default class EditorViewport {
     }
     for (const placement of [
       { ...document.playerSpawn, id: '@spawn', kind: 'spawn' }, ...document.entities,
-      ...(document.formatVersion !== 1 ? document.devices.map(device => ({ ...device, kind: 'relay' })) : []),
+      ...(document.formatVersion !== 1 ? document.devices.map(device => ({ ...device, kind: device.kind ?? 'relay' })) : []),
     ]) {
       const room = rooms.get(placement.roomId); if (!room) continue;
-      const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff };
+      const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff, reactor: 0xff843c };
       const marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.65), new THREE.MeshBasicMaterial({ color: colors[/** @type {keyof typeof colors} */ (placement.kind)] }));
       marker.position.fromArray(toWorld(room, placement.position)); marker.userData.roomId = room.id; marker.userData.contentId = placement.id;
       this.world.add(marker); this.markers.push(marker);

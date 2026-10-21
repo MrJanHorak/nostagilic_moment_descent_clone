@@ -42,7 +42,7 @@ export default class MineGuide {
     const target = queue.flatMap(roomId => devices.filter(device => device.roomId === roomId && !activated.has(device.id)))[0];
     const exit = this.document.entities.find(entity => entity.id === this.document.mission.exitId);
     const roomId = target?.roomId ?? exit?.roomId;
-    const destination = target ? `${target.label} in ${this.roomName(target.roomId)}` : exit ? `Exit in ${this.roomName(exit.roomId)}` : '';
+    const destination = target ? `${target.kind === 'reactor' ? 'Shoot reactor: ' : ''}${target.label} in ${this.roomName(target.roomId)}` : exit ? `Exit in ${this.roomName(exit.roomId)}` : '';
     const route = roomId ? routes.get(roomId) : null;
     const next = route && route.first !== current ? ` · Next: ${route.vertical > 0 ? 'ceiling hatch' : route.vertical < 0 ? 'floor hatch' : 'passage'} to ${this.roomName(route.first)}` : '';
     return `Location: ${this.roomName(current)} · ${destination}${next}${!route ? ' · Route locked: find a reachable cyan relay' : ''}`;

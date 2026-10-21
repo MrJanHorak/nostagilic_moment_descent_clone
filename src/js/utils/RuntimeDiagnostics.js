@@ -90,6 +90,7 @@ export default class RuntimeDiagnostics {
         enemies: game?.enemyManager?.enemies.length ?? 0,
         shots: (game?.projectileManager?.projectiles.length ?? 0) + (game?.enemyManager?.projectileManager.enemyProjectiles.length ?? 0),
         pickups: game?.powerUpManager?.powerups.length ?? 0,
+        visibility: game?.levelManager?.visibility ? { visibleRooms: game.levelManager.visibility.visibleRooms.size, totalRooms: game.levelManager.visibility.navigation.rooms.size, culledMeshes: game.levelManager.visibility.culledMeshes } : null,
         position: ship?.group.position.toArray(), speed: ship?.velocity.length() ?? 0,
         resources: collectResources(game), timing: this.metrics.snapshot(),
         profile: this.capture.result,

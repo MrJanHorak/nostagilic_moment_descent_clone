@@ -3,7 +3,7 @@
 export default function doorDialog(id, model, menu, commit) {
   const connection = model.document.connections.find(link => link.id === id); if (!connection) throw new Error('Select a real connection first.');
   const devices = model.document.formatVersion === 1 ? [] : model.document.devices, door = model.document.formatVersion === 1 ? null : model.document.doors.find(door => door.connectionId === id);
-  menu.form('Door controls', `${connection.a.roomId} ↔ ${connection.b.roomId}. Sliding panels stay open. Concealed panels match the walls. Force fields block ships and absorb shots; choose a relay to disable them with R.`, [
+  menu.form('Door controls', `${connection.a.roomId} ↔ ${connection.b.roomId}. Sliding panels stay open. Concealed panels match the walls. Force fields block ships and absorb shots; link a relay activated with R or a reactor destroyed by shots.`, [
     { id: 'relay', label: 'Door control', value: door?.activation === 'shot' ? '@shot' : door?.deviceId ?? '@new', options: [
       { value: '@new', label: 'Create relay near player spawn' }, { value: '@shot', label: 'Shoot door to open' }, ...devices.map(device => ({ value: device.id, label: device.label })), { value: '', label: 'Always open / remove door' },
     ] },

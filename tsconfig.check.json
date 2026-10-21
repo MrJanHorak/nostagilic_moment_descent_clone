@@ -96,6 +96,9 @@
     "src/js/editor/ConnectionDialog.js",
     "src/js/editor/DoorDialog.js",
     "src/js/editor/EscapeDialog.js",
-    "src/js/core/ForceField.js"
+    "src/js/core/ForceField.js",
+    "src/js/core/Reactor.js",
+    "src/js/core/PortalVisibility.js",
+    "src/js/core/InteriorDetails.js"
   ]
 }

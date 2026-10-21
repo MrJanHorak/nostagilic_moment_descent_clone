@@ -20,12 +20,13 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   for (const [index, device] of document.devices.entries()) {
     const path = `$.devices[${index}]`, room = rooms.get(device.roomId);
     if (!room) { issue(`${path}.roomId`, 'reference', `Unknown room: ${device.roomId}`); continue; }
-    if (!fitsInside(room, device.position, DEVICE_RADIUS)) issue(`${path}.position`, 'clearance', 'Relay must fit inside its room');
+    const radius = device.kind === 'reactor' ? 1.5 : DEVICE_RADIUS;
+    if (!fitsInside(room, device.position, radius)) issue(`${path}.position`, 'clearance', 'Relay must fit inside its room');
     const position = toWorld(room, device.position);
-    for (const other of placements) if (distance(position, other.position) < DEVICE_RADIUS + other.radius - 1e-6) {
+    for (const other of placements) if (distance(position, other.position) < radius + other.radius - 1e-6) {
       issue(`${path}.position`, 'placement-overlap', `Relay ${device.id} overlaps ${other.id}`);
     }
-    placements.push({ id: device.id, path: `${path}.position`, position, radius: DEVICE_RADIUS });
+    placements.push({ id: device.id, path: `${path}.position`, position, radius });
   }
   for (const [index, door] of document.doors.entries()) {
     if (!connections.has(door.connectionId)) issue(`$.doors[${index}].connectionId`, 'reference', `Unknown connection: ${door.connectionId}`);

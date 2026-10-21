@@ -16,7 +16,7 @@ export default class NavigationDisplay {
     this.canvas.setAttribute('aria-hidden', 'true');
     Object.assign(this.canvas.style, { width: '100%', height: 'calc(100% - 70px)', display: 'block' });
     this.legend = document.createElement('div');
-    this.legend.textContent = 'White: ship · Mint: current room · Blue: visited · Amber dashed: locked link · Cyan bars/diamond: field/control (green: disabled) · M close · Flight remains active';
+    this.legend.textContent = 'White: ship · Mint: current room · Blue: visited · Amber dashed: locked link · Cyan bars/diamond: field/control · Orange diamond: reactor · Green: disabled · M close · Flight remains active';
     this.element.append(this.title, this.legend); document.body.appendChild(this.element);
     this.summary = document.createElement('div'); this.summary.id = 'cockpit-instruments';
     this.summary.setAttribute('aria-label', 'Cockpit instruments');

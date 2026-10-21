@@ -8,6 +8,7 @@ export default class ExplorationMap {
     this.document = document;
     this.navigation = new RoomNavigation(document);
     /** @type {Set<string>} */ this.visited = new Set();
+    /** @type {Set<string>} */ this.completedDevices = new Set();
     /** @type {string | null} */ this.current = null;
     this.outlines = new Map(document.rooms.map(room => [room.id,
       Array.from({ length: 8 }, (_, i) => toWorld(room, /** @type {[number, number, number]} */ (
@@ -77,9 +78,9 @@ export function drawExploration(ctx, map, position, forward, closed, width, heig
   for (const device of map.document.formatVersion === 1 ? [] : map.document.devices) {
     const controlled = fields.filter(field => field.deviceId === device.id);
     const room = map.navigation.rooms.get(device.roomId)?.room;
-    if (!controlled.length || !room || !map.visited.has(device.roomId)) continue;
+    if ((!controlled.length && device.kind !== 'reactor') || !room || !map.visited.has(device.roomId)) continue;
     const [x, y] = screen(toWorld(room, device.position));
-    ctx.strokeStyle = controlled.some(field => closed.has(field.connectionId)) ? '#65f4ff' : '#45ff96';
+    ctx.strokeStyle = device.kind === 'reactor' ? map.completedDevices.has(device.id) ? '#45ff96' : '#ff9944' : controlled.some(field => closed.has(field.connectionId)) ? '#65f4ff' : '#45ff96';
     ctx.beginPath(); ctx.moveTo(x, y - 5); ctx.lineTo(x + 5, y); ctx.lineTo(x, y + 5); ctx.lineTo(x - 5, y); ctx.closePath(); ctx.stroke();
     if (width > 500) { ctx.fillStyle = ctx.strokeStyle; ctx.font = '11px monospace'; ctx.fillText(device.label, x + 9, y - 7); }
   }

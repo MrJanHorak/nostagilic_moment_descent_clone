@@ -74,7 +74,7 @@ test('partially shared faces preserve exact eighth-unit centers, strict old-form
   const before = model.export(), old = JSON.parse(before); old.formatVersion = 6; assert.equal(validateLevelDocument(old).valid, false);
   model.updateRoom('small', { pitch: 0, roll: 0 }); model.setSurface('small', 'negativeY', 0x123456, 'panels'); model.resizeRoom('small', [9, 9, 8.5]); model.snapConnections('small');
   assert.equal(model.document.formatVersion, 7); aligned(model);
-  for (const mutate of [d => d.formatVersion = 12, d => d.connections[0].a.offset[0] = 0.1, d => d.connections[0].openingSize[0] = 7.1, d => d.connections[0].openingSize[0] = 255.125]) { const bad = JSON.parse(before); mutate(bad); assert.equal(validateLevelDocument(bad).valid, false); }
+  for (const mutate of [d => d.formatVersion = 13, d => d.connections[0].a.offset[0] = 0.1, d => d.connections[0].openingSize[0] = 7.1, d => d.connections[0].openingSize[0] = 255.125]) { const bad = JSON.parse(before); mutate(bad); assert.equal(validateLevelDocument(bad).valid, false); }
 });
 
 test('Fit corridor end closes a gapped loop while keeping the anchor and target rooms fixed', () => {

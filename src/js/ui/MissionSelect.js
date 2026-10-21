@@ -24,7 +24,7 @@ export default function createMissionSelect(levels, choose, back) {
   const article = document.createElement('article');
   const eyebrow = document.createElement('div'); eyebrow.className = 'eyebrow'; eyebrow.textContent = 'DESCENDED / OPERATIONS';
   const title = document.createElement('h1'); title.id = 'mission-library-title'; title.textContent = 'SELECT MISSION';
-  const help = document.createElement('p'); help.textContent = 'Three authored missions: find the route, restore systems, and get out. C: camera · L: lights · H: HUD.';
+  const help = document.createElement('p'); help.textContent = 'Authored missions: find the route, restore systems, and get out. C: camera · L: lights · H: HUD.';
   article.append(eyebrow, title, help);
   const practice = document.createElement('details'), summary = document.createElement('summary');
   summary.textContent = 'Practice & prototypes'; practice.append(summary);

@@ -205,13 +205,16 @@ function readEntity(value, path, reader) {
   return type ? { id, roomId, position, kind, type } : null;
 }
 
-/** @param {unknown} value @param {string} path @param {Reader} reader
+/** @param {unknown} value @param {string} path @param {Reader} reader @param {number} version
  * @returns {import('../../../levelDocument.js').DeviceDocument | null} */
-function readDevice(value, path, reader) {
-  const object = reader.object(value, path, ['id', 'label', 'roomId', 'position']); if (!object) return null;
+function readDevice(value, path, reader, version) {
+  const object = reader.object(value, path, ['id', 'label', 'roomId', 'position', ...(version >= 12 ? ['kind', 'health'] : [])]); if (!object) return null;
   const id = reader.text(object.id, `${path}.id`, 64, true), label = reader.text(object.label, `${path}.label`, 40);
   const roomId = reader.text(object.roomId, `${path}.roomId`, 64, true), position = reader.vector(object.position, `${path}.position`);
-  return id && label && roomId && position ? { id, label, roomId, position } : null;
+  const kind = 'kind' in object ? reader.choice(object.kind, /** @type {const} */ (['reactor']), `${path}.kind`) : undefined;
+  const health = kind === 'reactor' ? reader.number(object.health, `${path}.health`, 10, 1000, true) : undefined;
+  if ('health' in object && !kind) reader.issue(`${path}.health`, 'reactor', 'Integrity requires a reactor');
+  return id && label && roomId && position ? { id, label, roomId, position, ...(kind && health !== null ? { kind, health } : {}) } : null;
 }
 
 /** @param {unknown} value @param {string} path @param {Reader} reader @param {number} version
@@ -252,7 +255,7 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–11 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–12 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -260,7 +263,7 @@ function readLevelDocument(input, semantics) {
   const rooms = (reader.array(root.rooms, '$.rooms', limits.rooms) ?? []).map((value, i) => readRoom(value, `$.rooms[${i}]`, reader, modern, oriented, shaped, expanded, version)).filter(value => value !== null);
   const connections = (reader.array(root.connections, '$.connections', limits.connections) ?? []).map((value, i) => readConnection(value, `$.connections[${i}]`, reader, modern, expanded, version)).filter(value => value !== null);
   const entities = (reader.array(root.entities, '$.entities', LIMITS.entities) ?? []).map((value, i) => readEntity(value, `$.entities[${i}]`, reader)).filter(value => value !== null);
-  const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader)).filter(value => value !== null) : [];
+  const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader, version)).filter(value => value !== null) : [];
   const doors = relay ? (reader.array(root.doors, '$.doors', 16) ?? []).map((value, i) => readDoor(value, `$.doors[${i}]`, reader, version)).filter(value => value !== null) : [];
   if (root.formatVersion === 2 && (!devices.length || !doors.length)) reader.issue('$', 'relay', 'Version 2 requires at least one device and door');
   if (!rooms.length) reader.issue('$.rooms', 'rooms', 'At least one room is required');
@@ -286,7 +289,7 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
+    ? { ...base, formatVersion: version === 12 ? 12 : version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

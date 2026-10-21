@@ -8,6 +8,7 @@ import { connectableFace, portFrame } from '../core/levels/document/RoomMath.js'
 import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
+import deepworks from '../core/levels/documents/asterion-deepworks.v12.json';
 import sample from '../core/levels/documents/signal-breach.v8.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';
@@ -21,7 +22,7 @@ host.innerHTML = `
   <header>
     <div class="brand"><span>DESCENDED</span><h1>Level designer</h1></div>
     <nav aria-label="Document controls">
-      <button id="new">New mine</button><button id="sample">Open example</button>
+      <button id="new">New mine</button><button id="sample">Open example</button><button id="deepworks">Open Deepworks</button>
       <button id="import">Import JSON</button><button id="export" class="primary">Export JSON</button>
       <button id="playtest">Playtest level</button>
       <button id="escape-settings">Reactor escape…</button>
@@ -42,7 +43,7 @@ host.innerHTML = `
         <p>Shape offsets follow the new corridor's local right/up axes. Continue from either end face.</p>
       </section>
       <section><h2>Add mission content</h2><p>Place in the selected room using local coordinates.</p>
-        <label>Content kind<select id="place-kind"><option value="enemy">Enemy</option><option value="health">Health pickup</option><option value="pulseAmmo">Pulse ammo pickup</option><option value="relay">Relay objective</option></select></label>
+        <label>Content kind<select id="place-kind"><option value="enemy">Enemy</option><option value="health">Health pickup</option><option value="pulseAmmo">Pulse ammo pickup</option><option value="relay">Relay objective</option><option value="reactor">Destructible reactor</option></select></label>
         <label>Enemy type<select id="enemy-type"></select></label>
         <div class="vector" id="place-position"></div><button id="add-content">Add content</button>
       </section>
@@ -92,7 +93,7 @@ host.innerHTML = `
         <label>Content room<select id="content-room"></select></label><div class="vector" id="content-position"></div>
         <label>Spawn heading<select id="spawn-yaw"><option>0</option><option>90</option><option>180</option><option>270</option></select></label>
         <label class="checkbox"><input id="content-required" type="checkbox" />Required for completion</label>
-        <button id="apply-content">Apply content</button><button id="delete-content">Delete content</button>
+        <label id="reactor-integrity-row" hidden>Reactor integrity<input id="reactor-integrity" type="number" min="10" max="1000" step="1" /></label><button id="apply-content">Apply content</button><button id="delete-content">Delete content</button>
       </section>
       <section><h2>Connect existing rooms</h2><p>Join opposing wall faces to close loops. Faces can meet off center. Fit corridor length or snap a separate branch when needed.</p>
         <label>Selected room port<select id="source-port"></select></label>
@@ -245,7 +246,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${room.id}` : `${room.id} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 11 ? ' · Relay force fields and reactor escape' : model.document.formatVersion >= 10 ? ' · Reactor escape countdown' : model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 12 ? ' · Destructible reactors and escape' : model.document.formatVersion >= 11 ? ' · Relay force fields and reactor escape' : model.document.formatVersion >= 10 ? ' · Reactor escape countdown' : model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   element('rooms').replaceChildren(...model.document.rooms.map(room => {
@@ -275,7 +276,7 @@ function refresh(rebuild = true) {
   const content = [
     { id: '@spawn', text: `Spawn · ${model.document.playerSpawn.roomId}` },
     ...model.document.entities.map(entity => ({ id: entity.id, text: `${entity.id} · ${entity.kind} · ${entity.roomId}` })),
-    ...(model.document.formatVersion !== 1 ? model.document.devices.map(device => ({ id: device.id, text: `${device.id} · relay · ${device.roomId}` })) : []),
+    ...(model.document.formatVersion !== 1 ? model.document.devices.map(device => ({ id: device.id, text: `${device.id} · ${device.kind ?? 'relay'} · ${device.roomId}` })) : []),
   ];
   if (!content.some(value => value.id === selectedContentId)) selectedContentId = '@spawn';
   element('entities').replaceChildren(...content.map(value => {
@@ -346,12 +347,14 @@ function refreshPanels() {
   const color = style?.color ?? (frame?.axis === 1 ? frame.direction < 0 ? preset.floor : preset.ceiling : preset.wall);
   input('surface-color').value = `#${color.toString(16).padStart(6, '0')}`; select('surface-pattern').value = style?.pattern ?? 'plain';
   const content = model.content(selectedContentId);
+  element('reactor-integrity-row').hidden = content.kind !== 'reactor';
+  input('reactor-integrity').value = String('health' in content ? content.health : 100);
   element('content-selection').textContent = `${content.id} · ${content.kind}`;
   options(select('content-room'), model.document.rooms.map(room => room.id)); select('content-room').value = content.roomId;
   for (const [index, axis] of ['X', 'Y', 'Z'].entries()) input(`content-position-${axis}`).value = String(content.position[index]);
   select('spawn-yaw').disabled = content.kind !== 'spawn';
   if ('rotation' in content) select('spawn-yaw').value = String((Math.round(2 * Math.atan2(content.rotation[1], content.rotation[3]) * 180 / Math.PI / 90) * 90 + 360) % 360);
-  input('content-required').checked = content.kind === 'relay' || model.document.mission.requiredEnemyIds.includes(content.id);
+  input('content-required').checked = content.kind === 'relay' || content.kind === 'reactor' || model.document.mission.requiredEnemyIds.includes(content.id);
   input('content-required').disabled = content.kind !== 'enemy'; button('delete-content').disabled = content.kind === 'spawn' || content.kind === 'exit';
   options(select('opening-connection'), model.document.connections.map(connection => connection.id));
   const wallConnections = selectedFace ? model.document.connections.filter(connection => [connection.a, connection.b].some(end => end.roomId === selectedId && end.port === selectedFace)) : [];
@@ -408,10 +411,10 @@ element('apply-surface').onclick = () => perform(() => model.setSurface(selected
 element('reset-surface').onclick = () => perform(() => model.resetSurface(selectedId, /** @type {import('../levelDocument.js').Face | 'all'} */ (select('surface-face').value)));
 element('add-content').onclick = () => perform(() => {
   const kind = select('place-kind').value;
-  selectedContentId = model.addContent(selectedId, kind === 'enemy' ? 'enemy' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? select('enemy-type').value : kind, ['X', 'Y', 'Z'].map(axis => Number(input(`place-position-${axis}`).value)));
+  selectedContentId = model.addContent(selectedId, kind === 'enemy' ? 'enemy' : kind === 'reactor' ? 'reactor' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? select('enemy-type').value : kind, ['X', 'Y', 'Z'].map(axis => Number(input(`place-position-${axis}`).value)));
   selectionKind = 'content'; selectedFace = null; if (inspector !== 'all') setInspector('content');
 });
-element('apply-content').onclick = () => perform(() => model.updateContent(selectedContentId, select('content-room').value, ['X', 'Y', 'Z'].map(axis => Number(input(`content-position-${axis}`).value)), input('content-required').checked, Number(select('spawn-yaw').value)));
+element('apply-content').onclick = () => perform(() => model.checked(candidate => { candidate.updateContent(selectedContentId, select('content-room').value, ['X', 'Y', 'Z'].map(axis => Number(input(`content-position-${axis}`).value)), input('content-required').checked, Number(select('spawn-yaw').value)); if (candidate.content(selectedContentId).kind === 'reactor') candidate.setReactorIntegrity(selectedContentId, Number(input('reactor-integrity').value)); }));
 element('delete-content').onclick = () => perform(() => { model.deleteContent(selectedContentId); selectedContentId = '@spawn'; });
 select('opening-connection').onchange = refreshPanels;
 element('apply-opening').onclick = () => perform(() => {
@@ -451,6 +454,7 @@ input('name').onchange = () => perform(() => {
 });
 const mayReplace = () => !model.dirty || window.confirm('Discard the current unsaved changes? Export JSON first to keep a backup.');
 element('new').onclick = () => { if (mayReplace()) { perform(() => { model = new EditorDocument(createDocument()); selectedId = model.document.rooms[0].id; }); viewport.frame(); } };
+element('deepworks').onclick = () => { if (mayReplace()) perform(() => { model.import(JSON.stringify(deepworks)); selectedId = model.document.rooms[0].id; selectedContentId = '@spawn'; }); viewport.frame(); };
 element('sample').onclick = () => {
   if (mayReplace()) perform(() => { model.import(JSON.stringify(sample)); selectedId = model.document.rooms[0].id; });
   viewport.frame();

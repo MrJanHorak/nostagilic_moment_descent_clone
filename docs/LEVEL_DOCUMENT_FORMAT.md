@@ -1,4 +1,4 @@
-# Shared level document — format versions 1–11
+# Shared level document — format versions 1–12
 
 Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. Version 9 adds lava contact hazards and animated safe water surfaces. Version 10 adds optional reactor escape countdowns. All ten versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
 
@@ -244,3 +244,7 @@ These are input/work bounds, not a promise that maximum-size worlds meet the ref
 ## Version 11: relay force fields
 
 A door may add `kind: "force-field"` to create a translucent energy barrier instead of sliding panels. It must reference a relay via `deviceId`, cannot use shot activation or `concealed: true`, and follows the same accessible-control progression checks. It blocks bodies, shots, AI sight and interaction until its relay clears it immediately. It deals no contact damage. Earlier versions reject `kind`. Version 11 also retains optional reactor escape settings from v10. See [force fields](FORCE_FIELDS.md).
+
+## Version 12: destructible reactor objectives
+
+A device can declare `kind: "reactor"` and integer `health: 10…1000`. Both fields require v12; ordinary relays omit them. Reactor placement reserves 1.5 units of clearance. Every reactor ID belongs to `mission.requiredDeviceIds`, and `mission.escape.triggerDeviceId` can reference it: destruction completes the system objective and starts the timer. The same ID may control entries in `doors`. Player swept shots damage the core; enemy fire and R do not. The escape-triggering core uses the existing prerequisite interlock/progression validation. Runtime health and deadlines never enter JSON. See [reactor authoring and Deepworks](DEEPWORKS.md).

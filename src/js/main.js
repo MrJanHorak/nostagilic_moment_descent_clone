@@ -200,7 +200,16 @@ export default class Game {
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
-        onWallHit: collider => {
+        onWallHit: (collider, projectile, position) => {
+          const reactor = this.levelManager.interaction?.hitReactor(collider, level.combat?.pulseDamage ?? projectile.power, id => this.mission?.canActivateDevice(id) ?? true);
+          if (reactor) {
+            if (reactor.blocked) this.uiManager.showMessage('REACTOR SHIELDED · Clear required drones and other controls first', 1800, '#ffce77');
+            else if (reactor.destroyed) {
+              this.completeDeviceObjective(reactor);
+              this.enemyManager.effectsManager?.createExplosion?.(position, 0xff8833, true, 3);
+            } else this.uiManager.showMessage('REACTOR INTEGRITY · ' + reactor.health, 900, '#ff9944');
+            return;
+          }
           const door = this.levelManager.interaction?.hitDoor(collider);
           if (door) this.uiManager.showMessage(door.concealed ? 'Hidden passage opening' : 'Door opening', 1800, '#ffce77');
         },
@@ -342,7 +351,13 @@ export default class Game {
     }
     const device = this.levelManager.interaction?.tryActivate(this.spaceship.group.position);
     if (!device) return false;
+    this.completeDeviceObjective(device);
+    return true;
+  }
+
+  completeDeviceObjective(device) {
     this.mission?.recordDeviceActivation(device.id, this.session.timeMs);
+    this.exploration?.completedDevices.add(device.id);
     const escape = this.mission?.definition.escape;
     this.uiManager.showMessage(device.id === escape?.triggerDeviceId
       ? `REACTOR CRITICAL · ${escape.durationSeconds}s TO ESCAPE · Follow the map to extraction`
@@ -434,6 +449,7 @@ export default class Game {
         const aim = this.shipView.update(this.levelManager.solidColliders);
         this.uiManager?.updateShipView?.(aim);
       }
+      this.levelManager.visibility?.update(this.camera);
       this.renderer?.info?.reset();
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
       if (this.settings.values.cameraView === 'cockpit' && ['playing', 'paused'].includes(this.session.phase)) {

@@ -1,0 +1,2997 @@
+{
+  "formatVersion": 12,
+  "id": "asterion-deepworks",
+  "name": "Asterion Deepworks",
+  "rooms": [
+    {
+      "id": "arrival-concourse",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        48,
+        24,
+        48
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-transfer",
+      "prefab": "box-room",
+      "position": [
+        -12,
+        0,
+        -48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-service",
+      "prefab": "box-room",
+      "position": [
+        12,
+        0,
+        -48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "power-control",
+      "prefab": "box-room",
+      "position": [
+        -48,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "freight-dock",
+      "prefab": "box-room",
+      "position": [
+        48,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "extraction-quay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        48
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-pumps",
+      "prefab": "box-room",
+      "position": [
+        -48,
+        0,
+        -48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lava-foundry",
+      "prefab": "box-room",
+      "position": [
+        48,
+        0,
+        -48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "cargo-marshalling",
+      "prefab": "box-room",
+      "position": [
+        -48,
+        0,
+        48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "security-control",
+      "prefab": "box-room",
+      "position": [
+        48,
+        0,
+        48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reactor-vault",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -96
+      ],
+      "size": [
+        32,
+        24,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "observation-deck",
+      "prefab": "box-room",
+      "position": [
+        0,
+        32,
+        0
+      ],
+      "size": [
+        32,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "upper-freight",
+      "prefab": "box-room",
+      "position": [
+        48,
+        32,
+        0
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reactor-overlook",
+      "prefab": "box-room",
+      "position": [
+        0,
+        32,
+        -96
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "roll": 90
+    },
+    {
+      "id": "coolant-reservoir",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -24,
+        0
+      ],
+      "size": [
+        32,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lower-freight",
+      "prefab": "box-room",
+      "position": [
+        48,
+        -24,
+        0
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "hidden-repair-locker",
+      "prefab": "box-room",
+      "position": [
+        -80,
+        0,
+        0
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "hidden-ammunition-store",
+      "prefab": "box-room",
+      "position": [
+        80,
+        0,
+        -48
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "optional-heavy-testing",
+      "prefab": "box-room",
+      "position": [
+        -48,
+        8,
+        80
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "hidden-survey-cache",
+      "prefab": "box-room",
+      "position": [
+        -56,
+        8,
+        112
+      ],
+      "size": [
+        16,
+        16,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-left-lane",
+      "prefab": "straight-corridor",
+      "position": [
+        -12,
+        0,
+        -32
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-right-lane",
+      "prefab": "straight-corridor",
+      "position": [
+        12,
+        0,
+        -32
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-cross-link",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        8
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-entry",
+      "prefab": "straight-corridor",
+      "position": [
+        -32,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-entry",
+      "prefab": "straight-corridor",
+      "position": [
+        32,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-return",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        30
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-north-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        -48,
+        0,
+        -24
+      ],
+      "size": [
+        8,
+        8,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-south-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        -48,
+        0,
+        24
+      ],
+      "size": [
+        8,
+        8,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-north-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        0,
+        -24
+      ],
+      "size": [
+        8,
+        8,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-south-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        0,
+        24
+      ],
+      "size": [
+        8,
+        8,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pump-transfer",
+      "prefab": "straight-corridor",
+      "position": [
+        -30,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "foundry-transfer",
+      "prefab": "straight-corridor",
+      "position": [
+        30,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-west-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        -26,
+        0,
+        48
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-east-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        26,
+        0,
+        48
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "core-left-approach",
+      "prefab": "straight-corridor",
+      "position": [
+        -12,
+        0,
+        -70
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "core-right-approach",
+      "prefab": "straight-corridor",
+      "position": [
+        12,
+        0,
+        -70
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "observation-lift",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        18,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "upper-freight-link",
+      "prefab": "straight-corridor",
+      "position": [
+        28,
+        32,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "freight-riser",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        16,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "reactor-escape-hatch",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        18,
+        -96
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "overhead-return",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        32,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        72
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reservoir-hatch",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -14,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        4
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "lower-return-loop",
+      "prefab": "straight-corridor",
+      "position": [
+        28,
+        -24,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-riser",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        -12,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        8
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "repair-access",
+      "prefab": "straight-corridor",
+      "position": [
+        -64,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "ammunition-access",
+      "prefab": "straight-corridor",
+      "position": [
+        64,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "smelter-ramp",
+      "prefab": "offset-corridor",
+      "position": [
+        -48,
+        4,
+        64
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 180,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "endOffset": [
+        0,
+        8
+      ]
+    },
+    {
+      "id": "survey-diagonal",
+      "prefab": "offset-corridor",
+      "position": [
+        -52,
+        8,
+        96
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 180,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      },
+      "endOffset": [
+        8,
+        0
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "north-left-lane-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "negativeZ",
+        "offset": [
+          -12,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-left-lane",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-left-lane-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-left-lane",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-transfer",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-right-lane-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "negativeZ",
+        "offset": [
+          12,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-right-lane",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-right-lane-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-right-lane",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-service",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-cross-link-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-transfer",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-cross-link",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-cross-link-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-cross-link",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-service",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-entry-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-entry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-entry-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-entry",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "power-control",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-entry-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-entry",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-entry-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-entry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "freight-dock",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "extraction-quay",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-north-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "power-control",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-north-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-north-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-north-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "coolant-pumps",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-south-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "power-control",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-south-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-south-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-south-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cargo-marshalling",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-north-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-north-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-north-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-north-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lava-foundry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-south-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-south-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-south-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-south-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "security-control",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pump-transfer-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "coolant-pumps",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pump-transfer",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pump-transfer-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pump-transfer",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-transfer",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "foundry-transfer-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-service",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "foundry-transfer",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "foundry-transfer-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "foundry-transfer",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lava-foundry",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-west-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cargo-marshalling",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-west-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-west-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-west-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "extraction-quay",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-east-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "extraction-quay",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-east-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-east-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-east-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "security-control",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-left-approach-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-transfer",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-left-approach",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-left-approach-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-left-approach",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reactor-vault",
+        "port": "positiveZ",
+        "offset": [
+          -12,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-right-approach-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-service",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-right-approach",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-right-approach-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-right-approach",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reactor-vault",
+        "port": "positiveZ",
+        "offset": [
+          12,
+          0
+        ]
+      }
+    },
+    {
+      "id": "observation-lift-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "observation-lift",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "observation-lift-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "observation-lift",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "observation-deck",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "upper-freight-link-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "observation-deck",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "upper-freight-link",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "upper-freight-link-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "upper-freight-link",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "upper-freight",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-riser-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "freight-riser",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-riser-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-riser",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "upper-freight",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "reactor-escape-hatch-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reactor-vault",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reactor-escape-hatch",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "reactor-escape-hatch-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reactor-escape-hatch",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reactor-overlook",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "overhead-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reactor-overlook",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "overhead-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "overhead-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "overhead-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "observation-deck",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "reservoir-hatch-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "arrival-concourse",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reservoir-hatch",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "reservoir-hatch-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reservoir-hatch",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "coolant-reservoir",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lower-return-loop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "coolant-reservoir",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lower-return-loop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lower-return-loop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lower-return-loop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lower-freight",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "coolant-riser-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lower-freight",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "coolant-riser",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "coolant-riser-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "coolant-riser",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "freight-dock",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "repair-access-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "power-control",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "repair-access",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "repair-access-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "repair-access",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "hidden-repair-locker",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ammunition-access-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lava-foundry",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ammunition-access",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ammunition-access-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ammunition-access",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "hidden-ammunition-store",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-ramp-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cargo-marshalling",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "smelter-ramp",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-ramp-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "smelter-ramp",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "optional-heavy-testing",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "survey-diagonal-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "optional-heavy-testing",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "survey-diagonal",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "survey-diagonal-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "survey-diagonal",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "hidden-survey-cache",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "power-relay",
+      "label": "Freight field power",
+      "roomId": "power-control",
+      "position": [
+        2,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "coolant-relay",
+      "label": "Reactor coolant bypass",
+      "roomId": "coolant-pumps",
+      "position": [
+        2,
+        0,
+        -2
+      ]
+    },
+    {
+      "id": "safety-relay",
+      "label": "Reactor safety interlock",
+      "roomId": "security-control",
+      "position": [
+        2,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "primary-reactor",
+      "kind": "reactor",
+      "label": "Primary reactor",
+      "roomId": "reactor-vault",
+      "position": [
+        0,
+        0,
+        -4
+      ],
+      "health": 150
+    }
+  ],
+  "doors": [
+    {
+      "id": "entry-shot-door",
+      "connectionId": "north-left-lane-in",
+      "activation": "shot"
+    },
+    {
+      "id": "freight-field",
+      "connectionId": "east-entry-in",
+      "deviceId": "power-relay",
+      "kind": "force-field"
+    },
+    {
+      "id": "coolant-gate",
+      "connectionId": "core-left-approach-in",
+      "deviceId": "coolant-relay"
+    },
+    {
+      "id": "safety-gate",
+      "connectionId": "core-right-approach-in",
+      "deviceId": "safety-relay"
+    },
+    {
+      "id": "escape-hatch",
+      "connectionId": "reactor-escape-hatch-in",
+      "deviceId": "primary-reactor"
+    },
+    {
+      "id": "repair-secret",
+      "connectionId": "repair-access-in",
+      "activation": "shot",
+      "concealed": true
+    },
+    {
+      "id": "ammunition-secret",
+      "connectionId": "ammunition-access-in",
+      "activation": "shot",
+      "concealed": true
+    },
+    {
+      "id": "survey-secret",
+      "connectionId": "survey-diagonal-out",
+      "activation": "shot",
+      "concealed": true
+    }
+  ],
+  "entities": [
+    {
+      "id": "transfer-guard",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "north-transfer",
+      "position": [
+        0,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "pump-guard",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "coolant-pumps",
+      "position": [
+        -3,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "dock-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "freight-dock",
+      "position": [
+        3,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "forge-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "lava-foundry",
+      "position": [
+        0,
+        1,
+        -3
+      ]
+    },
+    {
+      "id": "security-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "security-control",
+      "position": [
+        -3,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "test-chamber-boss",
+      "kind": "enemy",
+      "type": "boss",
+      "roomId": "optional-heavy-testing",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "vault-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "reactor-vault",
+      "position": [
+        -9,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "repair-0",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "arrival-concourse",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-0",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival-concourse",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-1",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "power-control",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-1",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "power-control",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-2",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "coolant-pumps",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-2",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "coolant-pumps",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-3",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "freight-dock",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-3",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "freight-dock",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-4",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "extraction-quay",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-4",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "extraction-quay",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-5",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "observation-deck",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-5",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "observation-deck",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-6",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "coolant-reservoir",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-6",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "coolant-reservoir",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-7",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "hidden-repair-locker",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-7",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "hidden-repair-locker",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-8",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "hidden-ammunition-store",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-8",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "hidden-ammunition-store",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "repair-9",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "hidden-survey-cache",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "ammunition-9",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "hidden-survey-cache",
+      "position": [
+        4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "extraction",
+      "kind": "exit",
+      "roomId": "extraction-quay",
+      "position": [
+        0,
+        0,
+        4
+      ],
+      "radius": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival-concourse",
+    "position": [
+      0,
+      0,
+      12
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "transfer-guard",
+      "pump-guard",
+      "vault-fighter"
+    ],
+    "requiredDeviceIds": [
+      "power-relay",
+      "coolant-relay",
+      "safety-relay",
+      "primary-reactor"
+    ],
+    "exitId": "extraction",
+    "escape": {
+      "triggerDeviceId": "primary-reactor",
+      "durationSeconds": 120
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 120,
+    "maxPulseAmmo": 300
+  }
+}

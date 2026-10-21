@@ -5,6 +5,8 @@ import surfaceMaterials from './SurfaceMaterials.js';
 import { convexGeometry, convexHull } from '../utils/ConvexSolid.js';
 import { buildSlidingDoor } from './SlidingDoor.js';
 import { buildForceField } from './ForceField.js';
+import { buildReactor } from './Reactor.js';
+import interiorDetails from './InteriorDetails.js';
 
 // Geometry stays at identity world transform. Keep the complete small arena loaded.
 /** @param {import('../levelDocument.js').ArenaLevel} level */
@@ -39,8 +41,10 @@ export default function buildArena(level) {
     }
     for (const door of level.doors ?? []) if (door.sliding) buildSlidingDoor(group, colliders, door, materialFor);
     for (const door of level.doors ?? []) if (door.kind === 'force-field') buildForceField(group, colliders, door);
+    interiorDetails(group, level);
     group.add(new THREE.HemisphereLight(0xe4f4ff, 0x394455, 2));
     for (const device of level.devices ?? []) {
+      if (device.kind === 'reactor') { buildReactor(group, colliders, device); continue; }
       const marker = new THREE.Mesh(new THREE.OctahedronGeometry(DEVICE_RADIUS - 0.1), new THREE.MeshBasicMaterial({ color: 0x45e5ed }));
       marker.name = device.id; marker.position.fromArray(device.position); group.add(marker);
     }
