@@ -1,7 +1,7 @@
 // Projectile system
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
-import { traceShot } from '../utils/combatTrace.js';
+import { traceShot, hasLineOfSight } from '../utils/combatTrace.js';
 
 class ProjectileManager {
   /** @param {THREE.Scene} scene @param {THREE.Object3D} playerTransform
@@ -21,6 +21,7 @@ class ProjectileManager {
     /** @type {import('../combatContracts.js').CombatWorld} */
     this.combatWorld = {};
     this.disposed = false;
+    this.generation = 0;
 
     // Default projectile geometry
     this.projectileGeometry = new THREE.SphereGeometry(0.05, 8, 8);
@@ -73,6 +74,7 @@ class ProjectileManager {
    */
   sweepProjectile(projectile, start, end, playerTransform, gameState, effectsManager) {
     if (!this.isProjectileActive(projectile)) return true;
+    if (projectile.faction === 'player') return this.sweepPlayerProjectile(projectile, start, end);
     const hostile = projectile.faction === 'enemy';
     const hit = traceShot(start, end, {
       colliders: this.combatWorld.getColliders?.() ?? [],
@@ -82,15 +84,57 @@ class ProjectileManager {
     });
     if (!hit) { projectile.mesh.position.copy(end); return false; }
     projectile.mesh.position.copy(hit.point);
-    if (projectile.faction === 'enemy') this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
-    else this.removeProjectile(projectile);
-    if (hit.kind === 'enemy' && projectile.faction === 'player') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
-    else if (hit.kind === 'wall' && projectile.faction === 'player') this.combatWorld.onWallHit?.(hit.target, projectile, hit.point);
-    else if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
+    this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
+    if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
       gameState.takeDamage(projectile.power ?? 10);
       if (!this.session || this.session.phase === 'playing') effectsManager?.createExplosion(hit.point, 0xff0000, true, 1);
     }
     return true;
+  }
+
+  /** Resolve each pierced body once, retaining wall priority and session ownership.
+   * @private @param {import('../combatContracts.js').PlayerProjectile} projectile
+   * @param {THREE.Vector3} start @param {THREE.Vector3} end */
+  sweepPlayerProjectile(projectile, start, end) {
+    if (projectile.resolving) return true;
+    const generation = this.generation, sessionId = this.session?.id;
+    const current = () => !this.disposed && this.generation === generation && (!this.session || this.session.id === sessionId && this.session.phase === 'playing');
+    const targets = [...(this.combatWorld.getTargets?.() ?? [])];
+    const colliders = [...(this.combatWorld.getColliders?.() ?? [])];
+    for (let count = 0; count <= targets.length; count++) {
+      const hit = traceShot(start, end, { colliders, targets: targets.filter(target => !projectile.hitTargets.has(target)), radius: 0.05 });
+      if (!hit) { projectile.mesh.position.copy(end); return false; }
+      projectile.mesh.position.copy(hit.point);
+      if (hit.kind === 'enemy' && projectile.penetrating) {
+        projectile.hitTargets.add(hit.target);
+        projectile.resolving = true;
+        try { this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point); }
+        finally { projectile.resolving = false; }
+        if (!current() || !this.isProjectileActive(projectile)) return true;
+        start = hit.point;
+        continue;
+      }
+      // Retire before callbacks: disposal, death or restart may reenter combat.
+      this.removeProjectile(projectile);
+      if (!current()) return true;
+      if (hit.kind === 'enemy') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
+      else if (hit.kind === 'wall') this.combatWorld.onWallHit?.(hit.target, projectile, hit.point);
+      if (projectile.explosive && current()) {
+        // Stay on the incoming side of the struck wall for blast visibility.
+        const center = hit.point.clone().addScaledVector(projectile.velocity.clone().normalize(), -0.01);
+        this.combatWorld.onExplosion?.(center, projectile.explosionRadius);
+        for (const target of targets) {
+          if (!current()) break;
+          if (!target.isActive || hit.kind === 'enemy' && target === hit.target) continue;
+          const nearest = target.collider.clampPoint(center, new THREE.Vector3()), distance = nearest.distanceTo(center);
+          if (distance >= projectile.explosionRadius || !hasLineOfSight(center, nearest, colliders)) continue;
+          const power = projectile.power * 0.5 * (1 - distance / projectile.explosionRadius);
+          this.combatWorld.onTargetHit?.(target, { ...projectile, power }, nearest);
+        }
+      }
+      return true;
+    }
+    return false;
   }
 
   /** @param {import('../combatContracts.js').Projectile} projectile @param {number} delta
@@ -100,6 +144,7 @@ class ProjectileManager {
    */
   moveProjectile(projectile, delta, playerTransform, gameState, effectsManager) {
     if (!this.isProjectileActive(projectile)) return true;
+    if (projectile.faction === 'player' && projectile.resolving) return true;
     if (projectile.launchOrigin) {
       const origin = projectile.launchOrigin;
       delete projectile.launchOrigin;
@@ -123,6 +168,7 @@ class ProjectileManager {
       playerVelocity = null,
       speed = this.projectileSpeed,
       explosive = false,
+      explosionRadius = 1.5,
       guided = false,
       gravity = 0,
       heatSeek = false,
@@ -183,6 +229,7 @@ class ProjectileManager {
       power: power,
       type: type,
       explosive: explosive,
+      explosionRadius,
       guided: guided,
       gravity: gravity,
       heatSeek: heatSeek,
@@ -190,6 +237,7 @@ class ProjectileManager {
       unstable: unstable,
       penetrating: penetrating,
       acceleration: acceleration,
+      hitTargets: new Set(),
       createdAt: this.now(),
       ownerManager: this,
       launchOrigin: options.launchOrigin?.clone(),
@@ -318,7 +366,6 @@ class ProjectileManager {
     // Check if we have the weapon and ammo
     const currentWeapon = gameState.currentWeapon || 'pulse';
     const rules = this.combatWorld.getRules?.();
-    if (rules && currentWeapon !== 'pulse') return; // The finite combat slice only supports pulse.
     const weaponInventory = gameState.weaponInventory || {
       pulse: { unlocked: true, ammo: Infinity },
     };
@@ -385,7 +432,7 @@ class ProjectileManager {
         projectileType = 'laser';
         projectileOptions = {
           speed: this.projectileSpeed + 5, // Faster
-          power: 1.5 * weaponPower,
+          power: 1.5 * (rules?.pulseDamage ?? 1) * weaponPower,
           penetrating: true, // Can go through multiple enemies
         };
         break;
@@ -395,9 +442,9 @@ class ProjectileManager {
         projectileType = 'missile';
         projectileOptions = {
           speed: this.projectileSpeed - 2, // Slower but more powerful
-          power: 3 * weaponPower,
+          power: 3 * (rules?.pulseDamage ?? 1) * weaponPower,
           explosive: true,
-          explosionRadius: 1.5,
+          explosionRadius: 4,
           unstable: true,
         };
         break;
@@ -407,10 +454,10 @@ class ProjectileManager {
         projectileType = 'plasma';
         projectileOptions = {
           speed: this.projectileSpeed,
-          power: 2 * weaponPower,
+          power: 2 * (rules?.pulseDamage ?? 1) * weaponPower,
           pulsate: true,
           explosive: true,
-          explosionRadius: 1.0,
+          explosionRadius: 2.5,
         };
         break;
     }
@@ -465,7 +512,7 @@ class ProjectileManager {
       penetrating: projectileOptions.penetrating || false,
       pulsate: projectileOptions.pulsate || false,
       unstable: projectileOptions.unstable || false,
-      guided: currentWeapon === 'missile' && weaponPower > 1,
+      guided: false,
     };
 
     return this.createProjectile(startPosition, startQuaternion, options);
@@ -473,9 +520,10 @@ class ProjectileManager {
 
   // Enemy projectile shooting method
   /** @param {import('../combatContracts.js').EnemyShooter | null} enemy @param {Pick<THREE.Object3D, 'position'>} playerTransform
+   * @param {{speed: number, inaccuracy: number}} [aim]
    * @returns {import('../combatContracts.js').EnemyProjectile | undefined}
    */
-  fireEnemyProjectile(enemy, playerTransform) {
+  fireEnemyProjectile(enemy, playerTransform, aim) {
     this.assertUsable();
     if (!enemy || !enemy.mesh) return;
 
@@ -548,14 +596,14 @@ class ProjectileManager {
     direction.subVectors(playerTransform.position, projectileMesh.position).normalize();
 
     // Add a slight inaccuracy to make it more fair
-    const inaccuracy = 0.05;
+    const inaccuracy = aim?.inaccuracy ?? 0.05;
     direction.x += (Math.random() * 2 - 1) * inaccuracy;
     direction.y += (Math.random() * 2 - 1) * inaccuracy;
     direction.z += (Math.random() * 2 - 1) * inaccuracy;
     direction.normalize();
 
     // Scale by projectile speed
-    const velocity = direction.multiplyScalar(10);
+    const velocity = direction.multiplyScalar(aim?.speed ?? 10);
     projectileMesh.lookAt(projectileMesh.position.clone().add(velocity));
 
     // Create the projectile object
@@ -812,6 +860,7 @@ class ProjectileManager {
   now() { return this.session?.timeMs ?? this.elapsedMs; }
 
   clear() {
+    this.generation++;
     for (const projectile of [...this.projectiles]) this.removeProjectile(projectile);
     this.clearEnemyProjectiles();
     this.elapsedMs = 0;

@@ -13,6 +13,8 @@ The live entry is `index.html → main.js → src/js/main.js`. `editor.html` loa
 | Validation, compilation and navigation | `src/js/core/levels/document/` |
 | Enemy statistics and models | `src/js/entities/EnemyTypes.js`, `EnemyFactory.js`, `meshBuilders/` |
 | Enemy behavior | `EnemyManager.js`, `FighterMovement.js`, `FighterAttack.js`, `ScoutAttack.js` in `src/js/entities/` |
+| Authored aggression tuning | `src/js/entities/EnemyTactics.js`; [pressure rules](docs/ENEMY_PRESSURE.md) |
+| Enemy salvage and special ammunition | `src/js/entities/EnemySalvage.js`; [weapon rules](docs/SALVAGE_AND_WEAPONS.md) |
 | Projectile creation and swept hits | `src/js/entities/ProjectileManager.js` |
 | Authored pickups / runtime effects | `src/js/core/levels/document/LevelContent.js`, `src/js/entities/PowerUpManager.js` |
 | Editor commands and preview | `src/js/editor/` |
@@ -33,17 +35,17 @@ Reuse existing [door](docs/LEVEL_DOCUMENT_FORMAT.md#version-8-sliding-doors-and-
 
 ## Extend combat
 
-Scouts have a warning, committed lunge and withdrawal/recovery. Fighters have warning/fire/recovery phases plus bounded movement in authored mines. [Fighter Proving Ground](docs/FIGHTER_MOVEMENT.md) exercises spacing and alternate approaches. Bomber/destroyer/boss models and projectile variants exist, but their authored-mine tactics are less developed. Enemy definition `damage` is not the current ranged shot power: hostile projectiles are created with power 10.
+Scouts have a warning, committed lunge and withdrawal/recovery. Fighters have warning/fire/recovery phases plus bounded movement in authored mines. [Fighter Proving Ground](docs/FIGHTER_MOVEMENT.md) exercises spacing; [Crossfire Relay](docs/CROSSFIRE_RELAY.md) combines both threats with direct/overhead approaches. Bomber/destroyer/boss models and projectile variants exist, but their authored-mine tactics are less developed. Enemy definition `damage` is not the current ranged shot power: hostile projectiles are created with power 10.
 
 For a new enemy type, update enemy unions/contracts, statistics, a concrete mesh builder and factory mapping; then add explicit perception/movement/attack rules in the manager or a dedicated behavior module. Update authoring validation, editor choices and diagnostics as needed. `EnemyAnimations.js` owns visual animation. Preserve body clearance, line of sight, last-seen memory, bounded planning and disposal ownership.
 
-Campaign/custom combat centers on pulse fire with authored damage and ammunition budgets. The training arena retains unlimited practice pulse ammo. Laser/missile/plasma inventory and visual paths are legacy extension points: the swept-hit path consumes a projectile on its first collision, and explosion/penetration flags alone do not implement splash damage or multi-target penetration. Define and test those mechanics before advertising them as complete weapons.
+Campaign/custom combat now supports equipment-specific salvage and special weapons alongside authored pulse budgets. Authored scouts have 20 health and fighters 40; the older non-document training values remain 10/25. Lasers pierce robots once each and stop at walls; missile/plasma blasts have falloff and physical occlusion. Damage scales from the mission pulse value. See [salvage and weapon rules](docs/SALVAGE_AND_WEAPONS.md) for capacities, direct-hit/objective rules and session ownership.
 
 Combat checks should cover actual shot hits, wall/door occlusion, damage/kill credit, cues, evasion, pause, death and replay. Compare 30/60/120 Hz movement where relevant. Browser combat should use ordinary input/fire; diagnostic neutralization isolates route geometry and does not establish balance.
 
 ## Extend pickups and mission systems
 
-Authored documents expose `health` and `pulseAmmo` through `AUTHORED_PICKUPS` in `LevelContent.js`. Health restores up to 25% of maximum shields; pulse ammo adds up to 20 rounds within capacity. `PowerUpManager.js` also retains legacy speed/weapon buffs and special-weapon drops; their existence does not make them portable authored pickup kinds.
+Authored documents expose `health` and `pulseAmmo` through `AUTHORED_PICKUPS` in `LevelContent.js`. Health restores up to 25% of maximum shields; pulse ammo adds up to 20 rounds within capacity. `EnemySalvage.js` maps authored shot kills to guaranteed pulse/laser/missile/plasma rewards, instantiated by `PowerUpManager.js`. These runtime rewards and legacy speed/weapon buffs are not portable editor pickup kinds.
 
 For a new pickup or objective, extend types, structural/semantic validation, compilation, runtime behavior and editor authoring together. Cover old-version compatibility, import/export, atomic undo, placement clearance and restart. Store collected items, carried rescues and armed countdowns in session state, not the document.
 
@@ -58,7 +60,7 @@ Finite campaign lighting stays stable during shots, effects, pickups and robot d
 ## Verify a change
 
 - `npm run verify`: scoped lint, strict types, unit/simulation tests and production build. Scope lives in `tsconfig.check.json` and `scripts/lint.mjs`; add newly checked modules there as appropriate.
-- `npm run test:browser`: build and full functional browser suite. Run `npm run browser:install` once first. Focused runs can use `npx playwright test tests/browser/<file>.spec.js --project=production` after building.
+- `npm run test:browser`: build and full functional browser suite. Run `npm run browser:install` once first. After building, use `npx playwright test --project=encounters` for Crossfire/mobile fighters, or the appropriate project/file filter from `playwright.config.js` for another focused run.
 - `npm run smoke`: development diagnostics. Normal play uses `npm run dev`; production inspection uses `npm run build` then `npm run preview`.
 - `npm run profile:arena` / `npm run profile:deepworks -- --renderer=hardware`: real-time hardware measurement, separate from controlled-clock software browser checks.
 - `npm run audit:deps`: fresh advisory check; prior zero-vulnerability snapshots are dated evidence.

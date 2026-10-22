@@ -13,9 +13,11 @@ import RoomNavigation from '../core/levels/document/RoomNavigation.js';
 import { createFighterAttack, advanceFighterAttack, fighterCommitted, presentFighterAttack } from './FighterAttack.js';
 import { createScoutAttack, updateScoutAttack } from './ScoutAttack.js';
 import updateFighterMovement from './FighterMovement.js';
+import { MINE_FIGHTER, mineSpeed, mineHealth } from './EnemyTactics.js';
+import { MINE_SALVAGE } from './EnemySalvage.js';
 
 /** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
- * route: THREE.Vector3[] | null, waypoint: number, revision: number, tactical: boolean}} MinePursuit */
+ * route: THREE.Vector3[] | null, waypoint: number, revision: number, tactical: boolean, nextAlertAt: number}} MinePursuit */
 
 class EnemyManager {
   /** @param {THREE.Scene} scene
@@ -99,13 +101,39 @@ class EnemyManager {
   minePursuit(enemy) {
     let pursuit = this.minePursuits.get(enemy);
     if (!pursuit) {
-      pursuit = { lastSeen: null, goalRoom: undefined, route: null, waypoint: 0, revision: -1, tactical: false };
+      pursuit = { lastSeen: null, goalRoom: undefined, route: null, waypoint: 0, revision: -1, tactical: false, nextAlertAt: 0 };
       this.minePursuits.set(enemy, pursuit);
     }
     return pursuit;
   }
 
-  /** Sight and incoming damage provide memory; hidden player movement does not.
+  /** Share an actually observed position with at most four nearby allies in the
+   * same/adjacent open room. Reports are bounded and never refresh from an unseen
+   * player's movement. Recipients still route through physical, body-clear portals.
+   * @private @param {import('../combatContracts.js').EnemyInstance} reporter @param {MinePursuit} pursuit */
+  reportMineSighting(reporter, pursuit) {
+    const navigation = this.mineNavigation, document = this.levelManager?.currentLevel?.sourceDocument;
+    const now = this.gameState.session.timeMs;
+    if (!navigation || !document || !pursuit.lastSeen || now < pursuit.nextAlertAt) return;
+    pursuit.nextAlertAt = now + 1200;
+    const room = navigation.roomAt(reporter.mesh.position), nearby = new Set([room]);
+    for (const connection of document.connections) {
+      if (this.levelManager?.interaction?.closedConnections.has(connection.id)) continue;
+      if (connection.a.roomId === room) nearby.add(connection.b.roomId);
+      if (connection.b.roomId === room) nearby.add(connection.a.roomId);
+    }
+    let notified = 0;
+    for (const ally of this.enemies) {
+      if (ally === reporter || !ally.isActive || ally.mesh.position.distanceToSquared(reporter.mesh.position) > 24 * 24 ||
+          !nearby.has(navigation.roomAt(ally.mesh.position))) continue;
+      const memory = this.minePursuit(ally);
+      if (memory.lastSeen) memory.lastSeen.copy(pursuit.lastSeen);
+      else memory.lastSeen = pursuit.lastSeen.clone();
+      if (++notified === 4) break;
+    }
+  }
+
+  /** Sight, nearby reports and incoming damage provide memory; hidden movement does not.
    * @param {import('../combatContracts.js').EnemyInstance} enemy
    * @param {number} delta @param {boolean} visible */
   updateMineEnemy(enemy, delta, visible) {
@@ -122,6 +150,7 @@ class EnemyManager {
     if (visible && distance < 30) {
       if (pursuit.lastSeen) pursuit.lastSeen.copy(this.playerTransform.position);
       else pursuit.lastSeen = this.playerTransform.position.clone();
+      this.reportMineSighting(enemy, pursuit);
     }
     if (pursuit.lastSeen) {
       const goalRoom = navigation.roomAt(pursuit.lastSeen);
@@ -146,10 +175,10 @@ class EnemyManager {
     const target = pursuit.route?.[pursuit.waypoint];
     enemy.velocity.set(0, 0, 0);
     const holdRange = fighterCommitted(enemy) || visible && distance < 8 && enemy.type.name !== 'scout';
-    if (tactical) updateFighterMovement(enemy, this.playerTransform.position, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta);
+    if (tactical) updateFighterMovement(enemy, this.playerTransform.position, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta, true);
     else if (target && !holdRange && delta > 0) {
       const travel = target.clone().sub(enemy.mesh.position);
-      const speed = Math.min(enemy.type.speed * 60, travel.length() / delta);
+      const speed = Math.min(mineSpeed(enemy), travel.length() / delta);
       const velocity = travel.normalize().multiplyScalar(speed);
       moveSphere(enemy.mesh.position, velocity, delta, this.levelManager?.solidColliders ?? [], enemy.collisionRadius);
       enemy.velocity.copy(velocity).divideScalar(60);
@@ -176,8 +205,6 @@ class EnemyManager {
     if (enemy.health > 0 || !enemy.isActive || !this.enemies.some(candidate => candidate === enemy)) return;
     this.gameState.score += enemy.type.pointValue;
     this.gameState.recordEnemyKill?.(enemy.type.name);
-    // Special weapons are outside the finite pulse-only encounter's contract.
-    if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
     this.destroyEnemy(this.enemies.findIndex(candidate => candidate === enemy));
   }
 
@@ -193,8 +220,9 @@ class EnemyManager {
     if (!enemyType) throw new RangeError(`Unknown enemy type: ${typeName}`);
 
     // Use the factory to create the enemy
+    const authored = !!this.levelManager?.currentLevel?.sourceDocument;
     const enemy = this.enemyFactory.createEnemy(
-      enemyType,
+      authored ? { ...enemyType, health: mineHealth(enemyType) } : enemyType,
       position,
       this.playerTransform,
       { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true }
@@ -206,8 +234,13 @@ class EnemyManager {
 
     this.enemies.push(enemy);
     enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
-    if (enemy.type.name === 'fighter') enemy.fighterAttack = createFighterAttack(enemy.lastFireTime, enemy.fireRate);
-    if (enemy.type.name === 'scout') enemy.scoutAttack = createScoutAttack(enemy.lastFireTime);
+    if (enemy.type.name === 'fighter') {
+      if (authored) enemy.fireRate = MINE_FIGHTER.intervalMs;
+      enemy.fighterAttack = createFighterAttack(enemy.lastFireTime,
+        authored ? MINE_FIGHTER.windupMs + MINE_FIGHTER.firstReactionMs : enemy.fireRate,
+        authored ? MINE_FIGHTER : undefined);
+    }
+    if (enemy.type.name === 'scout') enemy.scoutAttack = createScoutAttack(enemy.lastFireTime, authored);
     return enemy;
   }
 
@@ -697,8 +730,11 @@ class EnemyManager {
       try { this.audioManager.playSound('enemyCharge', { volume: 0.22 * Math.max(0.25, 1 - distance / 30) }); }
       catch (error) { console.warn('Unable to play enemy warning:', error); }
     } else if (event === 'fire') {
-      enemy.lastFireTime = now; enemy.fireRate = 2000 + Math.random() * 1000;
-      this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform);
+      const authored = !!this.levelManager?.currentLevel?.sourceDocument;
+      enemy.lastFireTime = now;
+      enemy.fireRate = authored ? MINE_FIGHTER.intervalMs + Math.random() * MINE_FIGHTER.intervalVariationMs : 2000 + Math.random() * 1000;
+      this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform,
+        authored ? { speed: MINE_FIGHTER.projectileSpeed, inaccuracy: MINE_FIGHTER.inaccuracy } : undefined);
     }
   }
 
@@ -723,6 +759,13 @@ class EnemyManager {
     const spawnId = enemy.mesh.userData.isPredefined ? enemy.mesh.userData.spawnPointId : null;
     // Cleanup hooks, effects and audio must observe an already removed enemy.
     this.removeEnemy(index);
+    if (!this.isCurrent(generation, sessionId)) return true;
+    // Ownership is retired before drop creation can call back into combat.
+    if (cause === 'shot' && this.gameState.session.phase === 'playing') {
+      if (this.levelManager?.currentLevel?.sourceDocument) {
+        this.powerUpManager?.spawnPowerup(enemy.mesh.position.clone(), MINE_SALVAGE[enemy.type.name], { persistent: true });
+      } else if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
+    }
     if (!this.isCurrent(generation, sessionId)) return true;
     if (spawnId) this.destroyedPredefinedEnemies.add(spawnId);
     this.effectsManager.createExplosion(enemy.mesh.position.clone(), 0xff9500, true);

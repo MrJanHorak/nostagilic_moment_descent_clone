@@ -1,0 +1,40 @@
+{
+  "formatVersion": 7,
+  "id": "crossfire-relay",
+  "name": "Crossfire Relay",
+  "rooms": [
+    { "id": "arrival", "prefab": "box-room", "position": [0, 0, 0], "size": [20, 14, 20], "yaw": 0, "materialPreset": "industrial-blue", "surfaces": { "negativeY": { "color": 2373447, "pattern": "grid" } } },
+    { "id": "approach", "prefab": "straight-corridor", "position": [0, 0, -16], "size": [8, 8, 12], "yaw": 0, "materialPreset": "industrial-blue" },
+    { "id": "crossfire-hall", "prefab": "box-room", "position": [0, 0, -32], "size": [24, 14, 20], "yaw": 0, "materialPreset": "industrial-red", "surfaces": { "negativeZ": { "color": 9134663, "pattern": "panels" } } },
+    { "id": "scout-passage", "prefab": "box-room", "position": [22, 0, -32], "size": [20, 14, 20], "yaw": 0, "materialPreset": "industrial-green" },
+    { "id": "return-passage", "prefab": "straight-corridor", "position": [22, 0, -16], "size": [8, 8, 12], "yaw": 0, "materialPreset": "industrial-green" },
+    { "id": "supply-bay", "prefab": "box-room", "position": [22, 0, 0], "size": [24, 14, 20], "yaw": 0, "materialPreset": "industrial-green", "surfaces": { "negativeY": { "color": 2309175, "pattern": "grid" } } },
+    { "id": "arrival-shaft", "prefab": "box-room", "position": [0, 12, 0], "size": [8, 10, 8], "yaw": 0, "materialPreset": "industrial-blue", "surfaces": { "negativeZ": { "color": 3958404, "pattern": "hazard" } } },
+    { "id": "overhead-gallery", "prefab": "straight-corridor", "position": [0, 21, -16], "size": [8, 8, 40], "yaw": 0, "materialPreset": "industrial-blue", "surfaces": { "negativeY": { "color": 2373447, "pattern": "grid" }, "negativeZ": { "color": 3958404, "pattern": "hazard" } } },
+    { "id": "hall-shaft", "prefab": "box-room", "position": [0, 12, -32], "size": [8, 10, 8], "yaw": 0, "materialPreset": "industrial-blue", "surfaces": { "negativeZ": { "color": 3958404, "pattern": "hazard" } } }
+  ],
+  "connections": [
+    { "id": "arrival-approach", "a": { "roomId": "arrival", "port": "negativeZ" }, "b": { "roomId": "approach", "port": "positiveZ" }, "openingSize": [6, 6] },
+    { "id": "approach-hall", "a": { "roomId": "approach", "port": "negativeZ" }, "b": { "roomId": "crossfire-hall", "port": "positiveZ" }, "openingSize": [6, 6] },
+    { "id": "scout-entry", "a": { "roomId": "crossfire-hall", "port": "positiveX" }, "b": { "roomId": "scout-passage", "port": "negativeX" }, "openingSize": [10, 8] },
+    { "id": "scout-return", "a": { "roomId": "scout-passage", "port": "positiveZ" }, "b": { "roomId": "return-passage", "port": "negativeZ" }, "openingSize": [6, 6] },
+    { "id": "return-supply", "a": { "roomId": "return-passage", "port": "positiveZ" }, "b": { "roomId": "supply-bay", "port": "negativeZ" }, "openingSize": [6, 6] },
+    { "id": "supply-shortcut", "a": { "roomId": "supply-bay", "port": "negativeX" }, "b": { "roomId": "arrival", "port": "positiveX" }, "openingSize": [8, 8] },
+    { "id": "arrival-hatch", "a": { "roomId": "arrival", "port": "positiveY" }, "b": { "roomId": "arrival-shaft", "port": "negativeY" }, "openingSize": [6, 6] },
+    { "id": "gallery-entry", "a": { "roomId": "arrival-shaft", "port": "positiveY" }, "b": { "roomId": "overhead-gallery", "port": "negativeY", "offset": [0, 16] }, "openingSize": [6, 6] },
+    { "id": "gallery-hall", "a": { "roomId": "overhead-gallery", "port": "negativeY", "offset": [0, -16] }, "b": { "roomId": "hall-shaft", "port": "positiveY" }, "openingSize": [6, 6] },
+    { "id": "hall-hatch", "a": { "roomId": "hall-shaft", "port": "negativeY" }, "b": { "roomId": "crossfire-hall", "port": "positiveY" }, "openingSize": [6, 6] }
+  ],
+  "playerSpawn": { "roomId": "arrival", "position": [8, 0, 5], "rotation": [0, 0, 0, 1] },
+  "entities": [
+    { "id": "crossfire:fighter", "kind": "enemy", "type": "fighter", "roomId": "crossfire-hall", "position": [-3, 0, -4] },
+    { "id": "crossfire:scout", "kind": "enemy", "type": "scout", "roomId": "scout-passage", "position": [-7.5, 0, 0] },
+    { "id": "crossfire:repair", "kind": "pickup", "type": "health", "roomId": "supply-bay", "position": [0, 0, -4] },
+    { "id": "crossfire:ammo", "kind": "pickup", "type": "pulseAmmo", "roomId": "supply-bay", "position": [-4, 0, 0] },
+    { "id": "crossfire:exit", "kind": "exit", "roomId": "arrival", "position": [-6, 0, 6], "radius": 1.5 }
+  ],
+  "devices": [ { "id": "crossfire:relay", "label": "Return shortcut", "roomId": "crossfire-hall", "position": [-6, 0, 3] } ],
+  "doors": [ { "id": "crossfire:door", "connectionId": "supply-shortcut", "deviceId": "crossfire:relay" } ],
+  "mission": { "type": "relay-clear-and-exit", "requiredEnemyIds": ["crossfire:fighter", "crossfire:scout"], "requiredDeviceIds": ["crossfire:relay"], "exitId": "crossfire:exit" },
+  "combat": { "pulseDamage": 5, "initialPulseAmmo": 40, "maxPulseAmmo": 80 }
+}

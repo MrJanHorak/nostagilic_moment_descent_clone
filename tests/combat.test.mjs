@@ -440,14 +440,15 @@ test('multiple lethal enemy shots dispatch death once and stop remaining damage'
   assert.equal(manager.enemyProjectiles.length, 0);
 });
 
-test('finite encounter fires pulse from the real pose and blocks unfinished weapons before consuming ammo', (t) => {
+test('finite encounter fires an unlocked special weapon and retains real-pose pulse combat', (t) => {
   const game = fixture(t), manager = game.projectileManager, canvas = {};
   document.pointerLockElement = canvas; manager.setCanvas(canvas);
   game.gameState.weaponInventory.laser = { unlocked: true, ammo: 10 };
   game.gameState.currentWeapon = 'laser';
-  assert.equal(manager.fireProjectile(game.gameState), undefined);
-  assert.equal(game.gameState.weaponInventory.laser.ammo, 10);
-  assert.equal(manager.projectiles.length, 0);
+  const laser = manager.fireProjectile(game.gameState);
+  assert.ok(laser); assert.equal(laser.power, 7.5); assert.equal(laser.penetrating, true);
+  assert.equal(game.gameState.weaponInventory.laser.ammo, 9);
+  manager.clear();
   game.gameState.currentWeapon = 'pulse';
   const fighter = game.enemyManager.enemies[0];
   // Keep the initial forward pose; five ordinary pulse shots travel through the doorway.

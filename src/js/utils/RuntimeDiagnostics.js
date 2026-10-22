@@ -41,8 +41,10 @@ export default class RuntimeDiagnostics {
       quaternion: ship?.group.quaternion.toArray(),
       escapeRemainingMs: gameState.game?.mission?.remainingEscapeMs(gameState.session.timeMs) ?? null,
       surfaceContact: gameState.game?.levelManager?.environment?.contact ?? null,
+      salvage: gameState.game?.powerUpManager?.powerups.filter(item => item.type.name.endsWith('Salvage')).slice(0, 64)
+        .map(item => ({ type: item.type.name, position: item.mesh.position.toArray() })),
       scouts: gameState.game?.enemyManager?.enemies.filter(enemy => enemy.type.name === 'scout' && enemy.isActive).slice(0, 16)
-        .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.scoutAttack?.phase ?? 'approach', since: enemy.scoutAttack?.since ?? 0 })),
+        .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.scoutAttack?.phase ?? 'approach', since: enemy.scoutAttack?.since ?? 0, position: enemy.mesh.position.toArray() })),
       fighters: gameState.game?.enemyManager?.enemies.filter(enemy => enemy.type.name === 'fighter' && enemy.isActive).slice(0, 16)
         .map(enemy => ({ id: enemy.mesh.userData.spawnPointId ?? enemy.mesh.uuid, phase: enemy.fighterAttack?.phase ?? 'idle',
           since: enemy.fighterAttack?.since ?? 0, firedAt: Number.isFinite(enemy.fighterAttack?.firedAt) ? enemy.fighterAttack.firedAt : null,

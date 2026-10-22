@@ -6,6 +6,7 @@ import compileLevelDocument from '../src/js/core/levels/document/compileLevelDoc
 import { serializeLevelDocument, parseLevelDocument } from '../src/js/core/levels/document/validateLevelDocument.js';
 import MineGuide from '../src/js/core/levels/document/MineGuide.js';
 import { enemyTypes } from '../src/js/entities/EnemyTypes.js';
+import { mineHealth } from '../src/js/entities/EnemyTactics.js';
 import { traceShot } from '../src/js/utils/combatTrace.js';
 import Game from '../src/js/main.js';
 import Spaceship from '../src/js/entities/Spaceship.js';
@@ -59,8 +60,8 @@ test('Deep Relay is a round-trippable eight-room v2 mission with a loop, cache, 
   assert.equal(level.sourceDocument.rooms.length, 8); assert.equal(level.sourceDocument.connections.length, 8);
   assert.equal(level.enemySpawns.length, 5); assert.equal(level.devices.length, 2); assert.equal(level.doors.length, 2);
   assert.equal(level.sourceDocument.rooms.find(room => room.id === 'supply-cache').prefab, 'straight-corridor');
-  const health = sample.entities.filter(entity => entity.kind === 'enemy').reduce((sum, entity) => sum + enemyTypes.find(type => type.name === entity.type).health, 0);
-  assert.equal(health / sample.combat.pulseDamage, 19);
+  const health = sample.entities.filter(entity => entity.kind === 'enemy').reduce((sum, entity) => sum + mineHealth(enemyTypes.find(type => type.name === entity.type)), 0);
+  assert.equal(health / sample.combat.pulseDamage, 32);
   assert.equal(sample.combat.initialPulseAmmo, 70);
   assert.equal(sample.entities.filter(entity => entity.type === 'pulseAmmo').length, 2);
   assert.equal(sample.entities.filter(entity => entity.type === 'health').length, 2);
@@ -136,7 +137,7 @@ test('real thrust traverses the lower loop, rotated supply cache, two relay gate
 
 test('all five authored encounters can be cleared with ordinary five-damage pulse fire and the starting ammunition', t => {
   const game = fixture(t); game.projectileManager.setCanvas({});
-  const positions = [[4, 0, -10], [14, 0, -10], [20, 16, 6], [16, 16, -12], [35, 16, -19]];
+  const positions = [[4, 0, -10], [14, 0, -10], [20, 16, 6], [12, 21, -12], [35, 16, -19]];
   const ids = sample.mission.requiredEnemyIds;
   for (let i = 0; i < ids.length; i++) {
     const enemy = game.enemyManager.enemies.find(enemy => enemy.mesh.userData.spawnPointId === ids[i]);
@@ -150,6 +151,6 @@ test('all five authored encounters can be cleared with ordinary five-damage puls
     assert.equal(game.mission.defeats.get(ids[i]), 'shot', ids[i]);
   }
   assert.equal(game.session.phase, 'playing'); assert.ok(game.gameState.playerHealth > 0);
-  assert.ok(game.gameState.weaponInventory.pulse.ammo >= 40, 'at least forty shots remain without collecting ammo');
+  assert.ok(game.gameState.weaponInventory.pulse.ammo >= 20, 'at least twenty shots remain without collecting ammo');
   assert.equal(game.mission.defeats.size, 5); assert.equal(game.mission.ready, false, 'both relays remain required');
 });

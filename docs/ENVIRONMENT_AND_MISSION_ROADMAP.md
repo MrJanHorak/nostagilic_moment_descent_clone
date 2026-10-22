@@ -4,7 +4,7 @@ Updated October 22, 2026. Use the [main roadmap](ROADMAP.md#next-work-queue) for
 
 ## Playable now
 
-The scout has a 550 ms amber-eyed warning, then commits to a straight 10-unit/s lunge for at most 650 ms. Sidestepping after commitment can evade it. Walls and closing doors stop it. A strike deals its existing 5 damage once, leaves the robot alive, and starts 1.1 seconds of recovery: brief backward movement followed by a stationary opportunity to return fire. Health stays 10; a campaign pulse still kills it in one hit. Touching it no longer suicides it or satisfies a required kill. The cue uses existing eyes and wings, without extra lights. Pause, death and restart own all timing through the simulation.
+Authored scouts now pursue at 5.4 units/s, warn for 450 ms from within eight units, then commit to a straight 14-unit/s lunge for at most 650 ms. Sidestepping after commitment can evade it; walls and closing doors stop it. A strike deals five damage once, leaves the robot alive and starts 700 ms of recovery, with brief withdrawal and a counterattack window. Health remains ten, so a campaign pulse still kills it in one hit. Nearby allies can report an actually seen ship position. The [pressure pass](ENEMY_PRESSURE.md) explains the new defaults; original non-document fixtures retain the old 550 ms / ten-unit/s / 1.1-second cycle. Cue geometry adds no lights; pause and restart own the simulation timing.
 
 | Feature | Current behavior | Where to try it |
 | --- | --- | --- |
@@ -31,7 +31,7 @@ These are future options, not current editor/runtime features:
 3. **Flooded passages and currents.** Author a separate fluid volume, with a clear boundary, submerged visibility/audio and consistent ship/enemy/projectile rules. A gentle current could create a route choice without introducing gravity into six-axis flight. This is a larger feature than a face texture and needs volume validation, editor tools and transition tests.
 4. **Triggered reinforcements.** A visibly active generator with a finite wave budget could make restoring a relay change an encounter. Cap active robots, provide a warning and fallback route, and reset its state cleanly.
 
-[Bounded fighter repositioning](FIGHTER_MOVEMENT.md) is implemented. The immediate gameplay task is to tune one mixed scout/fighter encounter before expanding mission systems. Avoid increasing enemy counts everywhere: quiet travel, recognizable landmarks, an optional supply branch and a retreat corner give a dangerous room context.
+[Bounded fighter repositioning](FIGHTER_MOVEMENT.md) and the [Crossfire Relay mixed encounter](CROSSFIRE_RELAY.md) are implemented. The immediate gameplay task is human balance feedback on its direct/overhead approaches before expanding mission systems. Avoid increasing enemy counts everywhere: quiet travel, recognizable landmarks, an optional supply branch and a retreat corner give a dangerous room context.
 
 ## Reference
 

@@ -1,0 +1,114 @@
+{
+  "date": "2026-10-22",
+  "feature": "Authored enemy durability, equipment salvage and player special weapons",
+  "environment": "Chromium SwiftShader, controlled application clock, ordinary keyboard input and read-only diagnostics; no human balance or hardware measurement",
+  "runs": [
+    {
+      "command": "npx playwright test --project=encounters --project=production --grep \"Crossfire Relay|mobile fighter drill|Signal Breach ranged fight|keyboard mission victory\" --global-timeout=600000",
+      "cases": [
+        {
+          "title": "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input",
+          "project": "production",
+          "status": "passed",
+          "durationMs": 91328
+        },
+        {
+          "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+          "project": "production",
+          "status": "passed",
+          "durationMs": 21596
+        },
+        {
+          "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "passed",
+          "durationMs": 70751
+        },
+        {
+          "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "failed",
+          "durationMs": 43360,
+          "error": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeTruthy\u001b[2m()\u001b[22m\n\nReceived: \u001b[31mundefined\u001b[39m"
+        },
+        {
+          "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+          "project": "encounters",
+          "status": "passed",
+          "durationMs": 60882
+        }
+      ]
+    },
+    {
+      "command": "npx playwright test --project=encounters --grep \"Crossfire Relay overhead\" --global-timeout=300000",
+      "cases": [
+        {
+          "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "passed",
+          "durationMs": 87476
+        }
+      ]
+    }
+  ],
+  "note": "Initial overhead check expected an uncollected laser drop, but ordinary descent had already collected it (HUD laser ammo 12). Corrected controller accepts collection during descent or flies to the remaining drop.",
+  "unitTests": 507,
+  "lintRuntimeModules": 83,
+  "fullBrowserSuite": false,
+  "hostedCI": false,
+  "newHardwareCapture": false,
+  "latestResults": {
+    "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input": "passed",
+    "production: keyboard mission victory, replay, enemy-fire death, reboot and menu": "passed",
+    "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input": "passed",
+    "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input": "passed",
+    "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input": "passed"
+  },
+  "latestPassed": 5,
+  "retries": 0,
+  "finalSourceHashes": {
+    "src/js/entities/EnemyTactics.js": "8c3c70acd94dc3a6546667b06209bfd96fddd233cf5eadd0f468cbb73ae1d470",
+    "src/js/entities/EnemySalvage.js": "537125ea6bd3623268e508df6cc7fa9bea63f6aaca9978935e79bafb4c09270c",
+    "src/js/entities/EnemyManager.js": "7b32724b32f6a3e9b7f19aafd84c2b8c2ffa582db5fee9cb6a44258e3f711222",
+    "src/js/entities/PowerUpManager.js": "415e27625292b93bc657b6fd9155bbe93e2b19bbaab104aecb48b43ce5093a70",
+    "src/js/entities/ProjectileManager.js": "263086fede768b54031c361bdfac8e86dba8d8210d1bc9674b9c7fdd2d8edc01",
+    "src/js/combatContracts.d.ts": "192d687fdf8aadb6c1d4d22bf78723e4b3b420bc99a99f4536b432e46560148c",
+    "src/js/main.js": "d46b411e1efd991ea8dd7de64535499b106528a3ac583e02dce7c670807c0bd0",
+    "src/js/utils/RuntimeDiagnostics.js": "9c3ae0aba5c3c52a4ea42bcd0884289300672e851b48fdd86334496b73431107",
+    "src/js/core/levels/CrossfireRelay.js": "15cdc901dbcab6b4f0c74618e592b037bc10d5c795073bda65ec6e486a0b8f17",
+    "src/js/core/levels/FighterDrill.js": "d2a32e34b9f972bc4faf954bd0e676cf362d069555724a04a731ccb032582fc5",
+    "tests/enemy-salvage.test.mjs": "209e5b0d04a21d4250672826c42569552497793021aa16c9d60c2e2c357e11d5",
+    "tests/browser/crossfire-relay.spec.js": "e3c5216c2f4da40ed1760814c9bc28fd05b523dbc2536a0a84dcb90d14cfb2bb",
+    "tests/browser/fighter-movement.spec.js": "f6bfc110d1fe4ab9a77b81441f822681af7fb427d0748a94ad10bfc32746ad7d",
+    "tests/browser/experience.spec.js": "1d6775a1b69f97638f0e2534827d5528f2a11397e60ca96bc80de1664470c50b"
+  },
+  "overheadObservations": {
+    "approach": "overhead",
+    "pulseShots": 16,
+    "laserShots": 1,
+    "minimumShields": 65,
+    "completionSeconds": 152.63333333333605,
+    "rooms": [
+      "arrival",
+      "arrival-shaft",
+      "overhead-gallery",
+      "hall-shaft",
+      "crossfire-hall",
+      "scout-passage",
+      "return-passage",
+      "supply-bay"
+    ],
+    "scoutPhases": [
+      "approach",
+      "windup",
+      "lunge"
+    ],
+    "fighterPhases": [
+      "idle",
+      "windup",
+      "recover"
+    ],
+    "evidence": "software renderer, controlled application clock, ordinary keyboard input with read-only diagnostics; not human balance or hardware performance"
+  },
+  "screenshot": "salvage-laser.png"
+}

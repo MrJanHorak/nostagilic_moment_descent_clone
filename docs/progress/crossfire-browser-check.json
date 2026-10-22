@@ -1,0 +1,275 @@
+{
+  "capturedAt": "2026-10-22T19:44:27.846Z",
+  "baseCommit": "5a044ecb6a19773bce4bd827575cbd5cbcc7587b",
+  "verification": {
+    "command": "npm run verify",
+    "passed": true,
+    "unitTests": 491,
+    "lintModules": 81
+  },
+  "scope": "Targeted functional checks; Chromium SwiftShader, controlled application clock, ordinary keyboard input and read-only diagnostics. No new hardware acceptance, hosted CI pass, audit or human balance claim.",
+  "browserRuns": [
+    {
+      "command": "npx playwright test --project=encounters --project=production --grep \"Crossfire Relay|mobile fighter drill|new campaign is primary|keyboard mission victory|My Levels imports\" --global-timeout=600000",
+      "stats": {
+        "startTime": "2026-10-22T19:38:37.965Z",
+        "duration": 249737.921,
+        "expected": 5,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "production: new campaign is primary; camera, headlights and HUD persist and settings isolate shortcuts",
+          "project": "production",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 15797,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 16615,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "production: My Levels imports, persists, plays to completion, replays, renames, exports and deletes",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 3785,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 56386,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 86581,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 65009,
+              "retry": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command": "npx playwright test --project=production --grep \"new campaign is primary\" --global-timeout=180000",
+      "stats": {
+        "startTime": "2026-10-22T19:43:26.527Z",
+        "duration": 9660.003,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "production: new campaign is primary; camera, headlights and HUD persist and settings isolate shortcuts",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 5813,
+              "retry": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    "Sandbox socket access blocked the local test server; browser runs use escalated execution.",
+    "An initial overhead controller descended into a pursuing fighter, causing a ram. The upper shaft hides the scout: the corrected route fights the visible fighter from above, descends, then engages the scout; simulation and browser coverage preserve that sightline behavior.",
+    "The production menu regression still expected six practice choices; updated to seven and checked that Crossfire remains collapsed with practice content."
+  ],
+  "approaches": [
+    {
+      "approach": "overhead",
+      "shots": 7,
+      "minimumShields": 75,
+      "completionSeconds": 153.18333333333572,
+      "rooms": [
+        "arrival",
+        "arrival-shaft",
+        "overhead-gallery",
+        "hall-shaft",
+        "crossfire-hall",
+        "scout-passage",
+        "return-passage",
+        "supply-bay"
+      ],
+      "scoutPhases": [
+        "approach",
+        "windup",
+        "lunge",
+        "recover"
+      ],
+      "fighterPhases": [
+        "idle",
+        "windup",
+        "recover"
+      ],
+      "evidence": "software renderer, controlled application clock, ordinary keyboard input with read-only diagnostics; not human balance or hardware performance"
+    },
+    {
+      "approach": "direct",
+      "shots": 7,
+      "minimumShields": 40,
+      "completionSeconds": 124.50000000001334,
+      "rooms": [
+        "arrival",
+        "approach",
+        "crossfire-hall",
+        "scout-passage",
+        "return-passage",
+        "supply-bay"
+      ],
+      "scoutPhases": [
+        "approach",
+        "windup",
+        "lunge",
+        "recover"
+      ],
+      "fighterPhases": [
+        "idle",
+        "windup",
+        "recover"
+      ],
+      "evidence": "software renderer, controlled application clock, ordinary keyboard input with read-only diagnostics; not human balance or hardware performance"
+    }
+  ],
+  "screenshots": [
+    "crossfire-overhead-map.png",
+    "crossfire-direct-complete.png"
+  ],
+  "sourceHashes": {
+    "src/js/core/levels/CrossfireRelay.js": "7e2c95670c5225e1b90ced80e9e44d94580721e921408d19531553db5612c6ed",
+    "src/js/core/levels/documents/crossfire-relay.v7.json": "00f500b57e4f882c59251e94dac6daa5a35c5c3ccabab6bfcd7b72cf1cd90c5a",
+    "src/js/core/LevelManager.js": "60cf9d8844ec0ebc69a2573d3ff5fd2de016f1100bae092452c6a92979ac76da",
+    "src/js/utils/RuntimeDiagnostics.js": "9806abea7a87cd72dd1827f5628152de221c05969c8c0757ca81387b3f7911e2",
+    "tests/crossfire-relay.test.mjs": "f421a15d5a3cd745fd0ea5650468024b942df381a05e72ed735bd735ad382d05",
+    "tests/browser/crossfire-relay.spec.js": "c188e2a1725cf122a08994746a83ef736a3718e3591427e02f717677e421408c",
+    "tests/browser/experience.spec.js": "c6e51ba746f2ed47327bb8fb29b1edea0a98d8d2c7cffa576610430721ca62fa",
+    "playwright.config.js": "9072983b0bf67b4954966c76a632053d4603ed81c0b728045ddaa3439771cbf5",
+    ".github/workflows/verify.yml": "c44a23577e265635c7f9f8aef01a920e8d5364583769dfa150cba34d83f7c2e1"
+  },
+  "finalCases": [
+    {
+      "title": "production: new campaign is primary; camera, headlights and HUD persist and settings isolate shortcuts",
+      "project": "production",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 5813,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 16615,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "production: My Levels imports, persists, plays to completion, replays, renames, exports and deletes",
+      "project": "production",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 3785,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 56386,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 86581,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 65009,
+          "retry": 0
+        }
+      ]
+    }
+  ],
+  "targetedResult": "Six distinct scenarios passed across completed runs after correcting the practice-menu assertion. No retries; not a full 62-case browser-suite run.",
+  "sourceHashesScope": "Final source/test files; the menu assertion was corrected between browser runs as recorded above."
+}

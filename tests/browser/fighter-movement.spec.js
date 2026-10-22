@@ -36,7 +36,7 @@ async function defeat(page, id) {
     }, { ticks: 100, message: `${id} must provide an attack warning` });
     if (!(await readFlight(page)).fighters.some(enemy => enemy.id === id)) return;
     await aimAt(page, state => state.fighters.find(enemy => enemy.id === id)?.position);
-    for (let shot = 0; shot < 5; shot++) await page.keyboard.press('f');
+    for (let shot = 0; shot < 8; shot++) await page.keyboard.press('f');
     for (let tick = 0; tick < 12; tick++) await page.clock.fastForward(100);
     if (!(await readFlight(page)).fighters.some(enemy => enemy.id === id)) return;
   }
@@ -65,9 +65,11 @@ test('development: mobile fighter drill warns, damages, pauses, clears, flies th
   await advanceUntil(page, async () => (await readFlight(page)).fighters.find(enemy => enemy.id === first.id)?.phase === 'recover', { ticks: 50 });
   await advanceUntil(page, async () => parseInt(await page.locator('#health-percentage').textContent(), 10) < 100, { ticks: 50 });
   await defeat(page, first.id); await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
+  // The first guard now reports the ship to its neighbour; clear the responding
+  // fighter before taking a slow survey lap rather than assuming it stays in its bay.
+  await defeat(page, 'drill:bay-fighter'); await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 2/2');
   await faceForward(page);
   await fly(page, 2, 0); await fly(page, 0, 18); await fly(page, 2, -18);
-  await defeat(page, 'drill:bay-fighter'); await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 2/2');
   await faceForward(page); await fly(page, 0, 0); await fly(page, 2, 0); await fly(page, 0, -8); await fly(page, 2, 8);
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
   await expect(page.locator('#score-display')).toHaveText('1200');

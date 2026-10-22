@@ -31,6 +31,8 @@ export interface FighterAttackState {
   since: number;
   readyAt: number;
   firedAt: number;
+  windupMs?: number;
+  recoveryMs?: number;
 }
 export interface FighterMovementState {
   target: Vector3;
@@ -46,6 +48,7 @@ export interface ScoutAttackState {
   since: number;
   readyAt: number;
   direction: Vector3;
+  aggressive?: boolean;
 }
 export interface EnemyInstance extends EnemyCombatTarget {
   readonly mesh: Group;
@@ -74,9 +77,9 @@ export interface EnemyLevelView {
     readonly rendering?: { readonly enemyAccentLights?: boolean };
   } | null;
 }
-export type EnemyDropType = 'health' | 'speedBoost' | 'weaponUpgrade' | 'ammoPickup' | 'weaponPickup';
+export type EnemyDropType = 'health' | 'pulseAmmo' | 'speedBoost' | 'weaponUpgrade' | 'ammoPickup' | 'weaponPickup' | 'laserSalvage' | 'missileSalvage' | 'plasmaSalvage';
 export interface EnemyDropSink {
-  spawnPowerup(position: Vector3, type: EnemyDropType): unknown;
+  spawnPowerup(position: Vector3, type: EnemyDropType, options?: { persistent?: boolean }): unknown;
 }
 export type ProjectileType = 'standard' | 'laser' | 'plasma' | 'bomb' | 'missile' | 'heavylaser' | 'nova';
 export type TrailType = 'standard' | 'pulse' | 'laser' | 'missile' | 'plasma' | null;
@@ -115,6 +118,7 @@ export interface PlayerProjectile extends ProjectileBase {
   readonly faction: 'player';
   createdAt: number;
   explosive: boolean;
+  explosionRadius: number;
   guided: boolean;
   gravity: number;
   heatSeek: boolean;
@@ -122,6 +126,8 @@ export interface PlayerProjectile extends ProjectileBase {
   unstable: boolean;
   penetrating: boolean;
   acceleration: number;
+  hitTargets: Set<EnemyCombatTarget>;
+  resolving?: boolean;
   light?: PointLight;
   pulseData?: { originalScale: number; pulseSpeed: number; pulseAmount: number; baseOpacity: number; lastPulse: number };
 }
@@ -139,6 +145,7 @@ export interface CombatWorld {
   getRules?(): { readonly pulseDamage: number } | null | undefined;
   onTargetHit?(enemy: EnemyCombatTarget, projectile: PlayerProjectile, position: Vector3): void;
   onWallHit?(collider: SolidCollider, projectile: PlayerProjectile, position: Vector3): void;
+  onExplosion?(position: Vector3, radius: number): void;
 }
 export interface CombatAudio {
   readonly initialized: boolean;

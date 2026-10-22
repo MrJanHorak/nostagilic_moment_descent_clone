@@ -1,6 +1,6 @@
 # DESCENDED: implementation status and next steps
 
-Updated October 22, 2026, against implementation commit `164bf41`. This is the current work queue. The [October 14 assessment](PROJECT_ASSESSMENT.md) describes the historical baseline; its defects and original delivery estimates are not a list of remaining work.
+Updated October 22, 2026, including Crossfire Relay after implementation baseline `164bf41`. This is the current work queue. The [October 14 assessment](PROJECT_ASSESSMENT.md) describes the historical baseline; its defects and original delivery estimates are not a list of remaining work.
 
 ## Milestone status
 
@@ -21,6 +21,9 @@ These acceptances remain valid. Subsequent features have their own regression ev
 - **Player presentation:** three camera views, cockpit instruments, headlights, explored-area map, original procedural music and saved controls/audio/view preferences.
 - **Custom levels:** browser-local My Levels library, import/export, rename/delete, editor update/copy, storage failure handling and cross-tab conflict detection. See [My Levels](USER_LEVELS.md).
 - **Combat:** scout warning/lunge/recovery; fighter warning/fire/recovery plus bounded strafing, elevation and distance control in authored mines. [Fighter Proving Ground](FIGHTER_MOVEMENT.md) is a separate four-room practice mission.
+- **Mixed encounter:** [Crossfire Relay](CROSSFIRE_RELAY.md), a separate nine-space practice mission with direct/overhead approaches, a scout/fighter pair, optional supplies and a relay-controlled return shortcut. Human difficulty/pacing feedback remains open.
+- **Aggression follow-up:** the owner found the encounter easy and robots passive. The [pressure pass](ENEMY_PRESSURE.md) increases shared authored pursuit/fire rates, shortens attack gaps and adds bounded local sighting reports. Recheck the stronger default in human playtests.
+- **Durability and salvage:** [authored scouts/fighters now have 20/40 health](SALVAGE_AND_WEAPONS.md). Shot kills leave equipment-specific pulse/laser/missile/plasma rewards. Special damage scales with mission pulse damage; lasers pierce robots, missile/plasma blasts have falloff and wall occlusion. Existing authored files inherit the runtime rules.
 - **Rendering:** conservative portal visibility and stable campaign light counts during combat. See [Deepworks](DEEPWORKS.md) and [combat performance](DEEPWORKS_COMBAT_PERFORMANCE.md).
 
 ## Next work queue
@@ -29,20 +32,20 @@ Keep each change small enough to review and play independently. These are propos
 
 | Priority | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Tune one mixed scout/fighter encounter around a loop and vertical approach | Safe arrival, cover, retreat route, optional supplies, ordinary-input combat/extraction/replay; record shots, minimum shields, route use and completion time during human playtests |
+| 1 | Recheck durability and salvage after the owner found the more aggressive enemies too easy to kill | Compare direct/overhead playthroughs with and without laser salvage; record shots, shields, retreat/supply use and attack readability |
 | 2 | Finish one distinct heavy-enemy role, starting with bomber area denial | Warning, committed explosive attack and recovery; explicit damage/blast/occlusion rules; collision, pause/reset and ordinary-fire browser coverage |
-| 3 | Close broader performance and release regression gates | Repeated real-time hardware captures of traversal, multiple enemies, reactor escape and restart resources; full browser suite on the same revision; inspect CI group duration and split the large production group if needed |
+| 3 | Close broader performance and release regression gates | Repeated real-time hardware captures of traversal, multiple enemies, reactor escape and restart resources; full browser suite on the same revision; monitor CI duration after the encounter-group split |
 | 4 | Add campaign persistence and user campaigns | Saved built-in progress/resume, custom mission ordering and briefings, validated campaign bundle import/export, isolated campaign and standalone replay behavior |
 
-The first encounter should use existing authoring and enemy systems. Establish balance from route choices, readable attack windows and pacing before changing health or enemy counts throughout the campaign. See [the encounter review](ENEMY_AND_ENCOUNTER_REVIEW.md).
+Crossfire Relay uses existing authoring and enemy systems. The current durability adjustment follows the owner's second playtest report; check its effect on route choices and pacing before increasing health further or adding more enemies. See [the encounter review](ENEMY_AND_ENCOUNTER_REVIEW.md) and [playtest checklist](CROSSFIRE_RELAY.md#balance-playtest-checklist).
 
-For heavier enemies, distinguish current visuals/projectile variants from finished tactical roles. Authored-mine bombers, destroyers and bosses share much of their movement; hostile projectiles currently use 10 damage. Player projectile explosion/penetration flags do not establish complete splash/penetration behavior. Check `EnemyManager.js` and `ProjectileManager.js` before extending them.
+For heavier enemies, distinguish current visuals/projectile variants from finished tactical roles. Authored-mine bombers, destroyers and bosses share much of their movement; hostile projectiles currently use 10 damage. Player laser penetration and missile/plasma splash are now implemented; bomber blast attacks, directional destroyer armor and boss phases remain proposed. Sniper/support robots should follow distinct core roles rather than precede them.
 
 ## Verification and performance boundary
 
-The October 22 repository review ran `npm run verify`: lint passed for 80 runtime modules and two lint tooling files, strict type checks passed, all 485 unit/simulation tests passed, and the production build passed. Scope is declared in `tsconfig.check.json`; this is not full-source lint/type coverage. The existing large-chunk build advisory remains.
+The October 22 salvage/weapon pass ran `npm run verify`: lint passed for 83 runtime modules and two lint tooling files, strict type checks passed, all 507 unit/simulation tests passed, and the production build passed. Scope is declared in `tsconfig.check.json`; this is not full-source lint/type coverage. The existing large-chunk build advisory remains.
 
-Latest completed targeted browser evidence is the [October 21 fighter checkpoint](progress/mobile-fighter-browser-check.json), alongside [My Levels](progress/my-levels-browser-check.json) and earlier feature reports. The October 22 fighter/library spot check was stopped during local server startup before tests executed. It establishes neither a browser pass nor a gameplay failure. Full browser verification for the current revision remains a next action.
+Use the [handoff](progress/NEXT_SESSION.md#verification-available) for the latest browser scope. The earlier [pressure record](progress/enemy-pressure-browser-check.json) has five distinct targeted scenarios passing before durability/salvage changed: Signal Breach combat/overhead extraction, both Crossfire approaches, the mobile-fighter drill and production victory/death/reboot. Local socket restrictions require running browsers outside the sandbox. Full browser/hosted verification remains open. Earlier [Crossfire](progress/crossfire-browser-check.json), [fighter](progress/mobile-fighter-browser-check.json) and [My Levels](progress/my-levels-browser-check.json) records retain their original scope.
 
 The [October 21 hardware capture](progress/deepworks-mobile-fighters.json) records Intel UHD / ANGLE D3D11 at 1280×720: idle p95/worst 16.8/33.4 ms, firing 16.7/16.8 ms, encounter 16.8/33.4 ms, with no frames over 100 ms. These focused results supersede the old 18 ms figure as the latest capture, but do not close M2. Retain the provisional 16.7 ms p95 target until representative measurements and an explicit acceptance decision support a change. Controlled-clock software-rendered browser checks are functional evidence only.
 

@@ -10,10 +10,11 @@ export default defineConfig({
   reporter: [['list', { printFailuresInline: true }], ['html', { open: 'never' }], ['json', { outputFile: 'test-results/browser-results.json' }]],
   // CI runs these groups in separate jobs; local runs still cover every case.
   projects: [
-    // Catch everything outside the two flight groups, including future tests.
-    { name: 'production', grepInvert: /development: (JSON mine loop|relay unlocks|Deep Relay lower loop)/ },
+    // Catch everything outside the longer flight/encounter groups, including future tests.
+    { name: 'production', grepInvert: /development: (JSON mine loop|relay unlocks|Deep Relay lower loop|mobile fighter drill|Crossfire Relay)/ },
     { name: 'prototypes', grep: /development: (JSON mine loop|relay unlocks)/ },
     { name: 'deep-relay', grep: /development: Deep Relay lower loop/ },
+    { name: 'encounters', grep: /development: (mobile fighter drill|Crossfire Relay)/ },
   ],
   use: {
     // Functional software-rendered checks. Hardware profiling keeps its own

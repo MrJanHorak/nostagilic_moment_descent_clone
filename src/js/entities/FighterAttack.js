@@ -8,9 +8,11 @@ const REACQUIRE_DELAY_MS = 200;
 /** All times are simulation milliseconds. No scheduled callbacks or timers can
  * survive the enemy/attempt that owns this state.
  * @param {number} now @param {number} interval
+ * @param {{windupMs: number, recoveryMs: number}} [timing]
  * @returns {import('../combatContracts.js').FighterAttackState} */
-export function createFighterAttack(now, interval) {
-  return { phase: 'idle', since: now, readyAt: now + Math.max(0, interval - FIGHTER_WINDUP_MS), firedAt: -Infinity };
+export function createFighterAttack(now, interval, timing) {
+  return { phase: 'idle', since: now, readyAt: now + Math.max(0, interval - (timing?.windupMs ?? FIGHTER_WINDUP_MS)), firedAt: -Infinity,
+    ...(timing ? { windupMs: timing.windupMs, recoveryMs: timing.recoveryMs } : {}) };
 }
 
 /** Every shot requires a complete, uninterrupted visible wind-up. Long frames
@@ -20,18 +22,19 @@ export function createFighterAttack(now, interval) {
  * @returns {'charge' | 'fire' | null} */
 export function advanceFighterAttack(state, now, eligible, interval) {
   if (!Number.isFinite(now) || now < state.since) return null;
+  const windup = state.windupMs ?? FIGHTER_WINDUP_MS, recovery = state.recoveryMs ?? FIGHTER_RECOVERY_MS;
   if (state.phase === 'windup') {
     if (!eligible) {
       state.phase = 'idle'; state.since = now; state.readyAt = now + REACQUIRE_DELAY_MS;
-    } else if (now - state.since >= FIGHTER_WINDUP_MS) {
+    } else if (now - state.since >= windup) {
       state.phase = 'recover'; state.since = now; state.firedAt = now; return 'fire';
     }
     return null;
   }
   if (state.phase === 'recover') {
-    if (now - state.since < FIGHTER_RECOVERY_MS) return null;
+    if (now - state.since < recovery) return null;
     state.phase = 'idle'; state.since = now;
-    state.readyAt = state.firedAt + Math.max(interval, FIGHTER_RECOVERY_MS + FIGHTER_WINDUP_MS) - FIGHTER_WINDUP_MS;
+    state.readyAt = state.firedAt + Math.max(interval, recovery + windup) - windup;
   }
   if (eligible && now >= state.readyAt) {
     state.phase = 'windup'; state.since = now; return 'charge';
@@ -51,7 +54,8 @@ export function presentFighterAttack(enemy, now) {
   const state = enemy.fighterAttack; if (!state) return;
   const charging = state.phase === 'windup', recovering = state.phase === 'recover';
   const flash = recovering && now - state.firedAt < FIGHTER_FLASH_MS;
-  const charge = MathUtils.clamp((now - state.since) / FIGHTER_WINDUP_MS, 0, 1);
+  const windup = state.windupMs ?? FIGHTER_WINDUP_MS, recovery = state.recoveryMs ?? FIGHTER_RECOVERY_MS;
+  const charge = MathUtils.clamp((now - state.since) / windup, 0, 1);
   const ring = enemy.mesh.getObjectByName('fighter_charge_ring');
   if (ring instanceof Mesh && ring.material instanceof MeshBasicMaterial) {
     ring.visible = charging || recovering;
@@ -60,7 +64,7 @@ export function presentFighterAttack(enemy, now) {
     ring.scale.set(size, size, 1); ring.rotation.z = charging ? charge * Math.PI : 0;
   }
   const weapon = enemy.mesh.getObjectByName('fighter_weapon');
-  if (weapon) weapon.position.z = enemy.type.size * 1.2 + (charging ? charge * 0.08 : recovering ? -0.08 * Math.max(0, 1 - (now - state.since) / FIGHTER_RECOVERY_MS) : 0);
+  if (weapon) weapon.position.z = enemy.type.size * 1.2 + (charging ? charge * 0.08 : recovering ? -0.08 * Math.max(0, 1 - (now - state.since) / recovery) : 0);
   for (const name of ['fighter_weapon', 'fighter_wing_0']) {
     const part = enemy.mesh.getObjectByName(name);
     if (!(part instanceof Mesh)) continue;

@@ -203,6 +203,7 @@ export default class Game {
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
+        onExplosion: (position, radius) => this.enemyManager.effectsManager.createExplosion(position, 0xff8833, true, radius),
         onWallHit: (collider, projectile, position) => {
           const reactor = this.levelManager.interaction?.hitReactor(collider, level.combat?.pulseDamage ?? projectile.power, id => this.mission?.canActivateDevice(id) ?? true);
           if (reactor) {

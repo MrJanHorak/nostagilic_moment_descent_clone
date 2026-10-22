@@ -185,25 +185,25 @@ test('Signal Breach: safe arrival, doorway cover and a body-clear overhead appro
   assert.equal(mission.ready, true, 'both routes support optional combat');
 });
 
-test('Signal Breach: the guard fires real damaging projectiles, takes three normal pulse shots and resets', t => {
+test('Signal Breach: the guard fires real damaging projectiles, takes four normal pulse shots and resets', t => {
   const { player, manager, state, shots, tick } = signalEncounter(t);
   player.position.set(0, 0, -15);
   const fighter = manager.enemies.find(enemy => enemy.type.name === 'fighter');
   for (let frame = 0; frame < 600 && state.playerHealth === 100; frame++) tick();
   assert.equal(state.playerHealth, 90, 'a waiting player must experience the ranged threat');
-  for (let shot = 1; shot <= 3; shot++) {
+  for (let shot = 1; shot <= 4; shot++) {
     const before = fighter.health;
     shots.fireProjectile(state, { requirePointerLock: false });
     for (let frame = 0; frame < 120 && fighter.isActive && fighter.health === before; frame++) tick();
     assert(fighter.health < before, 'wait for the normal projectile travel time to the braced fighter');
-    assert.equal(fighter.isActive, shot < 3);
+    assert.equal(fighter.isActive, shot < 4);
   }
-  assert.equal(state.weaponInventory.pulse.ammo, 77);
+  assert.equal(state.weaponInventory.pulse.ammo, 76);
   assert.equal(state.enemyKills.fighter, 1); assert.equal(state.score, 100);
   assert.equal(manager.enemies.length, 1, 'the optional branch remains independent');
   manager.resetLevel(); state.resetForSession(); manager.updateEnemies(0);
   assert.equal(state.playerHealth, 100);
   assert.equal(manager.enemies.length, 2);
-  assert.equal(manager.enemies.find(enemy => enemy.type.name === 'fighter').health, 25);
+  assert.equal(manager.enemies.find(enemy => enemy.type.name === 'fighter').health, 40);
   assert.equal(manager.projectileManager.enemyProjectiles.length, 0);
 });

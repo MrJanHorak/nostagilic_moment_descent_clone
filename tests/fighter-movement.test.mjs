@@ -12,6 +12,7 @@ import RoomNavigation from '../src/js/core/levels/document/RoomNavigation.js';
 import buildArena from '../src/js/core/ArenaGeometry.js';
 import { solidContact } from '../src/js/utils/sphereMovement.js';
 import disposeObject from '../src/js/utils/disposeObject.js';
+import { MINE_FIGHTER } from '../src/js/entities/EnemyTactics.js';
 
 const v = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z);
 function fixture(t, size = [32, 16, 32]) {
@@ -143,4 +144,51 @@ test('the proving ground has a usable loop, two required fighters, cover walls a
   const blocked = new Set(['bay-floor']);
   const route = navigation.route(v(0, 0, 8), v(6, 3, -18), 0.5, blocked);
   assert.ok(route.length > 4, 'the east gallery must provide an alternate route around the wall');
+});
+
+test('authored fighters close distance and strafe at the increased speed with bounded decisions and wall clearance', t => {
+  const { enemy, manager, player, state, world } = fixture(t); player.position.set(0, 0, 15);
+  let fastest = 0, lateral = 0;
+  for (let frame = 0; frame < 120; frame++) {
+    const before = enemy.mesh.position.clone(); state.session.advance(1 / 60); manager.updateMineEnemy(enemy, 1 / 60, true);
+    const speed = enemy.mesh.position.distanceTo(before) * 60; fastest = Math.max(fastest, speed);
+    assert.ok(speed <= MINE_FIGHTER.speed + 1e-6);
+    lateral = Math.max(lateral, Math.hypot(enemy.mesh.position.x, enemy.mesh.position.y));
+    for (const collider of world.colliders) assert.equal(solidContact(enemy.mesh.position, enemy.collisionRadius - 1e-4, collider), null);
+  }
+  assert.ok(fastest > 4.5); assert.ok(lateral > 0.7);
+  assert.ok(enemy.mesh.position.distanceTo(player.position) < 10, 'the fighter must close more than five units in two seconds');
+  assert.ok(enemy.fighterMovement.decisions >= 4 && enemy.fighterMovement.decisions <= 6);
+});
+
+test('authored fighters fire five real shots in eight seconds while preserving full warnings, recovery and ten-damage hits', t => {
+  t.mock.method(Math, 'random', () => 0.5);
+  const { enemy, manager, state } = fixture(t), times = []; let warningAt = null;
+  const fire = manager.projectileManager.fireEnemyProjectile.bind(manager.projectileManager);
+  t.mock.method(manager.projectileManager, 'fireEnemyProjectile', (...args) => {
+    assert.ok(state.session.timeMs - warningAt >= MINE_FIGHTER.windupMs - 1e-5);
+    const shot = fire(...args); assert.equal(shot.power, 10); assert.ok(Math.abs(shot.velocity.length() - 18) < 1e-6);
+    times.push(state.session.timeMs); return shot;
+  });
+  let previous = 'idle';
+  for (let frame = 0; frame < 480; frame++) {
+    state.session.advance(1 / 60); manager.updateEnemies(1 / 60);
+    if (enemy.fighterAttack.phase === 'windup' && previous !== 'windup') warningAt = state.session.timeMs;
+    previous = enemy.fighterAttack.phase;
+  }
+  assert.ok(times.length >= 5); assert.ok(times[0] <= 750);
+  for (let i = 1; i < times.length; i++) assert.ok(times[i] - times[i - 1] >= 1450 && times[i] - times[i - 1] < 1800);
+  assert.equal(enemy.health, 40); assert.ok(state.playerHealth < 100);
+});
+
+test('the faster authored movement stays comparable at 30, 60 and 120 Hz without adding planning work per frame', t => {
+  const samples = [];
+  for (const fps of [30, 60, 120]) {
+    const { enemy, manager, state } = fixture(t);
+    for (let frame = 0; frame < fps * 6; frame++) { state.session.advance(1 / fps); manager.updateMineEnemy(enemy, 1 / fps, true); }
+    samples.push(enemy.mesh.position.clone());
+    assert.ok(enemy.fighterMovement.decisions >= 12 && enemy.fighterMovement.decisions <= 18);
+  }
+  assert.ok(samples[0].distanceTo(samples[1]) < 0.35);
+  assert.ok(samples[2].distanceTo(samples[1]) < 0.35);
 });

@@ -9,6 +9,7 @@ import createMineLinkLevel from './levels/MineLink.js';
 import createRelayGateLevel from './levels/RelayGate.js';
 import createDeepRelayLevel from './levels/DeepRelay.js';
 import createFighterDrill from './levels/FighterDrill.js';
+import createCrossfireRelay from './levels/CrossfireRelay.js';
 import buildArena from './ArenaGeometry.js';
 import PortalVisibility from './PortalVisibility.js';
 import SurfaceEnvironment from './SurfaceEnvironment.js';
@@ -55,6 +56,7 @@ class LevelManager {
       createDeepRelayLevel(),
       ...createCampaign(),
       createFighterDrill(),
+      createCrossfireRelay(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;

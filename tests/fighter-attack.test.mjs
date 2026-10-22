@@ -9,6 +9,7 @@ import EditorDocument from '../src/js/editor/EditorDocument.js';
 import compileLevelDocument from '../src/js/core/levels/document/compileLevelDocument.js';
 import buildArena from '../src/js/core/ArenaGeometry.js';
 import disposeObject from '../src/js/utils/disposeObject.js';
+import { MINE_FIGHTER } from '../src/js/entities/EnemyTactics.js';
 
 test('fighter timing gives every shot a full wind-up, a recovery window and the existing firing interval', () => {
   const state = createFighterAttack(0, 2000);
@@ -69,10 +70,10 @@ test('live fighter braces, shows amber charge/white flash/blue recovery, and fir
   until(() => enemy.fighterAttack.phase === 'windup');
   assert.equal(ring.visible, true); assert.equal(ring.material.color.getHex(), 0xffc34f);
   const position = enemy.mesh.position.clone(), since = enemy.fighterAttack.since;
-  for (let i = 0; i < 30; i++) tick();
+  for (let i = 0; i < 20; i++) tick();
   assert(enemy.mesh.position.equals(position)); assert.equal(shots(), 0); assert(weapon.position.z > enemy.type.size * 1.2);
   until(() => enemy.fighterAttack.phase === 'recover');
-  assert(state.session.timeMs - since >= FIGHTER_WINDUP_MS); assert.equal(shots(), 1);
+  assert(state.session.timeMs - since >= MINE_FIGHTER.windupMs); assert.equal(shots(), 1);
   assert.equal(ring.material.color.getHex(), 0xffffff);
   for (let i = 0; i < 10; i++) tick();
   assert.equal(ring.material.color.getHex(), 0x235268); assert(enemy.mesh.position.equals(position));
@@ -83,15 +84,15 @@ test('live fighter braces, shows amber charge/white flash/blue recovery, and fir
 
 test('new cover during wind-up cancels the shot and the next clear sighting needs a fresh full warning', t => {
   const { enemy, world, until, tick, state, sounds, shots } = fixture(t);
-  until(() => enemy.fighterAttack.phase === 'windup'); for (let i = 0; i < 30; i++) tick();
+  until(() => enemy.fighterAttack.phase === 'windup'); for (let i = 0; i < 20; i++) tick();
   const barrier = { id: 'closed-cover', box: new THREE.Box3(new THREE.Vector3(-3, -3, -2), new THREE.Vector3(3, 3, -1)) };
   world.colliders.push(barrier); tick(); assert.equal(enemy.fighterAttack.phase, 'idle');
   assert.equal(enemy.mesh.getObjectByName('fighter_charge_ring').visible, false);
   for (let i = 0; i < 90; i++) tick(); assert.equal(shots(), 0); assert.equal(state.playerHealth, 100);
   world.colliders.splice(world.colliders.indexOf(barrier), 1);
   until(() => enemy.fighterAttack.phase === 'windup'); const since = enemy.fighterAttack.since;
-  for (let i = 0; i < 30; i++) tick(); assert.equal(shots(), 0);
-  until(() => shots() === 1); assert(state.session.timeMs - since >= FIGHTER_WINDUP_MS);
+  for (let i = 0; i < 20; i++) tick(); assert.equal(shots(), 0);
+  until(() => shots() === 1); assert(state.session.timeMs - since >= MINE_FIGHTER.windupMs);
   assert.equal(sounds.filter(id => id === 'enemyCharge').length, 2);
 });
 

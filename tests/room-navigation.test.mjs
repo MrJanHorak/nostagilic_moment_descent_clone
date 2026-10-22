@@ -116,15 +116,47 @@ test('near-wall targets and starts in portal throats first enter safe room inter
   assert.deepEqual(navigation.route(v(), v(), 1)[0].toArray(), [0, 0, 0], 'routes must not mutate graph or later callers');
 });
 
-test('unalerted mine enemies stay idle behind walls and never fire through them', t => {
-  const { manager, state } = fixture(t);
+test('mine enemies remain idle when no ally can see the player, and never fire through walls', t => {
+  const { manager, state, player } = fixture(t);
+  player.position.set(6, 0, -4);
   manager.updateEnemies(0);
   const scout = manager.enemies.find(enemy => enemy.type.name === 'scout');
   const start = scout.mesh.position.clone();
   assert.equal(manager.canSeePlayer(scout), false);
+  assert.ok(manager.enemies.every(enemy => !manager.canSeePlayer(enemy)));
   for (let frame = 0; frame < 120; frame++) { state.session.advance(1 / 60); manager.updateEnemies(1 / 60); }
   assert.ok(scout.mesh.position.equals(start));
   assert.equal(manager.minePursuits.get(scout).lastSeen, null);
+});
+
+test('a nearby fighter alerts the hidden scout with an observed position, without tracking later unseen movement', t => {
+  const { manager, state, player, world } = fixture(t);
+  manager.updateEnemies(0);
+  const scout = manager.enemies.find(enemy => enemy.type.name === 'scout'), start = scout.mesh.position.clone();
+  assert.equal(manager.canSeePlayer(scout), false);
+  assert.ok(manager.minePursuits.get(scout).lastSeen.equals(player.position));
+  const observed = player.position.clone(); player.position.set(500, 500, 500);
+  for (let frame = 0; frame < 120; frame++) { state.session.advance(1 / 60); manager.updateEnemies(1 / 60); noWallOverlap(scout, world.colliders); }
+  assert.ok(scout.mesh.position.distanceTo(start) > 5, 'the alerted scout must actively pursue through the portal');
+  assert.ok(manager.minePursuits.get(scout).lastSeen.equals(observed));
+  assert.equal(manager.projectileManager.enemyProjectiles.length, 0, 'an alert never permits shooting through a wall');
+});
+
+test('sighting reports respect closed passages, recipient bounds and a simulation-time cadence', t => {
+  const closed = fixture(t); closed.view.interaction = { closedConnections: new Set(['core-gallery']), revision: 0 };
+  closed.manager.updateEnemies(0);
+  const isolated = closed.manager.enemies.find(enemy => enemy.type.name === 'scout');
+  assert.equal(closed.manager.minePursuits.get(isolated).lastSeen, null, 'a closed adjacent passage blocks this local alert');
+
+  const f = fixture(t); f.manager.spawnPredefinedEnemies();
+  for (let i = 0; i < 6; i++) f.manager.spawnEnemy(v(14, 0, -18 + i * 0.5), 'scout');
+  f.manager.updateEnemies(0);
+  const recipients = f.manager.enemies.filter(enemy => enemy.type.name === 'scout' && f.manager.minePursuits.get(enemy)?.lastSeen);
+  assert.equal(recipients.length, 4, 'one sighting must not wake an unbounded crowd');
+  const fighter = f.manager.enemies.find(enemy => enemy.type.name === 'fighter'), memory = f.manager.minePursuits.get(fighter);
+  const next = memory.nextAlertAt;
+  for (let frame = 0; frame < 60; frame++) { f.state.session.advance(1 / 60); f.manager.updateEnemies(1 / 60); }
+  assert.equal(memory.nextAlertAt, next, 'reports cannot be emitted on every frame');
 });
 
 test('damage alerts a drone; remembered pursuit crosses two turns and a hatch without following hidden movement', t => {
@@ -144,7 +176,7 @@ test('damage alerts a drone; remembered pursuit crosses two turns and a hatch wi
   assert.ok(fighter.mesh.position.distanceTo(remembered) < 0.04);
   assert.ok(manager.minePursuits.get(fighter).lastSeen.equals(remembered));
   assert.equal(manager.projectileManager.enemyProjectiles.length, 0);
-  assert.equal(fighter.health, 24);
+  assert.equal(fighter.health, 39);
   const stopped = fighter.mesh.position.clone();
   state.session.advance(1); manager.updateEnemies(1);
   assert.ok(fighter.mesh.position.distanceTo(stopped) < 1e-6);
@@ -215,7 +247,7 @@ test('authored enemies spawn once even beyond 50 units and within the old 5-unit
   const position = fighter.mesh.position.clone();
   for (const where of [v(500, 500, 500), v(16, 12, 0), v(0, 0, 4)]) {
     player.position.copy(where); manager.updateEnemies(0);
-    assert.ok(manager.enemies.includes(fighter)); assert.equal(fighter.health, 20);
+    assert.ok(manager.enemies.includes(fighter)); assert.equal(fighter.health, 35);
     assert.ok(fighter.mesh.position.equals(position));
     assert.equal(fighter.lastFireTime, 1234); assert.equal(fighter.fireRate, 3456);
   }

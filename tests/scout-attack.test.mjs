@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import EnemyManager from '../src/js/entities/EnemyManager.js';
 import GameState from '../src/js/core/GameState.js';
-import { presentScoutAttack } from '../src/js/entities/ScoutAttack.js';
+import { presentScoutAttack, createScoutAttack } from '../src/js/entities/ScoutAttack.js';
+import { MINE_SCOUT } from '../src/js/entities/EnemyTactics.js';
 import disposeObject from '../src/js/utils/disposeObject.js';
 
 function fixture(t, onSound = () => {}) {
@@ -74,6 +75,25 @@ test('scout cue transforms are bounded by the existing collision body and do not
   for (let i = 0; i < 1000; i++) presentScoutAttack(enemy, time);
   assert(wings.scale.equals(scale)); assert(wings.scale.x <= 1);
   enemy.scoutAttack.phase = 'approach'; presentScoutAttack(enemy, time); assert.equal(wings.scale.x, 1);
+});
+
+test('authored scouts commit from eight units, lunge at fourteen units per second, and recover sooner without repeating contact damage', t => {
+  const { enemy, state, player, until, tick } = fixture(t);
+  enemy.mesh.position.set(0, 0, -7.5); enemy.scoutAttack = createScoutAttack(state.session.timeMs, true);
+  until(() => enemy.scoutAttack.phase === 'windup'); const warningAt = state.session.timeMs;
+  for (let frame = 0; frame < 25; frame++) tick(); assert.equal(enemy.scoutAttack.phase, 'windup');
+  until(() => enemy.scoutAttack.phase === 'lunge'); assert.ok(state.session.timeMs - warningAt >= MINE_SCOUT.windupMs - 1e-6);
+  const before = enemy.mesh.position.clone(); tick();
+  assert.ok(Math.abs(enemy.mesh.position.distanceTo(before) * 60 - 14) < 1e-6);
+  until(() => state.playerHealth < 100); assert.equal(state.playerHealth, 95); assert.equal(enemy.isActive, true);
+  const hitAt = state.session.timeMs;
+  for (let frame = 0; frame < 35; frame++) tick(); assert.equal(state.playerHealth, 95);
+  until(() => enemy.scoutAttack.phase === 'approach'); assert.ok(state.session.timeMs - hitAt < 750);
+  player.position.set(4, 0, 0);
+  until(() => enemy.scoutAttack.phase === 'lunge');
+  const direction = enemy.scoutAttack.direction.clone(); player.position.x += 5;
+  until(() => enemy.scoutAttack.phase === 'recover'); assert.equal(state.playerHealth, 95);
+  assert.ok(enemy.scoutAttack.direction.equals(direction), 'faster lunges still commit and can be evaded');
 });
 
 test('a scout damage callback that replaces the run cannot continue the old attack or damage the replacement', t => {

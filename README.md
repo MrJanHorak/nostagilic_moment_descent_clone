@@ -1,12 +1,14 @@
 # DESCENDED - Zero Gravity Shooter
 
-> **Project status (October 22, 2026):** **[M1](docs/M1_ACCEPTANCE.md), [M3](docs/M3_ACCEPTANCE.md) and [M4's functional workflow](docs/M4_ACCEPTANCE.md) are accepted.** Four authored campaign missions, the local designer, My Levels and mobile fighters are implemented. The October 22 review passed scoped lint/types, all 485 unit/simulation tests and the production build. Hosted CI was owner-confirmed October 18; latest-revision full browser verification and broader M2 hardware acceptance remain open. The latest focused Intel GPU captures record p95 16.7–16.8 ms; see [fighter verification](docs/FIGHTER_MOVEMENT.md#verification) for their limits. Start with the [current roadmap](docs/ROADMAP.md) and [handoff](docs/progress/NEXT_SESSION.md).
+> **Project status (October 22, 2026):** **[M1](docs/M1_ACCEPTANCE.md), [M3](docs/M3_ACCEPTANCE.md) and [M4's functional workflow](docs/M4_ACCEPTANCE.md) are accepted.** Four campaign missions, the local designer, My Levels and Crossfire Relay are implemented. Authored enemies use [stronger tactics](docs/ENEMY_PRESSURE.md), with [increased durability, equipment salvage and usable special weapons](docs/SALVAGE_AND_WEAPONS.md). Scoped lint/types, all 507 unit/simulation tests and production build pass. Hosted CI was owner-confirmed October 18; latest-revision full browser verification and broader M2 hardware acceptance remain open. The last pre-pressure hardware capture recorded p95 16.7–16.8 ms; see [fighter verification](docs/FIGHTER_MOVEMENT.md#verification) for limits. Start with the [roadmap](docs/ROADMAP.md) and [handoff](docs/progress/NEXT_SESSION.md).
 
 **Try the designer:** run `npm run dev` and open `/editor.html`, or choose **LEVEL DESIGNER** from the main menu. Click a wall/item to select it; right-click to style a face, edit an opening/door or place content at that point. Right-drag still pans; Shift+F10 or **Actions** opens the keyboard menu. Use **Playtest level** for first-person flight, then Esc and **Return to editor**. Drafts save locally and offer Restore/Discard on reload; export JSON for a portable backup. See [the UX/authoring guide](docs/progress/M4_DESIGNER_UX.md).
 
 **Play and share your own levels:** open **MY LEVELS** from the main menu or mission selector to import, play, rename, export or delete a level. The designer's **Save to My Levels** adds the current mine; opening it from the library lets you update it or **Save a copy**. Levels stay in this browser; export JSON for a portable backup. See [the user level guide](docs/USER_LEVELS.md).
 
-**Mobile fighters:** guards in authored mines now strafe, change height and maintain firing distance between attacks. Their amber warnings and blue recovery windows remain opportunities to counterattack. Try **SELECT MISSION → Practice & prototypes → Fighter Proving Ground**, a four-room loop with two fighters and a flank route. See [the fighter guide](docs/FIGHTER_MOVEMENT.md).
+**Enemy pressure:** authored fighters now pursue/reposition at 4.8 units/s and fire every 1.45–1.75 seconds, with 450 ms amber warnings and 400 ms blue recovery windows. Scouts pursue at 5.4 units/s and lunge at 14. Nearby robots can respond to an ally's actual sighting. Try **SELECT MISSION → Practice & prototypes → Fighter Proving Ground** or **Crossfire Relay**. See [pressure rules](docs/ENEMY_PRESSURE.md) and [the fighter guide](docs/FIGHTER_MOVEMENT.md).
+
+**Mixed encounter:** **SELECT MISSION → Practice & prototypes → Crossfire Relay** pits a ranged fighter and side-passage scout against direct or overhead approaches. Clear both, activate the relay and return to arrival; the green loop holds optional supplies and an unlocked shortcut. See [the route and balance checklist](docs/CROSSFIRE_RELAY.md).
 
 **Lava, water and scout attacks:** Vector Foundry and Nightfall Reactor now include animated lava floors; Nightfall also has safe coolant water. Fly above lava to avoid shield damage. In the editor, choose a face and **lava** or **water** under **Surface pattern** to author these in format v9. These are solid surfaces; submerged flight is future work. Scouts warn, lunge in a committed direction, then retreat/recover for return fire. See [the environment and mission roadmap](docs/ENVIRONMENT_AND_MISSION_ROADMAP.md).
 
@@ -99,7 +101,7 @@ Signal Breach has eleven authored spaces; Vector Foundry and Nightfall Reactor h
 
 ### Practice and custom missions
 
-The collapsed **Practice & prototypes** section retains Flight Training Arena, Arena Escape, Mine Link, Relay Gate, Deep Relay and Fighter Proving Ground. The level designer and My Levels use the same validated documents as the campaign. The old finite segment levels are removed; the internal endless generator remains only for existing tests/diagnostics.
+The collapsed **Practice & prototypes** section retains Flight Training Arena, Arena Escape, Mine Link, Relay Gate, Deep Relay, Fighter Proving Ground and Crossfire Relay. The level designer and My Levels use the same validated documents as the campaign. The old finite segment levels are removed; the internal endless generator remains only for existing tests/diagnostics.
 
 ## Getting Started
 
@@ -217,7 +219,7 @@ Web Audio supplies synthesized effects and an original 40-second stereo mission 
 
 ## Future Enhancements
 
-The [roadmap](docs/ROADMAP.md#next-work-queue) prioritizes a mixed scout/fighter balance encounter, one finished heavy-enemy role, broader performance/release verification, and campaign persistence/user campaigns. Rescue objectives, map controls/markers and further editor usability follow. Complete special-weapon mechanics require explicit implementation and tests. Multiplayer, mobile controls and VR require separate scope.
+The [roadmap](docs/ROADMAP.md#next-work-queue) prioritizes human balance feedback for Crossfire Relay, one finished heavy-enemy role, broader performance/release verification, and campaign persistence/user campaigns. Rescue objectives, map controls/markers and further editor usability follow. Complete special-weapon mechanics require explicit implementation and tests. Multiplayer, mobile controls and VR require separate scope.
 
 ## Credits and Acknowledgments
 

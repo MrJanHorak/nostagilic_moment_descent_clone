@@ -11,9 +11,9 @@ Updated October 22, 2026. Current campaign and combat summary, followed by propo
 | Nightfall Reactor | 7 / 7 | 2 scouts in coolant works/reactor | Both scouts | Two ammo and two repair pickups |
 | Asterion Deepworks | 48 / 56 | 2 scouts, 2 fighters, 1 bomber, 1 destroyer, 1 boss | Transfer scout, pump fighter, vault fighter; then the interlocked reactor | Ten ammo and ten repair pickups, including hidden stores |
 
-All four use pulse damage 10. Scout health is 10: a normal pulse hit defeats a scout. Scouts pursue, warn, commit to a straight strike and recover/withdraw; one strike deals 5 damage and leaves the scout alive for return fire. They do not fire projectiles or suicide on contact. A 25-health fighter takes three normal campaign pulse hits. The separate Fighter Proving Ground uses pulse damage 5, so its guards take five hits. The first three campaign missions start with 80 rounds; Deepworks starts with 120.
+All four use pulse damage 10. Authored scout health is now 20: two normal pulse hits defeat a scout. Scouts pursue, warn, commit to a straight strike and recover/withdraw; one strike deals 5 damage and leaves the scout alive for return fire. They do not fire projectiles or suicide on contact. A 40-health authored fighter takes four normal campaign pulse hits. Fighter Proving Ground and Crossfire use pulse damage 5, so fighters take eight hits and scouts four. The first three campaign missions start with 80 rounds; Deepworks starts with 120. Shot kills now leave [equipment-specific salvage](SALVAGE_AND_WEAPONS.md), including usable laser/missile/plasma unlocks and ammunition.
 
-The runtime contains five distinct models, health/speed/resistance values, firing ranges and projectile variants. Authored-mine movement respects physical walls/closed doors and routes toward a last observed position. Fighters additionally choose bounded lateral/elevation/spacing targets in the player's room; they brace during warning/recovery. See [mobile fighters](FIGHTER_MOVEMENT.md). The heavier ranged types still share broad approach/hold behavior in authored mines; their legacy type-specific movement lives in a separate non-mine path. Hostile projectiles currently use power 10 rather than the enemy definition's damage value. Bomb visuals are not a completed area-denial/blast contract. Campaign geometry supports loops, vertical routes, affine ramps and supplies: Signal Breach has two independent graph cycles, Nightfall one, Deepworks nine; Vector Foundry is a tree.
+The runtime contains five distinct models, health/speed/resistance values, firing ranges and projectile variants. Authored-mine movement respects physical walls/closed doors and routes toward observed/reported positions. Fighters choose bounded lateral/elevation/spacing targets in the player's room and brace during warning/recovery. The [pressure pass](ENEMY_PRESSURE.md) increases fighter/scout movement, firing pressure and bounded nearby sighting reports after owner feedback. The heavier ranged types still share broad approach/hold behavior; their legacy type-specific movement lives in a separate non-mine path. Hostile projectiles use power 10 rather than the enemy definition's damage value. Bomb visuals are not a completed area-denial/blast contract. Signal Breach has two independent graph cycles, Nightfall one, Deepworks nine; Vector Foundry is a tree.
 
 Evidence: [campaign documents](../src/js/core/levels/documents), [enemy definitions](../src/js/entities/EnemyTypes.js), [perception/navigation/combat](../src/js/entities/EnemyManager.js), [campaign compilation](../src/js/core/levels/Campaign.js).
 
@@ -48,13 +48,15 @@ Introduce roles individually before combining them. Distinguish them by silhouet
 
 Retain collision and sight/memory guarantees. Dodging should require local perception, have a reaction delay and limited duration, and avoid walls/closed doors. A robot should not evade every shot perfectly or track an unseen player through walls. New behavior needs deterministic tests for warning/attack/recovery timing and route safety.
 
-The fighter cycle braces during a 650 ms amber charge warning, emits one shot with a short white cannon/ring flash, then cools blue for 850 ms. A short synthesized chirp warns once per charge. Lost visibility/range/alignment cancels the shot; returning to sight requires a fresh full wind-up. The existing 2–3 second firing interval and 10-damage projectile are retained. Pause freezes it and no scheduled attack survives death/restart. Later fighter movement adds strafing and spacing between these stationary windows, preserving the counterattack opportunity.
+The authored fighter cycle now braces during a 450 ms amber warning, fires one shot with a short white flash, then cools blue for 400 ms. A chirp warns once per charge. Lost visibility/range/alignment cancels the shot; reacquisition requires a fresh full warning. Shots repeat every 1.45–1.75 seconds at 18 units/s and retain ten damage. Pause/death/restart own all timing. Strafing and spacing occur between stationary windows. The older 650/850 ms, 2–3-second cycle remains in non-document training; verification below describes that original cue checkpoint.
 
 The pass passes lint/types, all 416 unit/simulation cases and build, plus four browser cases including ordinary-input cue/shot/recovery capture, combat, extraction/replay, and production victory/death/reboot. See [player-experience verification](PLAYER_EXPERIENCE.md#fighter-attack-readability) and the [browser report](progress/fighter-attack-browser-check.json).
 
-## A concrete next encounter sequence
+## Mixed encounter: Crossfire Relay
 
-Build a small new encounter mission or revise one mission as a deliberate balance pass:
+[Crossfire Relay](CROSSFIRE_RELAY.md) now implements a standalone mixed encounter under Practice & prototypes: nine spaces, two loops, a fighter guarding the direct approach, a scout entering from the side, an overhead flank, optional supplies and a relay-controlled return shortcut. The campaign remains four missions. Its ordinary-input browser routes record automated observations; the linked human checklist is the next balance task.
+
+Use this sequence when playtesting and refining its pacing:
 
 1. **Orient:** a safe arrival with a distinct landmark, visible route choice and initial supplies. Show the eventual destination from a useful angle when geometry permits.
 2. **Teach incoming fire:** one existing fighter across a passage, with a wall return the player can retreat behind. Ensure the fight works at the fighter's actual firing range and the enemy body fits its route.
@@ -67,11 +69,11 @@ Keep quiet travel, a supply/recovery beat, and a landmark between demanding figh
 
 ## Suggested build order
 
-1. **Next:** author and tune one mixed scout/fighter encounter around a loop and vertical approach. Use the implemented attack cues and bounded fighter movement; cover ordinary input/fire, extraction and restart, and collect human balance feedback.
+1. **Next:** recheck [durability and salvage](SALVAGE_AND_WEAPONS.md) after the owner found the more aggressive enemies too easy to kill. Compare direct/overhead approaches with and without the laser, shots, shields and retreat/supply use; preserve ordinary-input combat/extraction/replay checks. Faster pursuit and local reports mean previously isolated enemies can now join the fight.
 2. Finish bomber area denial with a warning, committed attack, explicit damage/blast rules and recovery before combining heavy roles.
 3. Broaden real-time hardware captures and run full release/browser regressions on the resulting revision; inspect CI group duration as the suite grows.
 4. Follow the [roadmap](ROADMAP.md#next-work-queue) for campaign persistence/user campaigns. [Rescue objectives](ENVIRONMENT_AND_MISSION_ROADMAP.md) remain a later distinct mission-system option.
 
-Already delivered: Signal Breach's ranged/overhead encounter; scout strikes and mobile fighters; Nightfall's 60-second escape; Vector Foundry's relay field; Deepworks' destructible reactor and 120-second escape. These should not re-enter the backlog as missing features.
+Already delivered: Signal Breach's ranged/overhead encounter; scout strikes and mobile fighters; Crossfire Relay's mixed practice encounter; Nightfall's 60-second escape; Vector Foundry's relay field; Deepworks' destructible reactor and 120-second escape. These should not re-enter the backlog as missing features.
 
 Record kills/shots, minimum shields, optional-route use and completion time during playtesting. Set balance from those results rather than multiplying enemy counts or health across the campaign. Separate weapon energy/secondary fire and a rotatable marked automap remain useful cockpit-system follow-ups, but are separate from this visual/encounter review.

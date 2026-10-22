@@ -1,0 +1,357 @@
+{
+  "capturedAt": "2026-10-22T20:14:36.195Z",
+  "scope": "Authored scout/fighter pressure; functional software-rendered browser checks, controlled application clock and ordinary keyboard input. No human difficulty or hardware acceptance claim.",
+  "browserRuns": [
+    {
+      "command": "npx playwright test --project=encounters --project=production --grep \"Crossfire Relay|mobile fighter drill|Signal Breach ranged fight|keyboard mission victory\" --global-timeout=600000",
+      "stats": {
+        "startTime": "2026-10-22T20:01:12.295Z",
+        "duration": 205677.586,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input",
+          "project": "production",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 60693,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 21868,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 24632,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 77300,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+          "project": "encounters",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 13152,
+              "retry": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command": "npx playwright test --project=encounters --project=production --grep \"Crossfire Relay|mobile fighter drill|Signal Breach ranged fight|keyboard mission victory\" --global-timeout=600000",
+      "stats": {
+        "startTime": "2026-10-22T20:06:36.393Z",
+        "duration": 224815.642,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input",
+          "project": "production",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 26206,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 20358,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "unexpected",
+          "results": [
+            {
+              "status": "failed",
+              "durationMs": 22332,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 87793,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 61135,
+              "retry": 0
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "command": "npx playwright test --project=encounters --project=production --grep \"Crossfire Relay direct|Signal Breach ranged fight\" --global-timeout=360000",
+      "stats": {
+        "startTime": "2026-10-22T20:10:56.734Z",
+        "duration": 156625.508,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input",
+          "project": "production",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 90651,
+              "retry": 0
+            }
+          ]
+        },
+        {
+          "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+          "project": "encounters",
+          "status": "expected",
+          "results": [
+            {
+              "status": "passed",
+              "durationMs": 60988,
+              "retry": 0
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "corrections": [
+    "Legacy timing checks now use authored 450 ms wind-up and 400 ms recovery.",
+    "The Signal Breach route must deal with a scout responding to a nearby fighter, instead of ignoring it during a slow survey lap.",
+    "The direct controller engages from doorway cover rather than flying onto a pursuing fighter and waiting for an enemy that was already rammed.",
+    "The fighter drill clears the responding second guard before taking the four-room survey lap.",
+    "If the scout starts outside the report radius, the Signal Breach controller enters the hall to reveal it before waiting for its wind-up.",
+    "The direct Crossfire controller prioritizes the ranged guard from doorway cover before aiming at the approaching scout."
+  ],
+  "approaches": [
+    {
+      "approach": "overhead",
+      "shots": 10,
+      "minimumShields": 65,
+      "completionSeconds": 152.50000000000279,
+      "rooms": [
+        "arrival",
+        "arrival-shaft",
+        "overhead-gallery",
+        "hall-shaft",
+        "crossfire-hall",
+        "scout-passage",
+        "return-passage",
+        "supply-bay"
+      ],
+      "scoutPhases": [
+        "approach",
+        "windup",
+        "lunge"
+      ],
+      "fighterPhases": [
+        "idle",
+        "windup",
+        "recover"
+      ],
+      "evidence": "software renderer, controlled application clock, ordinary keyboard input with read-only diagnostics; not human balance or hardware performance"
+    },
+    {
+      "approach": "direct",
+      "shots": 10,
+      "minimumShields": 5,
+      "completionSeconds": 122.85000000001287,
+      "rooms": [
+        "arrival",
+        "approach",
+        "crossfire-hall",
+        "scout-passage",
+        "return-passage",
+        "supply-bay"
+      ],
+      "scoutPhases": [
+        "approach",
+        "windup",
+        "lunge",
+        "recover"
+      ],
+      "fighterPhases": [
+        "idle",
+        "windup",
+        "recover"
+      ],
+      "evidence": "software renderer, controlled application clock, ordinary keyboard input with read-only diagnostics; not human balance or hardware performance"
+    }
+  ],
+  "finalCases": [
+    {
+      "title": "development: Signal Breach ranged fight, overhead flank, extraction and clean restart with ordinary input",
+      "project": "production",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 90651,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "production: keyboard mission victory, replay, enemy-fire death, reboot and menu",
+      "project": "production",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 20358,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: Crossfire Relay direct approach, mixed combat, supply loop, extraction and replay use ordinary input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 60988,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: Crossfire Relay overhead approach, mixed combat, supply loop, extraction and replay use ordinary input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 87793,
+          "retry": 0
+        }
+      ]
+    },
+    {
+      "title": "development: mobile fighter drill warns, damages, pauses, clears, flies the loop and replays with native input",
+      "project": "encounters",
+      "status": "expected",
+      "results": [
+        {
+          "status": "passed",
+          "durationMs": 61135,
+          "retry": 0
+        }
+      ]
+    }
+  ],
+  "verification": {
+    "command": "npm run verify",
+    "passed": true,
+    "lintModules": 82,
+    "unitTests": 497,
+    "types": true,
+    "build": true
+  },
+  "tuning": {
+    "fighterSpeed": 4.8,
+    "fighterWarningMs": 450,
+    "fighterRecoveryMs": 400,
+    "fighterIntervalMs": [
+      1450,
+      1750
+    ],
+    "fighterProjectileSpeed": 18,
+    "scoutPursuitSpeed": 5.4,
+    "scoutLungeSpeed": 14,
+    "reportRecipientLimit": 4,
+    "reportRange": 24,
+    "reportIntervalMs": 1200,
+    "healthDamageChanged": false
+  },
+  "finalResult": "Five distinct targeted browser scenarios passed across completed runs after correcting passive-route assumptions; no retries. Full browser/hosted/hardware acceptance remains separate.",
+  "finalSourceHashes": {
+    "src/js/entities/EnemyTactics.js": "a9495f784aea678e40110f69087ab7aff69f42531e1fa82dc00eac3cba174a35",
+    "src/js/entities/EnemyManager.js": "f366c267a8488adb502d86169a4d7c1b51e2f62d5050c46d04dd51aa4ca9bcd8",
+    "src/js/entities/FighterMovement.js": "f16e5fb8c261350701adb7d18d6a8b19c015e875789c2f7171f4a35d1c1e834a",
+    "src/js/entities/FighterAttack.js": "f05a36a0395bf901239f7da70557f52b736a1b1c07bee6572b23290027580daf",
+    "src/js/entities/ScoutAttack.js": "0d7e101227fd285ab4ea4aea82c046dd0b3979279221072ffd551d1058c6b44c",
+    "src/js/entities/ProjectileManager.js": "44c65311bec0b1cb79889329f8fbee1597d218b0ed3888ea39c7201d1321cb15",
+    "src/js/combatContracts.d.ts": "33cc879571408a4f46c674b4ae79f507e21bcfac9c85a1eabcd9f3b49e747265",
+    "tests/fighter-movement.test.mjs": "40b98f20931d660594db89c41e50415c1a5e12fa42a647c183d806de69cd5cbc",
+    "tests/fighter-attack.test.mjs": "a0a1f2e6f7e4ee4feb6b602a55665220fc3994522913c780dac93c7a202a0f5c",
+    "tests/scout-attack.test.mjs": "5ac63520fe1b5622f92858630fdd2a91c933f7dcc6b86ae610ada7a9a18cf237",
+    "tests/room-navigation.test.mjs": "3a66977845a1e75d363e513ad542a43123b85dbd496ba492a1e49c3b14fe327e",
+    "tests/crossfire-relay.test.mjs": "5dd5c9197dc56141f81dc1612d9419778dddbc8407047f76e0e8ff024200f584",
+    "tests/browser/crossfire-relay.spec.js": "27c5b8026b766a58fbef4fc2a2a4e16789a309a80dce99c7fb573faa7a0fffdd",
+    "tests/browser/fighter-movement.spec.js": "422bdf68650863e180e37660d4e52330c335196b8fbc563ccfd9ea6dd773f94b",
+    "tests/browser/experience.spec.js": "7a3685c893162907933c9a055f6de8ad335254021afcf0f6a27611872d092e41"
+  },
+  "sourceNote": "Final source includes a comment-only description update after browser checks; executable behavior was unchanged."
+}

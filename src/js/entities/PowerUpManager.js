@@ -2,9 +2,22 @@
 import * as THREE from 'three';
 import { hasLineOfSight } from '../utils/combatTrace.js';
 import { AUTHORED_PICKUPS } from '../core/levels/document/LevelContent.js';
+import { SALVAGE_WEAPONS } from './EnemySalvage.js';
 
 // Power-up type definitions
 export const powerupTypes = [
+  ...Object.entries(SALVAGE_WEAPONS).map(([weapon, reward]) => ({
+    name: reward.pickup, size: 0.5, color: reward.color, duration: 0,
+    canCollect: state => !state.weaponInventory[weapon].unlocked || state.weaponInventory[weapon].ammo < reward.capacity,
+    effect(state, ui) {
+      const inventory = state.weaponInventory[weapon], first = !inventory.unlocked, before = inventory.ammo;
+      inventory.unlocked = true;
+      inventory.ammo = Math.min(reward.capacity, inventory.ammo + reward.ammo);
+      state.recordWeaponPickup(weapon);
+      ui.updateWeaponUI();
+      ui.showMessage(first ? `${weapon.toUpperCase()} SALVAGED · ${reward.key} TO SELECT` : `${weapon.toUpperCase()} AMMO +${inventory.ammo - before}`, 3000, `#${reward.color.toString(16).padStart(6, '0')}`);
+    },
+  })),
   {
     ...AUTHORED_PICKUPS.health,
     canCollect: (state) => state.playerHealth < state.maxPlayerHealth,

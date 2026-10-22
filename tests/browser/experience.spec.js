@@ -2,6 +2,7 @@ import { test as base, expect } from '@playwright/test';
 import { openClockedGame, advanceUntil } from '../helpers/browser-clock.mjs';
 import { FlightController } from '../helpers/browser-flight.mjs';
 import { aimAt, faceForward, readFlight } from '../helpers/browser-aim.mjs';
+import { MINE_FIGHTER } from '../../src/js/entities/EnemyTactics.js';
 
 const test = base.extend({
   cleanBrowser: [async ({ page }, use) => {
@@ -40,7 +41,8 @@ test('production: new campaign is primary; camera, headlights and HUD persist an
   await page.locator('#select-level-btn').click();
   for (const title of ['Signal Breach', 'Vector Foundry', 'Nightfall Reactor']) await expect(button(page, title)).toBeVisible();
   await expect(button(page, 'Arena Escape')).toBeHidden(); await expect(page.getByRole('button', { name: /Legacy level/ })).toHaveCount(0);
-  await expect(page.locator('.mission-library details button')).toHaveCount(6);
+  await expect(page.locator('.mission-library details button')).toHaveCount(7);
+  await expect(button(page, 'Crossfire Relay')).toBeHidden();
   await expect(button(page, 'ENDLESS MODE')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('new-mission-library.png'), fullPage: true });
   await button(page, 'Signal Breach').press('Enter'); await page.clock.fastForward(100);
@@ -264,20 +266,20 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   };
   await advanceUntil(page, async () => {
     const { time, fighter } = await attack();
-    return fighter?.phase === 'windup' && time - fighter.since >= 300 && time - fighter.since < 550;
+    return fighter?.phase === 'windup' && time - fighter.since >= 200 && time - fighter.since < MINE_FIGHTER.windupMs;
   }, { ticks: 100, message: 'The fighter must visibly warn before firing' });
   const charge = await attack(), shieldBeforeRelease = parseInt(await page.locator('#health-percentage').textContent(), 10);
   await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('fighter-windup.png'), animations: 'disabled' });
   await advanceUntil(page, async () => {
     const { time, fighter } = await attack();
-    return fighter?.phase === 'recover' && fighter.firedAt >= charge.fighter.since + 650 && time - fighter.firedAt < 120;
+    return fighter?.phase === 'recover' && fighter.firedAt >= charge.fighter.since + MINE_FIGHTER.windupMs && time - fighter.firedAt < 120;
   }, { ticks: 15, message: 'A full wind-up must release one shot with a firing flash' });
   await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('fighter-fire.png'), animations: 'disabled' });
   await advanceUntil(page, async () => {
     const { time, fighter } = await attack();
-    return fighter?.phase === 'recover' && time - fighter.since >= 200 && time - fighter.since < 700;
+    return fighter?.phase === 'recover' && time - fighter.since >= 150 && time - fighter.since < MINE_FIGHTER.recoveryMs;
   }, { ticks: 10, message: 'Firing must expose a visible recovery window' });
   await page.waitForTimeout(300);
   await page.screenshot({ path: testInfo.outputPath('fighter-recovery.png'), animations: 'disabled' });
@@ -289,11 +291,19 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   await page.screenshot({ path: testInfo.outputPath('signal-ranged-encounter.png'), animations: 'disabled' });
   await advanceUntil(page, async () => (await readFlight(page)).fighters.find(enemy => enemy.id === 'hall-fighter')?.phase === 'windup', { ticks: 100 });
   await aimAt(page, state => state.fighters.find(enemy => enemy.id === 'hall-fighter')?.position);
-  for (let shot = 0; shot < 3; shot++) await page.keyboard.press('f');
+  for (let shot = 0; shot < 4; shot++) await page.keyboard.press('f');
   for (let tick = 0; tick < 18; tick++) await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 1/2');
   await expect(page.locator('#score-display')).toHaveText('100');
-  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 76');
+  await expect(page.locator('#cockpit-instruments')).toContainText('1 pulse: 75');
+  // Nearby allies now pursue a reported sighting. Defeat the responding scout
+  // before spending time touring the overhead route; it no longer stays idle.
+  // Enter the hall if it was outside the fighter's local report radius.
+  await faceForward(page); await fly(page, 2, -28);
+  await advanceUntil(page, async () => (await readFlight(page)).scouts.some(enemy => enemy.phase === 'windup'), { ticks: 120 });
+  await aimAt(page, state => state.scouts[0]?.position); await page.keyboard.press('f'); await page.keyboard.press('f');
+  await advanceUntil(page, async () => !(await readFlight(page)).scouts.length, { ticks: 30 });
+  await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 2/2');
   await faceForward(page);
   // Read flight diagnostics only; all movement, fire and interaction use normal keys.
   for (const [axis, target] of [[2, 0], [1, 21], [2, -16]]) await fly(page, axis, target);

@@ -28,7 +28,7 @@ The library re-reads saved data before mutations. If another tab changed or dele
 
 ## Next steps
 
-This is the first step toward user campaigns. Custom campaign ordering/briefings, campaign bundle import/export and saved campaign progression are not implemented yet. Built-in missions already advance through the completion screen. [Mobile fighters and their proving ground](FIGHTER_MOVEMENT.md) are implemented; the next gameplay task is mixed scout/fighter encounter tuning. See the [current roadmap](ROADMAP.md#next-work-queue) for priorities.
+This is the first step toward user campaigns. Custom campaign ordering/briefings, campaign bundle import/export and saved campaign progression are not implemented yet. Built-in missions already advance through the completion screen. [Mobile fighters](FIGHTER_MOVEMENT.md) and the [Crossfire Relay mixed encounter](CROSSFIRE_RELAY.md) are implemented; human balance feedback is the next encounter task. See the [current roadmap](ROADMAP.md#next-work-queue) for priorities.
 
 ## Verification
 
