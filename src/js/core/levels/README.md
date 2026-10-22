@@ -8,6 +8,8 @@ Use the editor's **Open example** to inspect Signal Breach. Select a wall or ite
 
 See [the document format](../../../../docs/LEVEL_DOCUMENT_FORMAT.md), [editor design](../../../../docs/LEVEL_EDITOR_DESIGN.md), and [current player experience](../../../../docs/PLAYER_EXPERIENCE.md).
 
-Flight Training Arena, Arena Escape, Mine Link, Relay Gate and Deep Relay remain available in **Practice & prototypes** for testing and practice. These are finite fixtures. `LevelBlueprint.js` and `SegmentTypes.js` support the internal endless generator and its regression checks; do not use them to author new campaign missions. Endless mode is no longer a mission-library choice.
+Flight Training Arena, Arena Escape, Mine Link, Relay Gate, Deep Relay and Fighter Proving Ground remain available in **Practice & prototypes** for testing and practice. These are finite fixtures; the proving ground is a four-room loop with two mobile fighters and five-damage pulse fire. `LevelBlueprint.js` and `SegmentTypes.js` support the internal endless generator and its regression checks; do not use them to author new campaign missions. Endless mode is no longer a mission-library choice.
+
+Use **Save to My Levels** to keep an authored mine in the browser, **Save a copy** for an independent entry, and JSON export/import for sharing. See [the library guide](../../../../docs/USER_LEVELS.md). Built-in campaign advancement exists; saved campaign progress and custom campaign bundles remain future work.
 
 Vector Foundry’s lower lift hatch is protected by a relay-controlled force field; Nightfall Reactor’s shutdown starts a timed return to arrival.

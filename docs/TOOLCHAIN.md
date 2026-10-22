@@ -1,51 +1,58 @@
 # Runtime, dependencies and verification
 
-Baseline established October 15, 2026.
+Updated October 22, 2026. Versions below come from repository configuration; they are the project's pinned baseline, not a claim about the newest upstream releases.
 
-- Primary runtime: **Node 24.22.0**, pinned in `.nvmrc` and Netlify configuration.
-- Primary package manager: **npm 11.21.1**, declared in `package.json` and Netlify configuration. CI installs the declared version explicitly; the `packageManager` field alone does not change a local npm installation.
-- Compatibility range: Node 22.14+ within 22.x, or Node 24.x; npm 11.2+ within 11.x. These are compatibility floors, not a recommendation to keep old security patch levels. Prefer the exact primary baseline.
-- Runtime/build/browser dependencies: Vite **6.4.4**, Three.js **0.176.0**, and Playwright Test **1.64.1**. Development checks use TypeScript **7.0.2**, `@types/three` **0.176.0**, ESLint **10.12.0**, `@eslint/js` **10.0.1**, and `globals` **17.13.0**. Only Three.js is a production dependency. Exact direct versions and the committed lockfile make changes reviewable. `.npmrc` preserves exact versions on future saves and rejects unsupported engine ranges.
+- Node **24.22.0**: `.nvmrc` and Netlify configuration.
+- npm **11.21.1**: `package.json` and Netlify configuration. CI explicitly installs the declared version; `packageManager` alone does not select a local installation.
+- Declared compatibility: Node `^22.14.0 || ^24.0.0`, npm `>=11.2.0 <12`. Prefer the pinned baseline for reproducible checks.
+- Three.js **0.176.0**, Vite **6.4.4**, Playwright Test **1.64.1**; TypeScript **7.0.2**, `@types/three` **0.176.0**, ESLint **10.12.0**, `@eslint/js` **10.0.1**, `globals` **17.13.0**. Only Three.js is a production dependency. Exact versions and the lockfile are authoritative.
 
 ## Local setup
 
-Install/select Node 24.22.0 using your normal Node installation or version manager (`nvm install` / `nvm use` with a compatible manager). Then select the declared npm version:
+Select the pinned Node version using your normal installer/version manager, then:
 
 ```sh
 npm install --global npm@11.21.1
 npm ci --no-audit
 npm run verify
 npm run audit:deps
+npm run browser:install
+npm run test:browser
 ```
 
-Use `npm ci` for an existing checkout. It replaces `node_modules` from the lockfile, fails on manifest/lock mismatch, and does not update locked versions. Preserve optional platform dependencies; Rollup/esbuild need the matching native binary. `npm run verify` runs scoped lint, strict JSDoc type checking, all 254 unit/simulation/metrics tests and the production build, stopping on failure. See the [CI reliability checkpoint](progress/M2_CI_RELIABILITY.md) for the 36 checked runtime modules and limits; this does not check all legacy source. The separate audit includes development dependencies and fails at moderate severity or above; network failures also fail that step. `npm run browser:install` downloads Chromium; `npm run test:browser` builds and runs the nine browser checks. `npm run profile:arena` runs a separate hardware benchmark; see the [profiling checkpoint](progress/M2_PERFORMANCE.md).
+`npm ci` replaces `node_modules` from the lockfile and fails on manifest/lock mismatch. Preserve optional platform dependencies: Rollup/esbuild require matching native binaries. `.npmrc` preserves exact saved versions and enforces engine constraints.
 
-Run `npm run dev` for normal play, `npm run smoke` for the development diagnostics, or `npm run preview -- --host 127.0.0.1` after building for a production preview. See [M1 acceptance](M1_ACCEPTANCE.md) for the owner's Chrome sign-off and the repeatable regression playthrough.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Game and `/editor.html` |
+| `npm run smoke` | Development diagnostics on port 5183 |
+| `npm run build` then `npm run preview -- --host 127.0.0.1` | Production preview |
+| `npm run verify` | Scoped lint, strict JSDoc types, unit/simulation regressions and production build; stops on failure |
+| `npm run audit:deps` | Audit locked production/development dependencies, failing at moderate severity or above |
+| `npm run test:browser` | Production build plus all configured Playwright projects |
+| `npm run profile:arena` | Repeated warmed arena hardware captures |
+| `npm run profile:deepworks -- --renderer=hardware` | Deepworks idle, firing and encounter captures |
 
-Functional browser checks use a 960×540 SwiftShader viewport on both local and hosted runs. The hardware profiler keeps its separate explicit 1280×720 reference size. Browser steering observes simulation frames; it does not depend on short wall-clock input pulses. Set `BROWSER_CPU_SLOWDOWN=4` to exercise Chromium CPU throttling. Resource tests require rendered/settled snapshots and retain measurements before assertions. See [the hosted-failure investigation](progress/M2_CI_RELIABILITY.md); the supplied run failed, so a fresh hosted pass is still required.
+The October 22 review passed 80 runtime modules plus two lint tooling files, strict types, all 485 unit/simulation tests and the production build. `tsconfig.check.json` declares source coverage; lint uses that same JS list. These checks do not cover every source module. The existing large-chunk advisory remains.
 
-The implementation session verified the pinned runtime using temporary npm-exec packages; it did not replace the user's global Node/npm installation. Their existing Node 22.14.0/npm 11.2.0 remains separate from that validation.
+## Browser checks and hardware profiling
+
+`playwright.config.js` declares `production`, `prototypes` and `deep-relay` projects. The production group collects editor and gameplay cases outside the two specifically matched flight groups. Test discovery grows with files; old nine-case counts are historical. After building, a focused run can use `npx playwright test tests/browser/fighter-movement.spec.js --project=production`.
+
+Playwright owns production preview on 5184 and the diagnostic server on 5183. Keep source/build stable during runs. Functional checks use Chromium/SwiftShader at 960×540; many flight/combat cases use a controlled application clock and ordinary keyboard input. These establish behavior, not hardware FPS. `BROWSER_CPU_SLOWDOWN=4` exercises CPU throttling where the harness supports it.
+
+Hardware profilers own port 5185, use real time at 1280×720 and verify the actual renderer. See [arena profiling](progress/M2_PERFORMANCE.md), [Deepworks combat performance](DEEPWORKS_COMBAT_PERFORMANCE.md) and [the latest fighter capture](FIGHTER_MOVEMENT.md#verification). Focused captures do not close broader M2 acceptance. See [the handoff](progress/NEXT_SESSION.md#verification-available) for dated browser/hardware evidence and the October 22 startup-only browser attempt.
 
 ## CI and hosting
 
-`.github/workflows/verify.yml` runs on pushes, pull requests and manual dispatch, on both Ubuntu and Windows. Each job selects `.nvmrc`, installs npm from `packageManager`, performs a clean lockfile install, runs lint/types/tests/build, installs Chromium/platform libraries, runs browser smoke/resource checks, and audits all dependencies. It retains browser reports and measurements for seven days, has read-only repository permissions, and does not deploy. Hosted execution remains unverified until these files are pushed and GitHub runs the workflow.
+`.github/workflows/verify.yml` runs on pushes, pull requests and manual dispatch, on Ubuntu and Windows. Each OS has a contracts/tests/build/audit job. Three separate browser jobs per OS depend on verification; each clean-installs, builds, installs Chromium/platform dependencies and runs one Playwright project. Browser jobs have a 20-minute limit and a 15-minute suite deadline, retain reports for seven days, and use read-only repository permissions. The workflow does not deploy. Inspect the growing production group's duration before adding more long scenarios.
 
-Netlify has matching Node/npm versions declared for its next build. This checkpoint does not publish a deployment. Keep `.nvmrc`, package metadata and Netlify versions consistent when changing the baseline. Netlify's automatic dependency installation uses its own build process; CI/local `npm ci` is the explicit clean-install check.
+The owner reported hosted CI passing October 18, superseding earlier pending-run statements. That confirmation does not establish a hosted pass for every later revision. Historical failure investigations remain in [CI reliability](progress/M2_CI_RELIABILITY.md), [controlled clock](progress/M2_CI_CONTROLLED_CLOCK.md) and [job isolation](progress/M2_CI_JOB_ISOLATION.md).
 
-## Findings and update policy
+Netlify pins matching Node/npm versions for its build. Keep `.nvmrc`, package metadata and Netlify configuration consistent when changing the baseline. Hosted game contents must be checked separately from local source; this documentation update does not establish a deployment.
 
-The initial audit reported **six high-severity dependency packages**: Vite, Rollup, PostCSS, nanoid, picomatch and source-map-js. Several packages had multiple advisories. The patched lockfile has **zero known vulnerabilities** in the October 15 audit, including development dependencies; see [audit evidence](progress/toolchain-audit.json). This is an advisory snapshot, not a guarantee against future findings.
+## Dependency evidence and update policy
 
-Vite's findings affect development-server access/file handling, including Windows paths. The other findings involve build-time parsing, matching, source maps or generated output. These packages are development/build tools, rather than the Three.js runtime shipped with the game, but still warrant patching. Restrict local dev/preview servers to trusted use.
+The October 14 audit found six high-severity dependency packages. The patched October 15 lockfile audit reported zero known vulnerabilities, including development dependencies: [initial patch evidence](progress/toolchain-audit.json), [later contract audit](progress/contracts-dependency-audit.json). These are dated snapshots. The October 22 review did not perform a fresh audit or clean install.
 
-Vite 6.4 is a security-patched maintenance line according to the [official release policy](https://vite.dev/releases). This checkpoint patches within the existing major to avoid mixing security work with a bundler migration. A supported newer Vite major remains a separate follow-up, followed by its own production-browser check. Three.js is unchanged; evaluate its migration separately with visual checks.
-
-For future updates: change one toolchain/rendering dependency family at a time, review the lockfile, clean-install, run verify/audit, and perform the production browser flow. Do not use `npm audit fix --force` as an unattended upgrade policy. npm 11.21.1 currently reports an install-script review warning for esbuild's native-binary setup; the clean install and production build succeeded. No blanket install-script approval has been added.
-
-Useful primary references: [Node releases](https://nodejs.org/en/about/previous-releases), [Vite supported releases](https://vite.dev/releases), [setup-node](https://github.com/actions/setup-node), and [Netlify dependency configuration](https://docs.netlify.com/build/configure-builds/manage-dependencies/).
-
-## Verification and remaining M2 work
-
-On Windows, a clean install with Node 24.22.0/npm 11.21.1 passed, all 89 tests passed, and Vite 6.4.4 built the production game. All 89 tests also passed on the existing Node 22.14.0/npm 11.2.0. The workflow parsed successfully with YAML 2.8.1; this does not prove hosted GitHub execution. The output asset retains the prior filename/hash and approximately 644 kB minified / 162 kB gzip; the existing chunk-size warning remains. The source map changes with the upgraded bundler. No gameplay source changed in this checkpoint.
-
-This records the first M2 toolchain checkpoint. Follow-ups add [browser/resource regressions](progress/M2_BROWSER.md), a [three-run Intel GPU baseline and lighting reduction](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), initial [lint/type contracts](progress/M2_CONTRACTS.md), [saved audio controls](progress/M2_AUDIO_SETTINGS.md), expanded [player/input contracts](progress/M2_PLAYER_CONTRACTS.md), [projectile ownership](progress/M2_PROJECTILE_CONTRACTS.md), [enemy construction/effect ownership](progress/M2_ENEMY_EFFECTS.md), [enemy orchestration/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md), [shared level data/prototype](progress/M2_LEVEL_DOCUMENTS.md), [persistent mine enemies/portal routing](progress/M3_ROOM_NAVIGATION.md), and [relay-controlled doors](progress/M3_RELAY_OBJECTIVE.md). The latest scoped checks, 254 unit/simulation/metrics tests and build pass locally on the pinned toolchain. The final navigation build passed all eight browser cases on October 16. The expanded nine-case relay-build report is linked from the relay checkpoint. CI now allows twenty minutes for installation, verification, browser checks and audit; a successful hosted execution remains unconfirmed. The lockfile is unchanged since the clean install and [audit](progress/contracts-dependency-audit.json), which reported zero known vulnerabilities. The supplied hosted run failed browser checks; [timing/readiness repairs](progress/M2_CI_RELIABILITY.md) await a fresh hosted pass. The hardware frame-time target and broader source contracts/cleanup also remain.
+Upgrade one toolchain/rendering dependency family at a time; inspect the lockfile, clean-install, run verify/audit and production browser checks. Three.js changes also require visual and hardware checks. Check current official support/migration guidance before choosing an upgrade; the pinned Vite line is not a claim of current upstream support. Do not use unattended `npm audit fix --force` as an update policy.

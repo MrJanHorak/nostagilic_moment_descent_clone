@@ -2,6 +2,8 @@
 
 October 19, 2026. The owner confirmed the editor works and authored levels are playable, closing [M4 functional acceptance](M4_ACCEPTANCE.md). This pass addresses presentation and new content.
 
+Status reviewed October 22: this document collects successive feature checkpoints; their verification counts describe those runs. The current campaign has four missions, My Levels is implemented and fighters now reposition between attacks. Use the [roadmap](ROADMAP.md) and [handoff](progress/NEXT_SESSION.md) for current priorities and verification boundaries.
+
 ## Editor workflow
 
 The editor opens with the viewport and selection inspector. **Build tools** opens the optional prefab/numeric placement palette; **Scene browser** opens the optional searchable room/item list. They can be opened together for detailed authoring, or closed to recover canvas space. The scene browser is useful for hidden/overlapping objects and large maps, but direct wall/item selection remains the main workflow. Search matches room IDs, item kinds, relay IDs and containing rooms. F focuses the selection. Right-click or Shift+F10 opens its actions. Panel/search state stays outside the saved level and Undo history.
@@ -46,13 +48,14 @@ This pass passes lint, strict types (66 modules), production build, 17 targeted 
 
 ## Campaign
 
-The mission library leads with three authored shared-document missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors.
+The mission library leads with four authored shared-document missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors. Saved campaign progression is not yet implemented.
 
 | Mission | Layout and objective |
 | --- | --- |
 | Signal Breach | Eleven spaces, a shot-open entry door, concealed repair alcove, ranged fighter on the direct approach, blue overhead route and optional green maintenance loop with a scout. Restore the uplink and unlock the sliding extraction gate. Kills are optional. |
 | Vector Foundry | Seven spaces with a rising affine corridor, ceiling shaft, lava in the upper works and side cache. Restore lift power, climb and activate extraction controls. |
 | Nightfall Reactor | Seven spaces, safe coolant water, reactor lava, a lower loop and optional supply rooms. Clear two guards and coolant bypass, then use upper Reactor shutdown to start a 60-second escape through the lift and lower loop back to arrival. |
+| Asterion Deepworks | Forty-eight spaces, nine loops, three hidden stores, relay fields and gates. Restore three controls, clear three required guards and destroy the interlocked reactor; reach the southern quay within 120 seconds. |
 
 The first encounter pass expands Signal Breach from seven spaces to ten. The fighter takes three normal pulse hits; arrival starts outside its pursuit/fire range, and the arrival doorway provides sightline cover. Two ceiling shafts connect a hazard-marked blue overhead gallery to the signal hall, while the green maintenance scout stays hidden from spawn. The briefing explains the choices. AI, global enemy values and relay/exit requirements are unchanged.
 
@@ -78,7 +81,7 @@ The next combat pass gives fighters a 650 ms wind-up and 850 ms recovery. A part
 
 Losing sight, range or firing alignment cancels the charge. Reacquisition does not bank partial charge or release an overdue shot. Pause freezes simulation timing; long frames cannot produce catch-up volleys. Death/restart leaves no scheduled attacks. Existing navigation, last-seen memory and physical walls/doors still constrain pursuit and firing. The charge sound uses the existing effects mixer/mute/pause controls and distance attenuation; it is a short clip, not a looping source. Visual cues use one original ring mesh and existing materials/weapon parts, with no extra lights, full-screen flashes or change to the player camera.
 
-This applies to fighters in authored missions, practice and the internal legacy mode. Fighter placements, health, damage values and player weapons are unchanged. Bounded lateral fighter movement remains later work. The next pass adds a scout warning/lunge/withdraw cycle and authored lava/water surfaces; see [environments and mission variety](ENVIRONMENT_AND_MISSION_ROADMAP.md) for current behavior, limits and the proposed mission roadmap.
+This applies to fighters in authored missions, practice and the internal legacy mode. This attack-cue checkpoint left placements, health, damage values and player weapons unchanged. Later passes implemented [bounded fighter movement](FIGHTER_MOVEMENT.md), scout warning/lunge/withdrawal and authored lava/water surfaces; see [environments and mission variety](ENVIRONMENT_AND_MISSION_ROADMAP.md) for current behavior and limits.
 
 Verification: `npm run verify` passes (69 linted runtime modules, strict types, all 416 unit/simulation cases and production build). New cases cover exact warning/recovery boundaries, first-contact/reacquisition delay, cancellation behind new cover, real projectile damage, braced movement, pause/death/reset, reentrant audio callbacks, long-frame behavior, non-accumulating presentation and finite deterministic chirps. Existing normal pulse combat still defeats the fighter in three hits; its regression now waits for actual projectile travel to the braced enemy.
 

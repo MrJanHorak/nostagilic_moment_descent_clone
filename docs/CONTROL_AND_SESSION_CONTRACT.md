@@ -1,12 +1,14 @@
 # Control and session contract for M1
 
+Status reviewed October 22, 2026. This records the implemented M1 contract and early v2 follow-ups. Later authored mines extend collision to rotated/sloped spaces, add mission systems and support three camera views. See the [developer guide](../DEVELOPER_GUIDE.md), [document format](LEVEL_DOCUMENT_FORMAT.md) and [player experience](PLAYER_EXPERIENCE.md) for those extensions. Milestone acceptance remains valid; old verification counts below describe historical checkpoints.
+
 Implementation direction for M1, updated October 15, 2026. Startup, session ownership, player-root flight, fixed-step timing, finite arenas, wall-aware shots, basic enemy visibility/collision, and the Arena Escape objective/exit are implemented. A production browser flow covers victory, loss and reboot. M1 is now accepted following the owner's Chrome playthrough, reporting working flight/combat, pause, aiming recapture and default resets. See the [acceptance record](M1_ACCEPTANCE.md) for evidence scope and [mission checkpoint](progress/M1_MISSION.md) for implementation details.
 
 ## Player and world ownership
 
 Use a right-handed world: +X right, +Y up, and local -Z forward. Distances are world units; velocity is units/second, acceleration is units/second squared, and angular rates are radians/second.
 
-The implemented scene graph is (solid colliders currently apply to the finite arenas):
+The M1 first-person scene graph is shown below. Solid colliders also apply to current authored mines; external/cockpit presentation is described in the linked player experience guide.
 
 ```text
 scene
@@ -94,6 +96,8 @@ The version-2 prototype keeps the finite combat rules and requires one additiona
 - Required initialization failures reject the `init()` promise; the entry point cannot report a false success. The development smoke overlay displays caught initialization/update/animation errors.
 
 ## Verification boundary
+
+Current verification is tracked in the [handoff](progress/NEXT_SESSION.md#verification-available). The 254-case/nine-browser/36-module figures below describe the early relay checkpoint, not today's suite. Broader M2 hardware acceptance remains open; use the latest hardware evidence rather than treating the old arena figure as the latest capture.
 
 `npm test` covers startup/audio failure contracts, pickup behavior, both mode pipelines, session transitions/reset, pause-frozen timers, callback cancellation, cleanup, terminal latches, and mission selection. The Node fixtures use real Three.js/game managers; they do not validate WebGL, flight feel, native mouse capture, or a level's actual winnability.
 

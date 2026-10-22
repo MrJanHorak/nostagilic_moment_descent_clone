@@ -1,251 +1,66 @@
-# Developer Guide: Extending the Game
+# Developer guide
 
-> Shared level authoring now has a [version-1 JSON format](docs/LEVEL_DOCUMENT_FORMAT.md), a bundled Mine Link Prototype and a staged runtime import API. Use these contracts for new content; legacy extension examples below are not the import format.
+Updated October 22, 2026. Use [the roadmap](docs/ROADMAP.md) for status and priorities, [the handoff](docs/progress/NEXT_SESSION.md) for verification boundaries, and [the toolchain guide](docs/TOOLCHAIN.md) for setup. Historical starter implementations and repair utilities live in [archive/](archive/README.md).
 
-> Historical extension examples below can describe unfinished behavior. Current enemy definitions live in `src/js/entities/EnemyTypes.js`, models in `meshBuilders/`, and firing in `ProjectileManager.js`. Use `npm run smoke` for diagnostics. Old debug helpers and repair scripts are preserved in [the archive](archive/README.md); see [the current checkpoint](docs/progress/M2_ENEMY_ORCHESTRATION.md).
+## Runtime and editor boundaries
 
-This document provides guidance on how to extend various aspects of the game.
+The live entry is `index.html → main.js → src/js/main.js`. `editor.html` loads the designer; `playtest.html` hosts its runtime preview. `src/js/core/GameSession.js` owns session state and simulation-time callbacks. Input, movement, collision, combat and teardown must respect pause and session replacement.
 
-## Table of Contents
+| Change | Active source |
+| --- | --- |
+| Campaign order, documents and briefings | `src/js/core/levels/Campaign.js` |
+| Portable level data and types | `src/js/core/levels/documents/`, `src/js/levelDocument.d.ts` |
+| Validation, compilation and navigation | `src/js/core/levels/document/` |
+| Enemy statistics and models | `src/js/entities/EnemyTypes.js`, `EnemyFactory.js`, `meshBuilders/` |
+| Enemy behavior | `EnemyManager.js`, `FighterMovement.js`, `FighterAttack.js`, `ScoutAttack.js` in `src/js/entities/` |
+| Projectile creation and swept hits | `src/js/entities/ProjectileManager.js` |
+| Authored pickups / runtime effects | `src/js/core/levels/document/LevelContent.js`, `src/js/entities/PowerUpManager.js` |
+| Editor commands and preview | `src/js/editor/` |
+| HUD, cockpit, menus and library | `src/js/ui/` |
 
-1. [Adding New Enemy Types](#adding-new-enemy-types)
-2. [Adding New Power-ups](#adding-new-power-ups)
-3. [Adding New Weapons](#adding-new-weapons)
-4. [Creating New Level Features](#creating-new-level-features)
-5. [Extending the UI](#extending-the-ui)
+## Author a mission
 
-## Adding New Enemy Types
+1. Run `npm run dev` and open `/editor.html`, or select Level Designer. Build connected spaces and place spawn, enemies, supplies, controls and exit.
+2. Resolve validation issues; use runtime Playtest, return to editing, and check undo/reload behavior.
+3. Save to My Levels for browser-local use, or export JSON for a portable backup. The [library guide](docs/USER_LEVELS.md) covers updates, copies, imports and storage limits.
+4. To bundle a campaign mission, add its validated document under `src/js/core/levels/documents/` and register it with its briefing in `Campaign.js`. Add route/progression/reset coverage appropriate to its mechanics.
 
-The game currently implements five enemy types: scout, fighter, bomber, destroyer, and boss. Each has unique characteristics, behavior patterns, and visual appearance.
+The [document format](docs/LEVEL_DOCUMENT_FORMAT.md) supports versions 1–12. The validator, TypeScript interfaces and compiler are authoritative. Keep authored intent separate from runtime health, velocity, killed IDs and objective progress. Room centers use world coordinates; placements use room-local coordinates, +Y up and local -Z forward. Rendering and collision must agree for every passage and orientation.
 
-### Current Enemy Types
+Reuse existing [door](docs/LEVEL_DOCUMENT_FORMAT.md#version-8-sliding-doors-and-concealed-access), [reactor](docs/REACTOR_ESCAPE.md), [field](docs/FORCE_FIELDS.md) and [Deepworks](docs/DEEPWORKS.md) workflows. Format v6+ permits up to 256 rooms and 512 connections; v7+ supports multiple openings per face. Preserve old document contracts; add a versioned extension when new data would otherwise change old semantics.
 
-| Enemy Type | Health | Speed | Damage | Points | Description                                         |
-| ---------- | ------ | ----- | ------ | ------ | --------------------------------------------------- |
-| Scout      | 10     | 0.05  | 5      | 50     | Fast, agile reconnaissance ships with low health    |
-| Fighter    | 25     | 0.03  | 10     | 100    | Balanced combat ships with moderate capabilities    |
-| Bomber     | 50     | 0.02  | 20     | 200    | Heavy ships that deploy explosive weapons           |
-| Destroyer  | 100    | 0.01  | 30     | 500    | Heavily armored ships with devastating attacks      |
-| Boss       | 200    | 0.005 | 50     | 1000   | Massive command ships with multiple attack patterns |
+`LevelBlueprint.js` and `SegmentTypes.js` serve the internal endless generator and regressions. Removed Level1/Level2/Level3/ExampleLevel modules are not campaign authoring entry points.
 
-### Adding a New Enemy Type
+## Extend combat
 
-To add a new enemy type:
+Scouts have a warning, committed lunge and withdrawal/recovery. Fighters have warning/fire/recovery phases plus bounded movement in authored mines. [Fighter Proving Ground](docs/FIGHTER_MOVEMENT.md) exercises spacing and alternate approaches. Bomber/destroyer/boss models and projectile variants exist, but their authored-mine tactics are less developed. Enemy definition `damage` is not the current ranged shot power: hostile projectiles are created with power 10.
 
-1. Open `src/js/entities/EnemyTypes.js`
-2. Add a new object to the `enemyTypes` array:
+For a new enemy type, update enemy unions/contracts, statistics, a concrete mesh builder and factory mapping; then add explicit perception/movement/attack rules in the manager or a dedicated behavior module. Update authoring validation, editor choices and diagnostics as needed. `EnemyAnimations.js` owns visual animation. Preserve body clearance, line of sight, last-seen memory, bounded planning and disposal ownership.
 
-```javascript
-{
-  name: 'yourEnemyName',
-  color: 0xHEXCOLOR, // Use a hexadecimal color
-  size: 0.5, // Base size of the enemy
-  health: 15, // Health points
-  speed: 0.04, // Movement speed
-  damage: 7, // Damage dealt to player on collision
-  pointValue: 75, // Score points awarded when destroyed
-}
-```
+Campaign/custom combat centers on pulse fire with authored damage and ammunition budgets. The training arena retains unlimited practice pulse ammo. Laser/missile/plasma inventory and visual paths are legacy extension points: the swept-hit path consumes a projectile on its first collision, and explosion/penetration flags alone do not implement splash damage or multi-target penetration. Define and test those mechanics before advertising them as complete weapons.
 
-3. In the same file, add a new method to create the mesh for your enemy type, following the pattern of existing methods like `createScoutMesh`, `createFighterMesh`, etc.
-4. Modify the `createEnemyMesh` method to call your new mesh creation method when appropriate
-5. Add behavior patterns in the EnemyAnimations.js file
+Combat checks should cover actual shot hits, wall/door occlusion, damage/kill credit, cues, evasion, pause, death and replay. Compare 30/60/120 Hz movement where relevant. Browser combat should use ordinary input/fire; diagnostic neutralization isolates route geometry and does not establish balance.
 
-## Adding New Power-ups
+## Extend pickups and mission systems
 
-The game currently features five power-up types: health, speedBoost, weaponUpgrade, weaponPickup, and ammoPickup.
+Authored documents expose `health` and `pulseAmmo` through `AUTHORED_PICKUPS` in `LevelContent.js`. Health restores up to 25% of maximum shields; pulse ammo adds up to 20 rounds within capacity. `PowerUpManager.js` also retains legacy speed/weapon buffs and special-weapon drops; their existence does not make them portable authored pickup kinds.
 
-### Current Power-up Types
+For a new pickup or objective, extend types, structural/semantic validation, compilation, runtime behavior and editor authoring together. Cover old-version compatibility, import/export, atomic undo, placement clearance and restart. Store collected items, carried rescues and armed countdowns in session state, not the document.
 
-| Power-up Type  | Effect                                     | Duration |
-| -------------- | ------------------------------------------ | -------- |
-| Health         | Repairs player shield by 25% of max health | Instant  |
-| Speed Boost    | Increases player movement speed by 50%     | 10 sec   |
-| Weapon Upgrade | Doubles weapon damage                      | 15 sec   |
-| Weapon Pickup  | Provides a random weapon with ammunition   | Instant  |
-| Ammo Pickup    | Replenishes ammunition for special weapons | Instant  |
+Use simulation time for gameplay effects. Existing buffs use `GameState.applyTimedModifier`; scheduled attacks use `GameSession.schedule`. Avoid wall-clock `setTimeout` for gameplay expiration: pause and restart must own the lifetime. Keep cosmetic animation on the managed update path and release owned resources at teardown.
 
-### Adding a New Power-up
+## Presentation and rendering
 
-To add a new power-up:
+Use relative module imports as existing source does. Add UI beside the relevant menu, library, settings, cockpit or navigation component, with keyboard/focus behavior and text-safe imported names.
 
-1. Open `src/js/entities/PowerUpManager.js`
-2. Add a new object to the `powerupTypes` array:
+Finite campaign lighting stays stable during shots, effects, pickups and robot deaths. Preserve emissive cues without per-entity lights that recreate shader stalls. Portal visibility culls static rendering conservatively; collision, AI and discovery remain resident. Water is a solid face treatment, not a submerged volume. See [combat performance](docs/DEEPWORKS_COMBAT_PERFORMANCE.md).
 
-```javascript
-{
-  name: 'yourPowerupName',
-  color: 0xHEXCOLOR, // Use a hexadecimal color
-  size: 0.5, // Visual size
-  duration: 10000, // Duration in milliseconds (0 for instant effects)
-  effect: function (gameState, uiManager) {
-    // Implement your power-up effect here
-    // For example:
-    gameState.someProperty = newValue;
+## Verify a change
 
-    // Show message to player
-    uiManager.showMessage('Your Power-up Effect!', 2000, '#yourColor');
+- `npm run verify`: scoped lint, strict types, unit/simulation tests and production build. Scope lives in `tsconfig.check.json` and `scripts/lint.mjs`; add newly checked modules there as appropriate.
+- `npm run test:browser`: build and full functional browser suite. Run `npm run browser:install` once first. Focused runs can use `npx playwright test tests/browser/<file>.spec.js --project=production` after building.
+- `npm run smoke`: development diagnostics. Normal play uses `npm run dev`; production inspection uses `npm run build` then `npm run preview`.
+- `npm run profile:arena` / `npm run profile:deepworks -- --renderer=hardware`: real-time hardware measurement, separate from controlled-clock software browser checks.
+- `npm run audit:deps`: fresh advisory check; prior zero-vulnerability snapshots are dated evidence.
 
-    // For timed power-ups, reset after duration
-    if (this.duration > 0) {
-      setTimeout(() => {
-        gameState.someProperty = originalValue;
-        uiManager.showMessage('Effect Ended', 1500, '#yourColor');
-      }, this.duration);
-    }
-  },
-  message: 'Your Power-up Message!',
-}
-```
-
-## Adding New Weapons
-
-The game currently features four weapon types: pulse, laser, missile, and plasma.
-
-### Current Weapon Types
-
-| Weapon Type | Ammo     | Damage | Speed  | Special Properties                       |
-| ----------- | -------- | ------ | ------ | ---------------------------------------- |
-| Pulse       | Infinite | Low    | Medium | Basic projectile weapon                  |
-| Laser       | Limited  | Medium | High   | High-accuracy beam weapon                |
-| Missile     | Limited  | High   | Low    | Explosive projectiles with splash damage |
-| Plasma      | Limited  | V.High | Medium | Advanced energy weapon with high damage  |
-
-### Adding a New Weapon
-
-To add a new weapon type:
-
-1. Open `src/js/core/GameState.js` and add your new weapon to the `weaponInventory` object
-2. Open `src/js/entities/ProjectileManager.js`
-3. Enhance the `fireProjectile` method to support your new weapon type
-4. Create new visual effects for the projectiles
-5. Add new sound effects for the weapons
-
-Example enhancement:
-
-```javascript
-// In ProjectileManager.js
-fireProjectile(gameState) {
-  // ... existing code ...
-
-  // Check weapon type
-  switch(gameState.currentWeapon) {
-    case 'pulse':
-      // Default weapon behavior
-      break;
-    case 'laser':
-      // Laser behavior
-      break;
-    case 'missile':
-      // Missile behavior
-      break;
-    case 'plasma':
-      // Plasma behavior
-      break;
-    case 'yourNewWeapon':
-      // Your custom weapon behavior
-      projectileColor = 0xYOURCOLOR;
-      projectileSize = 0.1; // Larger projectile
-      projectileSpeed = 7; // Faster projectile
-      break;
-  }
-
-  // ... continue with firing logic ...
-}
-```
-
-## Creating New Level Features
-
-Levels in the game are constructed from a series of connected tunnel segments. The game supports several segment types, including straight sections, curves, junctions, and boss rooms.
-
-### Available Segment Types
-
-| Segment Type | Description                             |
-| ------------ | --------------------------------------- |
-| STRAIGHT     | Standard straight tunnel segment        |
-| CURVE_LEFT   | Curved segment turning left             |
-| CURVE_RIGHT  | Curved segment turning right            |
-| JUNCTION     | Wider junction area with multiple paths |
-| BOSS_ROOM    | Large area designed for boss encounters |
-| END          | Level endpoint with exit                |
-
-### Creating a Boss Room
-
-Boss rooms are special segments designed for confrontations with boss enemies. To add a boss room to your level:
-
-1. In your level blueprint file (e.g., `Level3.js`), add a boss room segment:
-
-```javascript
-// Add a boss room segment
-level.addSegment({
-  type: SegmentType.BOSS_ROOM,
-  width: 12, // Boss rooms are typically wider
-  height: 8, // And taller
-  length: 15, // And longer
-  obstaclePattern: ObstaclePattern.CUSTOM,
-  obstacles: [
-    // Custom obstacle placement for the boss arena
-    { position: new THREE.Vector3(3, 0, 7), scale: new THREE.Vector3(1, 2, 1) },
-    {
-      position: new THREE.Vector3(-3, 0, 7),
-      scale: new THREE.Vector3(1, 2, 1),
-    },
-    // Add more obstacles as needed
-  ],
-  lightColor: 0xff0000, // Red lighting for dramatic effect
-  lightIntensity: 0.8,
-});
-
-// Spawn the boss enemy in the boss room
-level.addEnemySpawn(
-  new THREE.Vector3(0, 0, 7.5), // Position in the middle of the boss room
-  'boss' // Enemy type 'boss'
-);
-```
-
-2. Add power-ups strategically around the boss room:
-
-```javascript
-// Add power-ups to help the player in the boss fight
-level.addPowerupSpawn(new THREE.Vector3(3, 2, 4), 'health');
-
-level.addPowerupSpawn(new THREE.Vector3(-3, 2, 4), 'weaponUpgrade');
-```
-
-## Extending the UI
-
-To enhance the UI:
-
-1. Open `src/js/ui/UIManager.js`
-2. Add new UI elements to the constructor or create new methods for specific UI components
-3. Add update methods for your new UI elements
-
-Example:
-
-```javascript
-// In UIManager.js
-createWeaponIndicator() {
-  const weaponUI = document.createElement('div');
-  // Style and position your UI element
-  // ...
-
-  document.body.appendChild(weaponUI);
-  return weaponUI;
-}
-
-updateWeaponUI() {
-  // Update the weapon UI based on current weapon
-  // ...
-}
-```
-
-## Troubleshooting
-
-If you encounter issues:
-
-1. Check the browser console for errors
-2. Run `npm run smoke` and use the development diagnostics; archived debug utilities are historical only
-3. Add console logs to track the flow of your new functionality
-4. Make sure all imports use absolute paths with the `/src/js/` prefix
-
-Happy coding!
+Keep runtime/build stable while browser tests own ports 5183/5184; profilers own 5185. Distinguish local/hosted checks, targeted/full suites, functional/hardware evidence and automated/human balance feedback when reporting results.

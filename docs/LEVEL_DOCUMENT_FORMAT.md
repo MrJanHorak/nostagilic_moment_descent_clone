@@ -1,16 +1,16 @@
 # Shared level document — format versions 1–12
 
-Version 1 implemented October 15, 2026; version 2 added October 16 for relay-controlled doors. Version 3 adds offset openings, per-face colors/patterns and optional relay content on October 18. Version 4 adds quarter-turn pitch/roll for upright corridors and rotated rooms. Version 5 adds convex sloped/diagonal corridors. Version 6 expands room counts and dimension bounds for connection-preserving resizing. Version 7 permits full shared openings and multiple passages per wall. Version 8 adds sliding relay/shot doors and concealed wall panels. Version 9 adds lava contact hazards and animated safe water surfaces. Version 10 adds optional reactor escape countdowns. All ten versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a design sketch, not a compatible v1 file.
+Status reviewed October 22, 2026. Version 1 implemented October 15; version 2 adds relay-controlled doors. Version 3 adds offset openings, face colors/patterns and optional relays. Version 4 adds quarter-turn pitch/roll; v5 convex sloped/diagonal corridors; v6 expanded room/dimension bounds; v7 shared/multiple openings; v8 sliding/shot/concealed doors; v9 lava/water surfaces; v10 escape countdowns; v11 relay force fields; v12 destructible reactor objectives. All twelve versions remain supported. The executable validator and [TypeScript interfaces](../src/js/levelDocument.d.ts) define this format. The earlier example in [the designer proposal](LEVEL_EDITOR_DESIGN.md) is a historical sketch, not a compatible runtime file.
 
-The game loads [mine-link.v1.json](../src/js/core/levels/documents/mine-link.v1.json) as **Mine Link Prototype** and [relay-gate.v2.json](../src/js/core/levels/documents/relay-gate.v2.json) as **Relay Gate Prototype**. [Deep Relay](progress/M3_DEEP_RELAY.md) is the larger eight-room mission using the same v2 format: a lower loop, supply cache, five drones and two relay gates. Room/route hints derive from stable room IDs, material presets and the validated portal graph. The accepted Flight Arena and Arena Escape definitions remain available.
+The game retains [Mine Link](../src/js/core/levels/documents/mine-link.v1.json), [Relay Gate](../src/js/core/levels/documents/relay-gate.v2.json) and [Deep Relay](progress/M3_DEEP_RELAY.md) as practice/prototype missions, alongside Flight Training Arena, Arena Escape and Fighter Proving Ground. Current campaign documents are Signal Breach v8, Vector Foundry v11, Nightfall Reactor v10 and Asterion Deepworks v12; `Campaign.js` selects their active files. Older campaign snapshots remain version examples, not additional mission-library choices. Room/route hints derive from stable IDs, material presets and the portal graph.
 
 ## Document contents
 
-All base fields below are required. The version-3 extension below describes its optional appearance/offset fields. Unknown fields are errors, including runtime health, spawned flags, callbacks or asset URLs. Root and placement objects are JSON data only.
+All base fields below are required. Later version sections describe optional fields and extended objective kinds. Unknown fields are errors, including saved runtime health/progress, spawned flags, callbacks or asset URLs; v12 explicitly permits authored initial reactor `health`. Root and placement objects are JSON data only.
 
 | Field | Contents |
 | --- | --- |
-| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for room orientation, `5` for shaped corridors, `6` for expanded authoring, `7` for shared/multiple openings, `8` for sliding/shot/concealed doors, `9` for lava/water, or `10` for escape countdowns; unknown versions are rejected |
+| `formatVersion` | Literal `1` for the base format, `2` for relays, `3` for openings/styles, `4` for orientation, `5` for shaped corridors, `6` for expanded authoring, `7` for shared/multiple openings, `8` for sliding/shot/concealed doors, `9` for lava/water, `10` for escape countdowns, `11` for fields, or `12` for destructible reactors; unknown versions are rejected |
 | `id`, `name` | Stable document identity and display name |
 | `rooms` | Room/prefab definitions |
 | `connections` | Named face ports and an opening size; v1/v2 use centered ports, v3 supports offsets |
@@ -230,16 +230,16 @@ Successful activation starts a full allowance in simulation time. Linked doors f
 | Limit | Value |
 | --- | ---: |
 | Rooms / connections / entities, v1–5 | 64 / 128 / 256 |
-| Rooms / connections / entities, v6–10 | 256 / 512 / 256 |
+| Rooms / connections / entities, v6–12 | 256 / 512 / 256 |
 | Parsed JSON text | 1,000,000 UTF-16 code units |
 | Validated tree nodes / nesting depth | 50,000 / 16 |
-| Connections per face, v1–6 / v7–10 | 1 / 8 |
+| Connections per face, v1–6 / v7–12 | 1 / 8 |
 | Reported diagnostics | 100 |
 | Coordinate component magnitude | 4,096 |
 
 Programmatic input must be a plain JSON tree. Accessors, non-enumerable/symbol properties, nonfinite numbers, sparse/extended arrays, cycles, functions and class instances are rejected. These checks do not establish a sandbox for arbitrary JavaScript proxies supplied by application code. Text input is parsed with `JSON.parse` before validation.
 
-These are input/work bounds, not a promise that maximum-size worlds meet the reference GPU frame-time target. Future incompatible geometry/objective semantics require a new version or an explicit migration of a copy. Old executable level blueprints are retained as legacy content and are not automatically converted by this implementation.
+These are input/work bounds, not a promise that maximum-size worlds meet the reference GPU frame-time target. Future incompatible geometry/objective semantics require a new version or an explicit migration of a copy. Old finite campaign segment levels have been removed; internal generator/practice definitions remain for their own workflows and are not automatically converted to documents.
 
 ## Version 11: relay force fields
 

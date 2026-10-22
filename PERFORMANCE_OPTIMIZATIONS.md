@@ -1,5 +1,7 @@
 # Performance Optimizations Applied
 
+> Historical optimization notes from the earlier tunnel prototype. The percentages and predicted improvements below are not current measured performance claims, and their proposed work may already be implemented or superseded. Use [Deepworks combat performance](docs/DEEPWORKS_COMBAT_PERFORMANCE.md), [latest fighter hardware evidence](docs/FIGHTER_MOVEMENT.md#verification) and [the current roadmap](docs/ROADMAP.md#verification-and-performance-boundary) for active rendering behavior, measurements and remaining acceptance work.
+
 This document summarizes the performance optimizations implemented to fix game sluggishness and improve smooth gameplay.
 
 ## Major Optimizations Implemented

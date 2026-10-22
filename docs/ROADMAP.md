@@ -1,128 +1,55 @@
-# DESCENDED: feasible delivery roadmap
+# DESCENDED: implementation status and next steps
 
-Date: October 14, 2026. Read [the assessment](PROJECT_ASSESSMENT.md) for verified defects and limits. This is a proposed plan, not a claim that the tasks are implemented.
+Updated October 22, 2026, against implementation commit `164bf41`. This is the current work queue. The [October 14 assessment](PROJECT_ASSESSMENT.md) describes the historical baseline; its defects and original delivery estimates are not a list of remaining work.
 
-**Implementation progress (October 19, 2026):** **[M1](M1_ACCEPTANCE.md), [M3](M3_ACCEPTANCE.md) and [M4's functional workflow](M4_ACCEPTANCE.md) are accepted.** The owner confirms the editor works and authored levels are playable. The owner also reports hosted CI passes, closing that M2 gate. M2 remains open for hardware performance acceptance: the last recorded Intel GPU p95 was about 18 ms versus the provisional 16.7 ms target. [The player experience follow-up](PLAYER_EXPERIENCE.md) adds a viewport-first editor, optional searchable scene browser, saved ship camera/HUD/headlight controls, an original stereo score and three new finite missions. The old finite legacy levels are retired.
+## Milestone status
 
-## Scope and effort
-
-**Latest UX follow-up:** [the viewport-first workbench and player presentation](PLAYER_EXPERIENCE.md) follow [validation navigation](progress/M4_VALIDATION_NAVIGATION.md), which makes errors select and frame the affected room, item or passage, open its inspector and focus an edit control without changing Undo history. Historical pending M4 acceptance statements in extension checkpoints are superseded by [owner confirmation](M4_ACCEPTANCE.md).
-
-**Latest M4 extension:** [loops and shared openings](progress/M4_LOOPS_AND_SHARED_OPENINGS.md) adds off-center joins, fitting/snap options, full clear openings, up to eight passages per wall and accessible relay-door authoring in format v7. [Selected-item movement](progress/M4_CONTENT_MOVEMENT.md) makes Move edit the selected enemy/pickup/relay/spawn/exit, with local-grid previews, atomic placement validation, preserved metadata and Escape cancellation. [Connected resizing and snapping](progress/M4_CONNECTED_RESIZING.md) adds anchored Stretch, precise/numeric resizing, connected-branch previews, repair of misaligned connections and format v6 limits (256 rooms; dimensions up to 256). Invalid overlaps/loop constraints reject atomically. [Ramps and diagonal corridor walls](progress/M4_SHAPED_CORRIDORS.md) adds a bounded convex corridor prefab, rise/sideways presets and context authoring, shared rendering/collision, perpendicular clearance and convex-volume navigation/overlap validation in format v5. [Upright corridors](progress/M4_VERTICAL_CORRIDORS.md), quarter-turn pitch/roll and XYZ rotation remain supported. M4's functional workflow is owner-accepted; M2's hardware performance gate remains open.
-
-Target a small, original single-player browser game: first-person six-degree-of-freedom flight, a compact connected mine, a few weapons/enemies, and a local prefab-based level designer. Keep the present repository and Three.js. Establish a stable game/data boundary before building editor UI.
-
-The ranges below are **rough engineering estimates for one experienced developer's focused work**, informed by the audit but not implementation spikes. They assume simple geometric assets, no backend, no arbitrary terrain sculpting, and modest visual polish. Learning, substantial new art/audio, or changing the target experience increases them.
-
-| Milestone | Focused effort | Dependency / outcome |
+| Milestone | Status | Evidence and remaining work |
 | --- | --- | --- |
-| M1: functional test mission | 40–70 hours | Fix contracts and establish coherent flight/combat/session behavior |
-| M2: update and stabilize | 40–80 hours | Make M1 reproducible, maintainable, measured, and deployable |
-| M3: connected authored mine and shared data | 60–100 hours | Prove the level model on a real exploratory mission |
-| M4: local level designer MVP | 60–100 hours | Create, save, reload, and play an authored mission without code edits |
-| Total through editor MVP | **200–350 hours** | Small game + constrained editor, not a polished commercial release |
+| M1: functional mission | Accepted | [Owner acceptance](M1_ACCEPTANCE.md); flight, combat, extraction and session reset are implemented |
+| M2: reproducibility and stability | Hardware acceptance open | Toolchain, scoped contracts, tests and CI are implemented; owner reported hosted CI passing October 18. Broader hardware performance acceptance remains open |
+| M3: connected authored mine | Accepted | [Owner acceptance](M3_ACCEPTANCE.md); shared validated documents, physical portals, navigation and relay progression |
+| M4: local level designer | Functional workflow accepted | [Owner acceptance](M4_ACCEPTANCE.md); author, validate, playtest, return, undo, export and reload |
 
-Reserve about **30% contingency**: roughly **260–455 focused hours**, or 7–12 weeks at 40 focused hours/week and 6–11 months at 10 hours/week. A repaired small playable slice can arrive much earlier than the editor. Re-estimate after M1 and after the M3 room/portal prototype. Quality gates determine completion; calendar dates should not override them.
+These acceptances remain valid. Subsequent features have their own regression evidence; the earlier hosted CI confirmation does not establish a hosted pass for every later revision.
 
-Optional release polish/content after M4 is a separate budget. There is not enough evidence to honestly estimate a complete Descent-scale campaign from this repository.
+## Delivered beyond the original MVP
 
-## M1 — Get one mission functional
+- **Campaign:** Signal Breach, Vector Foundry, Nightfall Reactor and Asterion Deepworks. Deepworks has 48 spaces, 56 passages and nine independent loops. Built-in missions advance through the completion screen.
+- **Editor and data:** shared format versions 1–12; rooms, ramps, diagonal corridors, vertical shafts, multiple openings per wall, connected resizing, face styles, content movement, validation navigation, undo/redo and draft recovery.
+- **Mission mechanics:** relays, sliding and shot-open doors, concealed access, force fields, lava contact damage, safe animated water surfaces, destructible reactors and simulation-time escape countdowns.
+- **Player presentation:** three camera views, cockpit instruments, headlights, explored-area map, original procedural music and saved controls/audio/view preferences.
+- **Custom levels:** browser-local My Levels library, import/export, rename/delete, editor update/copy, storage failure handling and cross-tab conflict detection. See [My Levels](USER_LEVELS.md).
+- **Combat:** scout warning/lunge/recovery; fighter warning/fire/recovery plus bounded strafing, elevation and distance control in authored mines. [Fighter Proving Ground](FIGHTER_MOVEMENT.md) is a separate four-room practice mission.
+- **Rendering:** conservative portal visibility and stable campaign light counts during combat. See [Deepworks](DEEPWORKS.md) and [combat performance](DEEPWORKS_COMBAT_PERFORMANCE.md).
 
-**Current status:** complete and accepted by the project owner on October 15, 2026, after a Chrome playthrough of the finite test slice. The [acceptance record](M1_ACCEPTANCE.md) combines that sign-off, the supplied console excerpt and existing automated evidence. The repeatable manual checklist is retained for future regressions.
+## Next work queue
 
-**Deliverable:** a short graybox mission, playable from menu to exit, with unrestricted orientation, solid boundaries, pulse fire, two enemy behaviors, health/ammo pickup, loss and win states, and reliable restart. Use a fixed finite environment; defer endless streaming.
+Keep each change small enough to review and play independently. These are proposals, not delivered features.
 
-1. **Capture the baseline and define the control contract (4–6 hours).** Preserve current output/evidence. Write down first-person camera choice, local axes, player radius, speed/acceleration/damping, quaternion orientation, input semantics, and pause behavior. Add a minimal browser smoke fixture and a developer-only error display. Initially use a supported test runner or Node assertions for pure modules; no large framework is required.
-2. **Restore startup and coherent session transitions (8–14 hours).** Reconcile audio registration; make sound failure nonfatal. Fix the power-up update contract. Implement `startSession`, `pause`, `resume`, `complete`, `die`, and `endSession` with legal transitions. Wire all menu routes through those functions. Correct playing-source audio control. Clear keys on blur/unlock; catch pointer-lock refusal; avoid leaving a partially started game.
-3. **Replace movement ownership (12–20 hours).** Add a world-space player root with position, quaternion, velocity, and collider. Camera/cockpit are children. Convert local thrust with the player quaternion; apply yaw/pitch/roll to that orientation. Remove the camera-follow overwrite and per-frame world offsets. Time-scale motion and damping; use simulation time for gameplay. Keep visual recoil/shake on a camera child.
-4. **Make the arena physically and mechanically coherent (10–18 hours).** Fix floor/wall geometry and collider alignment. Load the whole small test level. Define collision against actual solid walls, including doors/openings when present; use a swept sphere or bounded substeps and sliding response. Reconcile projectile constructor/update ownership; collide shots against enemies and walls. Implement basic enemy pursuit with line of sight and wall avoidance. Treat special weapon effects as disabled until implemented.
-5. **Close the complete-play loop (6–12 hours).** Use stable entity/spawn IDs, immutable definitions, clean removal versus combat kills, and idempotent objective completion. Reset velocity, entities, effects, timers, inventory, score/statistics, pause state, and audio as specified. Add a visible objective and exit. Playtest and tune basic readability and handling.
-
-**Acceptance gate:**
-
-- A fresh load reaches menu, starts, pauses/resumes, dies/restarts, and completes with no uncaught errors or repeated update errors.
-- Yaw, pitch, roll, and thrust operate in the ship's local frame. A player can turn around, return through a doorway, and fly while inverted.
-- Walls block movement and shots; sliding does not permanently stick the ship. No fixed global tunnel-bounds shortcut remains in the finite mission.
-- One pulse shot produces one hit; enemy fire damages the correct target; death/exit triggers exactly once. A shot behind a wall cannot hit through it.
-- Restart/reselect repeated ten times gives equivalent initial state; returning to the menu does not advance old session callbacks.
-- Equivalent 30/60/120 Hz movement simulations agree within a documented tolerance; pause freezes cooldowns, buffs, and projectile lifetimes.
-
-**Boundary:** do not attempt to finish all four old levels here. They are reference content; rebuilding one small reliable space exposes the architecture problems more efficiently.
-
-## M2 — Update the project and make regression visible
-
-**Current status:** [runtime/dependency/CI](TOOLCHAIN.md), [browser/resource checks](progress/M2_BROWSER.md), a [hardware baseline/lighting pass](progress/M2_PERFORMANCE.md), [saved mouse controls](progress/M2_SETTINGS.md), [saved volume/mute](progress/M2_AUDIO_SETTINGS.md), [enemy/source cleanup](progress/M2_ENEMY_ORCHESTRATION.md) and [shared level data](progress/M2_LEVEL_DOCUMENTS.md) are implemented. The owner reports hosted CI passes on October 18. Hardware performance acceptance remains open; M2 is not complete. Broader presentation/orchestration source coverage can continue incrementally.
-
-M2 can begin with an isolated dependency security patch during M1. Broader upgrades should follow a working smoke test so regressions can be identified.
-
-1. **Dependency and runtime baseline (6–12 hours).** Choose/pin a supported Node LTS and npm policy; verify a clean `npm ci`. Patch Vite/transitive advisories, inspect the lockfile, then evaluate a supported Vite major separately. Upgrade Three.js in a separate change using its migration notes and visual checks. Re-run build, smoke test, and advisory checks. Document residual advisories and applicability instead of relying on a count alone.
-2. **Contracts and source cleanup (10–20 hours).** Add JSDoc plus type checking or incrementally adopt TypeScript for `PlayerState`, `SessionState`, `Projectile`, `EnemyDefinition`, and level data. Consolidate active projectile/effect responsibility; move weapon/enemy settings into the actual source of truth. Remove global prototype patches from production. Archive unused starters, backup implementations, repair scripts, and unintegrated stubs after confirming references. Extract UI styles from the 1,000+ line UI builder gradually; do not turn cleanup into a product rewrite.
-3. **Verification and CI (10–18 hours).** Add lint, type check, pure simulation tests, schema/fixture checks, production build, and one browser smoke flow to CI. Test session teardown, collision, damage, completion, and resets. Keep GPU/pointer-lock behavior as explicit manual checks where headless automation is not representative. Include browser console errors in smoke failure criteria.
-4. **Resource lifecycle and profiling (10–20 hours).** Establish shared asset caches versus entity-owned resources, one effects update loop, bounded pool sizes, and a disposal policy. Fix stranded explosion effects/lights and stale obstacle references. Build a seeded combat fixture; record CPU/frame time, draw calls, lights, and renderer resource counts through repeated sessions. Reduce point lights and allocations based on those measurements.
-5. **Usability and delivery baseline (4–10 hours).** Provide sensitivity/invert-Y, volume/mute, input help, focus/pointer-lock recovery, and saved local settings. Correct README instructions and label supported features. Verify production assets under the actual deploy path and missing-asset behavior; preview before updating the existing hosted build.
-
-**Acceptance gate:** clean install + CI pass; dependency findings resolved or specifically documented; one production preview completes the M1 flow; resource counts settle near a steady baseline after repeated restarts. On a named reference machine/browser/resolution, define a frame-time target, provisionally p95 at or below 16.7 ms for the agreed test scene with no growing memory trend. Adjust quality settings or scope if measurement shows that target is unrealistic; no universal hardware guarantee is implied.
-
-## M3 — Make a connected mine, with data the editor can use
-
-**Current status:** **[M3 is accepted and complete](M3_ACCEPTANCE.md)**. The owner confirmed activating both relays, reaching MISSION COMPLETE and replaying with enemies, ammo and gates reset. The [shared documents](progress/M2_LEVEL_DOCUMENTS.md), [enemy routing](progress/M3_ROOM_NAVIGATION.md) and [relay objectives](progress/M3_RELAY_OBJECTIVE.md) support [Deep Relay](progress/M3_DEEP_RELAY.md), an eight-room mission with a lower loop, supply cache, vertical travel and five drones. Combined tests cover round trips, all connections in both directions, ordinary pulse combat, chained completion and ten restarts. Further art/balance improvements are optional. Hosted CI has since passed according to the owner; hardware performance remains a separate open M2 gate.
-
-**Deliverable:** one compact exploratory mission using the future editor's document format, loaded by the game without executable level scripts.
-
-1. **Versioned level document and loader (12–20 hours).** Define JSON primitives, stable IDs, coordinate conventions, units, references, allowed content types, and limits. Validate structure and semantics before scene creation. Supply clear errors, one canonical sample, import/export round-trip tests, and a conversion strategy for the useful old content. Keep session state outside the document.
-2. **Room/prefab connections and collision (20–34 hours).** Prototype box rooms and straight/turning corridor prefabs with matching ports. Produce both visible surfaces and solid colliders from the same definition; create real openings at connected ports. Prove local-to-world transforms, traversal in both directions, vertical travel, and a loop before adding more geometry types. Use the room graph for reachability, not an assumption that rooms form a straight list.
-3. **Objectives and navigation (12–20 hours).** Add one objective chain such as activate a device then reach exit, and a small door/key system if needed by the chosen mission. Validate mandatory routes. Use room/portal graph routing for enemies, combined with local steering and visibility. Introduce runtime objective events without requiring a general scripting language.
-4. **Author and test a real mission (16–26 hours).** Build approximately 6–10 modest spaces with a loop, vertical connection, readable landmarks, manageable encounters, and pickups placed by ID. Verify playability and fairness. Add a simple map/debug overlay if navigation requires it. Prefer loading the entire compact mission; implement room activation/culling only when profiling demonstrates a need.
-
-**Acceptance gate:** import JSON, navigate every intended connection in both directions, reach every mandatory objective from spawn, complete exactly once, restart correctly, export/reload without changing authored intent. An invalid ID, broken portal, overlapping room, or out-of-bounds entity produces a useful validation error rather than a partial broken level.
-
-**Checkpoint:** if the room/portal collision spike reveals disproportionate work, narrow the geometry to axis-aligned snapped rooms and explicit corridor pieces. Do not broaden to arbitrary mine geometry to solve an MVP scheduling problem.
-
-## M4 — Reach the level designer icebox feature
-
-**Current status:** [Functionally accepted by the owner](M4_ACCEPTANCE.md). `/editor.html` includes direct wall/item selection and context menus, room/content/objective/door authoring, offset openings, face styles, solid preview, real runtime playtest/return, undo/redo, room duplication/deletion and local draft recovery. The three-space author/export/reload/complete/return/undo scenario is automated. Presentation refinement continues in [the player experience follow-up](PLAYER_EXPERIENCE.md).
-
-**Deliverable:** a local browser editor that creates the same M3 documents the game already loads. Its primary success test is an end-to-end authoring workflow, not the number of editing tools.
-
-1. **Editor shell and placement (18–30 hours).** Use a separate entry/route with lazy-loaded editor code. Provide an orbit/fly viewport, grid, room/corridor palette, scene/entity list, selection, translate/rotate gizmos, snapping, and a properties panel. Bound sizes and allowed rotations to the validated prefab system.
-2. **Connections, content, and validation (14–24 hours).** Connect compatible ports, preview open/closed walls, place player spawn, enemies, pickups, objective, and exit. Expose validation errors in an actionable list. Reuse runtime definitions and prefab generation rather than writing a second geometry implementation.
-3. **Document editing and persistence (14–24 hours).** Add add/delete/duplicate, undo/redo commands, explicit JSON import/export, unsaved-change handling, and autosave/recovery through browser storage. Keep exported files as portable backups; browser storage is not the user's only copy.
-4. **Playtest and return (14–22 hours).** Launch a deep snapshot in the existing runtime and return to the untouched editing document. Release pointer lock and editor input correctly on transitions. Create a new valid level from an empty document, export, reload, play, and finish without editing JavaScript.
-
-**Acceptance gate:** a user can create three connected spaces, place spawn/enemy/pickup/objective/exit, play to completion, return, undo an edit, export, reload, and play the same layout. Session entities never appear in the saved document. Bad input cannot execute script or crash a running session. See [LEVEL_EDITOR_DESIGN.md](LEVEL_EDITOR_DESIGN.md) for scope and constraints.
-
-## First work queue
-
-Take these as small reviewable changes, not one large refactor. Each should keep a known smoke fixture available.
-
-| Order | Work item | Evidence / proof of completion |
+| Priority | Work | Completion evidence |
 | --- | --- | --- |
-| 1 | Document axes, player root, first-person camera, session states | A minimal arena fixture uses a single player transform |
-| 2 | Fix audio start contract and power-up exception | Both start routes advance simulation without F01/F02 |
-| 3 | Centralize start/end/pause/reset and callback ownership | Start -> pause -> resume -> restart -> menu smoke flow |
-| 4 | Replace world offsets and camera overwrite | Rotated thrust, roll, and inverted flight work; A03–A05/A08/A10 become intended-behavior tests |
-| 5 | Repair straight geometry and wall collision | Geometry/colliders match; ship/shot cannot cross a closed wall |
-| 6 | Reconcile projectile ownership and implement basic combat | Player/enemy shots collide correctly with walls and targets |
-| 7 | Add one latched objective/exit; clean entity removal | One completion event, no cleanup-as-kill side effects |
-| 8 | Fix pickup types, spawn/session IDs, buffs, and restart invariants | Same authored pickup after restart; no stale entities/timers |
-| 9 | Patch toolchain and add CI against the working slice | Clean install, checks, build, audit, browser smoke |
-| 10 | Prototype JSON rooms/ports with one vertical connection | Runtime loads and traverses the first future-editor document |
+| 1 | Tune one mixed scout/fighter encounter around a loop and vertical approach | Safe arrival, cover, retreat route, optional supplies, ordinary-input combat/extraction/replay; record shots, minimum shields, route use and completion time during human playtests |
+| 2 | Finish one distinct heavy-enemy role, starting with bomber area denial | Warning, committed explosive attack and recovery; explicit damage/blast/occlusion rules; collision, pause/reset and ordinary-fire browser coverage |
+| 3 | Close broader performance and release regression gates | Repeated real-time hardware captures of traversal, multiple enemies, reactor escape and restart resources; full browser suite on the same revision; inspect CI group duration and split the large production group if needed |
+| 4 | Add campaign persistence and user campaigns | Saved built-in progress/resume, custom mission ordering and briefings, validated campaign bundle import/export, isolated campaign and standalone replay behavior |
 
-## Icebox, with prerequisites
+The first encounter should use existing authoring and enemy systems. Establish balance from route choices, readable attack windows and pacing before changing health or enemy counts throughout the campaign. See [the encounter review](ENEMY_AND_ENCOUNTER_REVIEW.md).
 
-| Feature | Earliest sensible point | Feasible first version / reason to defer |
-| --- | --- | --- |
-| Level designer | Shared M3 loader, geometry, and validation exist | Prefab assembly and entity placement; avoid arbitrary mesh editing |
-| Additional weapons / bosses | M1 damage, ownership, and lifecycle work | Add one tested behavior at a time; existing flags are not finished features |
-| Doors / keys / reactor escape | M3 objective events and room connectivity | Small explicit objective types and a simulation-time escape timer |
-| Automap | Stable room graph and discovered-room state | Render graph/room outlines before attempting a detailed mine map |
-| Gamepad / control remapping | Input actions are separated from key codes | Local saved bindings and sensitivity; flight feel needs playtesting |
-| Better audio / art / accessibility options | Functional mission and measured budgets | Replace missing assets deliberately; test contrast and motion settings |
-| Endless mode | Finite levels and resource ownership are stable | Seeded, connected chunks with reproducible traversal and bounded cleanup |
-| Custom convex/deformed mine segments | Prefab editor proves useful | Separate geometry project: mesh editing, robust openings, collision, validation |
-| Multiplayer | Stable simulation and a separate design/budget | Networking affects authority, timing, prediction, content, and testing |
-| VR / mobile / classic Descent file compatibility | Explicit new project scope | These materially change constraints; they are not small final additions |
+For heavier enemies, distinguish current visuals/projectile variants from finished tactical roles. Authored-mine bombers, destroyers and bosses share much of their movement; hostile projectiles currently use 10 damage. Player projectile explosion/penetration flags do not establish complete splash/penetration behavior. Check `EnemyManager.js` and `ProjectileManager.js` before extending them.
 
-## Rules that keep the project finishable
+## Verification and performance boundary
 
-Keep the playable slice working at each milestone. Finish one weapon and one mission before expanding the inventory or campaign. Store definitions as data and make the game/editor consume the same loader. Defer streaming until a measured need exists. Make every task demonstrate a user-visible behavior or reduce a verified maintenance risk. Reassess the plan from actual playtests rather than the completeness of class names or README feature lists.
+The October 22 repository review ran `npm run verify`: lint passed for 80 runtime modules and two lint tooling files, strict type checks passed, all 485 unit/simulation tests passed, and the production build passed. Scope is declared in `tsconfig.check.json`; this is not full-source lint/type coverage. The existing large-chunk build advisory remains.
+
+Latest completed targeted browser evidence is the [October 21 fighter checkpoint](progress/mobile-fighter-browser-check.json), alongside [My Levels](progress/my-levels-browser-check.json) and earlier feature reports. The October 22 fighter/library spot check was stopped during local server startup before tests executed. It establishes neither a browser pass nor a gameplay failure. Full browser verification for the current revision remains a next action.
+
+The [October 21 hardware capture](progress/deepworks-mobile-fighters.json) records Intel UHD / ANGLE D3D11 at 1280×720: idle p95/worst 16.8/33.4 ms, firing 16.7/16.8 ms, encounter 16.8/33.4 ms, with no frames over 100 ms. These focused results supersede the old 18 ms figure as the latest capture, but do not close M2. Retain the provisional 16.7 ms p95 target until representative measurements and an explicit acceptance decision support a change. Controlled-clock software-rendered browser checks are functional evidence only.
+
+## Later work and scope limits
+
+Rescue objectives are the next proposed distinct mission mechanic after encounter tuning; recharge stations require a weapon-energy decision. Flooded volumes/currents and finite triggered reinforcements need separate validation, runtime, editor and lifecycle work. See [environment and mission options](ENVIRONMENT_AND_MISSION_ROADMAP.md).
+
+Map pan/rotate/zoom/markers, input remapping/gamepad support, further art/accessibility work and editor camera/isolation/multi-selection tools remain useful follow-ups. Water is currently a solid surface treatment. Arbitrary vertex editing, streaming, online level hosting, multiplayer, VR, mobile controls and classic Descent file compatibility require separate scope. The internal endless generator remains for diagnostics/regressions, not the primary mission library.
+
+Original M1–M4 engineering estimates described the October 14 recovery plan, not remaining implementation effort. Re-estimate each new feature from its actual scope and playtest results.

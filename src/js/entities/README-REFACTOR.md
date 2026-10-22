@@ -1,5 +1,7 @@
 # EnemyManager Refactoring Documentation
 
+> Historical refactoring record. Current extension instructions are in the [developer guide](../../../DEVELOPER_GUIDE.md); current behaviors and next steps are in the [encounter review](../../../docs/ENEMY_AND_ENCOUNTER_REVIEW.md) and [fighter guide](../../../docs/FIGHTER_MOVEMENT.md). Archived registries mentioned below are not active sources of truth.
+
 > Current source inventory: unused projectile definitions and demonstration files referenced below are preserved in [the historical archive](../../../archive/README.md). Use [the orchestration checkpoint](../../../docs/progress/M2_ENEMY_ORCHESTRATION.md) for current contracts and verification.
 
 > Historical refactoring notes. See the current [M2 enemy/effect checkpoint](../../../docs/progress/M2_ENEMY_EFFECTS.md): the unused base mesh builder has been removed, concrete builders are checked directly, and effect pools now have bounded retention. Some legacy definitions and claims below are not the active source of truth.

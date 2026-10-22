@@ -28,7 +28,7 @@ The library re-reads saved data before mutations. If another tab changed or dele
 
 ## Next steps
 
-This is the first step toward user campaigns. Campaign ordering, briefings, campaign bundle import/export and saved campaign progression are not implemented yet. [Mobile fighters and their proving ground](FIGHTER_MOVEMENT.md) are the next gameplay addition; difficulty and encounter tuning follow.
+This is the first step toward user campaigns. Custom campaign ordering/briefings, campaign bundle import/export and saved campaign progression are not implemented yet. Built-in missions already advance through the completion screen. [Mobile fighters and their proving ground](FIGHTER_MOVEMENT.md) are implemented; the next gameplay task is mixed scout/fighter encounter tuning. See the [current roadmap](ROADMAP.md#next-work-queue) for priorities.
 
 ## Verification
 

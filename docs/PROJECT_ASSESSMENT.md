@@ -2,7 +2,7 @@
 
 Assessment date: **October 14, 2026** (America/New_York). Baseline: **`7e70489`**, last repository commit dated May 25, 2025. This review adds documentation and diagnostic evidence; it does not repair the game or upgrade dependencies.
 
-**Historical baseline:** This assessment records the game before implementation. Subsequent fixes and current verification are tracked in the [startup checkpoint](progress/M1_STARTUP.md) and [session-lifecycle checkpoint](progress/M1_SESSION_LIFECYCLE.md). The P0 startup defects and much of the lifecycle/cleanup work are now repaired; remaining findings apply unless the progress notes say otherwise.
+**Historical baseline, not current status:** Everything below records the October 14 pre-implementation review at `7e70489`, including its then-current defects, inventory and recommendations. It is retained as audit evidence, not a current defect backlog. M1/M3/M4 are now accepted, and the game/editor have advanced substantially. Use the [current roadmap](ROADMAP.md), [handoff](progress/NEXT_SESSION.md) and [developer guide](../DEVELOPER_GUIDE.md) for implementation status, remaining work and supported extension paths. Revalidate an old finding against current source before treating it as open.
 
 ## Honest assessment
 

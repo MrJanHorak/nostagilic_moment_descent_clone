@@ -1,5 +1,7 @@
 # Environments and mission variety
 
+Updated October 22, 2026. Use the [main roadmap](ROADMAP.md#next-work-queue) for work order. Verification below records the original environment/scout checkpoint; later features have their own linked evidence.
+
 ## Playable now
 
 The scout has a 550 ms amber-eyed warning, then commits to a straight 10-unit/s lunge for at most 650 ms. Sidestepping after commitment can evade it. Walls and closing doors stop it. A strike deals its existing 5 damage once, leaves the robot alive, and starts 1.1 seconds of recovery: brief backward movement followed by a stationary opportunity to return fire. Health stays 10; a campaign pulse still kills it in one hit. Touching it no longer suicides it or satisfies a required kill. The cue uses existing eyes and wings, without extra lights. Pause, death and restart own all timing through the simulation.
@@ -14,16 +16,22 @@ Both are **solid face treatments**. Water is not yet a volume to dive into. Neit
 
 Version 9 opts authored documents into these surface rules and retains sliding doors. Version 1–8 cannot silently acquire damage from a new pattern; their old hazard stripes remain decoration. Contact uses actual rendered solid panels and convex sloped hulls, not an entire room bounding box. Door and hatch openings stay empty. Panel seams cannot multiply damage, re-entry cannot bypass the cadence, and long frames do not replay a damage backlog. Materials/textures belong to each world and are disposed at teardown. No external assets, dependencies or additional render passes are used.
 
-## Suggested next work
+## Delivered mission systems
 
 1. **Reactor escape countdown and destructible cores implemented.** Nightfall now starts a 60-second clock at shutdown and sends the player back through the lift/lower loop to arrival. Required objectives must be cleared first. See [the reactor guide](REACTOR_ESCAPE.md) for editor authoring, validation and lifecycle rules.
 2. **Panel-controlled force fields implemented.** Vector Foundry has a cyan lift field disabled by its nearby relay. Fields absorb shots, block bodies without contact damage, and appear with their controls on the visited-area map. See [force-field rules and authoring](FORCE_FIELDS.md).
-3. **Rescue objectives.** Put optional survivors in a side room, show the carried count in the cockpit, and award the rescue only on successful extraction. This gives exploration a purpose beyond ammunition.
-4. **Recharge stations.** Add recognizable safe alcoves with bounded shield/energy restoration. Decide how weapon energy works first; avoid turning a mandatory fight into unlimited refilling at its doorway.
-5. **Flooded passages and currents.** Author a separate fluid volume, with a clear boundary, submerged visibility/audio and consistent ship/enemy/projectile rules. A gentle current could create a route choice without introducing gravity into six-axis flight. This is a larger feature than a face texture and needs volume validation, editor tools and transition tests.
-6. **Triggered reinforcements.** A noisy, visibly active generator with a finite wave budget could make restoring a relay change an encounter. Cap active robots, provide a warning and fallback route, and make its state reset cleanly.
+3. **Destructible reactors and larger exploration implemented.** [Deepworks](DEEPWORKS.md) has an editable reactor, 120-second extraction, 48 spaces, nine loops and three hidden stores. Reactor destruction can control gates and countdowns.
 
-Continue bounded fighter repositioning and one mixed scout/fighter encounter alongside these mission mechanics. Avoid increasing enemy counts everywhere: quiet travel, recognizable landmarks, an optional supply branch and a retreat corner are what give a dangerous room context.
+## Proposed mission systems
+
+These are future options, not current editor/runtime features:
+
+1. **Rescue objectives.** Put optional survivors in a side room, show the carried count in the cockpit, and award the rescue only on successful extraction. This gives exploration a purpose beyond ammunition.
+2. **Recharge stations.** Add recognizable safe alcoves with bounded shield/energy restoration. Decide how weapon energy works first; avoid turning a mandatory fight into unlimited refilling at its doorway.
+3. **Flooded passages and currents.** Author a separate fluid volume, with a clear boundary, submerged visibility/audio and consistent ship/enemy/projectile rules. A gentle current could create a route choice without introducing gravity into six-axis flight. This is a larger feature than a face texture and needs volume validation, editor tools and transition tests.
+4. **Triggered reinforcements.** A visibly active generator with a finite wave budget could make restoring a relay change an encounter. Cap active robots, provide a warning and fallback route, and reset its state cleanly.
+
+[Bounded fighter repositioning](FIGHTER_MOVEMENT.md) is implemented. The immediate gameplay task is to tune one mixed scout/fighter encounter before expanding mission systems. Avoid increasing enemy counts everywhere: quiet travel, recognizable landmarks, an optional supply branch and a retreat corner give a dangerous room context.
 
 ## Reference
 
@@ -35,4 +43,4 @@ The environment/scout pass verified 71 linted runtime modules, strict types, all
 
 Five targeted browser scenarios pass across completed runs: native scout warning/strike/recovery and flight onto water/lava with pause/resume, climbing clear and restart; both updated campaign routes; editor export/import; and production weapon kills, extraction, replay, death/reboot and menu. See the [verification record](progress/environment-browser-check.json), reviewed [coolant water](progress/coolant-water.png) and [reactor lava](progress/reactor-lava.png). Earlier harness assumptions and their corrections are recorded there. These are functional checks; water volume physics and hardware frame-time acceptance remain separate work.
 
-The [Deepworks showcase](DEEPWORKS.md) adds physical destructible reactors, 48 spaces, nine loops, three secrets, an editor same-wall connection repair, procedural surface detail and conservative portal visibility. Rescue objectives remain the next distinct mission system.
+Later [Deepworks verification](DEEPWORKS.md#verification) covers physical reactors, larger routes, same-wall authoring and portal visibility. [Fighter verification](FIGHTER_MOVEMENT.md#verification) records the later 485-case suite and focused hardware capture. Rescue objectives remain proposed; mixed-encounter tuning comes first in the current queue.
