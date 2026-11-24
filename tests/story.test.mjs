@@ -204,3 +204,21 @@ test('rescuing one miner keeps the shared figure resources for the others; dispo
   story.dispose();
   assert.ok(disposed > 0);
 });
+
+test('every Act 1 mission carries a complete, valid story', async () => {
+  const { campaignDocuments } = await import('../src/js/core/levels/Campaign.js');
+  const { validateLevelDocument: validate } = await import('../src/js/core/levels/document/validateLevelDocument.js');
+  const prefixes = ['sb:', 'vf:', 'nr:', 'dw:'], seen = new Set();
+  for (const [index, document] of campaignDocuments.entries()) {
+    assert.equal(document.formatVersion, 13, `${document.id} uses the story format`);
+    assert.equal(validate(document).valid, true, `${document.id} validates`);
+    const story = /** @type {any} */ (document).story;
+    assert(story.messages.some(message => message.trigger.on === 'start'), `${document.id} opens with a radio message`);
+    assert(story.messages.some(message => message.speaker === 'FOREMAN'), `${document.id} hears from FOREMAN`);
+    assert(story.logs.length >= 2 && story.survivors.length >= 2, `${document.id} has logs and miners to find`);
+    for (const item of [...story.messages, ...story.logs, ...story.survivors]) {
+      assert(item.id.startsWith(prefixes[index]), `${item.id} uses the ${prefixes[index]} prefix`);
+      assert(!seen.has(item.id), `${item.id} is unique across the campaign`); seen.add(item.id);
+    }
+  }
+});

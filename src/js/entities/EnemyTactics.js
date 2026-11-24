@@ -4,7 +4,8 @@ import { MINE_BOMBER } from './BomberAttack.js';
 // Speeds are world units/second; all durations are simulation milliseconds.
 export const MINE_FIGHTER = Object.freeze({
   speed: 4.8, decisionMs: 350, nearRange: 5.5, farRange: 9,
-  windupMs: 450, recoveryMs: 400, firstReactionMs: 250,
+  // The first wind-up waits long enough for a few visible movement decisions.
+  windupMs: 450, recoveryMs: 400, firstReactionMs: 1200,
   intervalMs: 1450, intervalVariationMs: 300,
   projectileSpeed: 18, inaccuracy: 0.025,
 });

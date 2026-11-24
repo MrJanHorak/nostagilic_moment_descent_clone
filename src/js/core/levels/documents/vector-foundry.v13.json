@@ -1,0 +1,525 @@
+{
+  "formatVersion": 13,
+  "id": "vector-foundry",
+  "name": "Vector Foundry",
+  "rooms": [
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "incline",
+      "prefab": "offset-corridor",
+      "position": [
+        0,
+        4,
+        -18
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      },
+      "endOffset": [
+        0,
+        8
+      ]
+    },
+    {
+      "id": "upper-works",
+      "prefab": "box-room",
+      "position": [
+        0,
+        8,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877138,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lift-shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        23,
+        -36
+      ],
+      "size": [
+        8,
+        8,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      },
+      "pitch": 90
+    },
+    {
+      "id": "lift-control",
+      "prefab": "box-room",
+      "position": [
+        0,
+        38,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "extraction",
+      "prefab": "box-room",
+      "position": [
+        20,
+        38,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-cache",
+      "prefab": "box-room",
+      "position": [
+        20,
+        8,
+        -36
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "incline-entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "incline",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "incline-exit",
+      "a": {
+        "roomId": "incline",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "upper-works",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "lift-bottom",
+      "a": {
+        "roomId": "upper-works",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "lift-shaft",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "lift-top",
+      "a": {
+        "roomId": "lift-shaft",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "lift-control",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "extraction-gate",
+      "a": {
+        "roomId": "lift-control",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "extraction",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "cache",
+      "a": {
+        "roomId": "upper-works",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "coolant-cache",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        6
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "works-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "coolant-cache",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        1
+      ]
+    },
+    {
+      "id": "lift-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "lift-control",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "extraction",
+      "position": [
+        4,
+        0,
+        0
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-lift",
+      "label": "Lift field control",
+      "roomId": "upper-works",
+      "position": [
+        2,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "relay-control",
+      "label": "Extraction controls",
+      "roomId": "lift-control",
+      "position": [
+        2,
+        0,
+        0
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "lift-door",
+      "connectionId": "lift-bottom",
+      "deviceId": "relay-lift",
+      "kind": "force-field"
+    },
+    {
+      "id": "extraction-door",
+      "connectionId": "extraction-gate",
+      "deviceId": "relay-control"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [],
+    "requiredDeviceIds": [
+      "relay-lift",
+      "relay-control"
+    ],
+    "exitId": "exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "vf:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Same mine, second contract. The Consortium wants the foundry lift running so their 'recovery team' can follow you up. Climb, unlock extraction, get out. And keep an ear on that distress loop.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "vf:msg-foreman-closed",
+        "speaker": "FOREMAN",
+        "text": "NOTICE. FOUNDRY LEVELS ARE CLOSED. RETURN TO THE SURFACE.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "incline"
+        }
+      },
+      {
+        "id": "vf:msg-foreman-power",
+        "speaker": "FOREMAN",
+        "text": "LIFT POWER WITHDRAWN. THE CLIMB IS NOT SAFE FOR YOU.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "upper-works"
+        }
+      },
+      {
+        "id": "vf:msg-field",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "It's put a field across the lift. There's a control relay on this level; it can't hold that forever. Mind the floor, that's live lava.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "upper-works"
+        }
+      },
+      {
+        "id": "vf:msg-cache",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Distress loop is strongest in here. That scout is circling something. Someone, I think.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "coolant-cache"
+        }
+      },
+      {
+        "id": "vf:msg-foreman-worker",
+        "speaker": "FOREMAN",
+        "text": "THE WORKER IN THE COOLANT BAY IS UNHARMED. YOU MAY PROCEED.",
+        "trigger": {
+          "on": "defeat",
+          "enemyId": "works-scout"
+        }
+      },
+      {
+        "id": "vf:msg-lift",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Field's down. Did that thing just give you permission? Climb before it changes its mind.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-lift"
+        }
+      },
+      {
+        "id": "vf:msg-foreman-up",
+        "speaker": "FOREMAN",
+        "text": "IF YOU TAKE THEM, TAKE THEM UP. NOT DOWN.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "lift-control"
+        }
+      },
+      {
+        "id": "vf:msg-gate",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Extraction gate is open. 'Not down.' That memo said the lower works were being closed. I think FOREMAN read it too.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-control"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "vf:log-ticket",
+        "roomId": "upper-works",
+        "position": [
+          -6,
+          0,
+          -5
+        ],
+        "title": "Maintenance ticket 4471",
+        "text": "FOREMAN cut lift power after Consortium recovery drones came up the incline. Reason logged: WORKER PROTECTION. Ticket reassigned to Consortium remote admin. Resolution: 'Override site AI. Restore access for recovery team.' Status: failed."
+      },
+      {
+        "id": "vf:log-sato",
+        "roomId": "lift-control",
+        "position": [
+          -5,
+          0,
+          -4
+        ],
+        "title": "Voice note: M. Sato",
+        "text": "If the lift's dead we're stuck up here, but nothing comes up either. Ivo says FOREMAN sends a ration drop down the shaft every shift change. A mine computer, doing that. Nobody told it to."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "vf:miner-ivo",
+        "roomId": "coolant-cache",
+        "position": [
+          5,
+          0,
+          4
+        ],
+        "name": "Ivo Marsh"
+      },
+      {
+        "id": "vf:miner-mira",
+        "roomId": "lift-control",
+        "position": [
+          5,
+          0,
+          -4
+        ],
+        "name": "Mira Sato"
+      }
+    ]
+  }
+}

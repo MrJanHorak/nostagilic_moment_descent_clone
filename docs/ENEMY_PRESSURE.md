@@ -11,11 +11,13 @@ October 22, 2026. Owner feedback on Crossfire Relay was that combat felt easy an
 | Fighter movement | 1.8 units/s | 4.8 units/s for pursuit and local repositioning |
 | Fighter planning / preferred distance | 750–900 ms / 7–12 units | 350–500 ms / 5.5–9 units |
 | Fighter warning / recovery | 650 / 850 ms | 450 / 400 ms |
-| Fighter shot interval | 2–3 s | 1.45–1.75 s; a freshly spawned fighter can fire after about 700 ms |
+| Fighter shot interval | 2–3 s | 1.45–1.75 s; a freshly spawned fighter holds fire for 1.2 s, so its first shot comes after about 1.65 s (was 700 ms until November 24) |
 | Fighter projectile | 10 units/s, 0.05 directional spread | 18 units/s, 0.025 directional spread |
 | Scout pursuit / strike | 3 / 10 units/s; wind-up within six units | 5.4 / 14 units/s; wind-up within eight units |
 | Scout warning / recovery / retry | 550 / 1,100 / 500 ms | 450 / 700 / 250 ms |
 | Nearby allies | Individual sightings only | Bounded reports of an actually seen ship position |
+
+**November 24 balance pass.** Robots in authored mines are drawn at 80% size (`AUTHORED_ROBOT_SCALE`) so they no longer dwarf the miner figures. Their hit boxes and body clearance keep full-size values, so they are no harder to hit and route exactly as before. Fighters' opening grace (`MINE_FIGHTER.firstReactionMs`) rose from 250 ms to 1,200 ms: a fighter now visibly repositions and strafes before its first wind-up instead of firing almost immediately.
 
 Health, damage and ammunition costs are unchanged: the fighter still has 25 health and fires ten-damage projectiles; the scout has ten health and deals five damage on a successful strike. The ship's normal maximum speed remains six units/s. A faster pursuer and shorter attack gaps make holding a firing position or slowly touring a live encounter more dangerous.
 

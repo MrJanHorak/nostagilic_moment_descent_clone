@@ -55,10 +55,11 @@ test('development: mobile fighter drill warns, damages, pauses, clears, flies th
     const state = await readFlight(page), fighter = state.fighters.find(enemy => enemy.id === first.id);
     if (fighter?.motion === 'strafe' && Math.abs(fighter.position[0] - first.position[0]) > 0.3 && Math.abs(fighter.position[1] - first.position[1]) > 0.1) { moved = fighter; return true; }
     return false;
-    // Two attack cycles with up to 300 ms random interval variation each precede
-    // the first strafe, so it starts between about 2.8 and 3.4 s.
-  }, { ticks: 50, message: 'The fighter must strafe sideways and vertically within its first attack cycles' });
-  expect(moved.decisions).toBeLessThan(5);
+    // The opening grace (MINE_FIGHTER.firstReactionMs) lets it strafe at about 1 s,
+    // before its first wind-up; the margin covers slower frames.
+  }, { ticks: 30, message: 'The fighter must move sideways and vertically before committing to fire' });
+  expect(moved.decisions).toBeLessThan(5); expect(moved.phase).toBe('idle');
+  await expect(page.locator('#health-percentage')).toHaveText('100%');
   await page.clock.runFor(32); await page.screenshot({ path: info.outputPath('fighter-strafe.png') });
   await page.keyboard.press('Escape'); const paused = await readFlight(page);
   for (let tick = 0; tick < 20; tick++) await page.clock.fastForward(100);

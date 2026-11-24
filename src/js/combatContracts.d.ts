@@ -20,6 +20,8 @@ export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   health: number;
   velocity: Vector3;
   collisionRadius: number;
+  /** Hit box enlargement when the visible model is drawn smaller than full size. */
+  hitScale?: number;
   lastFireTime: number;
   fireRate: number;
   fighterAttack?: FighterAttackState;

@@ -114,7 +114,7 @@ test('editor rejects self-locked field controls atomically and preserves v11 thr
 });
 
 test('Vector Foundry includes a valid relay-controlled lift field without changing its extraction door', () => {
-  const doc = campaignDocuments[1]; assert.equal(validateLevelDocument(doc).valid, true); assert.equal(doc.formatVersion, 11);
+  const doc = campaignDocuments[1]; assert.equal(validateLevelDocument(doc).valid, true); assert.equal(doc.formatVersion, 13);
   assert.equal(doc.doors.find(d => d.id === 'lift-door').kind, 'force-field');
   assert.equal(doc.doors.find(d => d.id === 'extraction-door').kind, undefined);
 });

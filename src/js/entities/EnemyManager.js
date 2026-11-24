@@ -5,7 +5,7 @@ import { hasLineOfSight, traceShot } from '../utils/combatTrace.js';
 import { moveSphere } from '../utils/sphereMovement.js';
 import { animateEnemy, getEnemyFiringRange } from './EnemyAnimations.js';
 import { enemyTypes } from './EnemyTypes.js';
-import EnemyFactory from './EnemyFactory.js';
+import EnemyFactory, { fitEnemyCollider } from './EnemyFactory.js';
 import ProjectileManager from './ProjectileManager.js';
 import EffectsManager from '../effects/EffectsManager.js';
 import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
@@ -17,6 +17,9 @@ import { MINE_FIGHTER, mineSpeed, mineHealth } from './EnemyTactics.js';
 import { DIFFICULTIES, scaleEnemyHealth, scaleFireInterval } from '../core/Difficulty.js';
 import { MINE_BOMBER, advanceBomberAttack, bomberCommitted, createBomberAttack, presentBomberAttack } from './BomberAttack.js';
 import { MINE_SALVAGE } from './EnemySalvage.js';
+
+/** Mine robots read better slightly smaller than the original tunnel models, next to miners and doorways. */
+export const AUTHORED_ROBOT_SCALE = 0.8;
 
 /** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
  * route: THREE.Vector3[] | null, waypoint: number, revision: number, tactical: boolean, nextAlertAt: number}} MinePursuit */
@@ -244,7 +247,7 @@ class EnemyManager {
       authored ? { ...enemyType, health: scaleEnemyHealth(mineHealth(enemyType), this.difficulty) } : enemyType,
       position,
       this.playerTransform,
-      { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true }
+      { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true, scale: authored ? AUTHORED_ROBOT_SCALE : 1 }
     );
     if (!this.isCurrent(generation, sessionId)) {
       removeEnemyAt([enemy], 0);
@@ -643,7 +646,7 @@ class EnemyManager {
 
       // Update enemy collider
       enemy.mesh.updateMatrixWorld(true);
-      enemy.collider.setFromObject(enemy.mesh);
+      fitEnemyCollider(enemy);
 
       // Check collision with player
       const collisionDistance = arena ? enemy.collisionRadius + PLAYER_RADIUS : enemy.type.size * 2;
@@ -753,7 +756,7 @@ class EnemyManager {
     const eligible = distance < getEnemyFiringRange('fighter') && this.canSeePlayer(enemy)
       && enemy.mesh.getWorldDirection(new THREE.Vector3()).dot(direction.normalize()) > 0;
     const event = advanceFighterAttack(enemy.fighterAttack, now, eligible, enemy.fireRate);
-    presentFighterAttack(enemy, now); enemy.mesh.updateMatrixWorld(true); enemy.collider.setFromObject(enemy.mesh);
+    presentFighterAttack(enemy, now); enemy.mesh.updateMatrixWorld(true); fitEnemyCollider(enemy);
     if (event === 'charge' && this.audioManager?.initialized) {
       try { this.audioManager.playSound('enemyCharge', { volume: 0.22 * Math.max(0.25, 1 - distance / 30) }); }
       catch (error) { console.warn('Unable to play enemy warning:', error); }

@@ -11,6 +11,18 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 Act 1 story and balance pass (Phase 1 complete)
+
+- **Story:** Vector Foundry, Nightfall Reactor and Asterion Deepworks now have v13 copies with radio messages, data logs and rescuable miners (`*.v13.json`; the older files stay for tests). The campaign and the editor's **Open Deepworks** use them. Beats and names are in [STORY.md](../STORY.md#act-1-status), and briefings mention the optional story content.
+- **Balance:**
+  - Mine robots are drawn at 80% size with full-size hit boxes and clearance (`AUTHORED_ROBOT_SCALE`, `fitEnemyCollider`).
+  - Fighters wait 1.2 s before their first wind-up (was 250 ms), so they strafe before firing. In the drill the strafe now comes at about 1 s and the first shot at about 1.65 s.
+  - Details are in [enemy pressure](../ENEMY_PRESSURE.md).
+- **Tests:** a new Act 1 story test, a scale and hit-box test, and the updated fighter cadence test; the fighter-drill browser test is back to its original intent (strafe before the first shot). Verify passes (584 tests). A browser smoke check confirmed each mission's opening radio line and its miner and log counts.
+- **Owner check:** the long combat browser tests (keyboard victory/death, force fields, Signal Breach ranged fight, campaign routes, fighter drill) crash or exceed the VM's time limit, so confirm them on real hardware.
+
+Next: Phase 2, the multiplayer-ready refactor.
+
 ## November 24 editor tutorial and Windows menu fix
 
 - **Windows right-click:** the browser's own menu no longer covers the editor's menu. Windows fires `contextmenu` after the button is released, when the editor menu is already under the cursor, so the canvas never received it. `ViewportMenu` now blocks it over its own popovers too.

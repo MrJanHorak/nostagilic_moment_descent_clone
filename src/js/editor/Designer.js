@@ -10,7 +10,7 @@ import { connectableFace, portFrame, toWorld } from '../core/levels/document/Roo
 import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
-import deepworks from '../core/levels/documents/asterion-deepworks.v12.json';
+import deepworks from '../core/levels/documents/asterion-deepworks.v13.json';
 import sample from '../core/levels/documents/signal-breach.v13.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';

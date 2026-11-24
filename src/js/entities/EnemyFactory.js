@@ -6,6 +6,18 @@ import DestroyerMeshBuilder from './meshBuilders/DestroyerMeshBuilder.js';
 import BossMeshBuilder from './meshBuilders/BossMeshBuilder.js';
 import disposeObject from '../utils/disposeObject.js';
 
+/** Refresh an enemy's hit box from its mesh, restored to full size when the
+ * visible model is drawn smaller (see `scale` in createEnemy).
+ * @param {{mesh: THREE.Object3D, collider: THREE.Box3, hitScale?: number}} enemy */
+export function fitEnemyCollider(enemy) {
+  enemy.collider.setFromObject(enemy.mesh);
+  const factor = enemy.hitScale ?? 1;
+  if (factor !== 1 && !enemy.collider.isEmpty()) {
+    const center = enemy.collider.getCenter(new THREE.Vector3()), half = enemy.collider.getSize(new THREE.Vector3()).multiplyScalar(factor / 2);
+    enemy.collider.min.copy(center).sub(half); enemy.collider.max.copy(center).add(half);
+  }
+}
+
 class EnemyFactory {
   /** @param {THREE.Scene} scene */
   constructor(scene) {
@@ -23,9 +35,9 @@ class EnemyFactory {
   /** @param {import('../combatContracts.js').EnemyDefinition} enemyType
    * @param {THREE.Vector3} position
    * @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
-   * @param {{accentLights?: boolean}} [options]
+   * @param {{accentLights?: boolean, scale?: number}} [options] `scale` resizes the visible robot only: its hit box and body clearance keep their full-size values, so a smaller model is not harder to hit.
    * @returns {import('../combatContracts.js').EnemyInstance} */
-  createEnemy(enemyType, position, playerTransform = null, { accentLights = true } = {}) {
+  createEnemy(enemyType, position, playerTransform = null, { accentLights = true, scale = 1 } = {}) {
     if (!enemyType || !Object.hasOwn(this.meshBuilders, enemyType.name)) {
       throw new RangeError('Unknown enemy type');
     }
@@ -70,6 +82,8 @@ class EnemyFactory {
       const extent = new THREE.Vector3(...axes.map(axis => Math.max(Math.abs(bounds.min[axis]), Math.abs(bounds.max[axis]))));
       const collisionRadius = extent.length() * 1.1;
       if (!Number.isFinite(collisionRadius)) throw new Error('Enemy builder produced invalid bounds');
+      // Shrink the visible model after measuring it; gameplay volumes stay full size.
+      if (scale !== 1) { body.scale.setScalar(scale); body.updateMatrixWorld(true); }
 
       // Position the enemy
       body.position.copy(position);
@@ -91,10 +105,11 @@ class EnemyFactory {
         lastFireTime: 0,
         fireRate: 2000, // milliseconds between shots
         collisionRadius,
+        hitScale: 1 / scale,
       };
 
       // Update the enemy collider
-      enemy.collider.setFromObject(body);
+      fitEnemyCollider(enemy);
 
       // Add emissive glow to make enemies more visible
       body.traverse((child) => {

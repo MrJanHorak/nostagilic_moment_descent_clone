@@ -619,3 +619,19 @@ test('pause freezes ready-exit completion; resume completes once; death at the e
   assert.equal(game.session.phase, 'dead'); assert.equal(game.mission.completed, false);
   assert.equal(game.gameState.score, 150); assert.deepEqual(game.results, ['completed', 'dead']);
 });
+
+test('mine robots are drawn smaller but keep full-size hit boxes and body clearance', async () => {
+  const { default: Factory } = await import('../src/js/entities/EnemyFactory.js');
+  const { AUTHORED_ROBOT_SCALE } = await import('../src/js/entities/EnemyManager.js');
+  const { enemyTypes: types } = await import('../src/js/entities/EnemyTypes.js');
+  assert.ok(AUTHORED_ROBOT_SCALE < 1);
+  for (const type of types) {
+    const factory = new Factory(new THREE.Scene());
+    const full = factory.createEnemy(type, new THREE.Vector3(), null, { accentLights: false });
+    const small = factory.createEnemy(type, new THREE.Vector3(), null, { accentLights: false, scale: AUTHORED_ROBOT_SCALE });
+    assert.equal(small.mesh.scale.x, AUTHORED_ROBOT_SCALE, type.name);
+    assert.ok(Math.abs(small.collisionRadius - full.collisionRadius) < 1e-9, `${type.name} clearance`);
+    const fullSize = full.collider.getSize(new THREE.Vector3()), smallSize = small.collider.getSize(new THREE.Vector3());
+    assert.ok(fullSize.distanceTo(smallSize) < 1e-6, `${type.name} hit box`);
+  }
+});

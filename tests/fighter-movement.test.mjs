@@ -161,7 +161,7 @@ test('authored fighters close distance and strafe at the increased speed with bo
   assert.ok(enemy.fighterMovement.decisions >= 4 && enemy.fighterMovement.decisions <= 6);
 });
 
-test('authored fighters fire five real shots in eight seconds while preserving full warnings, recovery and ten-damage hits', t => {
+test('authored fighters hold fire for their opening grace, then fire five real shots in nine seconds with full warnings, recovery and ten-damage hits', t => {
   t.mock.method(Math, 'random', () => 0.5);
   const { enemy, manager, state } = fixture(t), times = []; let warningAt = null;
   const fire = manager.projectileManager.fireEnemyProjectile.bind(manager.projectileManager);
@@ -171,12 +171,13 @@ test('authored fighters fire five real shots in eight seconds while preserving f
     times.push(state.session.timeMs); return shot;
   });
   let previous = 'idle';
-  for (let frame = 0; frame < 480; frame++) {
+  for (let frame = 0; frame < 540; frame++) {
     state.session.advance(1 / 60); manager.updateEnemies(1 / 60);
     if (enemy.fighterAttack.phase === 'windup' && previous !== 'windup') warningAt = state.session.timeMs;
     previous = enemy.fighterAttack.phase;
   }
-  assert.ok(times.length >= 5); assert.ok(times[0] <= 750);
+  const opening = MINE_FIGHTER.firstReactionMs + MINE_FIGHTER.windupMs;
+  assert.ok(times.length >= 5); assert.ok(times[0] >= opening - 1e-5 && times[0] <= opening + 100, `first shot at ${times[0]} ms`);
   for (let i = 1; i < times.length; i++) assert.ok(times[i] - times[i - 1] >= 1450 && times[i] - times[i - 1] < 1800);
   assert.equal(enemy.health, 40); assert.ok(state.playerHealth < 100);
 });

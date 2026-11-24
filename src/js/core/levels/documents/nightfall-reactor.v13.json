@@ -1,0 +1,574 @@
+{
+  "formatVersion": 13,
+  "id": "nightfall-reactor",
+  "name": "Nightfall Reactor",
+  "rooms": [
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "coolant-works",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2325913,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reactor",
+      "prefab": "box-room",
+      "position": [
+        24,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877138,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lift-junction",
+      "prefab": "box-room",
+      "position": [
+        24,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "upper-control",
+      "prefab": "box-room",
+      "position": [
+        24,
+        16,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "upper-cache",
+      "prefab": "box-room",
+      "position": [
+        48,
+        16,
+        0
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "reserve-cache",
+      "prefab": "box-room",
+      "position": [
+        -24,
+        0,
+        -24
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "coolant-entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "coolant-works",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "reactor-entry",
+      "a": {
+        "roomId": "coolant-works",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "reactor",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "reactor-gate",
+      "a": {
+        "roomId": "reactor",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "lift-junction",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "return-loop",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "arrival",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "control-hatch",
+      "a": {
+        "roomId": "lift-junction",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "upper-control",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "upper-cache-entry",
+      "a": {
+        "roomId": "upper-control",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "upper-cache",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    },
+    {
+      "id": "cache-entry",
+      "a": {
+        "roomId": "coolant-works",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "reserve-cache",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        8,
+        6
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "coolant-guard",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "coolant-works",
+      "position": [
+        -5,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "reactor-guard",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "reactor",
+      "position": [
+        4,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "reserve-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "reserve-cache",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "reserve-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "reserve-cache",
+      "position": [
+        4,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "control-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "upper-cache",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "arrival",
+      "position": [
+        -7,
+        0,
+        5
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-coolant",
+      "label": "Coolant bypass",
+      "roomId": "coolant-works",
+      "position": [
+        2,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "relay-reactor",
+      "label": "Reactor shutdown",
+      "roomId": "upper-control",
+      "position": [
+        2,
+        0,
+        0
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "reactor-door",
+      "connectionId": "reactor-gate",
+      "deviceId": "relay-coolant"
+    },
+    {
+      "id": "extraction-door",
+      "connectionId": "return-loop",
+      "deviceId": "relay-reactor"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "coolant-guard",
+      "reactor-guard"
+    ],
+    "requiredDeviceIds": [
+      "relay-coolant",
+      "relay-reactor"
+    ],
+    "exitId": "exit",
+    "escape": {
+      "triggerDeviceId": "relay-reactor",
+      "durationSeconds": 60
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "nr:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Nightfall powers half the Ridge. The Consortium wants it shut down 'for safe recovery'. Clear the guards, open the coolant bypass, trigger shutdown, then you have sixty seconds to get back here.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "nr:msg-foreman-coolant",
+        "speaker": "FOREMAN",
+        "text": "THE COOLANT BYPASS IS LOCKED. THIS REACTOR KEEPS THE LOWER WORKS BREATHING.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "coolant-works"
+        }
+      },
+      {
+        "id": "nr:msg-bypass",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Bypass open. If that reactor runs the air below... hold on, Two. I'm asking the Consortium before you pull it.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-coolant"
+        }
+      },
+      {
+        "id": "nr:msg-consortium",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Consortium says shut it down. Their exact words: 'Personnel matters are handled.' I don't like that sentence.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "reactor"
+        }
+      },
+      {
+        "id": "nr:msg-foreman-failsafe",
+        "speaker": "FOREMAN",
+        "text": "SHUTDOWN WILL START MY FAILSAFE. THE LOWER WORKS WILL SEAL ON BACKUP AIR. THEY WILL BE SAFE IN THE DARK.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "upper-control"
+        }
+      },
+      {
+        "id": "nr:msg-run",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Reactor's going critical and the failsafe is live. Sixty seconds. Drop through the floor hatch and run west. Go!",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-reactor"
+        }
+      },
+      {
+        "id": "nr:msg-foreman-thanks",
+        "speaker": "FOREMAN",
+        "text": "FAILSAFE ACTIVE. LOWER WORKS SEALED. THANK YOU, PILOT.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-reactor"
+        }
+      },
+      {
+        "id": "nr:msg-reserve",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Another hidden cache. These miners have been planning for a long time.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "reserve-cache"
+        }
+      },
+      {
+        "id": "nr:msg-hale",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Someone up here wired that shutdown. If they're still aboard this rock, find them.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "upper-cache"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "nr:log-hale",
+        "roomId": "upper-control",
+        "position": [
+          -6,
+          0,
+          -6
+        ],
+        "title": "Shift log: J. Hale",
+        "text": "Day 6. Consortium remote-ordered a reactor shutdown. That kills the air below us. So I wired the shutdown into FOREMAN's seal failsafe: if anyone pulls it, the lower works seal and switch to backup scrubbers. I asked FOREMAN first. It agreed. It actually agreed."
+      },
+      {
+        "id": "nr:log-scrubbers",
+        "roomId": "coolant-works",
+        "position": [
+          -6,
+          0,
+          6
+        ],
+        "title": "Scrubber status board",
+        "text": "Backup scrubbers, lower works: 14 days capacity at current load. Occupancy: 23. Last manual check: J. Hale. Consortium remote note attached: 'Do not count personnel against recovery budget.'"
+      }
+    ],
+    "survivors": [
+      {
+        "id": "nr:miner-hale",
+        "roomId": "upper-cache",
+        "position": [
+          5,
+          0,
+          -5
+        ],
+        "name": "Jonah Hale"
+      },
+      {
+        "id": "nr:miner-pell",
+        "roomId": "reserve-cache",
+        "position": [
+          -5,
+          0,
+          -5
+        ],
+        "name": "Ana Pell"
+      }
+    ]
+  }
+}

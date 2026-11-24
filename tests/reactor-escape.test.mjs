@@ -150,7 +150,7 @@ test('successful extraction just before expiry stays complete; combat death and 
 
 test('Nightfall authors the escape back through known rooms, with its optional upper supply room open before shutdown', () => {
   const level = createCampaign().find(level => level.id === 'nightfall-reactor');
-  assert.equal(level.sourceDocument.formatVersion, 10); assert.equal(level.sourceDocument.entities.find(e => e.id === 'exit').roomId, 'arrival');
+  assert.equal(level.sourceDocument.formatVersion, 13); assert.equal(level.sourceDocument.entities.find(e => e.id === 'exit').roomId, 'arrival');
   assert.equal(level.doors.find(door => door.deviceId === 'relay-reactor').connectionId, 'return-loop');
   assert.equal(level.doors.some(door => door.connectionId === 'upper-cache-entry'), false);
 });

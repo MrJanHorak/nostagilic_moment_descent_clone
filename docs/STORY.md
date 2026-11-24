@@ -33,10 +33,17 @@ Radio lines are short (at most 280 characters) and never name keys, since contro
   - 9 radio messages from Vey and FOREMAN.
   - 2 data logs: a miner's shift log and a Consortium memo fragment.
   - 2 rescuable miners: Dara Okafor (maintenance) and Teo Brandt (supply bay).
-- **Vector Foundry, Nightfall Reactor, Deepworks: to write.** Suggested beats:
-  - **Foundry:** FOREMAN cuts power to stop you climbing, then lets you pass after you rescue a miner.
-  - **Nightfall:** the reactor shutdown is FOREMAN's own failsafe; a log shows a miner triggered it.
-  - **Deepworks:** the closure order, FOREMAN's first direct message to Two, and the heavy robots it calls "the Consortium's".
+- **Vector Foundry (v13): written.** FOREMAN withdraws lift power, then lets Two pass once the miner in the coolant bay is safe; "Take them up, not down."
+  - 9 radio messages; logs: maintenance ticket 4471 (the Consortium's failed override) and a voice note from Mira Sato (FOREMAN's ration drops).
+  - Miners: Ivo Marsh (coolant cache), Mira Sato (lift control).
+- **Nightfall Reactor (v13): written.** The shutdown is FOREMAN's own failsafe, wired by miner Jonah Hale to seal the lower works on backup air.
+  - 9 radio messages; logs: Hale's shift log and the scrubber status board ("Do not count personnel against recovery budget").
+  - Miners: Jonah Hale (upper cache), Ana Pell (reserve cache).
+- **Asterion Deepworks (v13): written.** Closure order AC-77, the Consortium's own Asset Protection robots ("THEY ARE THE CONSORTIUM'S"), and FOREMAN's first direct message to Two on the observation deck.
+  - 10 radio messages; logs: closure order AC-77, the freight manifest for the security frames, and a FOREMAN core note.
+  - Miners: Sela Rook (hidden repair locker), Pete Dunn (coolant reservoir), Inés Varga (cargo marshalling).
+
+Act 1 ends on Vey's line at the quay: "we need to talk about who we're actually working for." Act 2 picks up there.
 
 ## Authoring story in the editor
 
