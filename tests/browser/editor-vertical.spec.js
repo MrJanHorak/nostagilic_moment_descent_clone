@@ -49,11 +49,12 @@ test('designer vertical: attach a shaft from a floor menu, author a hatch and fl
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay');
   await page.getByLabel('place-position X', { exact: true }).fill('2'); await page.getByRole('button', { name: 'Add content', exact: true }).click();
   await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1');
-  await page.getByRole('combobox', { name: 'Unlock relay', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
   await page.getByRole('button', { name: 'Frame all', exact: true }).click();
   await page.screenshot({ path: testInfo.outputPath('vertical-three-spaces.png'), fullPage: true });
   const text = await saveJSON(page, testInfo, 'vertical-mine.json'), document = JSON.parse(text), level = compileLevelDocument(document);
-  expect(document.formatVersion).toBe(4); expect(document.rooms[1].size).toEqual([8, 8, 16]); expect(document.rooms[1].pitch).toBe(90);
+  // The relay door is a sliding door (format 8); the pitched shaft geometry is unchanged.
+  expect(document.formatVersion).toBe(8); expect(document.rooms[1].size).toEqual([8, 8, 16]); expect(document.rooms[1].pitch).toBe(90);
   expect(document.rooms[1].position).toEqual([0, -14, 0]); expect(level.mission.exit.position).toEqual([0, -28, 0]);
   await page.locator('#file').setInputFiles({ name: 'vertical-mine.json', mimeType: 'application/json', buffer: Buffer.from(text) });
   await page.getByRole('button', { name: 'Playtest level', exact: true }).click();

@@ -1,4 +1,5 @@
 import { FACES } from '../core/levels/document/LevelContent.js';
+import { storyOf } from './StoryContent.js';
 
 /** @typedef {{roomId: string, face?: import('../levelDocument.js').Face, contentId?: string, connectionId?: string}} ValidationTarget */
 
@@ -12,7 +13,8 @@ export function validationTarget(document, path) {
   const doors = document.formatVersion === 1 ? [] : document.doors;
   /** @param {string | undefined} id */
   const content = id => {
-    const item = id === '@spawn' ? document.playerSpawn : [...document.entities, ...devices].find(item => item.id === id);
+    const story = storyOf(document);
+    const item = id === '@spawn' ? document.playerSpawn : [...document.entities, ...devices, ...(story ? [...story.logs, ...story.survivors] : [])].find(item => item.id === id);
     return item && document.rooms.some(room => room.id === item.roomId) ? { roomId: item.roomId, contentId: id } : null;
   };
   /** @param {import('../levelDocument.js').ConnectionDocument | undefined} link @param {string} [side] */
@@ -41,6 +43,8 @@ export function validationTarget(document, path) {
       }
     }
   }
+  const collectible = path.match(/^\$\.story\.(logs|survivors)\[(\d+)\]/);
+  if (collectible) return content(storyOf(document)?.[/** @type {'logs' | 'survivors'} */ (collectible[1])][Number(collectible[2])]?.id);
   if (/^\$\.playerSpawn(?:\.|$)/.test(path)) return content('@spawn');
   if (path === '$.mission.exitId') return content(document.mission.exitId);
   const required = path.match(/^\$\.mission\.(requiredEnemyIds|requiredDeviceIds)\[(\d+)\]$/);

@@ -115,7 +115,7 @@ test('development: designer shaped corridor authors and flies a combined ramp/di
   await page.locator('#rooms').getByRole('button', { name: 'room-1 · room', exact: true }).click();
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay'); await page.getByLabel('place-position X', { exact: true }).fill('2');
   await page.getByRole('button', { name: 'Add content', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1'); await page.getByRole('combobox', { name: 'Unlock relay', exact: true }).selectOption('relay-1');
+  await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1'); await page.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1');
   await page.getByRole('button', { name: 'Apply door', exact: true }).click();
   const text = await saveJSON(page, testInfo, 'combined-ramp-mission.json');
   await page.locator('#file').setInputFiles({ name: 'combined-ramp-mission.json', mimeType: 'application/json', buffer: Buffer.from(text) });

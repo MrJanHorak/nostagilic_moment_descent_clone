@@ -32,3 +32,20 @@ Logs count once you extract with them.
 - pause/open behaviour
 
 Browser: J opened the log from flight with the comms section focused. The HUD counts and the seeded library archive rendered with a clean console. Settings-during-pause, victory/death/reboot and mission-library browser tests pass.
+
+## Readability and comms signal (November 24, second pass)
+
+From playtest feedback that the bottom bar was hard to read:
+
+- **Two-line guide (HUD and external views):**
+  - Bold first line: mission, objective state, relay/system counts and Aboard/Logs.
+  - Smaller second line: what to do next (nearest relay prompt, where the exit is, location and next room, reactor notes) and the mission-log key.
+  - Control hints (fire, aim, pickup colours, Esc) appear only during the first 15 seconds of each attempt.
+- **Cockpit view:** the top strip also shows Aboard/Logs.
+- **Incoming message signal:**
+  - A short radio chirp, with a softer three-note chime for data logs and the pickup cue for rescues.
+  - Three quick pulses on the comms panel.
+  - A fourth cockpit status lamp that blinks cyan for three seconds.
+- **Cockpit is the default view for new profiles.** Saves made before the camera option existed keep the HUD view; anyone who chose a view keeps it. C still cycles cockpit → HUD → external.
+
+Browser checks: the cockpit default, panel and lamp; the guide before and after the hint window; camera persistence, cockpit instruments, Deepworks cockpit, mission list, Deep Relay start and settings pass.

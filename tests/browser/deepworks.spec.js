@@ -32,7 +32,7 @@ test('production: Deepworks vault cockpit repaints after viewport changes', asyn
   await expect(page.locator('#format-version')).toContainText('Format 12'); await page.clock.pauseAt(start + 3600000);
   await button(page, 'Playtest level').click(); const frame = page.frameLocator('iframe[title="Mission playtest"]');
   await button(frame, 'Start playtest').press('Enter'); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c');
+  /* cockpit is the default view */
   await settleViewport(page, 640, 400); await settleViewport(page, 1280, 800);
   await expect(frame.locator('#cockpit-objective')).toContainText('CORE 150/150');
   await page.screenshot({ path: info.outputPath('deepworks-vault-visual.png'), animations: 'disabled' });
@@ -57,7 +57,7 @@ test('production: editor reactor integrity, destruction-triggered countdown, pau
   const authored = JSON.parse(await readFile(path, 'utf8')); expect(authored.devices[0]).toMatchObject({ kind: 'reactor', health: 20 }); expect(authored.mission.escape.triggerDeviceId).toBe('reactor-1');
   await button(page, 'Undo').click(); await button(page, 'Redo').click(); await page.locator('#file').setInputFiles(path);
   await button(page, 'Playtest level').click(); const frame = page.frameLocator('iframe[title="Mission playtest"]');
-  await button(frame, 'Start playtest').press('Enter'); await page.clock.fastForward(100); await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await button(frame, 'Start playtest').press('Enter'); await page.clock.fastForward(100); /* cockpit is the default view */ await page.clock.fastForward(100);
   await page.keyboard.press('r'); await expect(frame.locator('#escape-countdown')).toBeHidden();
   const fire = async () => { await page.keyboard.press('f'); for (let i = 0; i < 8; i++) await page.clock.fastForward(100); };
   for (let i = 0; i < 3; i++) await fire();
@@ -105,7 +105,7 @@ async function fly(page, axis, target) {
 test('development: Deepworks portal visibility, loop route, native reactor destruction and timed return', async ({ page }, info) => {
   test.setTimeout(600000); await page.setViewportSize({ width: 1280, height: 800 }); await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#select-level-btn').click(); await button(page, 'Asterion Deepworks').press('Enter'); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.clock.fastForward(100);
   const snapshot = () => page.locator('#runtime-diagnostics').getAttribute('data-snapshot').then(JSON.parse);
   await advanceUntil(page, async () => !!(await snapshot()).visibility, { ticks: 15 });
   const initial = await snapshot(); expect(initial.visibility.totalRooms).toBe(48); expect(initial.visibility.visibleRooms).toBeLessThan(48); expect(initial.visibility.culledMeshes).toBeGreaterThan(0);

@@ -147,7 +147,7 @@ test('designer UX: three authored spaces export/reload, play to completion, retu
   await page.getByLabel('place-position X', { exact: true }).fill('1.5'); await page.getByRole('button', { name: 'Add content', exact: true }).click();
   await page.getByLabel('Required for completion', { exact: true }).uncheck(); await page.getByRole('button', { name: 'Apply content', exact: true }).click();
   await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1');
-  await page.getByRole('combobox', { name: 'Unlock relay', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
   const authored = await exportDocument(page, testInfo, 'three-space-authored.json');
   expect(JSON.parse(authored).rooms).toHaveLength(3); compileLevelDocument(JSON.parse(authored));
   // Fresh JSON import is the portable-backup path, independent of autosave.

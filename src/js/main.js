@@ -548,7 +548,7 @@ export default class Game {
       this.levelManager.visibility?.update(this.camera);
       this.renderer?.info?.reset();
       if (this.session.phase !== 'error') this.renderer?.render(this.scene, this.camera);
-      if (this.settings.values.cameraView === 'cockpit' && ['playing', 'paused'].includes(this.session.phase)) {
+      if (this.cockpit && this.settings.values.cameraView === 'cockpit' && ['playing', 'paused'].includes(this.session.phase)) {
         this.cockpit.update(this.gameState, this.spaceship, this.exploration, this.enemyManager.enemies,
           this.levelManager.interaction?.closedConnections ?? new Set(), this.session.timeMs, this.settings.values.headlights);
         this.cockpit.render(this.renderer, this.camera.aspect, this.settings.values.showHUD);

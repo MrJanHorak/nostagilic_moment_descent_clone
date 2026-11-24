@@ -125,8 +125,9 @@ export default class CockpitInterior {
       }
     };
     switchBank(-1); switchBank(1);
-    this.lampMaterials = [0, 1, 2].map(() => new THREE.MeshStandardMaterial({ color: 0x31413a, emissive: 0x85cf9e, emissiveIntensity: 0.3, roughness: 0.4 }));
-    this.lampMaterials.forEach((material, i) => box([0.055, 0.024, 0.035], [(i - 1) * 0.1, -0.32, -1.66], material));
+    // Status lamps: headlights, ammunition, shields, comms.
+    this.lampMaterials = [0, 1, 2, 3].map(() => new THREE.MeshStandardMaterial({ color: 0x31413a, emissive: 0x85cf9e, emissiveIntensity: 0.3, roughness: 0.4 }));
+    this.lampMaterials.forEach((material, i) => box([0.055, 0.024, 0.035], [(i - 1.5) * 0.1, -0.32, -1.66], material));
     // A guarded emergency switch and two real-looking hand controls occupy the lower corners.
     box([0.13, 0.075, 0.07], [-0.4, -0.42, -1.75], recess);
     box([0.045, 0.035, 0.04], [-0.4, -0.4, -1.7], new THREE.MeshStandardMaterial({ color: 0xb14b37 }));

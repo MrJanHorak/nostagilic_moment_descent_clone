@@ -3,7 +3,7 @@ import doorDialog from './DoorDialog.js';
 import openResizeDialog from './ResizeDialog.js';
 import EditorDocument from './EditorDocument.js';
 import { faceLabel, placementPosition } from './EditorPicking.js';
-import { FACES, MATERIALS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
+import { FACES, MATERIALS, STORY_LIMITS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
 import { connectableFace, portFrame, openingFrame, toWorld } from '../core/levels/document/RoomMath.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 
@@ -31,9 +31,9 @@ export default function openContextActions(target, { model, viewport, menu, comm
       catch (error) { viewport.showPlacement(room.id, position, false); menu.error(error); }
     } catch (error) { viewport.showPlacement(room.id, null); menu.error(error); }
   };
-  /** @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
-  const place = (kind, type = 'scout') => commit(() => {
-    const id = model.placeAt(room.id, target.localPoint, kind, type);
+  /** @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] @param {{title?: string, text?: string, name?: string}} [story] */
+  const place = (kind, type = 'scout', story = {}) => commit(() => {
+    const id = model.placeAt(room.id, target.localPoint, kind, type, story);
     select({ ...target, face: undefined, contentId: id });
   });
   const appearance = () => {
@@ -72,7 +72,14 @@ export default function openContextActions(target, { model, viewport, menu, comm
   /** @type {import('./ViewportMenu.js').MenuAction[]} */ const actions = [];
   if (target.contentId) {
     const content = model.content(target.contentId), protectedContent = content.kind === 'spawn' || content.kind === 'exit';
-    actions.push({ label: 'Move selected item', action: moveSelected }, { label: 'Edit selected item', action: inspect }, { label: 'Delete selected item', disabled: protectedContent,
+    actions.push({ label: 'Move selected item', action: moveSelected }, { label: 'Edit selected item', action: inspect },
+      ...(content.kind === 'log' ? [{ label: 'Edit log text…', action: () => menu.form(`Edit ${content.id}`, 'Data log text appears in the mission log after pickup.', [
+        { id: 'title', label: 'Log title', value: content.title, maxLength: STORY_LIMITS.title },
+        { id: 'text', label: 'Log text', type: /** @type {const} */ ('textarea'), value: content.text, maxLength: STORY_LIMITS.logText },
+      ], values => commit(() => model.updateStoryItem(content.id, values)), 'Save log') }] : []),
+      ...(content.kind === 'survivor' ? [{ label: 'Rename miner…', action: () => menu.form(`Rename ${content.id}`, 'Shown when the pilot rescues them.', [
+        { id: 'name', label: 'Miner name', value: content.name, maxLength: STORY_LIMITS.name },
+      ], values => commit(() => model.updateStoryItem(content.id, values)), 'Save name') }] : []), { label: 'Delete selected item', disabled: protectedContent,
       reason: protectedContent ? 'Move the unique spawn or exit instead of deleting it.' : undefined,
       action: () => commit(() => model.checked(candidate => candidate.deleteContent(content.id))) });
   }
@@ -99,6 +106,13 @@ export default function openContextActions(target, { model, viewport, menu, comm
     { label: 'Place ammo here', preview: () => preview('pulseAmmo'), action: () => place('pulseAmmo') },
     { label: 'Place reactor here', action: () => place('reactor'), preview: () => preview('reactor') },
     { label: 'Place relay here', preview: () => preview('relay'), action: () => place('relay') },
+    { label: 'Place data log here…', preview: () => preview('log'), action: () => menu.form('Place data log', `${room.id} · the pilot collects it by flying through. Read later from the mission log.`, [
+      { id: 'title', label: 'Log title', value: 'Shift report', maxLength: STORY_LIMITS.title },
+      { id: 'text', label: `Log text (up to ${STORY_LIMITS.logText} characters)`, type: 'textarea', value: '', maxLength: STORY_LIMITS.logText },
+    ], values => place('log', 'scout', { title: values.title, text: values.text }), 'Place log', () => preview('log')) },
+    { label: 'Place trapped miner here…', preview: () => preview('survivor'), action: () => menu.form('Place trapped miner', `${room.id} · the pilot rescues them by flying close. Rescues are an optional objective.`, [
+      { id: 'name', label: 'Miner name', value: '', maxLength: STORY_LIMITS.name },
+    ], values => place('survivor', 'scout', { name: values.name }), 'Place miner', () => preview('survivor')) },
     { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
     { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },
     { label: target.contentId ? 'Focus selected item' : 'Focus this room', action: () => viewport.frame(true) },

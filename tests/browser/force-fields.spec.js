@@ -37,7 +37,7 @@ test('production: author a force field, shoot and collide, pause, restart, disab
   await dialog.getByRole('button', { name: 'Cancel', exact: true }).click();
   await page.getByRole('button', { name: 'Playtest level', exact: true }).click();
   const frame = page.frameLocator('iframe[title="Mission playtest"]'); await frame.getByRole('button', { name: 'Start playtest', exact: true }).press('Enter');
-  await page.clock.fastForward(100); await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  await page.clock.fastForward(100); /* cockpit is the default view */ await page.clock.fastForward(100);
   for (let i = 0; i < 32; i++) await page.clock.fastForward(100);
   await page.screenshot({ path: info.outputPath('force-field-cockpit.png'), animations: 'disabled' });
   await page.keyboard.press('m'); await page.clock.fastForward(100);

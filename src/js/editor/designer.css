@@ -2,13 +2,13 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 #designer { height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-button, input, select { font: inherit; }
-button, a, input, select { border-radius: 5px; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { border-radius: 5px; }
 button { cursor: pointer; background: #223244; border: 1px solid #41576b; color: #e7eff5; padding: 7px 10px; }
 button:hover { background: #30475b; }
 button:disabled { opacity: .4; cursor: default; }
 button[aria-pressed="true"] { background: #354b5c; border-color: #ffc16e; color: #ffd69e; }
-button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #60dbff; outline-offset: 2px; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid #60dbff; outline-offset: 2px; }
 a { color: #8bdeef; padding: 8px; }
 header { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 22px; border-bottom: 1px solid #344657; background: #182432; }
 .brand span { color: #85a4bc; font-size: 11px; letter-spacing: .24em; }
@@ -52,7 +52,7 @@ aside { background: #17222f; overflow-y: auto; }
 section { padding: 17px; border-bottom: 1px solid #344657; }
 p { margin: 8px 0; font-size: 12px; color: #a7bdcd; overflow-wrap: anywhere; }
 label { display: flex; flex-direction: column; gap: 4px; margin: 9px 0; color: #a7bdcd; font-size: 12px; }
-input, select { min-width: 0; width: 100%; background: #101923; border: 1px solid #42596b; color: #eff4f7; padding: 7px; }
+input, select, textarea { min-width: 0; width: 100%; background: #101923; border: 1px solid #42596b; color: #eff4f7; padding: 7px; }
 fieldset { border: 0; padding: 0; margin: 10px 0; }
 legend { color: #bdd0df; font-size: 12px; }
 .vector { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
@@ -109,3 +109,14 @@ main { grid-column: 2; grid-row: 1; display: flex; flex-direction: column; min-w
   .right-panel { grid-column: 1; grid-row: 3; }
   aside { overflow: visible; }
 }
+
+textarea { resize: vertical; line-height: 1.4; }
+/* Story dialog: a wider popover with a scrolling message list. */
+.viewport-popover.story-dialog { width: 400px; }
+.story-list { display: grid; gap: 6px; margin-top: 8px; max-height: 46dvh; overflow: auto; }
+.story-row { border: 1px solid #34495a; border-radius: 6px; padding: 7px; background: #142231; }
+.story-row p { margin: 0 0 6px; }
+.story-row .story-trigger { color: #8fd0d6; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.story-row .story-actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.story-row .story-actions button { font-size: 11px; padding: 3px 8px; }
+.story-summary { color: #c8d6df; }

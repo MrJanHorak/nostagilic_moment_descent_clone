@@ -16,6 +16,7 @@ function near(actual, expected, tolerance = 1e-9) {
 // Enemy AI/streaming are isolated here; their real managers run in session tests.
 function flight() {
   const game = new Game();
+  game.settings.update({ cameraView: 'hud' }); // these checks cover the first-person camera
   game.camera = new THREE.PerspectiveCamera();
   game.scene.add(game.camera);
   game.spaceship = new Spaceship();

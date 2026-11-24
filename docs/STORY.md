@@ -29,7 +29,7 @@ Radio lines are short (at most 280 characters) and never name keys, since contro
 
 ## Act 1 status
 
-- **Signal Breach (v13): written.**
+- **Signal Breach (v13): written.** Survivors appear as floating, waving miner figures.
   - 9 radio messages from Vey and FOREMAN.
   - 2 data logs: a miner's shift log and a Consortium memo fragment.
   - 2 rescuable miners: Dara Okafor (maintenance) and Teo Brandt (supply bay).
@@ -37,3 +37,8 @@ Radio lines are short (at most 280 characters) and never name keys, since contro
   - **Foundry:** FOREMAN cuts power to stop you climbing, then lets you pass after you rescue a miner.
   - **Nightfall:** the reactor shutdown is FOREMAN's own failsafe; a log shows a miner triggered it.
   - **Deepworks:** the closure order, FOREMAN's first direct message to Two, and the heavy robots it calls "the Consortium's".
+
+## Authoring story in the editor
+
+Open **Story & radio…** in the level designer to write radio messages and choose when each plays. Place data logs and trapped miners by right-clicking inside a room. The first story edit upgrades a level to format 13. See [level document format](LEVEL_DOCUMENT_FORMAT.md) for the fields and limits.
+

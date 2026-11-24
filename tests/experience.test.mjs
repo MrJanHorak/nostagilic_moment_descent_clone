@@ -207,3 +207,14 @@ test('Signal Breach: the guard fires real damaging projectiles, takes four norma
   assert.equal(manager.enemies.find(enemy => enemy.type.name === 'fighter').health, 40);
   assert.equal(manager.projectileManager.enemyProjectiles.length, 0);
 });
+
+import CockpitView from '../src/js/ui/CockpitView.js';
+
+test('the cockpit comms lamp blinks for three seconds after a transmission and survives the first update', () => {
+  const cockpit = Object.create(CockpitView.prototype);
+  cockpit.commsAt = -Infinity; cockpit.lastUpdate = -Infinity;
+  cockpit.signalComms(0);
+  assert.equal(cockpit.commsAt, 0, 'a message during mission start is kept for the first cockpit update');
+  cockpit.lastUpdate = 1000; cockpit.signalComms(1050);
+  assert.ok(cockpit.lastUpdate <= 950, 'the lamp refreshes on the next frame rather than waiting for the 10 Hz cadence');
+});

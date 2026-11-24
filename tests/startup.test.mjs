@@ -105,7 +105,7 @@ test('audio defaults are immediately playable without fetching missing assets', 
   globalForTest(t, 'fetch', requests);
   const audio = new AudioManager();
   assert.equal(audio.init(), true);
-  assert.equal(Object.keys(audio.sounds).length, 10);
+  assert.equal(Object.keys(audio.sounds).length, 12); // includes the comms and data-log cues
   for (const sound of Object.values(audio.sounds)) assert.ok(sound.buffer);
   assert.ok(audio.playSound('shoot'));
   assert.ok(audio.playSound('enemyCharge'));

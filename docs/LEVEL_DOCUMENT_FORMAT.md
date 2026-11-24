@@ -270,7 +270,7 @@ Added November 24, 2026. Version 13 adds an optional top-level `story` object. E
 | --- | --- | --- |
 | Message | `speaker` 1–32 chars, `text` 1–280 chars; trigger `start`, `enter` (room), `device` (relay/reactor activated or destroyed), or `defeat` (a robot killed by the player); at most 48 | Fires once per attempt in authored order; shown in the comms panel; the panel holds the current message during pause |
 | Data log | `title` 1–48 chars, `text` 1–700 chars, room-local position; clearance radius 0.5; at most 16 | Collected by flying within 1 unit; text shown in the comms panel; counted on the completion screen, with +100 score each on extraction |
-| Survivor | `name` 1–40 chars, room-local position; clearance radius 0.75; at most 16 | Taken aboard by flying within 1.25 units; counts only on successful extraction (+250 score each); lost on death or restart |
+| Survivor | `name` 1–40 chars, room-local position; clearance radius 1 (a floating miner figure); at most 16 | Taken aboard by flying within 1.5 units; counts only on successful extraction (+250 score each); lost on death or restart |
 
 Validation:
 - IDs are unique across the whole document.
@@ -283,6 +283,8 @@ Editor: version-13 documents open, export and undo normally.
 - Deleting a relay or robot removes messages triggered by it.
 - New editor IDs never collide with story IDs.
 
-Dedicated story authoring controls are the next step. Until then, add a `story` block to exported JSON and import it.
+- **Story & radio…** edits radio messages: speaker, text, trigger and order.
+- Right-click inside a room places a data log or a trapped miner; the Content inspector edits its text or name. Like other content, they can be moved and deleted.
+- The first story edit upgrades a draft to version 13.
 
 Campaign progress records each mission's best rescue count (`mostRescued`) and every log ever recovered (`logIds`), for a future log archive.

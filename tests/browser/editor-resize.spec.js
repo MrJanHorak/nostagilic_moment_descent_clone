@@ -61,7 +61,7 @@ test('designer resize: stretch a connected corridor, reject a bad shrink and fly
   }
   await page.locator('#rooms').getByRole('button', { name: 'room-1 · room', exact: true }).click();
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay'); await page.getByLabel('place-position X', { exact: true }).fill('2'); await page.getByRole('button', { name: 'Add content', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1'); await page.getByRole('combobox', { name: 'Unlock relay', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
+  await page.getByRole('combobox', { name: 'Connection', exact: true }).selectOption('connection-1'); await page.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1'); await page.getByRole('button', { name: 'Apply door', exact: true }).click();
   await page.locator('#rooms').getByRole('button', { name: 'room-2 · corridor', exact: true }).click();
   await page.getByRole('button', { name: 'Resize and keep connections…', exact: true }).click(); await resize(page, [12, 10, 32.5]);
   await expect(page.locator('#validation-title')).toContainText('Valid level');

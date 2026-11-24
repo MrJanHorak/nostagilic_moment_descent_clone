@@ -48,7 +48,8 @@ test('production: new campaign is primary; camera, headlights and HUD persist an
   await page.screenshot({ path: testInfo.outputPath('new-mission-library.png'), fullPage: true });
   await button(page, 'Signal Breach').press('Enter'); await page.clock.fastForward(100);
   await expect(page.locator('#arena-guide')).toContainText('SIGNAL BREACH');
-  await page.keyboard.press('c'); await page.clock.fastForward(100);
+  // Cockpit is the default view: two presses cycle cockpit → HUD → external.
+  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
   await expect(page.locator('#ship-view-status')).toContainText('EXTERNAL VIEW');
   await page.screenshot({ path: testInfo.outputPath('external-ship-view.png'), fullPage: true });
   await page.keyboard.press('l'); await page.keyboard.press('h'); await page.clock.fastForward(100);
@@ -98,10 +99,10 @@ test('production: cockpit instruments, firing, map, view cycle and saved selecti
   await openClockedGame(page, 'http://127.0.0.1:5184/');
   await expect(page.locator('canvas')).toHaveCount(1);
   await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  /* cockpit is the default view */ await page.clock.fastForward(200);
   await expect(page.locator('#ship-view-status')).toContainText('COCKPIT VIEW');
   await expect(page.locator('#hud-container')).toHaveCSS('display', 'none');
-  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1');
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1 · ABOARD 0/2 · LOGS 0/2');
   expect((await page.locator('#arena-guide').boundingBox()).height).toBeLessThan(46);
   await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 80');
   await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
@@ -140,7 +141,7 @@ test('production: cockpit follows enemy shield damage and resets on restart', as
   await openClockedGame(page, 'http://127.0.0.1:5184/');
   await page.locator('#select-level-btn').click(); await page.locator('.mission-library summary').click();
   await button(page, 'Arena Escape').press('Enter'); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  /* cockpit is the default view */ await page.clock.fastForward(200);
   await expect(page.locator('#cockpit-objective')).toHaveText('ARENA ESCAPE · DRONES 0/2');
   await advanceUntil(page, async () => {
     const shield = parseInt(await page.locator('#health-percentage').textContent(), 10);
@@ -167,7 +168,7 @@ test('development: scout warning and recovery, water contact, lava damage, pause
   await page.setViewportSize({ width: 1280, height: 800 });
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#select-level-btn').click(); await button(page, 'Nightfall Reactor').press('Enter'); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.clock.fastForward(100);
   const read = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
   await fly(page, 2, -18);
   await advanceUntil(page, async () => (await read()).scouts.some(enemy => enemy.phase === 'windup'), { ticks: 120, message: 'Visible scout must warn before striking' });
@@ -210,7 +211,7 @@ test('development: Signal Breach concealed wall blocks flight, opens on a native
   await page.setViewportSize({ width: 1280, height: 800 });
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.clock.fastForward(100);
   await fly(page, 2, 0);
   const read = async () => JSON.parse(await page.locator('#runtime-diagnostics').getAttribute('data-flight'));
   await page.keyboard.down('ArrowLeft');
@@ -257,7 +258,7 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#start-game-btn').click(); await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.clock.fastForward(100);
   await page.keyboard.press('f');
   for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
   await fly(page, 2, -15);
@@ -314,14 +315,14 @@ test('development: Signal Breach ranged fight, overhead flank, extraction and cl
   await page.keyboard.press('m');
   for (const [axis, target] of [[2, -32], [1, 0], [2, -30]]) await fly(page, axis, target);
   await page.keyboard.press('r'); await page.clock.fastForward(100);
-  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · EXIT READY');
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · EXIT READY · ABOARD 0/2 · LOGS 0/2');
   await fly(page, 2, -56);
   await expect(page.getByRole('heading', { name: 'MISSION COMPLETE', exact: true })).toBeVisible();
   await button(page, 'REPLAY MISSION').press('Enter'); await page.clock.fastForward(100);
   await expect(page.locator('#enemy-count-display')).toHaveText('ENEMIES: 0/2');
   await expect(page.locator('#cockpit-instruments')).toContainText('Shield 100% · Selected pulse · 1 pulse: 80');
   await expect(page.locator('#cockpit-instruments')).toHaveAttribute('data-visited', '1');
-  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1');
+  await expect(page.locator('#cockpit-objective')).toHaveText('SIGNAL BREACH · RELAYS 0/1 · ABOARD 0/2 · LOGS 0/2');
 });
 
 for (const [name, route] of routes) test(`development: campaign ${name} route, relays, extraction and replay`, async ({ page }, testInfo) => {
@@ -336,7 +337,7 @@ for (const [name, route] of routes) test(`development: campaign ${name} route, r
     await page.keyboard.press('f');
     for (let tick = 0; tick < 15; tick++) await page.clock.fastForward(100);
   }
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(200);
+  /* cockpit is the default view */ await page.clock.fastForward(200);
   let liftFieldChecked = false;
   for (const step of route) {
     if (step === 'r') {

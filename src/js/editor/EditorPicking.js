@@ -1,10 +1,10 @@
-import { GRID, WALL_THICKNESS, PLAYER_RADIUS, DEVICE_RADIUS, AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, enemyClearance } from '../core/levels/document/LevelContent.js';
+import { GRID, WALL_THICKNESS, PLAYER_RADIUS, DEVICE_RADIUS, AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, LOG_RADIUS, SURVIVOR_RADIUS, enemyClearance } from '../core/levels/document/LevelContent.js';
 import { clearanceScale, portFrame } from '../core/levels/document/RoomMath.js';
 import { Euler, Quaternion } from 'three';
 export { toLocal } from '../core/levels/document/RoomMath.js';
 
 export const FACE_LABELS = Object.freeze({ negativeX: 'Left wall', positiveX: 'Right wall', negativeY: 'Floor', positiveY: 'Ceiling', negativeZ: 'Forward wall', positiveZ: 'Rear wall' });
-/** @typedef {'spawn' | 'exit' | 'enemy' | 'health' | 'pulseAmmo' | 'relay' | 'reactor'} PlacementKind */
+/** @typedef {'spawn' | 'exit' | 'enemy' | 'health' | 'pulseAmmo' | 'relay' | 'reactor' | 'log' | 'survivor'} PlacementKind */
 /** @typedef {{roomId: string, face?: import('../levelDocument.js').Face, contentId?: string, connectionId?: string, localPoint: number[], clientX: number, clientY: number}} ViewportTarget */
 
 /** Labels describe the world-facing surface even in a pitched/rolled room.
@@ -38,7 +38,7 @@ export function snappedAngles(rotation, previous) {
  * @returns {[number, number, number]} */
 export function placementPosition(room, point, kind, enemyType = 'scout', exitRadius = 1.5) {
   if (point.length !== 3 || !point.every(Number.isFinite)) throw new Error('Choose a finite point inside the room.');
-  const radius = kind === 'spawn' ? PLAYER_RADIUS : kind === 'exit' ? exitRadius + EXIT_MARKER_MARGIN : kind === 'enemy' ? enemyClearance(enemyType) : kind === 'reactor' ? 1.5 : kind === 'relay' ? DEVICE_RADIUS : AUTHORED_PICKUPS[kind].size;
+  const radius = kind === 'spawn' ? PLAYER_RADIUS : kind === 'exit' ? exitRadius + EXIT_MARKER_MARGIN : kind === 'enemy' ? enemyClearance(enemyType) : kind === 'reactor' ? 1.5 : kind === 'relay' ? DEVICE_RADIUS : kind === 'log' ? LOG_RADIUS : kind === 'survivor' ? SURVIVOR_RADIUS : AUTHORED_PICKUPS[kind].size;
   const scales = clearanceScale(room);
   const half = room.size.map((size, axis) => Math.floor((size / 2 - WALL_THICKNESS - radius * scales[axis]) / GRID) * GRID);
   if (half.some(value => value < 0)) throw new Error('This item is too large for the selected room.');

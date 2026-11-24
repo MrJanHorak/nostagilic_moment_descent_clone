@@ -11,6 +11,7 @@ import { boxCorners, BOX_FACES } from '../utils/BoxTopology.js';
 import { convexGeometry } from '../utils/ConvexSolid.js';
 import disposeObject from '../utils/disposeObject.js';
 import { snappedAngles, toLocal } from './EditorPicking.js';
+import { storyPlacements } from './StoryContent.js';
 
 export default class EditorViewport {
   /** @param {HTMLElement} host @param {(id: string) => void} select
@@ -147,7 +148,7 @@ export default class EditorViewport {
     for (const connection of layout.connections) {
       const source = rooms.get(connection.a.roomId); if (source) this.passages.get(connection.id)?.position.fromArray(openingFrame(source, connection.a).center);
     }
-    for (const item of [{ ...layout.playerSpawn, id: '@spawn' }, ...layout.entities, ...(layout.formatVersion === 1 ? [] : layout.devices)]) {
+    for (const item of [{ ...layout.playerSpawn, id: '@spawn' }, ...layout.entities, ...(layout.formatVersion === 1 ? [] : layout.devices), ...storyPlacements(layout)]) {
       const source = rooms.get(item.roomId), marker = this.markers.find(marker => marker.userData.contentId === item.id);
       if (source && marker) marker.position.fromArray(toWorld(source, item.position));
     }
@@ -209,10 +210,13 @@ export default class EditorViewport {
     for (const placement of [
       { ...document.playerSpawn, id: '@spawn', kind: 'spawn' }, ...document.entities,
       ...(document.formatVersion !== 1 ? document.devices.map(device => ({ ...device, kind: device.kind ?? 'relay' })) : []),
+      ...storyPlacements(document),
     ]) {
       const room = rooms.get(placement.roomId); if (!room) continue;
-      const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff, reactor: 0xff843c };
-      const marker = new THREE.Mesh(new THREE.OctahedronGeometry(0.65), new THREE.MeshBasicMaterial({ color: colors[/** @type {keyof typeof colors} */ (placement.kind)] }));
+      const colors = { spawn: 0x60dbff, enemy: 0xff7171, pickup: 0x9be16a, exit: 0xffc16e, relay: 0xc29cff, reactor: 0xff843c, log: 0xffe36b, survivor: 0x6bffc4 };
+      // Story collectibles get distinct shapes: a flat data slate and an upright miner.
+      const geometry = placement.kind === 'log' ? new THREE.BoxGeometry(0.7, 0.18, 0.5) : placement.kind === 'survivor' ? new THREE.CapsuleGeometry(0.3, 0.8, 4, 8) : new THREE.OctahedronGeometry(0.65);
+      const marker = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: colors[/** @type {keyof typeof colors} */ (placement.kind)] }));
       marker.position.fromArray(toWorld(room, placement.position)); marker.userData.roomId = room.id; marker.userData.contentId = placement.id;
       this.world.add(marker); this.markers.push(marker);
     }
@@ -302,7 +306,8 @@ export default class EditorViewport {
   keyboardTarget() {
     if (!this.selected) return null;
     const bounds = this.renderer.domElement.getBoundingClientRect();
-    const content = this.selectedContent === '@spawn' ? this.document?.playerSpawn : this.document?.entities.find(item => item.id === this.selectedContent) ?? (this.document?.formatVersion !== 1 ? this.document?.devices.find(item => item.id === this.selectedContent) : undefined);
+    const content = this.selectedContent === '@spawn' ? this.document?.playerSpawn : this.document?.entities.find(item => item.id === this.selectedContent) ?? (this.document?.formatVersion !== 1 ? this.document?.devices.find(item => item.id === this.selectedContent) : undefined)
+      ?? (this.document ? storyPlacements(this.document).find(item => item.id === this.selectedContent) : undefined);
     return { roomId: this.selected, localPoint: content ? [...content.position] : [0, 0, 0], clientX: bounds.left + bounds.width / 2, clientY: bounds.top + bounds.height / 2, ...(this.selectedFace ? { face: this.selectedFace } : {}), ...(content ? { contentId: this.selectedContent } : {}), ...(this.selectedConnection ? { connectionId: this.selectedConnection } : {}) };
   }
   /** @param {string} roomId @param {number[] | null} point @param {boolean} [valid] */

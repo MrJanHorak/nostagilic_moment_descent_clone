@@ -42,6 +42,9 @@ export default class CommsPanel {
     const label = root.querySelector('.comms-label'), text = root.querySelector('.comms-text');
     if (label) { label.textContent = item.label; /** @type {HTMLElement} */ (label).style.color = item.tone === 'log' ? '#ffd27a' : '#7fe3ef'; }
     if (text) text.textContent = item.text;
+    // Draw the eye: three quick border/background pulses as each message appears.
+    root.animate?.([{ backgroundColor: item.tone === 'log' ? '#3a2a08ee' : '#0b3a48ee', boxShadow: `0 0 18px ${item.tone === 'log' ? '#ffc04d' : '#59d7e6'}` },
+      { backgroundColor: '#06141fdd', boxShadow: '0 0 12px #0008' }], { duration: 380, iterations: 3 });
     const duration = Math.min(14000, Math.max(3500, 1500 + item.text.length * 55));
     this.timer = setTimeout(() => this.next(), duration);
   }

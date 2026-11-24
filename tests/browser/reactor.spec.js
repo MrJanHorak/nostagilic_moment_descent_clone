@@ -35,7 +35,7 @@ test('production: editor reactor countdown authoring, timeout, reboot and native
   await frame.getByRole('button', { name: 'Start playtest', exact: true }).press('Enter'); await page.clock.fastForward(100);
   await expect(frame.locator('#escape-countdown')).toBeHidden();
   await page.keyboard.press('r'); await page.clock.fastForward(100); await expect(frame.locator('#escape-countdown')).toContainText('ESCAPE 00:10');
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.keyboard.press('h'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.keyboard.press('h'); await page.clock.fastForward(100);
   await expect(frame.locator('#escape-countdown')).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath('reactor-countdown-cockpit.png'), animations: 'disabled' });
   await page.keyboard.press('Escape'); const frozen = await frame.locator('#escape-countdown').textContent();

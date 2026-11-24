@@ -4,7 +4,7 @@ export const SETTINGS_KEY = 'descended.settings.v1';
 /** @type {import('../contracts.js').UserPreferences} */
 export const DEFAULT_SETTINGS = Object.freeze({
   mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false,
-  cameraView: 'hud', headlights: true, showHUD: true, difficulty: DEFAULT_DIFFICULTY,
+  cameraView: 'cockpit', headlights: true, showHUD: true, difficulty: DEFAULT_DIFFICULTY,
 });
 
 /** @param {unknown} source @param {number} fallback */
@@ -57,7 +57,8 @@ export default class UserSettings {
       try {
         /** @type {unknown} */
         const saved = JSON.parse(raw);
-        if (saved !== null && typeof saved === 'object' && 'version' in saved && saved.version === 1) this.values = normalize(saved);
+        // New profiles start in the cockpit; saves from before the camera option existed keep the HUD view they knew.
+        if (saved !== null && typeof saved === 'object' && 'version' in saved && saved.version === 1) this.values = normalize(saved, { ...DEFAULT_SETTINGS, cameraView: 'hud' });
       } catch { /* A malformed preference record falls back to defaults. */ }
     }
     this.onChange(this.values);

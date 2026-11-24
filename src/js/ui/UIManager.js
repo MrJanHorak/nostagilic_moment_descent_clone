@@ -12,6 +12,9 @@ import CommsPanel from './CommsPanel.js';
 import MissionLogPanel from './MissionLogPanel.js';
 import { optionalSummary } from '../core/MissionStatus.js';
 
+/** How long each attempt shows control hints in the bottom guide. */
+const GUIDE_HINT_MS = 15000;
+
 class UIManager {
   constructor(gameState, audioManager) {
     this.gameState = gameState;
@@ -1090,6 +1093,12 @@ class UIManager {
   /** Version-13 story events: radio lines, data logs and rescued survivors.
    * @param {import('../core/StoryController.js').StoryEvent} event */
   showStoryEvent(event) {
+    const cue = event.kind === 'message' ? 'commsIn' : event.kind === 'log' ? 'logFound' : 'powerup';
+    if (this.audioManager?.initialized) {
+      try { this.audioManager.playSound(cue, { volume: event.kind === 'survivor' ? 0.5 : 0.45 }); }
+      catch (error) { console.warn('Unable to play story cue:', error); }
+    }
+    if (event.kind !== 'survivor') this.game?.cockpit?.signalComms?.(this.game.session.timeMs);
     if (event.kind === 'message') this.comms.push(event.speaker.toUpperCase(), event.text);
     else if (event.kind === 'log') {
       this.showMessage(`DATA LOG ${event.found}/${event.total} RECOVERED`, 2200, '#ffd27a');
@@ -1118,7 +1127,13 @@ class UIManager {
     guide.textContent = this.game.levelManager.currentLevel?.combat
       ? 'COMBAT TRAINING · Clear 2 drones · Click to capture mouse/fire pulse · Walls provide cover · Esc pause'
       : 'FLIGHT TRAINING · Fly through the cyan doorway and return. Q/E roll · Arrows look · Esc pause';
-    this.guideDetails = document.createElement('span'); this.guideDetails.textContent = guide.textContent;
+    // Two lines: the objective (always), then location/next step and, briefly, control hints.
+    this.guideDetails = document.createElement('span');
+    this.guidePrimary = document.createElement('span'); this.guidePrimary.className = 'guide-primary'; this.guidePrimary.textContent = guide.textContent;
+    this.guideNav = document.createElement('span'); this.guideNav.className = 'guide-nav';
+    Object.assign(this.guidePrimary.style, { display: 'block', font: 'bold 15px Arial, sans-serif', color: '#e3fbff' });
+    Object.assign(this.guideNav.style, { display: 'block', font: '13px Arial, sans-serif', color: '#9fc6d6', marginTop: '4px' });
+    this.guideDetails.append(this.guidePrimary, this.guideNav);
     this.guideSummary = document.createElement('span'); this.guideSummary.id = 'cockpit-objective'; this.guideSummary.hidden = true;
     this.guideSummary.textContent = this.game.levelManager.currentLevel?.combat ? 'COMBAT TRAINING · CLEAR DRONES' : 'FLIGHT TRAINING · CYAN DOORWAY';
     this.guideEscape = document.createElement('span'); this.guideEscape.id = 'escape-countdown'; this.guideEscape.hidden = true;
@@ -1210,14 +1225,15 @@ class UIManager {
     const navigation = this.mineGuide?.describe(this.game.spaceship.group.position, mission.activatedDevices, interaction?.closedConnections ?? new Set());
     const destination = ['mine-link', 'relay-gate'].includes(level.id) ? 'in the upper green chamber (ceiling hatch · Space up / Shift down)' : level.sourceDocument ? 'at the marked exit' : 'at the far end';
     const status = mission.ready ? `EXIT READY · Fly into the green ring ${destination}`
-      : `${mission.requiredIds.size ? `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size}` : 'Reach extraction'} · Exit locked (amber ring ${destination})`;
+      : `${mission.requiredIds.size ? `Neutralize drones ${mission.defeats.size}/${mission.requiredIds.size}` : 'Reach extraction'} · Exit locked`;
     const device = this.game.levelManager.interaction?.nearest(this.game.spaceship.group.position);
     const reactors = interaction?.reactors ?? [];
     const reactorStatus = reactors.filter(core => core.health > 0).map(core => ` · CORE ${core.health}/${core.device.health ?? 100}`).join('');
     const systemName = reactors.length ? 'Systems' : 'Relays';
-    const relay = mission.requiredDeviceIds.size ? ` · ${systemName} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
-      (device ? ` · ${this.boundKey('interact', 'KeyR')}: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
+    const relay = mission.requiredDeviceIds.size ? ` · ${systemName} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : '';
+    const relayHint = mission.requiredDeviceIds.size ? (device ? ` · ${this.boundKey('interact', 'KeyR')}: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
         level.id === 'relay-gate' ? ` · Cyan relay: lower blue return chamber · ${this.boundKey('interact', 'KeyR')} activates nearby` : reactors.length ? ` · Cyan: ${this.boundKey('interact', 'KeyR')} activates · Orange reactor: shoot the core` : ` · Find a cyan relay · ${this.boundKey('interact', 'KeyR')} activates nearby` : ' · Linked doors unlocked') : '';
+    const lockedHint = mission.ready ? '' : ` · Amber ring ${destination}`;
     const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
     const remaining = mission.remainingEscapeMs(this.game.session.timeMs);
     const escapeHint = mission.definition.escape && remaining === null ? ' · Reactor control starts the escape countdown after other objectives are clear' : '';
@@ -1232,8 +1248,13 @@ class UIManager {
       }
     }
     const extras = this.game?.missionStatus ? optionalSummary(this.game.missionStatus()) : '';
-    const text = `${level.name.toUpperCase()} · ${status}${relay}${reactorStatus}${escapeHint}${extras ? ` · ${extras}` : ''}${navigation ? ` · ${navigation}` : ''} · Click/${this.boundKey('fire', 'KeyF')} fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause · ${this.boundKey('missionLog', 'KeyJ')}: mission log`;
-    if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
+    const primary = `${level.name.toUpperCase()} · ${status}${relay}${reactorStatus}${extras ? ` · ${extras}` : ''}`;
+    // Control hints only for the first seconds of an attempt; the pause menu keeps the full picture.
+    const hints = this.game.session.timeMs < GUIDE_HINT_MS
+      ? ` · Click/${this.boundKey('fire', 'KeyF')} fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause` : '';
+    const nav = `${[relayHint, lockedHint, navigation ? ` · ${navigation}` : '', escapeHint].join('').replace(/^ · /, '')}${relayHint || lockedHint || navigation || escapeHint ? ' · ' : ''}${this.boundKey('missionLog', 'KeyJ')}: mission log${hints}`;
+    if (this.guidePrimary && this.guidePrimary.textContent !== primary) this.guidePrimary.textContent = primary;
+    if (this.guideNav && this.guideNav.textContent !== nav) this.guideNav.textContent = nav;
     if (this.guideSummary) {
       const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size
         ? `${systemName.toUpperCase()} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : `DRONES ${mission.defeats.size}/${mission.requiredIds.size}`;
@@ -1258,7 +1279,7 @@ class UIManager {
     for (const element of this.transientElements) element.remove();
     this.transientElements.clear();
     this.arenaGuide = null;
-    this.guideDetails = this.guideSummary = null;
+    this.guideDetails = this.guideSummary = this.guidePrimary = this.guideNav = null;
     this.guideEscape = null;
     this.mineGuide = null;
     this.hidePauseMenu();

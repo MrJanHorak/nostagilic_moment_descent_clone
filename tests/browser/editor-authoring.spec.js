@@ -43,16 +43,17 @@ test('designer: overlap warnings, corner openings, relay doors and patterned sol
   await page.locator('#rooms').getByRole('button', { name: 'room-1 · room', exact: true }).click();
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay');
   await page.getByRole('button', { name: 'Add content', exact: true }).click();
-  await page.getByRole('combobox', { name: 'Unlock relay', exact: true }).selectOption('relay-1');
+  await page.getByRole('combobox', { name: 'Door control', exact: true }).selectOption('relay-1');
   await page.getByRole('button', { name: 'Apply door', exact: true }).click();
-  await expect(page.locator('#connections')).toContainText('CLOSED until relay-1');
+  await expect(page.locator('#connections')).toContainText('CLOSED · relay relay-1');
   await page.getByRole('button', { name: 'Frame all', exact: true }).click();
   await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('cutaway');
   await page.screenshot({ path: testInfo.outputPath('patterned-cutaway.png'), fullPage: true });
   await page.getByRole('combobox', { name: 'View', exact: true }).selectOption('solid');
   await page.screenshot({ path: testInfo.outputPath('solid-exterior.png'), fullPage: true });
   const text = await saveJSON(page, testInfo, 'corner-mine.json'), document = JSON.parse(text);
-  expect(document.formatVersion).toBe(3); expect(document.connections[0].a.offset).toEqual([5, 3]);
+  // Doors applied in the current designer slide (format 8); the corner offset is unchanged.
+  expect(document.formatVersion).toBe(8); expect(document.connections[0].a.offset).toEqual([5, 3]);
   expect(document.rooms[1].surfaces.negativeZ).toEqual({ color: 0xb55330, pattern: 'panels' });
   expect(compileLevelDocument(document).doors).toHaveLength(1);
   await page.locator('#file').setInputFiles({ name: 'corner-mine.json', mimeType: 'application/json', buffer: Buffer.from(text) });

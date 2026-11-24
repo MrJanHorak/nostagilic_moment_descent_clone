@@ -6,6 +6,9 @@ import InputManager from '../src/js/core/InputManager.js';
 import Spaceship from '../src/js/entities/Spaceship.js';
 import GameState from '../src/js/core/GameState.js';
 
+/** Saves from before the camera option keep the HUD view; brand-new profiles start in the cockpit. */
+const LEGACY_DEFAULTS = Object.freeze({ ...DEFAULT_SETTINGS, cameraView: 'hud' });
+
 function memoryStorage(initial = null) {
   let value = initial;
   return { getItem(key) { assert.equal(key, SETTINGS_KEY); return value; },
@@ -21,7 +24,7 @@ test('settings start at the original flight defaults and round-trip only version
   assert.deepEqual(new UserSettings(() => storage).values, settings.values);
   assert.equal(settings.saveStatus, 'saved');
   assert.ok(Object.isFrozen(settings.values));
-  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false, cameraView: 'hud', headlights: true, showHUD: true, difficulty: 'pilot' });
+  assert.deepEqual(DEFAULT_SETTINGS, { mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false, cameraView: 'cockpit', headlights: true, showHUD: true, difficulty: 'pilot' });
 });
 
 test('invalid, malformed and future-version records fall back without rewriting stored data', () => {
@@ -29,7 +32,8 @@ test('invalid, malformed and future-version records fall back without rewriting 
     '{"version":1,"mouseSensitivity":"2","invertY":"true"}']) {
     const storage = memoryStorage(raw);
     const settings = new UserSettings(() => storage);
-    assert.deepEqual(settings.values, DEFAULT_SETTINGS);
+    // Readable version-1 saves predate the camera option and keep the HUD view; unreadable data gets new-profile defaults.
+    assert.deepEqual(settings.values, raw.startsWith('{"version":1') ? LEGACY_DEFAULTS : DEFAULT_SETTINGS);
     assert.equal(storage.getItem(SETTINGS_KEY), raw);
   }
 });
@@ -73,12 +77,12 @@ test('old control-only records retain mouse preferences and acquire audio defaul
   const raw = JSON.stringify({ version: 1, mouseSensitivity: 2.25, invertY: true });
   const storage = memoryStorage(raw), applied = [];
   const settings = new UserSettings(() => storage, values => applied.push(values));
-  assert.deepEqual(settings.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 2.25, invertY: true });
+  assert.deepEqual(settings.values, { ...LEGACY_DEFAULTS, mouseSensitivity: 2.25, invertY: true });
   assert.equal(storage.getItem(SETTINGS_KEY), raw);
   assert.deepEqual(applied, [settings.values]);
   settings.update({ musicVolume: 0.23, effectsVolume: 0, muted: true });
   const reloaded = new UserSettings(() => storage);
-  assert.deepEqual(reloaded.values, { ...DEFAULT_SETTINGS, mouseSensitivity: 2.25, invertY: true,
+  assert.deepEqual(reloaded.values, { ...LEGACY_DEFAULTS, mouseSensitivity: 2.25, invertY: true,
     musicVolume: 0.23, effectsVolume: 0, muted: true });
   assert.ok(Object.isFrozen(applied[1]));
 });
@@ -95,7 +99,7 @@ test('audio preferences clamp, snap and reject nonfinite or wrong types without 
     assert.deepEqual(settings.values, valid);
   }
   const malformed = new UserSettings(() => memoryStorage('{"version":1,"musicVolume":"0.2","effectsVolume":null,"muted":"true"}'));
-  assert.deepEqual(malformed.values, DEFAULT_SETTINGS);
+  assert.deepEqual(malformed.values, LEGACY_DEFAULTS);
 });
 
 test('storage failure still applies live audio changes and reset restores all defaults', () => {

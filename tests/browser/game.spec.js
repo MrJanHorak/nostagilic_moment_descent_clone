@@ -412,6 +412,9 @@ test('development: Deep Relay lower loop, cache, chained hatches, exit and repla
 
 test('development: pause freezes simulation and ten combat restarts return resources to baseline', async ({ page, browser }, testInfo) => {
   test.setTimeout(180000);
+  // Measure the arena itself, as in the original acceptance reports: start in the HUD view,
+  // since the default cockpit's separate render pass compiles its own shader programs.
+  await page.addInitScript(() => localStorage.setItem('descended.settings.v1', JSON.stringify({ version: 1, cameraView: 'hud' })));
   await page.goto('http://127.0.0.1:5183/?smoke=1');
   await chooseMission(page);
   const samples = [];
@@ -618,7 +621,11 @@ test('production: saved mixer preferences apply at startup, unmute without repla
   await expect(music).toHaveValue('40'); await expect(effects).toHaveValue('60'); await expect(mute).not.toBeChecked();
   await expectMixer('reset while paused', { master: 0, effects: expect.closeTo(0.6, 5), music: expect.closeTo(0.4, 5), startedLoops: 4, activeLoops: 2 });
   await page.setViewportSize({ width: 390, height: 640 });
+  // Tab order after Mute: Difficulty, the collapsed Controls section, then Reset.
   await mute.focus(); await page.keyboard.press('Tab');
+  await expect(dialog.getByLabel('Difficulty', { exact: true })).toBeFocused();
+  await page.keyboard.press('Tab'); await expect(dialog.locator('.controls-panel summary')).toBeFocused();
+  await page.keyboard.press('Tab');
   await expect(dialog.getByRole('button', { name: 'Reset to defaults', exact: true })).toBeFocused();
   await testInfo.attach('audio-settings-small-viewport', { body: await page.screenshot(), contentType: 'image/png' });
   await page.keyboard.press('Escape'); await button(page, 'RETURN TO BASE').click();

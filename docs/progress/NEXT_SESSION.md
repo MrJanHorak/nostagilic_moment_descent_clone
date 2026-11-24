@@ -11,6 +11,56 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 second browser run on owner hardware
+
+61/62 passed, including the cockpit-shield test and editor-shapes:99, which the VM could not confirm. The one failure was the fighter drill's strafe check. Since commit 8865550 the fighter fires twice before its first strafe, and each cycle has up to 300 ms of random interval variation, so the strafe starts between about 2.8 and 3.4 s. The test only waited 3 s, so it was a coin flip on any machine. The window is now 5 s; the check that the strafe happens within the first four decisions is unchanged.
+
+## November 24 editor story tools
+
+The level designer can now author everything the story layer supports:
+- **Story & radio… (header button):** add, edit, reorder and delete radio messages. Each message has a speaker, text and a trigger: mission start, pilot enters a room, relay activated or reactor destroyed, or robot destroyed. Messages with the same trigger play in list order. Cancel in the message editor returns to the list.
+- **Data logs and trapped miners:** right-click inside a room → "Place data log here…" or "Place trapped miner here…", or use Build tools → Content kind. They are ordinary content: drag to move, transfer rooms, delete, and edit the title/text or name in the Content inspector (or via right-click on the item). Markers: yellow slate (log) and green capsule (miner).
+- **Format:** the first story edit upgrades the draft to format 13. Deleting a room, relay or robot drops the messages and items that depended on it. Validation issues on logs and miners focus the item.
+- **Code:** `src/js/editor/StoryContent.js` (helpers), `StoryDialog.js`, new `EditorDocument` commands (`addStoryMessage`, `updateStoryMessage`, `moveStoryMessage`, `deleteStoryMessage`, `addStoryItem`, `updateStoryItem`). The menu's form gained a multi-line text field and an optional "back" for Cancel.
+- **Tests:** `tests/editor-story.test.mjs` (9) and `tests/browser/editor-story.spec.js` (passes in the VM). Verify passes (566 tests).
+
+Next: the campaign builder in My Levels (mission order, briefings, bundle export/import), then the hands-on editor UX review.
+
+## November 24 browser suite on owner hardware
+
+Owner's full run: 52/62 passed. The VM-only concerns (reactor return-to-editor, fighter drill, force fields, victory flow) all pass on real hardware.
+
+Fixed afterwards:
+- **Seven stale editor tests:**
+  - "Unlock relay" was renamed "Door control".
+  - The connection list now reads "CLOSED · relay relay-1".
+  - Designer doors upgrade a level to format 8 (sliding), so the expected versions changed.
+  - The validation-navigation tests reach invalid items through draft recovery, because content edits are now validated before they apply.
+- **Resource-bound test:** starts in the HUD view, because the cockpit compiles extra shader programs.
+- **Audio-settings Tab order:** includes the new Difficulty select and the Controls section.
+- **Cockpit shield readout:** refreshes immediately when shields change, instead of waiting up to 100 ms (this was a real lag behind the HUD).
+
+Re-verified in the VM: all affected editor tests, the mixer test and the resource test pass. Still to confirm on the owner's machine: the cockpit-shield test (it crashes the VM tab) and editor-shapes:99 (too long for the VM).
+
+## November 24 readability, comms signal, cockpit default
+
+- **Guide:** a two-line bottom guide; control hints only for the first 15 s.
+- **Comms signal:** a radio chirp, a softer data-log chime, three panel pulses and a blinking cockpit COMMS lamp (fourth status lamp).
+- **Default view:** cockpit for new profiles. Older saves keep HUD. Browser tests that pressed C twice to reach the cockpit no longer do.
+
+Verify passes (557 tests).
+
+Browser notes from this VM:
+- **Mission victory/death/reboot test:** now exceeds the 3-minute limit here because the cockpit adds a software-rendered pass.
+- **Fighter drill test:** fails its 3-second strafe window here, although debug output shows identical fighter behaviour before and after the change.
+- **Reactor editor test:** "Return to editor" leaves the playtest panel open. This fails even on commit 8865550 (before this work). Investigate on real hardware: it may be a real playtest-return bug or VM-specific.
+- **Force-field test:** crashes the tab here (VM memory).
+- **Next step:** run the full browser suite on the owner's machine or CI.
+
+## November 24 miner figures
+
+Survivors are now floating miner figures instead of capsules (`src/js/entities/meshBuilders/SurvivorMeshBuilder.js`): orange high-vis suit with reflective bands, yellow hard hat, dark visor, glowing lamp, waving arm, blinking backpack beacon and an amber marker ring under the boots. They bob and turn to face the ship. No lights; geometry and materials are shared and kept until the story is disposed. Survivor clearance is now 1 unit (pickup reach 1.5) so the raised arm never clips walls. Verify passes (553 tests). Reviewed in a standalone render; not yet viewed in-mission by the owner.
+
 ## November 24 mission status and comms log
 
 From playtest feedback:

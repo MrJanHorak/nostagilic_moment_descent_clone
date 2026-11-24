@@ -13,6 +13,15 @@ async function exportDocument(page, testInfo, name) {
   const pending = page.waitForEvent('download'); await page.getByRole('button', { name: 'Export JSON', exact: true }).click();
   const path = testInfo.outputPath(name); await (await pending).saveAs(path); return await readFile(path, 'utf8');
 }
+/** Content edits are validated before they apply, so an invalid item reaches the editor
+ * through draft recovery, which deliberately accepts semantic errors for repair. */
+async function restoreInvalidDraft(page, text, mutate) {
+  const document = JSON.parse(text); mutate(document);
+  await page.evaluate(draft => localStorage.setItem('descended.designer.draft.v1',
+    JSON.stringify({ version: 1, savedAt: new Date().toISOString(), document: draft })), document);
+  await page.reload(); await openAuthoringPanels(page);
+  await page.getByRole('button', { name: 'Restore draft', exact: true }).click();
+}
 async function chooseRoom(page, id) {
   await page.locator('#rooms').getByRole('button', { name: `${id} · room`, exact: true }).click();
 }
@@ -23,8 +32,7 @@ test('designer validation: an issue selects the affected item or room despite an
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('health');
   await page.getByRole('button', { name: 'Add content', exact: true }).click();
   const before = await exportDocument(page, testInfo, 'before-errors.json');
-  await page.getByLabel('content-position X', { exact: true }).fill('100');
-  await page.getByRole('button', { name: 'Apply content', exact: true }).click();
+  await restoreInvalidDraft(page, before, document => { document.entities.find(entity => entity.id === 'pickup-1').position[0] = 100; });
   await page.locator('#entities').getByRole('button', { name: 'Spawn · room-1', exact: true }).click();
   await page.locator('#issues').getByRole('button', { name: /Entity pickup-1 does not fit/ }).press('Enter');
   await expect(page.locator('#inspector-selection')).toHaveText('pickup-1 · room-2');
@@ -54,14 +62,16 @@ test('designer validation: spawn and misaligned passage errors open the precise 
   await page.setViewportSize({ width: 1280, height: 800 }); await page.goto('http://127.0.0.1:5184/editor.html'); await openAuthoringPanels(page);
   await page.getByRole('button', { name: 'Attach room', exact: true }).click();
   const before = await exportDocument(page, testInfo, 'before-spawn-and-passage.json');
-  await page.locator('#entities').getByRole('button', { name: 'Spawn · room-1', exact: true }).click();
-  await page.getByLabel('content-position X', { exact: true }).fill('100');
-  await page.getByRole('button', { name: 'Apply content', exact: true }).click();
+  const spawnX = JSON.parse(before).playerSpawn.position[0];
+  await restoreInvalidDraft(page, before, document => { document.playerSpawn.position[0] = 100; });
   await chooseRoom(page, 'room-2');
   await page.locator('#issues').getByRole('button', { name: /Player spawn intersects/ }).click();
   await expect(page.locator('#inspector-selection')).toHaveText('Player spawn · room-1');
   await expect(page.getByLabel('content-position X', { exact: true })).toBeFocused();
-  await page.getByRole('button', { name: 'Undo', exact: true }).click();
+  // A restored draft starts a fresh history, so repair the spawn in place.
+  await page.getByLabel('content-position X', { exact: true }).fill(String(spawnX));
+  await page.getByRole('button', { name: 'Apply content', exact: true }).click();
+  expect(await exportDocument(page, testInfo, 'after-spawn-repair.json')).toBe(before);
   await chooseRoom(page, 'room-2');
   await page.getByLabel('position Z', { exact: true }).fill('-17');
   await page.getByRole('button', { name: 'Apply properties', exact: true }).click();

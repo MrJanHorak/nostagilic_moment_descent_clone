@@ -24,8 +24,11 @@ export default class CockpitView {
     };
     this.screens = [screen(this.interior.mounts[0], 1.02, 0.68), screen(this.interior.gauge, 0.64, 0.64, true), screen(this.interior.mounts[1], 1.02, 0.68)];
     this.lastUpdate = -Infinity; this.lastHealth = 100; this.lastAmmo = Infinity; this.lastWeapon = 'pulse';
-    this.damageAt = -Infinity; this.shotAt = -Infinity; this.attitude = new THREE.Quaternion();
+    this.damageAt = -Infinity; this.shotAt = -Infinity; this.commsAt = -Infinity; this.attitude = new THREE.Quaternion();
   }
+
+  /** A transmission arrived at simulation time `time`: blink the comms lamp. @param {number} time */
+  signalComms(time) { this.commsAt = time; if (this.lastUpdate !== -Infinity) this.lastUpdate = Math.min(this.lastUpdate, time - 100); }
 
   /** @param {import('../core/GameState.js').default} state
    * @param {import('../entities/Spaceship.js').default} ship
@@ -33,12 +36,17 @@ export default class CockpitView {
    * @param {readonly import('../combatContracts.js').EnemyInstance[]} enemies @param {ReadonlySet<string>} closed
    * @param {number} time @param {boolean} [headlights] */
   update(state, ship, map, enemies, closed, time, headlights = true) {
-    if (time >= this.lastUpdate && time - this.lastUpdate < 100) return;
+    // Instruments refresh at 10 Hz, but a shield change shows at once so the cockpit
+    // never lags the HUD after a hit or repair.
+    const shieldChanged = state.playerHealth !== this.lastHealth;
+    if (!shieldChanged && time >= this.lastUpdate && time - this.lastUpdate < 100) return;
     if (time < this.lastUpdate || this.lastUpdate === -Infinity) {
       this.damageAt = this.shotAt = -Infinity; this.lastHealth = state.playerHealth;
       this.lastWeapon = state.currentWeapon; this.lastAmmo = state.weaponInventory[state.currentWeapon].ammo; this.attitude.copy(ship.group.quaternion);
     }
     this.lastUpdate = time;
+    // A lamp time from a previous attempt (later than now) is stale; one from this start is kept.
+    if (this.commsAt > time) this.commsAt = -Infinity;
     // Approximate room bounce from authored surface colors, without another world render.
     const room = map?.current ? map.navigation.rooms.get(map.current)?.room : null;
     const tint = new THREE.Color(room ? MATERIALS[room.materialPreset].wall : 0x647883);
@@ -63,7 +71,10 @@ export default class CockpitView {
     this.lastHealth = state.playerHealth; this.lastAmmo = ammo; this.lastWeapon = state.currentWeapon;
     this.warningLight.intensity = Math.max(0, 1 - (time - this.damageAt) / 500) * 1.6 + (shield <= 30 ? 0.25 + Math.sin(time / 230) * 0.12 : 0);
     this.weaponLight.intensity = Math.max(0, 1 - (time - this.shotAt) / 200) * 0.9;
+    // The comms lamp blinks cyan for three seconds after a transmission arrives.
+    const sinceComms = time - this.commsAt, commsBlink = sinceComms >= 0 && sinceComms < 3000 && Math.floor(sinceComms / 250) % 2 === 0;
     this.interior.lampMaterials.forEach((material, i) => {
+      if (i === 3) { material.emissive.set(0x4fe3ff); material.emissiveIntensity = commsBlink ? 1.8 : 0.08; return; }
       material.emissive.set(i === 2 ? shield > 30 ? 0x76cbaa : 0xff5130 : i === 0 ? 0xb3d9e0 : 0xd8a553);
       material.emissiveIntensity = i === 0 && !headlights || i === 1 && ammo <= 0 ? 0 : 0.9;
     });

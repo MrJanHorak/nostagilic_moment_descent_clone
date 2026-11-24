@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import RoomNavigation from './levels/document/RoomNavigation.js';
 import { LOG_RADIUS, PLAYER_RADIUS, SURVIVOR_RADIUS } from './levels/document/LevelContent.js';
 import disposeObject from '../utils/disposeObject.js';
+import { animateSurvivor, createSurvivorKit } from '../entities/meshBuilders/SurvivorMeshBuilder.js';
 
 /** @typedef {NonNullable<import('../levelDocument.js').ArenaLevel['story']>} CompiledStory */
 /** @typedef {{ kind: 'message', id: string, speaker: string, text: string }
@@ -32,20 +33,19 @@ export default class StoryController {
     this.group.name = 'story-content';
     /** @type {Map<string, THREE.Object3D>} */ this.meshes = new Map();
     const logGeometry = new THREE.OctahedronGeometry(0.28, 0);
-    const podGeometry = new THREE.CapsuleGeometry(0.28, 0.5, 4, 10);
-    const ringGeometry = new THREE.TorusGeometry(0.55, 0.05, 6, 24);
-    this.shared = new Set([logGeometry, podGeometry, ringGeometry]);
+    const miners = createSurvivorKit();
+    /** Shared resources survive removing one collectible; dispose() releases them all. */
+    this.shared = new Set([logGeometry, ...miners.keepGeometries]);
+    this.sharedMaterials = miners.keepMaterials;
     for (const log of story.logs) {
       const mesh = new THREE.Mesh(logGeometry, new THREE.MeshStandardMaterial({ color: 0x9ff6ff, emissive: 0x2fd8ff, emissiveIntensity: 1.2, metalness: 0.3, roughness: 0.3 }));
       mesh.name = `story-log:${log.id}`; mesh.position.fromArray(log.world);
       this.group.add(mesh); this.meshes.set(log.id, mesh);
     }
-    for (const survivor of story.survivors) {
-      const pod = new THREE.Group(); pod.name = `story-survivor:${survivor.id}`; pod.position.fromArray(survivor.world);
-      const body = new THREE.Mesh(podGeometry, new THREE.MeshStandardMaterial({ color: 0xe8edf0, emissive: 0x5d6a70, emissiveIntensity: 0.5, metalness: 0.4, roughness: 0.5 }));
-      const beacon = new THREE.Mesh(ringGeometry, new THREE.MeshBasicMaterial({ color: 0xffc04d }));
-      beacon.name = 'beacon'; beacon.rotation.x = Math.PI / 2;
-      pod.add(body, beacon); this.group.add(pod); this.meshes.set(survivor.id, pod);
+    for (const [index, survivor] of story.survivors.entries()) {
+      const miner = miners.build(); miner.name = `story-survivor:${survivor.id}`; miner.position.fromArray(survivor.world);
+      miner.userData.phase = index * 1.7;
+      this.group.add(miner); this.meshes.set(survivor.id, miner);
     }
     scene.add(this.group);
   }
@@ -89,7 +89,7 @@ export default class StoryController {
     const t = timeMs / 1000;
     for (const [id, mesh] of this.meshes) {
       if (mesh.name.startsWith('story-log:')) { mesh.rotation.y = t * 1.6; mesh.position.y = (this.story.logs.find(log => log.id === id)?.world[1] ?? 0) + Math.sin(t * 2) * 0.08; }
-      else { const beacon = mesh.getObjectByName('beacon'); if (beacon) beacon.scale.setScalar(1 + 0.15 * Math.sin(t * 4)); }
+      else animateSurvivor(mesh, t, mesh.userData.phase ?? 0, position);
     }
   }
 
@@ -101,7 +101,7 @@ export default class StoryController {
   /** @private @param {string} id */
   remove(id) {
     const mesh = this.meshes.get(id); if (!mesh) return;
-    this.meshes.delete(id); disposeObject(mesh, this.shared);
+    this.meshes.delete(id); disposeObject(mesh, this.shared, this.sharedMaterials);
   }
 
   /** @returns {StorySummary} */

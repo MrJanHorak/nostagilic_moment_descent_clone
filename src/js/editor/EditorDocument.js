@@ -1,4 +1,5 @@
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, SURFACE_PATTERNS, WALL_THICKNESS, openingRules } from '../core/levels/document/LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, STORY_LIMITS, SURFACE_PATTERNS, WALL_THICKNESS, openingRules } from '../core/levels/document/LevelContent.js';
+import { storyOf } from './StoryContent.js';
 import { faceOverlap, sharedOpening, connectedBranch } from './ConnectionTools.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import { connectableFace, distance, portFrame } from '../core/levels/document/RoomMath.js';
@@ -52,6 +53,41 @@ function pruneStory(draft, removed) {
     && !(trigger.on === 'device' && devices.has(trigger.deviceId)) && !(trigger.on === 'defeat' && enemies.has(trigger.enemyId)));
   story.logs = story.logs.filter(log => !rooms.has(log.roomId));
   story.survivors = story.survivors.filter(survivor => !rooms.has(survivor.roomId));
+}
+
+/** @typedef {import('./DraftTypes.js').Mutable<import('../levelDocument.js').StoryDocument>} MutableStory */
+
+/** Upgrade a draft to version 13 and give it a story block on first story edit.
+ * @param {LevelDocument} draft @returns {MutableStory} */
+function ensureStory(draft) {
+  const modern = modernize(draft);
+  Object.assign(modern, { formatVersion: 13 });
+  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13}>} */ (modern);
+  upgraded.story ??= { messages: [], logs: [], survivors: [] };
+  return /** @type {MutableStory} */ (upgraded.story);
+}
+
+/** Any placed item that has a room and a local position, story collectibles included.
+ * @param {LevelDocument} document @param {string} id */
+function placed(document, id) {
+  if (id === '@spawn') return document.playerSpawn;
+  const story = document.formatVersion === 13 ? /** @type {MutableStory | undefined} */ (document.story) : undefined;
+  return document.entities.find(value => value.id === id)
+    ?? (document.formatVersion !== 1 ? document.devices.find(value => value.id === id) : undefined)
+    ?? (story ? [...story.logs, ...story.survivors].find(value => value.id === id) : undefined);
+}
+
+/** @param {string} value @param {string} label @param {number} limit */
+function storyText(value, label, limit) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text) throw new Error(`Enter ${label}.`);
+  if (text.length > limit) throw new Error(`${label[0].toUpperCase()}${label.slice(1)} is limited to ${limit} characters.`);
+  return text;
+}
+
+/** @param {{speaker: string, text: string, trigger: import('../levelDocument.js').StoryTrigger}} message */
+function storyMessage(message) {
+  return { speaker: storyText(message.speaker, 'a speaker', STORY_LIMITS.speaker), text: storyText(message.text, 'the message text', STORY_LIMITS.message), trigger: copy(message.trigger) };
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
@@ -125,8 +161,9 @@ export default class EditorDocument {
     if (!result.valid) throw new Error(result.errors.slice(0, 3).map(issue => issue.message).join('\n'));
     this.change(draft => Object.assign(draft, candidate.document));
   }
-  /** @param {string} roomId @param {number[]} point @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type] */
-  placeAt(roomId, point, kind, type = 'scout') {
+  /** @param {string} roomId @param {number[]} point @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type]
+   * @param {{title?: string, text?: string, name?: string}} [story] Text for a data log or trapped miner. */
+  placeAt(roomId, point, kind, type = 'scout', story = {}) {
     const exit = this.document.entities.find(entity => entity.kind === 'exit');
     const position = placementPosition(this.room(roomId), point, kind, type, exit?.kind === 'exit' ? exit.radius : 1.5);
     let id = '';
@@ -136,7 +173,8 @@ export default class EditorDocument {
         const rotation = candidate.document.playerSpawn.rotation;
         const yaw = (Math.round(2 * Math.atan2(rotation[1], rotation[3]) * 180 / Math.PI / 90) * 90 + 360) % 360;
         candidate.updateContent(id, roomId, position, false, yaw);
-      } else id = candidate.addContent(roomId, kind === 'enemy' ? 'enemy' : kind === 'reactor' ? 'reactor' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? type : kind, position);
+      } else if (kind === 'log' || kind === 'survivor') id = candidate.addStoryItem(roomId, kind, position, story);
+      else id = candidate.addContent(roomId, kind === 'enemy' ? 'enemy' : kind === 'reactor' ? 'reactor' : kind === 'relay' ? 'relay' : 'pickup', kind === 'enemy' ? type : kind, position);
     });
     return id;
   }
@@ -470,11 +508,14 @@ export default class EditorDocument {
 
   /** @param {string} id */
   content(id) {
-    if (id === '@spawn') return { ...this.document.playerSpawn, id, kind: 'spawn' };
+    if (id === '@spawn') return { ...this.document.playerSpawn, id, kind: /** @type {const} */ ('spawn') };
     const value = this.document.entities.find(value => value.id === id)
       ?? (this.document.formatVersion !== 1 ? this.document.devices.find(value => value.id === id) : undefined);
-    if (!value) throw new Error('Select mission content.');
-    return 'kind' in value ? value : { ...value, kind: 'relay' };
+    if (value) return 'kind' in value ? value : { ...value, kind: /** @type {const} */ ('relay') };
+    const story = storyOf(this.document);
+    const log = story?.logs.find(log => log.id === id); if (log) return { ...log, kind: /** @type {const} */ ('log') };
+    const survivor = story?.survivors.find(survivor => survivor.id === id); if (survivor) return { ...survivor, kind: /** @type {const} */ ('survivor') };
+    throw new Error('Select mission content.');
   }
 
   /** @param {string} roomId @param {'enemy' | 'pickup' | 'relay' | 'reactor'} kind @param {string} type @param {number[]} position */
@@ -509,7 +550,7 @@ export default class EditorDocument {
     this.room(roomId); this.content(id);
     if (position.length !== 3 || !position.every(value => Number.isFinite(value) && Math.abs(value) <= 4096) || ![0, 90, 180, 270].includes(yaw)) throw new Error('Enter finite room-local coordinates and a quarter-turn spawn heading.');
     this.change(draft => {
-      const value = id === '@spawn' ? draft.playerSpawn : draft.entities.find(value => value.id === id) ?? (draft.formatVersion !== 1 ? draft.devices.find(value => value.id === id) : undefined);
+      const value = placed(draft, id);
       if (!value) return;
       value.roomId = roomId; value.position = /** @type {[number, number, number]} */ ([...position]);
       if (id === '@spawn') draft.playerSpawn.rotation = [0, Math.sin(yaw * Math.PI / 360), 0, Math.cos(yaw * Math.PI / 360)];
@@ -525,7 +566,7 @@ export default class EditorDocument {
     const content = this.content(id), room = this.room(content.roomId);
     const position = /** @type {[number, number, number]} */ (toLocal(room, world).map(value => Math.round(value / GRID) * GRID));
     const document = copy(this.document);
-    const item = id === '@spawn' ? document.playerSpawn : document.entities.find(item => item.id === id) ?? (document.formatVersion !== 1 ? document.devices.find(item => item.id === id) : undefined);
+    const item = placed(document, id);
     if (!item) throw new Error('Select mission content.');
     item.position = position;
     const validation = validateLevelDocument(document);
@@ -554,7 +595,74 @@ export default class EditorDocument {
         if ('escape' in modern.mission && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
         pruneStory(draft, { devices: new Set([id]), enemies: new Set([id]) });
       }
+      const story = draft.formatVersion === 13 ? /** @type {MutableStory | undefined} */ (draft.story) : undefined;
+      if (story) { story.logs = story.logs.filter(log => log.id !== id); story.survivors = story.survivors.filter(survivor => survivor.id !== id); }
     });
+  }
+
+  /** Place a data log or trapped miner. The first story edit upgrades to format 13.
+   * @param {string} roomId @param {'log' | 'survivor'} kind @param {number[]} position
+   * @param {{title?: string, text?: string, name?: string}} [fields] */
+  addStoryItem(roomId, kind, position, fields = {}) {
+    this.room(roomId);
+    if (position.length !== 3 || !position.every(value => Number.isFinite(value) && Math.abs(value) <= 4096)) throw new Error('Enter finite room-local coordinates.');
+    const existing = storyOf(this.document);
+    if (kind === 'log' && (existing?.logs.length ?? 0) >= STORY_LIMITS.logs) throw new Error(`Data log limit reached (${STORY_LIMITS.logs}).`);
+    if (kind === 'survivor' && (existing?.survivors.length ?? 0) >= STORY_LIMITS.survivors) throw new Error(`Miner limit reached (${STORY_LIMITS.survivors}).`);
+    const id = nextId(this.document, kind === 'log' ? 'log' : 'miner'), local = /** @type {[number, number, number]} */ ([...position]);
+    const log = kind === 'log' ? { id, roomId, position: local, title: storyText(fields.title ?? 'Data log', 'a log title', STORY_LIMITS.title), text: storyText(fields.text ?? 'Recovered entry.', 'the log text', STORY_LIMITS.logText) } : null;
+    const survivor = kind === 'survivor' ? { id, roomId, position: local, name: storyText(fields.name ?? 'Trapped miner', "the miner's name", STORY_LIMITS.name) } : null;
+    this.change(draft => {
+      const story = ensureStory(draft);
+      if (log) story.logs.push(log);
+      if (survivor) story.survivors.push(survivor);
+    });
+    return id;
+  }
+
+  /** Edit a placed log's title/text or a miner's name.
+   * @param {string} id @param {{title?: string, text?: string, name?: string}} fields */
+  updateStoryItem(id, fields) {
+    const content = this.content(id);
+    if (content.kind !== 'log' && content.kind !== 'survivor') throw new Error('Select a data log or trapped miner.');
+    const values = content.kind === 'log'
+      ? { title: storyText(fields.title ?? content.title, 'a log title', STORY_LIMITS.title), text: storyText(fields.text ?? content.text, 'the log text', STORY_LIMITS.logText) }
+      : { name: storyText(fields.name ?? content.name, "the miner's name", STORY_LIMITS.name) };
+    this.change(draft => {
+      const story = ensureStory(draft), item = [...story.logs, ...story.survivors].find(item => item.id === id);
+      if (item) Object.assign(item, values);
+    });
+  }
+
+  /** Add a radio message. Its trigger must name existing content; the result is validated.
+   * @param {{speaker: string, text: string, trigger: import('../levelDocument.js').StoryTrigger}} message @returns {string} */
+  addStoryMessage(message) {
+    if ((storyOf(this.document)?.messages.length ?? 0) >= STORY_LIMITS.messages) throw new Error(`Radio message limit reached (${STORY_LIMITS.messages}).`);
+    const values = storyMessage(message), id = nextId(this.document, 'msg');
+    this.checked(candidate => candidate.change(draft => { ensureStory(draft).messages.push({ id, ...values }); }));
+    return id;
+  }
+
+  /** @param {string} id @param {{speaker: string, text: string, trigger: import('../levelDocument.js').StoryTrigger}} message */
+  updateStoryMessage(id, message) {
+    if (!storyOf(this.document)?.messages.some(message => message.id === id)) throw new Error('Select a radio message.');
+    const values = storyMessage(message);
+    this.checked(candidate => candidate.change(draft => { const target = ensureStory(draft).messages.find(message => message.id === id); if (target) Object.assign(target, values); }));
+  }
+
+  /** Messages with the same trigger play in list order.
+   * @param {string} id @param {-1 | 1} step */
+  moveStoryMessage(id, step) {
+    const messages = storyOf(this.document)?.messages ?? [], index = messages.findIndex(message => message.id === id);
+    if (index < 0) throw new Error('Select a radio message.');
+    const target = index + step; if (target < 0 || target >= messages.length) return;
+    this.change(draft => { const list = ensureStory(draft).messages; [list[index], list[target]] = [list[target], list[index]]; });
+  }
+
+  /** @param {string} id */
+  deleteStoryMessage(id) {
+    if (!storyOf(this.document)?.messages.some(message => message.id === id)) throw new Error('Select a radio message.');
+    this.change(draft => { const story = ensureStory(draft); story.messages = story.messages.filter(message => message.id !== id); });
   }
 
   /** @param {string} connectionId @param {string} deviceId

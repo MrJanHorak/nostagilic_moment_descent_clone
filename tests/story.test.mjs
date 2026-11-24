@@ -82,9 +82,10 @@ test('logs and survivors are collected once by flying through them and reported 
   const { level, scene, story, events } = controller(t);
   const [dara] = level.story.survivors, [okafor] = level.story.logs;
   assert.ok(scene.getObjectByName(`story-survivor:${dara.id}`) && scene.getObjectByName(`story-log:${okafor.id}`));
-  story.update(new THREE.Vector3(...dara.world).add(new THREE.Vector3(1.4, 0, 0)), 0);
+  // Reach is the 1-unit survivor clearance plus the ship's 0.5 radius.
+  story.update(new THREE.Vector3(...dara.world).add(new THREE.Vector3(1.6, 0, 0)), 0);
   assert.equal(events.filter(event => event.kind === 'survivor').length, 0, 'not collected from outside reach');
-  story.update(new THREE.Vector3(...dara.world).add(new THREE.Vector3(1.2, 0, 0)), 0);
+  story.update(new THREE.Vector3(...dara.world).add(new THREE.Vector3(1.4, 0, 0)), 0);
   story.update(new THREE.Vector3(...dara.world), 0);
   story.update(new THREE.Vector3(...okafor.world), 0);
   const collected = events.filter(event => event.kind !== 'message');
@@ -167,4 +168,39 @@ test('campaign records keep the best rescue count and a bounded union of recover
   stored = JSON.stringify({ version: 1, missions: { 'signal-breach': { completions: 1, bestScore: 1, bestTimeMs: 1, mostRescued: -3, logIds: ['ok', 7, 'bad id!', 'ok'] } } });
   const cleaned = new CampaignProgress(() => storage).get('signal-breach');
   assert.equal(cleaned.mostRescued, 0); assert.deepEqual(cleaned.logIds, ['ok']);
+});
+
+import { animateSurvivor, createSurvivorKit } from '../src/js/entities/meshBuilders/SurvivorMeshBuilder.js';
+import { SURVIVOR_RADIUS } from '../src/js/core/levels/document/LevelContent.js';
+
+test('stranded miners are waving figures that fit their clearance and animate without drift', () => {
+  const kit = createSurvivorKit(), miner = kit.build();
+  for (const name of ['body', 'waveArm', 'beacon', 'lamp']) assert.ok(miner.getObjectByName(name), name);
+  let reach = 0;
+  for (const t of [0, 0.13, 0.4, 1.7, 3.3]) {
+    animateSurvivor(miner, t, 0.5, new THREE.Vector3(3, 0, 2));
+    miner.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(miner);
+    reach = Math.max(reach, ...[box.min, box.max].flatMap(corner => corner.toArray().map(Math.abs)));
+  }
+  assert.ok(reach <= SURVIVOR_RADIUS, `figure reaches ${reach.toFixed(2)} of ${SURVIVOR_RADIUS}`);
+  animateSurvivor(miner, 2, 0.5); const once = miner.getObjectByName('waveArm').rotation.z;
+  animateSurvivor(miner, 7, 0.5); animateSurvivor(miner, 2, 0.5);
+  assert.equal(miner.getObjectByName('waveArm').rotation.z, once, 'pose depends only on time');
+  const lamp = miner.getObjectByName('lamp');
+  assert.ok(lamp.material instanceof THREE.MeshBasicMaterial, 'the helmet lamp glows without a light');
+  let lights = 0; miner.traverse(node => { if (node.isLight) lights++; }); assert.equal(lights, 0);
+});
+
+test('rescuing one miner keeps the shared figure resources for the others; dispose releases them', t => {
+  const { level, scene, story } = controller(t);
+  const [dara, teo] = level.story.survivors;
+  const remaining = scene.getObjectByName(`story-survivor:${teo.id}`);
+  let disposed = 0;
+  remaining.traverse(node => { if (node.isMesh) node.material.addEventListener('dispose', () => disposed++); });
+  story.update(new THREE.Vector3(...dara.world), 0);
+  assert.equal(scene.getObjectByName(`story-survivor:${dara.id}`), undefined);
+  assert.equal(disposed, 0, 'the other miner still renders with its materials');
+  story.dispose();
+  assert.ok(disposed > 0);
 });

@@ -48,14 +48,16 @@ test('development: mobile fighter drill warns, damages, pauses, clears, flies th
   await page.setViewportSize({ width: 960, height: 540 }); await openClockedGame(page, 'http://127.0.0.1:5183/?smoke=1');
   await page.locator('#select-level-btn').click(); await page.locator('.mission-library summary').click();
   await button(page, 'Fighter Proving Ground').press('Enter'); await page.clock.fastForward(100);
-  await page.keyboard.press('c'); await page.keyboard.press('c'); await page.clock.fastForward(100);
+  /* cockpit is the default view */ await page.clock.fastForward(100);
   const start = await readFlight(page), first = start.fighters.find(enemy => enemy.id === 'drill:floor-fighter');
   let moved;
   await advanceUntil(page, async () => {
     const state = await readFlight(page), fighter = state.fighters.find(enemy => enemy.id === first.id);
     if (fighter?.motion === 'strafe' && Math.abs(fighter.position[0] - first.position[0]) > 0.3 && Math.abs(fighter.position[1] - first.position[1]) > 0.1) { moved = fighter; return true; }
     return false;
-  }, { ticks: 30, message: 'The fighter must move sideways and vertically before committing to fire' });
+    // Two attack cycles with up to 300 ms random interval variation each precede
+    // the first strafe, so it starts between about 2.8 and 3.4 s.
+  }, { ticks: 50, message: 'The fighter must strafe sideways and vertically within its first attack cycles' });
   expect(moved.decisions).toBeLessThan(5);
   await page.clock.runFor(32); await page.screenshot({ path: info.outputPath('fighter-strafe.png') });
   await page.keyboard.press('Escape'); const paused = await readFlight(page);

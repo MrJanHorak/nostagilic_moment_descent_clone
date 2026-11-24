@@ -1,5 +1,5 @@
 /** @typedef {{label: string, action: () => void, disabled?: boolean, reason?: string, preview?: () => void}} MenuAction */
-/** @typedef {{id: string, label: string, value: string, type?: 'text' | 'color' | 'number', options?: {value: string, label: string}[], min?: string, max?: string, step?: string}} MenuField */
+/** @typedef {{id: string, label: string, value: string, type?: 'text' | 'color' | 'number' | 'textarea', options?: {value: string, label: string}[], min?: string, max?: string, step?: string, maxLength?: number}} MenuField */
 
 /** An anchored, keyboard-operable menu/editor. All dynamic labels are text.
  * Failing actions leave the menu and its error visible beside the clicked point. */
@@ -28,7 +28,7 @@ export default class ViewportMenu {
     root.append(heading, description, error); this.root = root; document.body.append(root);
     root.addEventListener('keydown', event => {
       event.stopPropagation();
-      const controls = [...root.querySelectorAll('button:not(:disabled), input, select')].filter(node => node instanceof HTMLElement);
+      const controls = [...root.querySelectorAll('button:not(:disabled), input, select, textarea')].filter(node => node instanceof HTMLElement);
       const current = controls.indexOf(/** @type {HTMLElement} */ (document.activeElement));
       if (event.key === 'Escape') { event.preventDefault(); this.close(true); }
       else if (role === 'menu' && ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) {
@@ -66,25 +66,26 @@ export default class ViewportMenu {
   }
   /** @param {string} title @param {string} detail @param {MenuField[]} fields
    * @param {(values: Record<string, string>) => void} apply @param {string} [applyLabel]
-   * @param {(values: Record<string, string>) => void} [preview] */
-  form(title, detail, fields, apply, applyLabel = 'Apply', preview = () => {}) {
+   * @param {(values: Record<string, string>) => void} [preview] @param {() => void} [back] Cancel returns here instead of closing. */
+  form(title, detail, fields, apply, applyLabel = 'Apply', preview = () => {}, back) {
     const root = this.panel(title, detail, 'dialog'), form = document.createElement('form');
-    /** @type {Record<string, HTMLInputElement | HTMLSelectElement>} */ const controls = {};
+    /** @type {Record<string, HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>} */ const controls = {};
     const values = () => Object.fromEntries(Object.entries(controls).map(([key, control]) => [key, control.value]));
     for (const field of fields) {
       const label = document.createElement('label'); label.textContent = field.label;
-      const control = field.options ? document.createElement('select') : document.createElement('input');
+      const control = field.options ? document.createElement('select') : field.type === 'textarea' ? document.createElement('textarea') : document.createElement('input');
       if (control instanceof HTMLSelectElement) for (const option of field.options ?? []) control.add(new Option(option.label, option.value));
-      else { control.type = field.type ?? 'text'; control.required = true; if (field.min) control.min = field.min; if (field.max) control.max = field.max; if (field.step) control.step = field.step; }
+      else if (control instanceof HTMLTextAreaElement) { control.required = true; control.rows = 4; if (field.maxLength) control.maxLength = field.maxLength; }
+      else { control.type = field.type ?? 'text'; control.required = true; if (field.min) control.min = field.min; if (field.max) control.max = field.max; if (field.step) control.step = field.step; if (field.maxLength) control.maxLength = field.maxLength; }
       control.value = field.value; controls[field.id] = control; label.append(control); form.append(label);
       control.addEventListener('input', () => preview(values()));
     }
     const buttons = document.createElement('div'); buttons.className = 'popover-buttons';
     const submit = document.createElement('button'); submit.type = 'submit'; submit.textContent = applyLabel; submit.className = 'primary';
-    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel'; cancel.onclick = () => this.close(true);
+    const cancel = document.createElement('button'); cancel.type = 'button'; cancel.textContent = 'Cancel'; cancel.onclick = () => { if (back) back(); else this.close(true); };
     buttons.append(submit, cancel); form.append(buttons); root.append(form);
     form.onsubmit = event => { event.preventDefault(); try { apply(values()); if (this.root === root) this.close(true); } catch (error) { this.error(error); } };
-    this.position(); const first = root.querySelector('input, select'); if (first instanceof HTMLElement) first.focus(); preview(values());
+    this.position(); const first = root.querySelector('input, select, textarea'); if (first instanceof HTMLElement) first.focus(); preview(values());
   }
   dispose() { this.close(); this.events.abort(); }
 }
