@@ -1,5 +1,17 @@
 // Input Manager for handling keyboard and mouse inputs
 import { shakeCamera } from '../utils/effectsUtils.js';
+import ControlBindings from './ControlBindings.js';
+import { GAMEPAD_BUTTONS, GamepadTracker, MENU_BUTTONS, choosePad, neutralFlight, readFlight } from './GamepadInput.js';
+
+/** @typedef {import('./ControlBindings.js').ControlAction} ControlAction */
+/** @type {readonly (keyof import('./GamepadInput.js').AnalogFlight)[]} */
+const FLIGHT_ACTIONS = ['forward', 'backward', 'left', 'right', 'up', 'down', 'yawLeft', 'yawRight', 'pitchUp', 'pitchDown', 'rollLeft', 'rollRight'];
+/** @type {readonly import('../contracts.js').WeaponType[]} */
+const WEAPONS = ['pulse', 'laser', 'missile', 'plasma'];
+/** Full stick deflection turns this much faster than a held key at stick sensitivity 1. */
+const STICK_TURN_SCALE = 1.5;
+/** Recent controller use suppresses the "click to capture the mouse" prompt for this long. */
+const GAMEPAD_RECENT_MS = 5000;
 
 class InputManager {
   /** @param {import('three').Camera | null} camera
@@ -7,13 +19,19 @@ class InputManager {
    * @param {import('./GameState.js').default} gameState
    * @param {import('../contracts.js').InputFeedback | null} [uiManager]
    * @param {Pick<import('./UserSettings.js').default, 'values'> | null} [settings]
+   * @param {ControlBindings | null} [controls] keyboard bindings and controller preferences
    */
-  constructor(camera, projectileManager, gameState, uiManager = null, settings = null) {
+  constructor(camera, projectileManager, gameState, uiManager = null, settings = null, controls = null) {
     this.camera = camera;
     this.projectileManager = projectileManager;
     this.gameState = gameState;
     this.uiManager = uiManager;
     this.settings = settings;
+    this.controls = controls ?? new ControlBindings(() => undefined);
+    this.gamepad = new GamepadTracker();
+    this.analog = neutralFlight();
+    this.gamepadConnected = false;
+    this.lastGamepadUse = -Infinity;
     /** @type {import('../contracts.js').InputGameActions | null} */
     this.game = null; // Will be set from main.js
 
@@ -77,26 +95,14 @@ class InputManager {
   /** @param {import('../contracts.js').KeyboardInput} event */
   onKeyDown(event) {
     if (this.uiManager?.settingsDialog?.isOpen) return;
-    if (this.gameState.session.phase === 'playing' &&
-      ['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-      event.preventDefault?.();
-    }
+    const action = this.controls.actionFor(event.code);
+    const playing = this.gameState.session.phase === 'playing';
+    // Bound keys (Space, arrows...) must not scroll the page or trigger browser shortcuts in flight.
+    if (playing && action) event.preventDefault?.();
     // Always set keyStates, even if pointer lock is not active
     this.keyStates[event.code] = true;
 
-    if (event.code === 'KeyF' && !event.repeat && this.gameState.session.phase === 'playing') {
-      event.preventDefault?.();
-      this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false });
-    }
-    if (event.code === 'KeyR' && !event.repeat && this.gameState.session.phase === 'playing') {
-      event.preventDefault?.(); this.game?.interact?.();
-    }
-    if (!event.repeat && this.gameState.session.phase === 'playing') {
-      if (event.code === 'KeyM') { event.preventDefault?.(); this.game?.toggleMap?.(); }
-      const option = /** @type {const} */ ({ KeyC: 'cameraView', KeyL: 'headlights', KeyH: 'showHUD' });
-      const key = /** @type {keyof typeof option} */ (event.code);
-      if (option[key]) { event.preventDefault?.(); this.game?.toggleShipOption?.(option[key]); }
-    }
+    if (playing && !event.repeat && action) this.performAction(action);
 
     // Handle escape key for pause menu
     if (
@@ -111,22 +117,98 @@ class InputManager {
       }
     }
 
-    // Handle weapon switching with number keys 1-4
-    if (
-      !this.gameState.isGameOver &&
-      this.gameState.isGameStarted &&
-      !this.gameState.isPaused
-    ) {
-      const weaponKeys = ['Digit1', 'Digit2', 'Digit3', 'Digit4'];
-      const keyIndex = weaponKeys.indexOf(event.code);
+  }
 
-      if (keyIndex !== -1) {
-        /** @type {readonly import('../contracts.js').WeaponType[]} */
-        const weaponTypes = ['pulse', 'laser', 'missile', 'plasma'];
-        const weaponType = weaponTypes[keyIndex];
+  /** One-shot actions shared by keyboard and controller. Callers check the session phase.
+   * @param {ControlAction | 'weaponNext' | 'weaponPrevious'} action */
+  performAction(action) {
+    switch (action) {
+      case 'fire': this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false }); break;
+      case 'interact': this.game?.interact?.(); break;
+      case 'map': this.game?.toggleMap?.(); break;
+      case 'cameraView': case 'headlights': case 'showHUD': this.game?.toggleShipOption?.(action); break;
+      case 'weapon1': case 'weapon2': case 'weapon3': case 'weapon4':
+        this.gameState.switchWeapon(WEAPONS[Number(action.slice(6)) - 1]); break;
+      case 'weaponNext': case 'weaponPrevious': this.cycleWeapon(action === 'weaponNext' ? 1 : -1); break;
+      default: break;
+    }
+  }
 
-        this.gameState.switchWeapon(weaponType);
-      }
+  /** Select the next/previous unlocked weapon. @param {1 | -1} step */
+  cycleWeapon(step) {
+    const start = Math.max(0, WEAPONS.indexOf(this.gameState.currentWeapon));
+    for (let offset = 1; offset < WEAPONS.length; offset++) {
+      const weapon = WEAPONS[(start + step * offset + WEAPONS.length * offset) % WEAPONS.length];
+      if (this.gameState.weaponInventory[weapon]?.unlocked) return this.gameState.switchWeapon(weapon);
+    }
+    return false;
+  }
+
+  /** Poll the first connected controller once per rendered frame (also while paused, so
+   * Menu can resume and menus can be navigated).
+   * @param {() => ArrayLike<import('./GamepadInput.js').GamepadSnapshot | null> | null | undefined} [getPads]
+   * @param {number} [now] */
+  pollGamepad(getPads, now) {
+    // Defaults live in the body: the production build mis-scopes optional calls inside
+    // default parameter values, which crashed every frame in the browser.
+    const time = now ?? (typeof performance === 'undefined' ? 0 : performance.now());
+    /** @type {(import('./GamepadInput.js').GamepadSnapshot | null)[]} */
+    let pads;
+    try {
+      const source = getPads ? getPads() : (typeof navigator !== 'undefined' && typeof navigator.getGamepads === 'function' ? navigator.getGamepads() : null);
+      pads = Array.from(source ?? []);
+    } catch { pads = []; }
+    const pad = choosePad(pads);
+    if (!!pad !== this.gamepadConnected) {
+      this.gamepadConnected = !!pad;
+      this.uiManager?.showMessage(pad ? 'CONTROLLER CONNECTED · Settings lists the layout' : 'CONTROLLER DISCONNECTED', 2200, '#8be8f0');
+    }
+    const pressed = this.gamepad.presses(pad);
+    const phase = this.gameState.session.phase;
+    if (!pad || phase !== 'playing') this.analog = neutralFlight();
+    else {
+      const flight = readFlight(pad, { invertY: this.controls.values.invertStickY });
+      const scale = STICK_TURN_SCALE * this.controls.values.stickSensitivity;
+      // A gentle response curve gives fine aim near the centre and full speed at the edge.
+      for (const key of /** @type {const} */ (['yawLeft', 'yawRight', 'pitchUp', 'pitchDown'])) flight[key] = Math.pow(flight[key], 1.5) * scale;
+      this.analog = flight;
+      if (Object.values(flight).some(value => value > 0)) this.lastGamepadUse = time;
+    }
+    if (pressed.length) this.lastGamepadUse = time;
+    if (this.uiManager?.settingsDialog?.isOpen) { for (const index of pressed) this.navigateMenu(index, true); return pressed; }
+    for (const index of pressed) {
+      if (index === MENU_BUTTONS.pause && this.gameState.isGameStarted && ['playing', 'paused'].includes(phase)) { this.game?.togglePause(); continue; }
+      if (phase === 'playing') {
+        const action = GAMEPAD_BUTTONS[index];
+        if (action && !['up', 'down', 'rollLeft', 'rollRight', 'pause'].includes(action)) this.performAction(/** @type {any} */ (action));
+      } else this.navigateMenu(index, false);
+    }
+    // A press may have paused or ended the run; never carry stick input out of active flight.
+    if (this.gameState.session.phase !== 'playing') this.analog = neutralFlight();
+    return pressed;
+  }
+
+  /** D-pad focus movement and A/B activation for menus, pause and result screens.
+   * @param {number} index @param {boolean} inDialog */
+  navigateMenu(index, inDialog) {
+    if (typeof document === 'undefined' || !document.querySelectorAll) return;
+    const scope = document.querySelector('dialog[open]') ?? [...document.querySelectorAll('[role="dialog"]')].at(-1) ?? document.body;
+    if (!scope) return;
+    const focusable = [...scope.querySelectorAll('button, a[href], select, summary, input')]
+      .filter(node => node instanceof HTMLElement && !(/** @type {HTMLButtonElement} */ (node).disabled) && node.getClientRects().length > 0);
+    if (!focusable.length) return;
+    const active = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const position = active ? focusable.indexOf(active) : -1;
+    if (index === MENU_BUTTONS.next || index === MENU_BUTTONS.previous) {
+      const step = index === MENU_BUTTONS.next ? 1 : -1;
+      const target = focusable[position === -1 ? (step > 0 ? 0 : focusable.length - 1) : (position + step + focusable.length) % focusable.length];
+      if (target instanceof HTMLElement) { target.focus(); target.scrollIntoView?.({ block: 'nearest' }); }
+    } else if (index === MENU_BUTTONS.confirm && active && position !== -1) {
+      if (active instanceof HTMLInputElement && active.type === 'checkbox') active.click();
+      else if (!(active instanceof HTMLSelectElement) && !(active instanceof HTMLInputElement)) active.click();
+    } else if (index === MENU_BUTTONS.back) {
+      (active ?? scope).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', bubbles: true }));
+      if (inDialog) this.uiManager?.settingsDialog?.close?.();
     }
   }
 
@@ -177,6 +259,8 @@ class InputManager {
 
   onPointerlockError() {
     if (this.game && this.game.session.phase !== 'playing') return;
+    // Controller players fly without mouse capture; do not nag them to click.
+    if (performance.now() - this.lastGamepadUse < GAMEPAD_RECENT_MS) return;
     if (performance.now() - (this.lastLockMessage ?? -Infinity) < 500) return;
     this.lastLockMessage = performance.now();
     this.uiManager?.showMessage('Click the game view to capture mouse controls.', 2500, '#ffcc66');
@@ -184,6 +268,7 @@ class InputManager {
 
   clearKeys() {
     this.keyStates = {};
+    this.analog = neutralFlight();
   }
 
   // Handle pointer lock change
@@ -220,21 +305,14 @@ class InputManager {
       return;
     }
 
-    // Gather input for spaceship drift physics
-    const input = {
-      left: !!this.keyStates['KeyA'],
-      right: !!this.keyStates['KeyD'],
-      yawLeft: !!this.keyStates['ArrowLeft'],
-      yawRight: !!this.keyStates['ArrowRight'],
-      up: !!this.keyStates['Space'],
-      down: !!this.keyStates['ShiftLeft'] || !!this.keyStates['ControlLeft'],
-      forward: !!this.keyStates['KeyW'],
-      backward: !!this.keyStates['KeyS'],
-      pitchUp: !!this.keyStates['ArrowUp'],
-      pitchDown: !!this.keyStates['ArrowDown'],
-      rollLeft: !!this.keyStates['KeyQ'],
-      rollRight: !!this.keyStates['KeyE'],
-    };
+    // Bound keys report full deflection; a controller adds analog amounts. The stronger wins.
+    /** @type {Partial<Record<ControlAction, boolean | number>>} */
+    const input = {};
+    for (const action of FLIGHT_ACTIONS) {
+      const key = this.controls.isHeld(action, this.keyStates);
+      const stick = this.analog[action];
+      input[action] = stick > 0 ? Math.max(key ? 1 : 0, stick) : key;
+    }
 
     // Pass input to spaceship for drift/inertia physics
     if (this.game && this.game.spaceship) {

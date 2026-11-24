@@ -1,8 +1,10 @@
+import { DEFAULT_DIFFICULTY, isDifficultyId } from './Difficulty.js';
+
 export const SETTINGS_KEY = 'descended.settings.v1';
 /** @type {import('../contracts.js').UserPreferences} */
 export const DEFAULT_SETTINGS = Object.freeze({
   mouseSensitivity: 1, invertY: false, musicVolume: 0.4, effectsVolume: 0.6, muted: false,
-  cameraView: 'hud', headlights: true, showHUD: true,
+  cameraView: 'hud', headlights: true, showHUD: true, difficulty: DEFAULT_DIFFICULTY,
 });
 
 /** @param {unknown} source @param {number} fallback */
@@ -27,6 +29,7 @@ function normalize(source, fallback = DEFAULT_SETTINGS) {
     cameraView: 'cameraView' in record && (record.cameraView === 'hud' || record.cameraView === 'external' || record.cameraView === 'cockpit') ? record.cameraView : fallback.cameraView,
     headlights: 'headlights' in record && typeof record.headlights === 'boolean' ? record.headlights : fallback.headlights,
     showHUD: 'showHUD' in record && typeof record.showHUD === 'boolean' ? record.showHUD : fallback.showHUD,
+    difficulty: 'difficulty' in record && isDifficultyId(record.difficulty) ? record.difficulty : fallback.difficulty,
   });
 }
 

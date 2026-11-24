@@ -15,6 +15,7 @@ export interface UserPreferences {
   readonly cameraView: 'hud' | 'external' | 'cockpit';
   readonly headlights: boolean;
   readonly showHUD: boolean;
+  readonly difficulty: 'trainee' | 'pilot' | 'veteran' | 'insane';
 }
 export type SettingsStorage = Pick<Storage, 'getItem' | 'setItem'>;
 export type SettingsSaveStatus = 'ready' | 'saved' | 'unavailable';
@@ -25,13 +26,15 @@ export type TimedModifier = 'speedMultiplier' | 'weaponPower';
 export type WeaponInventory = Record<WeaponType, { unlocked: boolean; ammo: number }>;
 // Returns true when a presentation animation is complete; it is then removed.
 export type SimulationAnimation = (delta: number) => boolean;
+/** Booleans from keys, or 0..1 analog amounts from a controller (turning may exceed 1). */
+export type FlightAmount = boolean | number;
 export interface FlightInput {
-  readonly left?: boolean; readonly right?: boolean;
-  readonly up?: boolean; readonly down?: boolean;
-  readonly forward?: boolean; readonly backward?: boolean;
-  readonly yawLeft?: boolean; readonly yawRight?: boolean;
-  readonly pitchUp?: boolean; readonly pitchDown?: boolean;
-  readonly rollLeft?: boolean; readonly rollRight?: boolean;
+  readonly left?: FlightAmount; readonly right?: FlightAmount;
+  readonly up?: FlightAmount; readonly down?: FlightAmount;
+  readonly forward?: FlightAmount; readonly backward?: FlightAmount;
+  readonly yawLeft?: FlightAmount; readonly yawRight?: FlightAmount;
+  readonly pitchUp?: FlightAmount; readonly pitchDown?: FlightAmount;
+  readonly rollLeft?: FlightAmount; readonly rollRight?: FlightAmount;
 }
 export interface PlayerFeedback {
   updateWeaponUI(): void;
@@ -63,7 +66,7 @@ export interface InputGameActions {
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;
 }
-export type InputFeedback = Pick<PlayerFeedback, 'showMessage' | 'flash'> & { settingsDialog?: { readonly isOpen: boolean } };
+export type InputFeedback = Pick<PlayerFeedback, 'showMessage' | 'flash'> & { settingsDialog?: { readonly isOpen: boolean; close?(): void } };
 export type KeyboardInput = Pick<KeyboardEvent, 'code'> & Partial<Pick<KeyboardEvent, 'repeat' | 'preventDefault'>>;
 export interface MouseMotion {
   readonly movementX?: number; readonly movementY?: number;

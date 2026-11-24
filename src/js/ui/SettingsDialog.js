@@ -1,8 +1,13 @@
+import { DIFFICULTIES, DIFFICULTY_ORDER } from '../core/Difficulty.js';
+import createControlsPanel from './ControlsPanel.js';
+
 // One modal at a time. Native modality supplies background inertness; Tab edges stay inside.
 export default class SettingsDialog {
-  /** @param {import('../core/UserSettings.js').default} settings */
-  constructor(settings) {
+  /** @param {import('../core/UserSettings.js').default} settings
+   * @param {import('../core/ControlBindings.js').default | null} [controls] */
+  constructor(settings, controls = null) {
     this.settings = settings;
+    this.controls = controls;
     /** @type {HTMLDialogElement | null} */
     this.dialog = null;
     /** @type {HTMLElement | SVGElement | null} */
@@ -44,17 +49,23 @@ export default class SettingsDialog {
       <label for="camera-view">Ship camera</label><select id="camera-view"><option value="hud">HUD / first person</option><option value="external">External chase camera</option><option value="cockpit">Immersive cockpit</option></select>
       <label><input id="ship-headlights" type="checkbox"> Ship headlights</label>
       <label><input id="show-flight-hud" type="checkbox"> Show flight HUD</label>
-      <p class="settings-hint">During flight: C cycles first person / external / cockpit · M expands the explored map · L toggles headlights · H toggles instruments. Mission objectives stay visible.</p>
+      <p class="settings-hint">During flight (default keys; change them under Controls below): C cycles first person / external / cockpit · M expands the explored map · L toggles headlights · H toggles instruments. Mission objectives stay visible.</p>
       <label for="music-volume">Music volume <output id="music-volume-value" for="music-volume"></output></label>
       <input id="music-volume" type="range" min="0" max="100" step="1">
       <label for="effects-volume">Effects volume <output id="effects-volume-value" for="effects-volume"></output></label>
       <input id="effects-volume" type="range" min="0" max="100" step="1">
       <label><input id="mute-audio" type="checkbox" aria-describedby="mute-hint"> Mute all audio</label>
       <p id="mute-hint" class="settings-hint">Mute keeps your volume levels. Audio stays silent while the game is paused.</p>
+      <label for="difficulty-level">Difficulty</label><select id="difficulty-level" aria-describedby="difficulty-hint">${DIFFICULTY_ORDER.map(id => `<option value="${id}">${DIFFICULTIES[id].label}</option>`).join('')}</select>
+      <p id="difficulty-hint" class="settings-hint"></p>
       <p class="settings-save-status" role="status" aria-label="Settings saving status" aria-live="polite"></p>
       <div class="settings-actions"><button type="button" class="settings-reset">Reset to defaults</button>
         <button type="button" class="settings-done">Done</button></div>`;
+    const controlsPanel = this.controls ? createControlsPanel(this.controls) : null;
+    if (controlsPanel) dialog.querySelector('.settings-save-status')?.before(controlsPanel.element);
     // These controls are owned by the fixed markup above; fail locally if it drifts.
+    const difficulty = dialog.querySelector('select#difficulty-level');
+    const difficultyHint = dialog.querySelector('p#difficulty-hint');
     const sensitivity = dialog.querySelector('input#mouse-sensitivity');
     const invert = dialog.querySelector('input#invert-mouse-y');
     const music = dialog.querySelector('input#music-volume');
@@ -72,10 +83,13 @@ export default class SettingsDialog {
     if (!(sensitivity instanceof HTMLInputElement) || !(invert instanceof HTMLInputElement) ||
       !(music instanceof HTMLInputElement) || !(effects instanceof HTMLInputElement) ||
       !(mute instanceof HTMLInputElement) || !(cameraView instanceof HTMLSelectElement) || !(headlights instanceof HTMLInputElement) || !(showHUD instanceof HTMLInputElement) || !musicOutput || !effectsOutput ||
-      !output || !status || !(reset instanceof HTMLButtonElement) || !(done instanceof HTMLButtonElement)) {
+      !output || !status || !(reset instanceof HTMLButtonElement) || !(done instanceof HTMLButtonElement) ||
+      !(difficulty instanceof HTMLSelectElement) || !difficultyHint) {
       throw new Error('Settings dialog controls are missing');
     }
     const refresh = () => {
+      difficulty.value = this.settings.values.difficulty;
+      difficultyHint.textContent = `${DIFFICULTIES[this.settings.values.difficulty].summary}. Applies when a mission starts or restarts.`;
       sensitivity.value = String(this.settings.values.mouseSensitivity);
       invert.checked = this.settings.values.invertY;
       music.value = String(Math.round(this.settings.values.musicVolume * 100));
@@ -90,6 +104,7 @@ export default class SettingsDialog {
         : this.settings.saveStatus === 'saved' ? 'Saved on this browser. Changes apply immediately.'
           : 'Changes apply immediately and are saved on this browser.';
     };
+    difficulty.addEventListener('change', () => { this.settings.update({ difficulty: difficulty.value }); refresh(); });
     sensitivity.addEventListener('input', () => { this.settings.update({ mouseSensitivity: Number(sensitivity.value) }); refresh(); });
     invert.addEventListener('change', () => { this.settings.update({ invertY: invert.checked }); refresh(); });
     music.addEventListener('input', () => { this.settings.update({ musicVolume: Number(music.value) / 100 }); refresh(); });
@@ -103,6 +118,7 @@ export default class SettingsDialog {
     // Escape closes only this dialog; slider arrows and F never reach gameplay handlers.
     dialog.addEventListener('keydown', event => {
       event.stopPropagation();
+      if (controlsPanel?.handleKey(event)) return;
       if (event.key !== 'Tab') return;
       if (!event.shiftKey && document.activeElement === done) {
         event.preventDefault(); sensitivity.focus();
@@ -110,7 +126,7 @@ export default class SettingsDialog {
         event.preventDefault(); done.focus();
       }
     });
-    dialog.addEventListener('cancel', event => { event.preventDefault(); this.close(); });
+    dialog.addEventListener('cancel', event => { event.preventDefault(); if (!controlsPanel?.listening) this.close(); });
     refresh();
     document.body.appendChild(dialog);
     this.dialog = dialog;

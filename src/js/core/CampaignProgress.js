@@ -1,6 +1,9 @@
+import { DIFFICULTIES, isDifficultyId } from './Difficulty.js';
+
 export const CAMPAIGN_PROGRESS_KEY = 'descended.campaign.v1';
 
-/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, lastCompletedAt: string }} MissionRecord */
+/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, lastCompletedAt: string,
+ *   hardestDifficulty: import('./Difficulty.js').DifficultyId }} MissionRecord */
 /** @typedef {{ id: string, campaignOrder: number }} CampaignMission */
 
 const MAX_COUNT = 1e6, MAX_SCORE = 1e9, MAX_TIME_MS = 864e5;
@@ -18,7 +21,10 @@ function normalizeRecord(source) {
   const bestTimeMs = bounded(record.bestTimeMs, MAX_TIME_MS);
   if (!completions || bestScore === null || bestTimeMs === null) return null;
   const when = typeof record.lastCompletedAt === 'string' && !Number.isNaN(Date.parse(record.lastCompletedAt)) ? record.lastCompletedAt : new Date(0).toISOString();
-  return Object.freeze({ completions, bestScore, bestTimeMs, lastCompletedAt: when });
+  // Records written before difficulty tiers existed were played at the authored (Pilot) balance.
+  const saved = record.hardestDifficulty;
+  const hardestDifficulty = isDifficultyId(saved) ? saved : 'pilot';
+  return Object.freeze({ completions, bestScore, bestTimeMs, lastCompletedAt: when, hardestDifficulty });
 }
 
 /** @param {unknown} source @returns {Readonly<Record<string, MissionRecord>>} */
@@ -81,17 +87,22 @@ export default class CampaignProgress {
   completedCount(campaign) { return campaign.filter(mission => this.isCompleted(mission.id)).length; }
 
   /** Record a successful extraction.
-   * @param {CampaignMission} mission @param {{ score: number, timeMs: number }} result
+   * @param {CampaignMission} mission
+   * @param {{ score: number, timeMs: number, difficulty?: import('./Difficulty.js').DifficultyId }} result
    * @param {Date} [now] */
   recordCompletion(mission, result, now = new Date()) {
     if (!mission || !Number.isInteger(mission.campaignOrder) || mission.campaignOrder < 1 || typeof mission.id !== 'string') return null;
     const score = bounded(result.score, MAX_SCORE) ?? 0, timeMs = bounded(result.timeMs, MAX_TIME_MS) ?? MAX_TIME_MS;
     const previous = this.get(mission.id);
+    const difficulty = isDifficultyId(result.difficulty) ? result.difficulty : 'pilot';
+    const hardestDifficulty = previous && DIFFICULTIES[previous.hardestDifficulty].rank >= DIFFICULTIES[difficulty].rank
+      ? previous.hardestDifficulty : difficulty;
     const record = Object.freeze({
       completions: Math.min(MAX_COUNT, (previous?.completions ?? 0) + 1),
       bestScore: Math.max(previous?.bestScore ?? 0, score),
       bestTimeMs: previous ? Math.min(previous.bestTimeMs, timeMs) : timeMs,
       lastCompletedAt: now.toISOString(),
+      hardestDifficulty,
     });
     this.missions = Object.freeze({ ...this.missions, [mission.id]: record });
     this.save();
@@ -99,6 +110,7 @@ export default class CampaignProgress {
       record, firstCompletion: !previous,
       newBestScore: !!previous && score > previous.bestScore,
       newBestTime: !!previous && timeMs < previous.bestTimeMs,
+      newHardestDifficulty: !!previous && hardestDifficulty !== previous.hardestDifficulty,
     };
   }
 

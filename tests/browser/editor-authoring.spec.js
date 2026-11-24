@@ -38,7 +38,7 @@ test('designer: overlap warnings, corner openings, relay doors and patterned sol
   await expect(page.getByLabel('U offset', { exact: true })).toHaveValue('5');
   await expect(page.getByLabel('V offset', { exact: true })).toHaveValue('3');
   await page.getByLabel('Face color', { exact: true }).fill('#b55330');
-  await page.getByRole('combobox', { name: 'Repeating pattern', exact: true }).selectOption('panels');
+  await page.getByRole('combobox', { name: 'Surface pattern', exact: true }).selectOption('panels');
   await page.getByRole('button', { name: 'Apply face style', exact: true }).click();
   await page.locator('#rooms').getByRole('button', { name: 'room-1 · room', exact: true }).click();
   await page.getByRole('combobox', { name: 'Content kind', exact: true }).selectOption('relay');
@@ -84,7 +84,7 @@ test('designer: authored content plays to completion and returns to an unchanged
   await expect(page.locator('#validation-title')).toContainText('Valid level');
   await page.getByRole('button', { name: 'Delete content', exact: true }).click();
   await page.getByLabel('Face color', { exact: true }).fill('#387c83');
-  await page.getByRole('combobox', { name: 'Repeating pattern', exact: true }).selectOption('grid');
+  await page.getByRole('combobox', { name: 'Surface pattern', exact: true }).selectOption('grid');
   await page.getByRole('button', { name: 'Apply face style', exact: true }).click();
   const before = await saveJSON(page, testInfo, 'before-playtest.json');
   await page.getByRole('button', { name: 'Playtest level', exact: true }).click();

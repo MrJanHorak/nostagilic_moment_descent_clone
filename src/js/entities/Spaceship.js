@@ -1,6 +1,15 @@
 import * as THREE from 'three';
 import { PLAYER_RADIUS } from '../core/levels/document/LevelContent.js';
 
+/** Keys report booleans; controllers report analog amounts. Turning may exceed 1 so a
+ * full stick can turn faster than a key; thrust never exceeds full.
+ * @param {boolean | number | undefined} value @param {number} [max] */
+function amount(value, max = 1) {
+  if (typeof value === 'boolean') return value ? 1 : 0;
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(max, Math.max(0, value)) : 0;
+}
+const MAX_TURN_RATE = 3;
+
 class Spaceship {
   constructor() {
     this.group = new THREE.Group();
@@ -147,17 +156,19 @@ class Spaceship {
    */
   update(delta, input = {}, speedMultiplier = 1) {
     this.rotate(
-      ((+!!input.yawLeft) - (+!!input.yawRight)) * this.rotationSpeed * delta,
-      ((+!!input.pitchUp) - (+!!input.pitchDown)) * this.rotationSpeed * delta,
-      ((+!!input.rollLeft) - (+!!input.rollRight)) * this.rotationSpeed * delta
+      (amount(input.yawLeft, MAX_TURN_RATE) - amount(input.yawRight, MAX_TURN_RATE)) * this.rotationSpeed * delta,
+      (amount(input.pitchUp, MAX_TURN_RATE) - amount(input.pitchDown, MAX_TURN_RATE)) * this.rotationSpeed * delta,
+      (amount(input.rollLeft, MAX_TURN_RATE) - amount(input.rollRight, MAX_TURN_RATE)) * this.rotationSpeed * delta
     );
     const thrust = new THREE.Vector3(
-      (+!!input.right) - (+!!input.left),
-      (+!!input.up) - (+!!input.down),
-      (+!!input.backward) - (+!!input.forward)
+      amount(input.right) - amount(input.left),
+      amount(input.up) - amount(input.down),
+      amount(input.backward) - amount(input.forward)
     );
     if (thrust.lengthSq() > 0) {
-      thrust.normalize().applyQuaternion(this.group.quaternion);
+      // Diagonal keys never exceed full thrust; a partly deflected stick gives partial thrust.
+      if (thrust.lengthSq() > 1) thrust.normalize();
+      thrust.applyQuaternion(this.group.quaternion);
       this.velocity.addScaledVector(thrust, this.acceleration * speedMultiplier * delta);
     } else this.velocity.multiplyScalar(Math.pow(this.damping, delta * 60));
     this.velocity.clampLength(0, this.maxSpeed * speedMultiplier);

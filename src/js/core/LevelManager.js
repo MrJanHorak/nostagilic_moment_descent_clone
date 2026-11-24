@@ -10,6 +10,7 @@ import createRelayGateLevel from './levels/RelayGate.js';
 import createDeepRelayLevel from './levels/DeepRelay.js';
 import createFighterDrill from './levels/FighterDrill.js';
 import createCrossfireRelay from './levels/CrossfireRelay.js';
+import createBomberDrill from './levels/BomberDrill.js';
 import buildArena from './ArenaGeometry.js';
 import PortalVisibility from './PortalVisibility.js';
 import SurfaceEnvironment from './SurfaceEnvironment.js';
@@ -56,6 +57,7 @@ class LevelManager {
       createDeepRelayLevel(),
       ...createCampaign(),
       createFighterDrill(),
+      createBomberDrill(),
       createCrossfireRelay(),
     ];
     this.currentLevelIndex = 0;

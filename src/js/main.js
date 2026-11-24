@@ -16,6 +16,8 @@ import MissionObjective from './core/MissionObjective.js';
 import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
 import CampaignProgress from './core/CampaignProgress.js';
+import ControlBindings from './core/ControlBindings.js';
+import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
 import CockpitView from './ui/CockpitView.js';
@@ -36,6 +38,7 @@ export default class Game {
       this.uiManager?.updateShipView?.();
     });
     this.campaignProgress = new CampaignProgress();
+    this.controls = new ControlBindings();
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
@@ -61,7 +64,7 @@ export default class Game {
       this.isEndlessMode = false;
       this.projectileManager = new ProjectileManager(this.scene, this.spaceship.group, this.audioManager, this.session);
       this.projectileManager.setCanvas(this.canvas);
-      this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager, this.settings).init(this.canvas);
+      this.inputManager = new InputManager(this.camera, this.projectileManager, this.gameState, this.uiManager, this.settings, this.controls).init(this.canvas);
       this.inputManager.game = this;
       this.powerUpManager = new PowerUpManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.uiManager, this.levelManager);
       this.enemyManager = new EnemyManager(this.scene, this.spaceship.group, this.gameState, this.audioManager, this.levelManager);
@@ -172,6 +175,7 @@ export default class Game {
     this.session.begin();
     try {
       this.gameState.resetForSession();
+      this.gameState.difficulty = getDifficulty(this.settings.values.difficulty);
       this.failureReason = null;
       this.spaceship.reset();
       this.lastMovement = null;
@@ -193,8 +197,9 @@ export default class Game {
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
         level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
-        this.gameState.weaponInventory.pulse.ammo = level.combat.initialPulseAmmo;
-        this.gameState.pulseAmmoCapacity = level.combat.maxPulseAmmo;
+        const ammo = scaleAmmo(level.combat.initialPulseAmmo, level.combat.maxPulseAmmo, this.gameState.difficulty);
+        this.gameState.weaponInventory.pulse.ammo = ammo.initial;
+        this.gameState.pulseAmmoCapacity = ammo.capacity;
       }
       this.enemyManager.onEnemyDefeated = (id, cause) => {
         if (this.session.phase === 'playing') this.mission?.recordDefeat(id, cause);
@@ -343,10 +348,10 @@ export default class Game {
     const level = this.levelManager?.levels[this.currentLevelIndex];
     if (!level?.campaignOrder || !level.id || this.currentLevelIndex === this.importedLevelIndex) return null;
     const result = this.campaignProgress.recordCompletion({ id: level.id, campaignOrder: level.campaignOrder },
-      { score: this.gameState.score, timeMs: this.session.timeMs });
+      { score: this.gameState.score, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty.id });
     if (!result) return null;
     const campaign = this.campaignMissions();
-    return { ...result, timeMs: this.session.timeMs, saved: this.campaignProgress.saveStatus === 'saved',
+    return { ...result, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty, saved: this.campaignProgress.saveStatus === 'saved',
       completed: this.campaignProgress.completedCount(campaign), total: campaign.length };
   }
 
@@ -497,6 +502,7 @@ export default class Game {
     requestAnimationFrame(() => this.animate());
     try {
       const frameStart = this.diagnostics.enabled ? performance.now() : 0;
+      this.inputManager?.pollGamepad?.();
       this.advanceFrame(this.clock.getDelta());
       if (this.shipView && this.levelManager) {
         const aim = this.shipView.update(this.levelManager.solidColliders);

@@ -2,6 +2,9 @@
 import * as THREE from 'three';
 import disposeObject from '../utils/disposeObject.js';
 import { traceShot, hasLineOfSight } from '../utils/combatTrace.js';
+import { MINE_BOMBER, blastDamage } from './BomberAttack.js';
+
+const PLAYER_HIT_RADIUS = 0.5;
 
 class ProjectileManager {
   /** @param {THREE.Scene} scene @param {THREE.Object3D} playerTransform
@@ -42,8 +45,10 @@ class ProjectileManager {
     this.projectileGeometries.laser.rotateX(Math.PI / 2);
     this.projectileGeometries.heavylaser.rotateX(Math.PI / 2);
     this.projectileGeometries.missile.rotateX(Math.PI);
+    // Unit sphere scaled to each bomb's blast radius while it arms.
+    this.bombWarningGeometry = new THREE.SphereGeometry(1, 20, 12);
     /** @private @type {ReadonlySet<THREE.BufferGeometry>} */
-    this.sharedGeometries = new Set(Object.values(this.projectileGeometries));
+    this.sharedGeometries = new Set([...Object.values(this.projectileGeometries), this.bombWarningGeometry]);
 
     this.projectileSpeed = 15; // Units per second
     /** @type {HTMLCanvasElement | null} */
@@ -144,6 +149,7 @@ class ProjectileManager {
    */
   moveProjectile(projectile, delta, playerTransform, gameState, effectsManager) {
     if (!this.isProjectileActive(projectile)) return true;
+    if (projectile.faction === 'enemy' && projectile.bomb) return this.moveBomb(projectile, delta, playerTransform, gameState, effectsManager);
     if (projectile.faction === 'player' && projectile.resolving) return true;
     if (projectile.launchOrigin) {
       const origin = projectile.launchOrigin;
@@ -152,6 +158,130 @@ class ProjectileManager {
     }
     const start = projectile.mesh.position.clone();
     return this.sweepProjectile(projectile, start, start.clone().addScaledVector(projectile.velocity, delta), playerTransform, gameState, effectsManager);
+  }
+
+  /** Area-denial bomb: fly to the target point (or stick to the first wall), arm with a
+   * visible blast-radius marker, then detonate. It passes through the ship in flight, so
+   * every blast is telegraphed: a pilot who stays put sees the marker around them.
+   * Returns true once the bomb has landed or detonated, so the caller skips flight cleanup.
+   * @private @param {import('../combatContracts.js').EnemyProjectile} projectile @param {number} delta
+   * @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
+   * @param {import('../core/GameState.js').default | null} [gameState]
+   * @param {import('../combatContracts.js').CombatEffects | null} [effectsManager] */
+  moveBomb(projectile, delta, playerTransform, gameState, effectsManager) {
+    const bomb = /** @type {import('../combatContracts.js').BombState} */ (projectile.bomb);
+    const now = this.now();
+    if (bomb.armedAt !== null) {
+      const armed = now - bomb.armedAt;
+      this.presentBomb(projectile, armed);
+      if (armed >= bomb.armMs) this.detonateBomb(projectile, playerTransform, gameState, effectsManager);
+      return true;
+    }
+    const from = projectile.launchOrigin ?? projectile.mesh.position.clone();
+    delete projectile.launchOrigin;
+    const remaining = projectile.mesh.position.distanceTo(bomb.target);
+    const step = projectile.velocity.length() * delta;
+    const reaches = step >= remaining;
+    const to = reaches ? bomb.target.clone() : projectile.mesh.position.clone().addScaledVector(projectile.velocity, delta);
+    const hit = traceShot(from, to, { colliders: this.combatWorld.getColliders?.() ?? [], radius: 0.12 });
+    if (hit) {
+      // Stick on the incoming side of the wall so the blast is not hidden behind it.
+      const back = to.clone().sub(from); if (back.lengthSq() > 0) back.normalize();
+      projectile.mesh.position.copy(hit.point).addScaledVector(back, -0.15);
+      this.armBomb(projectile, now);
+      return true;
+    }
+    projectile.mesh.position.copy(to);
+    if (reaches || now - bomb.launchedAt >= bomb.flightMs) { this.armBomb(projectile, now); return true; }
+    return false;
+  }
+
+  /** @private @param {import('../combatContracts.js').EnemyProjectile} projectile @param {number} now */
+  armBomb(projectile, now) {
+    const bomb = projectile.bomb;
+    if (!bomb || bomb.armedAt !== null) return;
+    bomb.armedAt = now;
+    projectile.velocity.set(0, 0, 0);
+    // Last for the full arming time regardless of when it was launched.
+    projectile.life = Math.max(projectile.life, now - projectile.timestamp + bomb.armMs + 1000);
+    const warning = new THREE.Mesh(this.bombWarningGeometry, new THREE.MeshBasicMaterial({
+      color: 0xff7a1a, transparent: true, opacity: 0.15, wireframe: true, depthWrite: false }));
+    warning.name = 'bomb_blast_radius';
+    warning.scale.setScalar(bomb.radius);
+    projectile.mesh.add(warning);
+    bomb.warning = warning;
+    this.presentBomb(projectile, 0);
+    if (this.audioManager?.initialized) {
+      try { this.audioManager.playSound('enemyCharge', { volume: 0.2, pitch: 0.7 }); }
+      catch (error) { console.warn('Unable to play bomb arming sound:', error); }
+    }
+  }
+
+  /** The marker brightens and pulses faster as detonation approaches.
+   * @private @param {import('../combatContracts.js').EnemyProjectile} projectile @param {number} armedMs */
+  presentBomb(projectile, armedMs) {
+    const bomb = projectile.bomb; if (!bomb) return;
+    const progress = Math.min(1, Math.max(0, armedMs / bomb.armMs));
+    const pulse = 0.5 + 0.5 * Math.sin(armedMs / (90 - progress * 60));
+    const material = bomb.warning?.material;
+    if (material instanceof THREE.MeshBasicMaterial) material.opacity = 0.12 + progress * 0.3 + pulse * 0.12;
+    projectile.mesh.material.emissiveIntensity = 0.8 + pulse * (1 + progress * 2);
+  }
+
+  /** Remove first, then apply effects and damage: a lethal blast may end the session.
+   * @private @param {import('../combatContracts.js').EnemyProjectile} projectile
+   * @param {Pick<THREE.Object3D, 'position'> | null} [playerTransform]
+   * @param {import('../core/GameState.js').default | null} [gameState]
+   * @param {import('../combatContracts.js').CombatEffects | null} [effectsManager] */
+  detonateBomb(projectile, playerTransform, gameState, effectsManager) {
+    const bomb = projectile.bomb;
+    const index = this.enemyProjectiles.indexOf(projectile);
+    if (!bomb || index === -1) return;
+    const center = projectile.mesh.position.clone();
+    this.removeEnemyProjectile(index);
+    if (this.session && this.session.phase !== 'playing') return;
+    effectsManager?.createExplosion(center, 0xff8833, true, bomb.radius);
+    if (this.audioManager?.initialized) {
+      try { this.audioManager.playSound('explosion', { volume: 0.5 }); }
+      catch (error) { console.warn('Unable to play bomb explosion:', error); }
+    }
+    if (!playerTransform || !gameState || gameState.isGameOver) return;
+    const distance = Math.max(0, center.distanceTo(playerTransform.position) - PLAYER_HIT_RADIUS);
+    const damage = blastDamage(distance, { blastRadius: bomb.radius, blastDamage: bomb.damage, edgeFactor: bomb.edgeFactor });
+    if (damage <= 0 || !hasLineOfSight(center, playerTransform.position, this.combatWorld.getColliders?.() ?? [])) return;
+    gameState.takeDamage(damage);
+  }
+
+  /** Launch an area-denial bomb from a bomber toward a fixed point (where the player was).
+   * @param {import('../combatContracts.js').EnemyShooter} enemy @param {THREE.Vector3} target
+   * @param {Partial<typeof MINE_BOMBER>} [rules]
+   * @returns {import('../combatContracts.js').EnemyProjectile | undefined} */
+  fireBomb(enemy, target, rules = {}) {
+    this.assertUsable();
+    if (!enemy?.mesh || !target) return;
+    const config = { ...MINE_BOMBER, ...rules };
+    const mesh = new THREE.Mesh(this.projectileGeometries.bomb, new THREE.MeshStandardMaterial({
+      color: 0xffb040, emissive: 0xff7a1a, emissiveIntensity: 0.8, metalness: 0.4, roughness: 0.4 }));
+    mesh.scale.setScalar(1.6);
+    const toTarget = target.clone().sub(enemy.mesh.position);
+    if (toTarget.lengthSq() === 0) toTarget.set(0, 0, 1);
+    toTarget.normalize();
+    mesh.position.copy(enemy.mesh.position).addScaledVector(toTarget, enemy.type.size * 1.5);
+    const velocity = target.clone().sub(mesh.position);
+    if (velocity.lengthSq() === 0) velocity.copy(toTarget);
+    velocity.normalize().multiplyScalar(config.bombSpeed);
+    const now = this.now();
+    /** @type {import('../combatContracts.js').EnemyProjectile} */
+    const projectile = {
+      faction: 'enemy', lastTrailUpdate: 0, mesh, velocity, type: 'bomb', power: 0,
+      life: config.flightMs + config.armMs + 1000, timestamp: now, ownerManager: this,
+      launchOrigin: enemy.mesh.position.clone(),
+      bomb: { target: target.clone(), launchedAt: now, flightMs: config.flightMs, armMs: config.armMs,
+        radius: config.blastRadius, damage: config.blastDamage, edgeFactor: config.edgeFactor, armedAt: null },
+    };
+    this.scene.add(mesh);
+    this.enemyProjectiles.push(projectile);
+    return projectile;
   }
 
   // Create different projectile types with unique behaviors

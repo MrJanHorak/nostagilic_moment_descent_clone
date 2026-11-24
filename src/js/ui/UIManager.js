@@ -6,6 +6,8 @@ import createUserLevels from './UserLevels.js';
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
 import NavigationDisplay from './NavigationDisplay.js';
 import { formatMissionTime } from '../core/CampaignProgress.js';
+import { DIFFICULTIES } from '../core/Difficulty.js';
+import { keyLabel } from '../core/ControlBindings.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -684,11 +686,11 @@ class UIManager {
       : next ? `CONTINUE · MISSION ${String(next.campaignOrder).padStart(2, '0')}` : 'REPLAY CAMPAIGN';
     startButton.setAttribute('aria-label', completed === 0 ? 'Start campaign at mission 1'
       : next ? `Continue campaign at mission ${next.campaignOrder}, ${next.name}` : 'Replay campaign from mission 1');
-    if (completed === 0) return;
+    const difficulty = DIFFICULTIES[this.game?.settings?.values?.difficulty ?? 'pilot'] ?? DIFFICULTIES.pilot;
     const status = document.createElement('p');
     status.id = 'campaign-progress-status';
-    status.textContent = next ? `Campaign progress: ${completed} of ${campaign.length} missions · Next: ${next.name}`
-      : `Campaign complete: all ${campaign.length} missions extracted`;
+    status.textContent = `${completed === 0 ? '' : next ? `Campaign progress: ${completed} of ${campaign.length} missions · Next: ${next.name} · `
+      : `Campaign complete: all ${campaign.length} missions extracted · `}Difficulty: ${difficulty.label}`;
     Object.assign(status.style, { margin: '10px auto 0', color: '#9fd8e6', textAlign: 'center', font: '15px system-ui, sans-serif', position: 'relative', zIndex: '2' });
     startButton.parentElement?.after(status);
   }
@@ -746,7 +748,8 @@ class UIManager {
       index => game.startSession({ endless: false, levelIndex: index }), () => game.showMainMenu(),
       { userLevels: () => game.showUserLevels(), hiddenIndex: game.importedLevelIndex,
         progress: level => (level.campaignOrder && level.id ? game.campaignProgress?.get(level.id) ?? null : null),
-        resetProgress: () => { game.resetCampaignProgress(); this.createLevelSelect(game); } });
+        resetProgress: () => { game.resetCampaignProgress(); this.createLevelSelect(game); },
+        difficulty: game.settings ? { value: game.settings.values.difficulty, onChange: value => game.settings.update({ difficulty: value }) } : undefined });
     document.body.appendChild(this.levelSelectMenu);
     this.levelSelectMenu.querySelector('button')?.focus();
     return this.levelSelectMenu;
@@ -777,7 +780,7 @@ class UIManager {
   showSettings() {
     if (!['menu', 'paused'].includes(this.game.session.phase)) return false;
     this.game.inputManager?.clearKeys();
-    this.settingsDialog ??= new SettingsDialog(this.game.settings);
+    this.settingsDialog ??= new SettingsDialog(this.game.settings, this.game.controls ?? null);
     this.settingsDialog.open();
     return true;
   }
@@ -1164,8 +1167,15 @@ class UIManager {
         padding: cockpit ? '3px 8px' : '8px 12px', borderRight: cockpit ? 'none' : '2px solid #68c7d3',
         fontSize: cockpit ? '10px' : '11px', background: cockpit ? '#0b171bc9' : '#061925bf' });
     }
-    const text = cockpit ? `COCKPIT VIEW · C CAMERA · L LIGHTS ${values.headlights ? 'ON' : 'OFF'} · H HUD ${values.showHUD ? 'ON' : 'OFF'} · M MAP`
-      : `C · ${values.cameraView === 'hud' ? 'HUD VIEW' : 'EXTERNAL VIEW'}\nL · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\nH · HUD ${values.showHUD ? 'ON' : 'OFF'}\nM · EXPLORED MAP`;
+    // Show the player's current primary key for each shortcut (the defaults read C/L/H/M).
+    const bindings = this.game.controls?.values?.bindings;
+    const key = (action, fallback) => {
+      const code = bindings ? bindings[action]?.[0] : fallback;
+      return code ? keyLabel(code).toUpperCase() : '—';
+    };
+    const [C, L, H, M] = [key('cameraView', 'KeyC'), key('headlights', 'KeyL'), key('showHUD', 'KeyH'), key('map', 'KeyM')];
+    const text = cockpit ? `COCKPIT VIEW · ${C} CAMERA · ${L} LIGHTS ${values.headlights ? 'ON' : 'OFF'} · ${H} HUD ${values.showHUD ? 'ON' : 'OFF'} · ${M} MAP`
+      : `${C} · ${values.cameraView === 'hud' ? 'HUD VIEW' : 'EXTERNAL VIEW'}\n${L} · LIGHTS ${values.headlights ? 'ON' : 'OFF'}\n${H} · HUD ${values.showHUD ? 'ON' : 'OFF'}\n${M} · EXPLORED MAP`;
     if (this.shipStatus.textContent !== text) this.shipStatus.textContent = text;
   }
 
@@ -1277,8 +1287,10 @@ class UIManager {
     const lines = [`Score: ${this.gameState.score} (includes 1,000 completion bonus)`];
     if (progress) {
       const record = progress.record;
+      lines.push(`Difficulty: ${progress.difficulty.label}`);
       lines.push(`Time: ${formatMissionTime(progress.timeMs)} · Best: ${formatMissionTime(record.bestTimeMs)} · Best score: ${record.bestScore}`);
-      const highlights = [progress.newBestTime && 'NEW BEST TIME', progress.newBestScore && 'NEW BEST SCORE'].filter(Boolean);
+      const highlights = [progress.newBestTime && 'NEW BEST TIME', progress.newBestScore && 'NEW BEST SCORE',
+        progress.newHardestDifficulty && `FIRST ${progress.difficulty.label.toUpperCase()} CLEAR`].filter(Boolean);
       if (highlights.length) lines.push(highlights.join(' · '));
       lines.push(progress.completed === progress.total ? `Campaign complete: ${progress.total} of ${progress.total} missions`
         : `Campaign progress: ${progress.completed} of ${progress.total} missions`);

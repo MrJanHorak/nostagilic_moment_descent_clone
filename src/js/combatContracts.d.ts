@@ -23,6 +23,8 @@ export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   lastFireTime: number;
   fireRate: number;
   fighterAttack?: FighterAttackState;
+  /** Authored-mine bombers: same warning/launch/recovery cycle, lobbing area-denial bombs. */
+  bomberAttack?: FighterAttackState;
   fighterMovement?: FighterMovementState;
   scoutAttack?: ScoutAttackState;
 }
@@ -131,10 +133,24 @@ export interface PlayerProjectile extends ProjectileBase {
   light?: PointLight;
   pulseData?: { originalScale: number; pulseSpeed: number; pulseAmount: number; baseOpacity: number; lastPulse: number };
 }
+export interface BombState {
+  /** Where the bomb lands if nothing intercepts it. */
+  readonly target: Vector3;
+  readonly launchedAt: number;
+  readonly flightMs: number;
+  readonly armMs: number;
+  readonly radius: number;
+  readonly damage: number;
+  readonly edgeFactor: number;
+  /** Simulation time the bomb landed and began arming; null while in flight. */
+  armedAt: number | null;
+  warning?: Mesh;
+}
 export interface EnemyProjectile extends ProjectileBase {
   readonly faction: 'enemy';
   timestamp: number;
   life: number;
+  bomb?: BombState;
 }
 export type Projectile = PlayerProjectile | EnemyProjectile;
 export interface CombatWorld {

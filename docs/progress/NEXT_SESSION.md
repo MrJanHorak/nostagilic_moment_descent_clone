@@ -11,6 +11,20 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 23 bomber area denial (Phase 1 start)
+
+Authored bombers now hold at range, charge for 900 ms, then lob a non-homing bomb that lands, shows a 3.6-unit blast sphere for 1 s and detonates. Damage falls from 24 to 40% at the rim and is blocked by walls. Bombs pass through the ship, so every blast is telegraphed. Authored bomber health is now 60. There's a new **Bomber Drill** practice mission between Fighter Proving Ground and Crossfire Relay. See [bomber](../BOMBER.md). Full `npm run verify` passes (539 tests) in the Linux scratch copy. Browser: a real Bomber Drill run had a clean console; mission-list/settings tests pass. Needs human balance feedback.
+
+Browser tests in this environment: the VM can run single Playwright tests (each command is capped at 3 minutes and Chrome renders in software). The full suite should run on the owner's machine or in CI. Seven editor browser tests are stale against the current door dialog and validation wording; this is pre-existing, and one label rename was fixed.
+
+## November 23 controls and gamepad
+
+Keyboard remapping (Settings → Controls; `descended.controls.v1`, two keys per action, single owner per key, Escape reserved) and standard-mapping gamepad support. Gamepad covers analog sticks, roll/slide buttons, trigger fire, weapon cycling, relay, view toggles, pause/resume and D-pad/A/B menu navigation. `InputManager.pollGamepad()` runs once per rendered frame from `Game.animate`. `Spaceship.update` accepts 0..1 analog amounts; keyboard booleans produce identical motion. See [controls](../CONTROLS.md). Lint (88 modules) and 529 unit/simulation tests pass on Linux; typecheck/build and a real-controller check need the owner's machine. Phase 0 (housekeeping, campaign save, difficulty, controls) is complete pending that check.
+
+## November 23 difficulty levels
+
+Trainee / Pilot / Veteran / Insane (`src/js/core/Difficulty.js`, preference `difficulty` in `descended.settings.v1`). Pilot is exactly the prior tuning. Tiers scale authored robot health, all damage taken, authored fighter interval (never below its 850 ms telegraph) and mission starting ammo/capacity; the tier is snapshotted at mission start. Selectable in Settings and at the top of Select Mission; campaign records keep the hardest tier cleared. See [difficulty](../DIFFICULTY.md). Lint (85 modules) and 521 unit/simulation tests pass on Linux; typecheck/build and a browser look at the new selectors need the owner's machine. Balance of the non-Pilot tiers is untested by humans.
+
 ## November 23 campaign progress
 
 Built-in campaign progress now persists (`src/js/core/CampaignProgress.js`, storage key `descended.campaign.v1`). The main button continues at the first unfinished mission; the mission library shows completion, best time and best score with a two-click reset; the completion screen reports time, records and save status. Imported, playtest and practice levels never change progress. See [campaign progress](../CAMPAIGN_PROGRESS.md). Lint (84 modules) and all 515 unit/simulation tests pass on Linux; typecheck/build and browser checks of the new menus still need a run on the owner's machine.

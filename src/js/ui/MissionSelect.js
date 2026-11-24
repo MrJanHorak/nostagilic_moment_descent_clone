@@ -1,11 +1,13 @@
 import { formatMissionTime } from '../core/CampaignProgress.js';
+import { DIFFICULTIES, DIFFICULTY_ORDER } from '../core/Difficulty.js';
 
-/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number }} MissionProgress */
+/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, hardestDifficulty?: import('../core/Difficulty.js').DifficultyId }} MissionProgress */
 /** @param {readonly {name: string, id?: string, campaignOrder?: number, briefing?: string}[]} levels
  * @param {(index: number) => void} choose @param {() => void} back
  * @param {{userLevels?: () => void, hiddenIndex?: number | null,
  *   progress?: (level: {name: string, id?: string, campaignOrder?: number}) => MissionProgress | null,
- *   resetProgress?: () => void}} [options] */
+ *   resetProgress?: () => void,
+ *   difficulty?: { value: import('../core/Difficulty.js').DifficultyId, onChange: (value: string) => void }}} [options] */
 export default function createMissionSelect(levels, choose, back, options = {}) {
   const root = document.createElement('div'); root.className = 'mission-library'; root.setAttribute('role', 'dialog');
   root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'mission-library-title');
@@ -26,6 +28,10 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
     .mission-library details button { display:block; width:100%; margin:8px 0; font-size:14px; }
     .mission-library button:hover { background:#315b70; }
     .mission-library .mission-status { margin:10px 0 0; color:#8fe3a8; font-size:13px; letter-spacing:.06em; }
+    .mission-library .difficulty-row { display:flex; flex-wrap:wrap; align-items:center; gap:10px; margin:0 0 6px; }
+    .mission-library .difficulty-row select { font:inherit; color:#d9f8ff; background:#24485c; border:1px solid #5e9cae; border-radius:5px; padding:8px 10px; }
+    .mission-library .difficulty-row select:focus-visible { outline:2px solid #a4edf3; outline-offset:4px; }
+    .mission-library .difficulty-summary { margin:0 0 16px; font-size:14px; }
     .mission-library .reset-progress { margin-top:12px; font-size:14px; background:#3a2a2a; border-color:#9a6a6a; }
     .mission-library .reset-progress:hover { background:#4d3434; }
     .mission-library button:focus-visible, .mission-library summary:focus-visible { outline:2px solid #a4edf3; outline-offset:4px; }
@@ -35,6 +41,21 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
   const title = document.createElement('h1'); title.id = 'mission-library-title'; title.textContent = 'SELECT MISSION';
   const help = document.createElement('p'); help.textContent = 'Authored missions: find the route, restore systems, and get out. C: camera · L: lights · H: HUD.';
   article.append(eyebrow, title, help);
+  if (options.difficulty) {
+    const current = options.difficulty;
+    const row = document.createElement('div'); row.className = 'difficulty-row';
+    const label = document.createElement('label'); label.htmlFor = 'mission-difficulty'; label.textContent = 'Difficulty';
+    const select = document.createElement('select'); select.id = 'mission-difficulty';
+    for (const id of DIFFICULTY_ORDER) {
+      const option = document.createElement('option'); option.value = id; option.textContent = DIFFICULTIES[id].label; select.append(option);
+    }
+    select.value = current.value;
+    const summary = document.createElement('p'); summary.className = 'difficulty-summary'; summary.id = 'mission-difficulty-summary';
+    summary.textContent = DIFFICULTIES[current.value].summary;
+    select.setAttribute('aria-describedby', summary.id);
+    select.onchange = () => { current.onChange(select.value); summary.textContent = DIFFICULTIES[DIFFICULTY_ORDER.find(id => id === select.value) ?? 'pilot'].summary; };
+    row.append(label, select); article.append(row, summary);
+  }
   if (options.userLevels) {
     const userLevels = document.createElement('button'); userLevels.textContent = 'MY LEVELS'; userLevels.onclick = options.userLevels; article.append(userLevels);
   }
@@ -51,7 +72,8 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
       const record = options.progress?.(level);
       if (record) {
         const status = document.createElement('div'); status.className = 'mission-status';
-        status.textContent = `✓ COMPLETED${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
+        const hardest = record.hardestDifficulty && record.hardestDifficulty !== 'pilot' ? ` on ${DIFFICULTIES[record.hardestDifficulty].label}` : '';
+        status.textContent = `✓ COMPLETED${hardest}${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
         button.setAttribute('aria-description', 'Completed');
         card.append(status);
       }

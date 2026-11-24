@@ -36,8 +36,10 @@ updateCaveParticles(particles, 1 / 60);
 controls.forward = false;
 // @ts-expect-error Misspelled movement flags must not silently become no input.
 ship.update(1 / 60, { forwards: true });
-// @ts-expect-error Thrust flags must be booleans.
-ship.update(1 / 60, { forward: 1 });
+// Keys supply booleans and controllers supply analog amounts.
+ship.update(1 / 60, { forward: 0.5, yawLeft: true });
+// @ts-expect-error Thrust values must be booleans or numeric amounts, not text.
+ship.update(1 / 60, { forward: 'full' });
 // @ts-expect-error Speed multipliers must be numeric.
 ship.update(1 / 60, {}, 'fast');
 // @ts-expect-error Only a camera can be mounted as the view.

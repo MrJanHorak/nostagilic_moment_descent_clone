@@ -1,3 +1,5 @@
+import { MINE_BOMBER } from './BomberAttack.js';
+
 // Authored mines use more persistent pressure than the original training slice.
 // Speeds are world units/second; all durations are simulation milliseconds.
 export const MINE_FIGHTER = Object.freeze({
@@ -14,12 +16,13 @@ export const MINE_SCOUT = Object.freeze({
 
 /** @param {import('../combatContracts.js').EnemyDefinition} type */
 export function mineHealth(type) {
-  return type.name === 'scout' ? 20 : type.name === 'fighter' ? 40 : type.health;
+  return type.name === 'scout' ? 20 : type.name === 'fighter' ? 40 : type.name === 'bomber' ? MINE_BOMBER.health : type.health;
 }
 
 /** The definition's old speed is units/frame at 60 Hz. Keep that contract for
  * legacy fixtures and heavy types; only authored scouts/fighters use these speeds.
  * @param {import('../combatContracts.js').EnemyCombatTarget} enemy */
 export function mineSpeed(enemy) {
-  return enemy.type.name === 'fighter' ? MINE_FIGHTER.speed : enemy.type.name === 'scout' ? MINE_SCOUT.speed : enemy.type.speed * 60;
+  return enemy.type.name === 'fighter' ? MINE_FIGHTER.speed : enemy.type.name === 'scout' ? MINE_SCOUT.speed
+    : enemy.type.name === 'bomber' ? MINE_BOMBER.speed : enemy.type.speed * 60;
 }

@@ -1,5 +1,6 @@
 import GameSession from './GameSession.js';
 import { shakeCamera } from '../utils/effectsUtils.js';
+import { getDifficulty, scaleIncomingDamage } from './Difficulty.js';
 
 function createEnemyKills() { return { scout: 0, fighter: 0, bomber: 0, destroyer: 0, boss: 0 }; }
 function createWeaponPickups() { return { laser: 0, missile: 0, plasma: 0 }; }
@@ -17,6 +18,9 @@ export default class GameState {
   constructor() {
     this.session = new GameSession();
     this.maxPlayerHealth = 100;
+    /** Snapshotted at mission start; Pilot leaves authored balance unchanged.
+     * @type {import('./Difficulty.js').DifficultyTier} */
+    this.difficulty = getDifficulty(undefined);
     /** @type {number} */
     this.playerHealth = this.maxPlayerHealth;
     /** @type {number} */
@@ -137,6 +141,7 @@ export default class GameState {
   /** @param {number} amount */
   takeDamage(amount) {
     if (this.session.phase !== 'playing' || amount <= 0) return;
+    amount = scaleIncomingDamage(amount, this.difficulty);
     this.playerHealth = Math.max(0, this.playerHealth - amount);
     this.audioManager?.playSound('playerDamage', { volume: 0.6 });
     this.uiManager?.updateHUD();

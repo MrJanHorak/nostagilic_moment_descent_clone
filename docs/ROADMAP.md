@@ -33,7 +33,7 @@ Keep each change small enough to review and play independently. These are propos
 | Priority | Work | Completion evidence |
 | --- | --- | --- |
 | 1 | Recheck durability and salvage after the owner found the more aggressive enemies too easy to kill | Compare direct/overhead playthroughs with and without laser salvage; record shots, shields, retreat/supply use and attack readability |
-| 2 | Finish one distinct heavy-enemy role, starting with bomber area denial | Warning, committed explosive attack and recovery; explicit damage/blast/occlusion rules; collision, pause/reset and ordinary-fire browser coverage |
+| 2 | Finish one distinct heavy-enemy role ([bomber area denial](BOMBER.md) delivered November 23; destroyer anchor next) | Warning, committed explosive attack and recovery; explicit damage/blast/occlusion rules; collision, pause/reset and ordinary-fire browser coverage |
 | 3 | Close broader performance and release regression gates | Repeated real-time hardware captures of traversal, multiple enemies, reactor escape and restart resources; full browser suite on the same revision; monitor CI duration after the encounter-group split |
 | 4 | Add user campaigns (built-in [campaign progress](CAMPAIGN_PROGRESS.md) delivered November 23) | Custom mission ordering and briefings, validated campaign bundle import/export, isolated campaign and standalone replay behavior |
 

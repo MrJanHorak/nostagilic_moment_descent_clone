@@ -29,9 +29,9 @@ function fixture(t, authored = true) {
   return { state, player, level, enemies, pickups, shots, messages };
 }
 
-test('authored scout/fighter durability increases while legacy training keeps its original health', t => {
+test('authored scout/fighter/bomber durability increases while legacy training keeps its original health', t => {
   const mine = fixture(t), legacy = fixture(t, false);
-  for (const [type, health, old] of [['scout', 20, 10], ['fighter', 40, 25], ['bomber', 50, 50], ['destroyer', 100, 100], ['boss', 200, 200]]) {
+  for (const [type, health, old] of [['scout', 20, 10], ['fighter', 40, 25], ['bomber', 60, 50], ['destroyer', 100, 100], ['boss', 200, 200]]) {
     assert.equal(mine.enemies.spawnEnemy(v(), type).health, health);
     assert.equal(legacy.enemies.spawnEnemy(v(), type).health, old);
   }

@@ -14,6 +14,8 @@ import { createFighterAttack, advanceFighterAttack, fighterCommitted, presentFig
 import { createScoutAttack, updateScoutAttack } from './ScoutAttack.js';
 import updateFighterMovement from './FighterMovement.js';
 import { MINE_FIGHTER, mineSpeed, mineHealth } from './EnemyTactics.js';
+import { DIFFICULTIES, scaleEnemyHealth, scaleFireInterval } from '../core/Difficulty.js';
+import { MINE_BOMBER, advanceBomberAttack, bomberCommitted, createBomberAttack, presentBomberAttack } from './BomberAttack.js';
 import { MINE_SALVAGE } from './EnemySalvage.js';
 
 /** @typedef {{lastSeen: THREE.Vector3 | null, goalRoom: string | null | undefined,
@@ -68,6 +70,21 @@ class EnemyManager {
     // For endless mode
     this.lastRandomSpawnTime = 0;
     this.randomSpawnInterval = 5000; // 5 seconds between spawns in endless mode
+  }
+
+  /** Difficulty snapshot for the current run; Pilot when no game state provides one. */
+  get difficulty() { return this.gameState?.difficulty ?? DIFFICULTIES.pilot; }
+
+  /** Authored fighter interval for the current difficulty, never shorter than its telegraph.
+   * @param {number} intervalMs */
+  fighterInterval(intervalMs) {
+    return scaleFireInterval(intervalMs, this.difficulty, MINE_FIGHTER.windupMs + MINE_FIGHTER.recoveryMs);
+  }
+
+  /** Authored bomber interval for the current difficulty, never shorter than its telegraph.
+   * @param {number} intervalMs */
+  bomberInterval(intervalMs) {
+    return scaleFireInterval(intervalMs, this.difficulty, MINE_BOMBER.windupMs + MINE_BOMBER.recoveryMs);
   }
 
   /** @param {readonly THREE.Object3D[]} segments */
@@ -174,7 +191,9 @@ class EnemyManager {
     }
     const target = pursuit.route?.[pursuit.waypoint];
     enemy.velocity.set(0, 0, 0);
-    const holdRange = fighterCommitted(enemy) || visible && distance < 8 && enemy.type.name !== 'scout';
+    // Bombers hang back to lob; fighters and heavier robots stop at close range.
+    const holdDistance = enemy.bomberAttack ? MINE_BOMBER.holdRange : 8;
+    const holdRange = fighterCommitted(enemy) || bomberCommitted(enemy) || visible && distance < holdDistance && enemy.type.name !== 'scout';
     if (tactical) updateFighterMovement(enemy, this.playerTransform.position, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta, true);
     else if (target && !holdRange && delta > 0) {
       const travel = target.clone().sub(enemy.mesh.position);
@@ -222,7 +241,7 @@ class EnemyManager {
     // Use the factory to create the enemy
     const authored = !!this.levelManager?.currentLevel?.sourceDocument;
     const enemy = this.enemyFactory.createEnemy(
-      authored ? { ...enemyType, health: mineHealth(enemyType) } : enemyType,
+      authored ? { ...enemyType, health: scaleEnemyHealth(mineHealth(enemyType), this.difficulty) } : enemyType,
       position,
       this.playerTransform,
       { accentLights: this.levelManager?.currentLevel?.rendering?.enemyAccentLights ?? true }
@@ -235,12 +254,16 @@ class EnemyManager {
     this.enemies.push(enemy);
     enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
     if (enemy.type.name === 'fighter') {
-      if (authored) enemy.fireRate = MINE_FIGHTER.intervalMs;
+      if (authored) enemy.fireRate = this.fighterInterval(MINE_FIGHTER.intervalMs);
       enemy.fighterAttack = createFighterAttack(enemy.lastFireTime,
         authored ? MINE_FIGHTER.windupMs + MINE_FIGHTER.firstReactionMs : enemy.fireRate,
         authored ? MINE_FIGHTER : undefined);
     }
     if (enemy.type.name === 'scout') enemy.scoutAttack = createScoutAttack(enemy.lastFireTime, authored);
+    if (enemy.type.name === 'bomber' && authored) {
+      enemy.fireRate = this.bomberInterval(MINE_BOMBER.intervalMs);
+      enemy.bomberAttack = createBomberAttack(enemy.lastFireTime);
+    }
     return enemy;
   }
 
@@ -646,6 +669,11 @@ class EnemyManager {
         if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
         continue;
       }
+      if (enemy.bomberAttack) {
+        this.updateBomberAttack(enemy, currentTime);
+        if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
+        continue;
+      }
       // Handle enemy firing projectiles
       if (
         enemy.type.name !== 'scout' &&
@@ -732,9 +760,28 @@ class EnemyManager {
     } else if (event === 'fire') {
       const authored = !!this.levelManager?.currentLevel?.sourceDocument;
       enemy.lastFireTime = now;
-      enemy.fireRate = authored ? MINE_FIGHTER.intervalMs + Math.random() * MINE_FIGHTER.intervalVariationMs : 2000 + Math.random() * 1000;
+      enemy.fireRate = authored ? this.fighterInterval(MINE_FIGHTER.intervalMs + Math.random() * MINE_FIGHTER.intervalVariationMs) : 2000 + Math.random() * 1000;
       this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform,
         authored ? { speed: MINE_FIGHTER.projectileSpeed, inaccuracy: MINE_FIGHTER.inaccuracy } : undefined);
+    }
+  }
+
+  /** Charge visibly, lob one bomb at the player's position at launch, then recover.
+   * @param {import('../combatContracts.js').EnemyInstance} enemy @param {number} now */
+  updateBomberAttack(enemy, now) {
+    const state = enemy.bomberAttack; if (!state) return;
+    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position), distance = direction.length();
+    const eligible = distance < MINE_BOMBER.firingRange && this.canSeePlayer(enemy)
+      && enemy.mesh.getWorldDirection(new THREE.Vector3()).dot(direction.normalize()) > 0;
+    const event = advanceBomberAttack(state, now, eligible, enemy.fireRate);
+    presentBomberAttack(enemy, now);
+    if (event === 'charge' && this.audioManager?.initialized) {
+      try { this.audioManager.playSound('enemyCharge', { volume: 0.25 * Math.max(0.25, 1 - distance / 30), pitch: 0.6 }); }
+      catch (error) { console.warn('Unable to play bomber warning:', error); }
+    } else if (event === 'fire') {
+      enemy.lastFireTime = now;
+      enemy.fireRate = this.bomberInterval(MINE_BOMBER.intervalMs + Math.random() * MINE_BOMBER.intervalVariationMs);
+      this.projectileManager.fireBomb(enemy, this.playerTransform.position.clone());
     }
   }
 
