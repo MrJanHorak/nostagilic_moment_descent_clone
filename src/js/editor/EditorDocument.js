@@ -29,7 +29,8 @@ export function createDocument() {
 /** @param {LevelDocument} document @param {string} prefix */
 function nextId(document, prefix) {
   const ids = new Set([document.id, ...document.rooms.map(value => value.id), ...document.connections.map(value => value.id),
-    ...document.entities.map(value => value.id), ...(document.formatVersion !== 1 ? [...document.devices, ...document.doors].map(value => value.id) : [])]);
+    ...document.entities.map(value => value.id), ...(document.formatVersion !== 1 ? [...document.devices, ...document.doors].map(value => value.id) : []),
+    ...(document.formatVersion === 13 && document.story ? [...document.story.messages, ...document.story.logs, ...document.story.survivors].map(value => value.id) : [])]);
   let index = 1;
   while (ids.has(`${prefix}-${index}`)) index++;
   return `${prefix}-${index}`;
@@ -40,15 +41,28 @@ function occupied(document, roomId, port) {
   return document.connections.some(connection => [connection.a, connection.b].some(endpoint => endpoint.roomId === roomId && endpoint.port === port));
 }
 
+/** Drop story entries that refer to removed rooms, relays or robots, so deleting
+ * content never leaves an invalid version-13 document behind.
+ * @param {LevelDocument} draft @param {{rooms?: ReadonlySet<string>, devices?: ReadonlySet<string>, enemies?: ReadonlySet<string>}} removed */
+function pruneStory(draft, removed) {
+  if (draft.formatVersion !== 13 || !draft.story) return;
+  const rooms = removed.rooms ?? new Set(), devices = removed.devices ?? new Set(), enemies = removed.enemies ?? new Set();
+  const story = /** @type {{ messages: import('../levelDocument.js').StoryMessage[], logs: import('../levelDocument.js').StoryLog[], survivors: import('../levelDocument.js').StorySurvivor[] }} */ (draft.story);
+  story.messages = story.messages.filter(({ trigger }) => !(trigger.on === 'enter' && rooms.has(trigger.roomId))
+    && !(trigger.on === 'device' && devices.has(trigger.deviceId)) && !(trigger.on === 'defeat' && enemies.has(trigger.enemyId)));
+  story.logs = story.logs.filter(log => !rooms.has(log.roomId));
+  story.survivors = story.survivors.filter(survivor => !rooms.has(survivor.roomId));
+}
+
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -191,6 +205,7 @@ export default class EditorDocument {
         modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && (!door.deviceId || !devices.has(door.deviceId)));
         modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
         if ('escape' in modern.mission && modern.mission.escape && devices.has(modern.mission.escape.triggerDeviceId)) delete modern.mission.escape;
+        pruneStory(draft, { rooms: new Set([roomId]), devices, enemies: removed });
       }
     });
   }
@@ -537,6 +552,7 @@ export default class EditorDocument {
         const modern = modernize(draft); modern.devices = modern.devices.filter(value => value.id !== id);
         modern.doors = modern.doors.filter(door => door.deviceId !== id); modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(value => value !== id);
         if ('escape' in modern.mission && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
+        pruneStory(draft, { devices: new Set([id]), enemies: new Set([id]) });
       }
     });
   }

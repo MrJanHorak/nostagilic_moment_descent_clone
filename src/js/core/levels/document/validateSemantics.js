@@ -2,6 +2,7 @@ import { AUTHORED_PICKUPS, EXIT_MARKER_MARGIN, PLAYER_RADIUS, openingRules, enem
 import { connectableFace, distance, fitsInside, openingFrame, toWorld } from './RoomMath.js';
 import { overlappingPairs } from './RoomOverlap.js';
 import validateRelaySemantics from './validateRelaySemantics.js';
+import validateStorySemantics from './validateStorySemantics.js';
 
 /** @param {import('../../../levelDocument.js').LevelDocument} document
  * @param {(path: string, code: string, message: string) => void} issue */
@@ -80,4 +81,5 @@ export default function validateSemantics(document, issue) {
   if (entities.get(document.mission.exitId)?.kind !== 'exit') issue('$.mission.exitId', 'reference', 'Mission exitId must identify an exit entity');
   if (document.entities.filter(entity => entity.kind === 'exit').length !== 1) issue('$.entities', 'exit', 'Exactly one exit is required');
   if (document.formatVersion !== 1) validateRelaySemantics(document, issue, ids, placements);
+  if (document.formatVersion === 13) validateStorySemantics(document, issue, ids, placements, reachable);
 }

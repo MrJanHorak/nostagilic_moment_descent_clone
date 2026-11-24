@@ -85,6 +85,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 - Four difficulty levels (Trainee, Pilot, Veteran, Insane) scale robot health, damage taken, fighter fire rate and starting ammunition; choose in Settings or Select Mission (see [difficulty](docs/DIFFICULTY.md))
 - Remappable keyboard controls and standard gamepad support (analog flight, menus, pause) under Settings → Controls (see [controls](docs/CONTROLS.md))
 - Bombers deny areas: a telegraphed charge, a slow bomb that lands with a visible blast sphere, and a wall-blocked blast. Try **Practice & prototypes → Bomber Drill** (see [bomber](docs/BOMBER.md))
+- Story: radio messages, collectible data logs and rescuable miners (level format v13). Signal Breach is the first mission with a story; see [the story bible](docs/STORY.md)
 - Sliding/shot/concealed doors, relay force fields, lava hazards and reactor escape countdowns
 - Browser-local custom level library with JSON sharing, rename, update and copy
 - Local level designer with portable JSON export, autosave recovery and real-runtime preview

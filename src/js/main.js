@@ -17,6 +17,7 @@ import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
 import CampaignProgress from './core/CampaignProgress.js';
 import ControlBindings from './core/ControlBindings.js';
+import StoryController from './core/StoryController.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
@@ -42,6 +43,10 @@ export default class Game {
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
+    /** @type {StoryController | null} */
+    this.story = null;
+    /** @type {import('./core/StoryController.js').StorySummary | null} */
+    this.lastStorySummary = null;
     this.failureReason = null;
     this.exploration = null;
     this.currentLevelIndex = 0;
@@ -152,6 +157,8 @@ export default class Game {
     this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.mission = null;
+    this.story?.dispose();
+    this.story = null;
     this.exploration = null;
     this.inputManager?.clearKeys();
     this.releasePointerLock();
@@ -201,7 +208,11 @@ export default class Game {
         this.gameState.weaponInventory.pulse.ammo = ammo.initial;
         this.gameState.pulseAmmoCapacity = ammo.capacity;
       }
+      this.lastStorySummary = null;
+      this.story = !endless && level.story && level.sourceDocument
+        ? new StoryController(level.story, level.sourceDocument, this.scene, event => this.uiManager.showStoryEvent?.(event)) : null;
       this.enemyManager.onEnemyDefeated = (id, cause) => {
+        if (this.session.phase === 'playing') this.story?.enemyDefeated(id);
         if (this.session.phase === 'playing') this.mission?.recordDefeat(id, cause);
       };
       this.projectileManager.setCombatWorld?.({
@@ -249,6 +260,7 @@ export default class Game {
       if (!endless && level.doors?.some(door => door.activation === 'shot' && !door.concealed)) {
         this.uiManager.showMessage('Shoot striped doors to open · R activates cyan relays', 3500, '#ffce77');
       }
+      this.story?.start();
       this.inputManager.requestPointerLock();
       return true;
     } catch (error) {
@@ -326,6 +338,9 @@ export default class Game {
     this.session.transition('completed');
     this.session.tasks.clear();
     this.gameState.score += 1000;
+    // Survivors count only on extraction; recovered logs add a small bonus.
+    this.lastStorySummary = this.story?.summary() ?? null;
+    if (this.lastStorySummary) this.gameState.score += this.lastStorySummary.rescued * 250 + this.lastStorySummary.logsFound * 100;
     const progress = this.recordCampaignProgress();
     this.inputManager.clearKeys();
     this.releasePointerLock();
@@ -348,7 +363,8 @@ export default class Game {
     const level = this.levelManager?.levels[this.currentLevelIndex];
     if (!level?.campaignOrder || !level.id || this.currentLevelIndex === this.importedLevelIndex) return null;
     const result = this.campaignProgress.recordCompletion({ id: level.id, campaignOrder: level.campaignOrder },
-      { score: this.gameState.score, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty.id });
+      { score: this.gameState.score, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty.id,
+        rescued: this.lastStorySummary?.rescued ?? 0, logIds: this.lastStorySummary?.logIds ?? [] });
     if (!result) return null;
     const campaign = this.campaignMissions();
     return { ...result, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty, saved: this.campaignProgress.saveStatus === 'saved',
@@ -415,6 +431,7 @@ export default class Game {
 
   completeDeviceObjective(device) {
     this.mission?.recordDeviceActivation(device.id, this.session.timeMs);
+    this.story?.deviceActivated(device.id);
     this.exploration?.completedDevices.add(device.id);
     const escape = this.mission?.definition.escape;
     this.uiManager.showMessage(device.id === escape?.triggerDeviceId
@@ -469,6 +486,7 @@ export default class Game {
     if (environment?.damage) this.gameState.takeDamage(environment.damage);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     this.exploration?.update(this.spaceship.group.position);
+    this.story?.update(this.spaceship.group.position, this.session.timeMs);
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.enemyManager.updateEnemies(delta);
     if (this.session.phase !== 'playing') return;

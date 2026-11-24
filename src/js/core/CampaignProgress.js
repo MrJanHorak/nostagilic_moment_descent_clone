@@ -3,10 +3,16 @@ import { DIFFICULTIES, isDifficultyId } from './Difficulty.js';
 export const CAMPAIGN_PROGRESS_KEY = 'descended.campaign.v1';
 
 /** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, lastCompletedAt: string,
- *   hardestDifficulty: import('./Difficulty.js').DifficultyId }} MissionRecord */
+ *   hardestDifficulty: import('./Difficulty.js').DifficultyId, mostRescued: number, logIds: readonly string[] }} MissionRecord */
 /** @typedef {{ id: string, campaignOrder: number }} CampaignMission */
 
-const MAX_COUNT = 1e6, MAX_SCORE = 1e9, MAX_TIME_MS = 864e5;
+const MAX_COUNT = 1e6, MAX_SCORE = 1e9, MAX_TIME_MS = 864e5, MAX_LOGS = 32;
+const ID = /^[a-zA-Z][a-zA-Z0-9:_-]{0,63}$/;
+
+/** @param {unknown} value @returns {readonly string[]} */
+function logList(value) {
+  return Object.freeze(Array.isArray(value) ? [...new Set(value.filter(id => typeof id === 'string' && ID.test(id)))].slice(0, MAX_LOGS) : []);
+}
 
 /** @param {unknown} value @param {number} max */
 function bounded(value, max) {
@@ -24,7 +30,8 @@ function normalizeRecord(source) {
   // Records written before difficulty tiers existed were played at the authored (Pilot) balance.
   const saved = record.hardestDifficulty;
   const hardestDifficulty = isDifficultyId(saved) ? saved : 'pilot';
-  return Object.freeze({ completions, bestScore, bestTimeMs, lastCompletedAt: when, hardestDifficulty });
+  return Object.freeze({ completions, bestScore, bestTimeMs, lastCompletedAt: when, hardestDifficulty,
+    mostRescued: bounded(record.mostRescued, 64) ?? 0, logIds: logList(record.logIds) });
 }
 
 /** @param {unknown} source @returns {Readonly<Record<string, MissionRecord>>} */
@@ -88,7 +95,7 @@ export default class CampaignProgress {
 
   /** Record a successful extraction.
    * @param {CampaignMission} mission
-   * @param {{ score: number, timeMs: number, difficulty?: import('./Difficulty.js').DifficultyId }} result
+   * @param {{ score: number, timeMs: number, difficulty?: import('./Difficulty.js').DifficultyId, rescued?: number, logIds?: readonly string[] }} result
    * @param {Date} [now] */
   recordCompletion(mission, result, now = new Date()) {
     if (!mission || !Number.isInteger(mission.campaignOrder) || mission.campaignOrder < 1 || typeof mission.id !== 'string') return null;
@@ -103,6 +110,9 @@ export default class CampaignProgress {
       bestTimeMs: previous ? Math.min(previous.bestTimeMs, timeMs) : timeMs,
       lastCompletedAt: now.toISOString(),
       hardestDifficulty,
+      // Best rescue count and every data log ever recovered in this mission.
+      mostRescued: Math.max(previous?.mostRescued ?? 0, bounded(result.rescued, 64) ?? 0),
+      logIds: logList([...(previous?.logIds ?? []), ...(result.logIds ?? [])]),
     });
     this.missions = Object.freeze({ ...this.missions, [mission.id]: record });
     this.save();

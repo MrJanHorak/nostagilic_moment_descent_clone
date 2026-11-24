@@ -1,5 +1,5 @@
 import { enemyTypes } from '../../../entities/EnemyTypes.js';
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, documentLimits, openingRules, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, STORY_LIMITS, documentLimits, openingRules, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
 import validateSemantics from './validateSemantics.js';
 
 class Reader {
@@ -231,6 +231,51 @@ function readDoor(value, path, reader, version) {
   return id && connectionId && (deviceId || activation === 'shot') ? { id, connectionId, ...(deviceId ? { deviceId } : {}), ...(activation ? { activation } : {}), ...(kind ? { kind } : {}), ...(typeof object.concealed === 'boolean' ? { concealed: object.concealed } : {}) } : null;
 }
 
+/** @param {unknown} value @param {string} path @param {Reader} reader
+ * @returns {import('../../../levelDocument.js').StoryTrigger | null} */
+function readTrigger(value, path, reader) {
+  const probe = typeof value === 'object' && value !== null && !Array.isArray(value) ? /** @type {Record<string, unknown>} */ (value).on : undefined;
+  const on = reader.choice(probe, /** @type {const} */ (['start', 'enter', 'device', 'defeat']), `${path}.on`);
+  if (!on) return null;
+  if (on === 'start') return reader.object(value, path, ['on']) ? { on } : null;
+  if (on === 'enter') {
+    const object = reader.object(value, path, ['on', 'roomId']), roomId = reader.text(object?.roomId, `${path}.roomId`, 64, true);
+    return roomId ? { on, roomId } : null;
+  }
+  if (on === 'device') {
+    const object = reader.object(value, path, ['on', 'deviceId']), deviceId = reader.text(object?.deviceId, `${path}.deviceId`, 64, true);
+    return deviceId ? { on, deviceId } : null;
+  }
+  const object = reader.object(value, path, ['on', 'enemyId']), enemyId = reader.text(object?.enemyId, `${path}.enemyId`, 64, true);
+  return enemyId ? { on, enemyId } : null;
+}
+
+/** @param {unknown} value @param {string} path @param {Reader} reader
+ * @returns {import('../../../levelDocument.js').StoryDocument | null} */
+function readStory(value, path, reader) {
+  const object = reader.object(value, path, ['messages', 'logs', 'survivors']); if (!object) return null;
+  const messages = (reader.array(object.messages ?? [], `${path}.messages`, STORY_LIMITS.messages) ?? []).map((entry, i) => {
+    const at = `${path}.messages[${i}]`, message = reader.object(entry, at, ['id', 'speaker', 'text', 'trigger']);
+    const id = reader.text(message?.id, `${at}.id`, 64, true), speaker = reader.text(message?.speaker, `${at}.speaker`, STORY_LIMITS.speaker);
+    const text = reader.text(message?.text, `${at}.text`, STORY_LIMITS.message), trigger = readTrigger(message?.trigger, `${at}.trigger`, reader);
+    return id && speaker && text && trigger ? { id, speaker, text, trigger } : null;
+  }).filter(entry => entry !== null);
+  const logs = (reader.array(object.logs ?? [], `${path}.logs`, STORY_LIMITS.logs) ?? []).map((entry, i) => {
+    const at = `${path}.logs[${i}]`, log = reader.object(entry, at, ['id', 'roomId', 'position', 'title', 'text']);
+    const id = reader.text(log?.id, `${at}.id`, 64, true), roomId = reader.text(log?.roomId, `${at}.roomId`, 64, true);
+    const position = reader.vector(log?.position, `${at}.position`), title = reader.text(log?.title, `${at}.title`, STORY_LIMITS.title);
+    const text = reader.text(log?.text, `${at}.text`, STORY_LIMITS.logText);
+    return id && roomId && position && title && text ? { id, roomId, position, title, text } : null;
+  }).filter(entry => entry !== null);
+  const survivors = (reader.array(object.survivors ?? [], `${path}.survivors`, STORY_LIMITS.survivors) ?? []).map((entry, i) => {
+    const at = `${path}.survivors[${i}]`, survivor = reader.object(entry, at, ['id', 'roomId', 'position', 'name']);
+    const id = reader.text(survivor?.id, `${at}.id`, 64, true), roomId = reader.text(survivor?.roomId, `${at}.roomId`, 64, true);
+    const position = reader.vector(survivor?.position, `${at}.position`), name = reader.text(survivor?.name, `${at}.name`, STORY_LIMITS.name);
+    return id && roomId && position && name ? { id, roomId, position, name } : null;
+  }).filter(entry => entry !== null);
+  return { messages, logs, survivors };
+}
+
 /** @template T @param {T} value @returns {T} */
 function freezeTree(value) {
   if (value !== null && typeof value === 'object') { for (const child of Object.values(value)) freezeTree(child); Object.freeze(value); }
@@ -253,9 +298,9 @@ export function validateLevelDraft(input) { return readLevelDocument(input, fals
 function readLevelDocument(input, semantics) {
   const reader = new Reader(); inspectJSON(input, reader);
   if (reader.errors.length) return { valid: false, errors: reader.errors };
-  const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors']);
+  const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors', 'story']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–12 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–13 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -266,6 +311,8 @@ function readLevelDocument(input, semantics) {
   const devices = relay ? (reader.array(root.devices, '$.devices', 16) ?? []).map((value, i) => readDevice(value, `$.devices[${i}]`, reader, version)).filter(value => value !== null) : [];
   const doors = relay ? (reader.array(root.doors, '$.doors', 16) ?? []).map((value, i) => readDoor(value, `$.doors[${i}]`, reader, version)).filter(value => value !== null) : [];
   if (root.formatVersion === 2 && (!devices.length || !doors.length)) reader.issue('$', 'relay', 'Version 2 requires at least one device and door');
+  if ('story' in root && version < 13) reader.issue('$.story', 'version', 'Story messages, logs and survivors require formatVersion 13');
+  const story = version >= 13 && 'story' in root ? readStory(root.story, '$.story', reader) : null;
   if (!rooms.length) reader.issue('$.rooms', 'rooms', 'At least one room is required');
   const spawn = reader.object(root.playerSpawn, '$.playerSpawn', ['roomId', 'position', 'rotation']);
   const roomId = reader.text(spawn?.roomId, '$.playerSpawn.roomId', 64, true), position = reader.vector(spawn?.position, '$.playerSpawn.position'), rotation = reader.rotation(spawn?.rotation, '$.playerSpawn.rotation');
@@ -289,7 +336,9 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? { ...base, formatVersion: version === 12 ? 12 : version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
+    ? version === 13
+      ? { ...base, formatVersion: 13, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) }, ...(story ? { story } : {}) }
+      : { ...base, formatVersion: version === 12 ? 12 : version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));
   return reader.errors.length ? { valid: false, errors: reader.errors } : { valid: true, document: freezeTree(document) };

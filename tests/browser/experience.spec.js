@@ -41,8 +41,9 @@ test('production: new campaign is primary; camera, headlights and HUD persist an
   await page.locator('#select-level-btn').click();
   for (const title of ['Signal Breach', 'Vector Foundry', 'Nightfall Reactor']) await expect(button(page, title)).toBeVisible();
   await expect(button(page, 'Arena Escape')).toBeHidden(); await expect(page.getByRole('button', { name: /Legacy level/ })).toHaveCount(0);
-  await expect(page.locator('.mission-library details button')).toHaveCount(7);
+  await expect(page.locator('.mission-library details button')).toHaveCount(8);
   await expect(button(page, 'Crossfire Relay')).toBeHidden();
+  await expect(button(page, 'Bomber Drill')).toBeHidden();
   await expect(button(page, 'ENDLESS MODE')).toHaveCount(0);
   await page.screenshot({ path: testInfo.outputPath('new-mission-library.png'), fullPage: true });
   await button(page, 'Signal Breach').press('Enter'); await page.clock.fastForward(100);

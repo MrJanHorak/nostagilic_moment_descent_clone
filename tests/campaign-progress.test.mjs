@@ -47,7 +47,7 @@ test('completions persist best score, best time and count, and report new record
   assert.equal(progress.saveStatus, 'saved');
   const reloaded = new CampaignProgress(() => storage);
   assert.deepEqual({ ...reloaded.get('signal-breach'), lastCompletedAt: undefined },
-    { completions: 3, bestScore: 1800, bestTimeMs: 90_000, lastCompletedAt: undefined, hardestDifficulty: 'pilot' });
+    { completions: 3, bestScore: 1800, bestTimeMs: 90_000, lastCompletedAt: undefined, hardestDifficulty: 'pilot', mostRescued: 0, logIds: [] });
   assert.ok(Object.isFrozen(reloaded.missions) && Object.isFrozen(reloaded.get('signal-breach')));
 });
 

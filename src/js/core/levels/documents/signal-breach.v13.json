@@ -1,0 +1,737 @@
+{
+  "formatVersion": 13,
+  "id": "signal-breach",
+  "name": "Signal Breach",
+  "rooms": [
+    {
+      "id": "repair-alcove",
+      "prefab": "box-room",
+      "position": [
+        -16,
+        0,
+        0
+      ],
+      "size": [
+        12,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        }
+      }
+    },
+    {
+      "id": "arrival-shaft",
+      "prefab": "box-room",
+      "position": [
+        0,
+        12,
+        0
+      ],
+      "size": [
+        8,
+        10,
+        8
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "overhead-gallery",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        21,
+        -16
+      ],
+      "size": [
+        8,
+        8,
+        40
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "hall-shaft",
+      "prefab": "box-room",
+      "position": [
+        0,
+        12,
+        -32
+      ],
+      "size": [
+        8,
+        10,
+        8
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "arrival",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "entry-tunnel",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -16
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "signal-hall",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -32
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4207401,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 9134663,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "maintenance",
+      "prefab": "box-room",
+      "position": [
+        20,
+        0,
+        -32
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "return-tunnel",
+      "prefab": "straight-corridor",
+      "position": [
+        20,
+        0,
+        -16
+      ],
+      "size": [
+        8,
+        8,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "supply-bay",
+      "prefab": "box-room",
+      "position": [
+        20,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2309175,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3896684,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "extraction",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2373447,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 3958404,
+          "pattern": "panels"
+        }
+      }
+    }
+  ],
+  "connections": [
+    {
+      "id": "secret-access",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "repair-alcove",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        4,
+        4
+      ]
+    },
+    {
+      "id": "arrival-hatch",
+      "a": {
+        "roomId": "arrival",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "arrival-shaft",
+        "port": "negativeY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "gallery-entry",
+      "a": {
+        "roomId": "arrival-shaft",
+        "port": "positiveY"
+      },
+      "b": {
+        "roomId": "overhead-gallery",
+        "port": "negativeY",
+        "offset": [
+          0,
+          16
+        ]
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "gallery-return",
+      "a": {
+        "roomId": "overhead-gallery",
+        "port": "negativeY",
+        "offset": [
+          0,
+          -16
+        ]
+      },
+      "b": {
+        "roomId": "hall-shaft",
+        "port": "positiveY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "hall-hatch",
+      "a": {
+        "roomId": "hall-shaft",
+        "port": "negativeY"
+      },
+      "b": {
+        "roomId": "signal-hall",
+        "port": "positiveY"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "entry",
+      "a": {
+        "roomId": "arrival",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "entry-tunnel",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "signal",
+      "a": {
+        "roomId": "entry-tunnel",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "signal-hall",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "east-loop",
+      "a": {
+        "roomId": "signal-hall",
+        "port": "positiveX"
+      },
+      "b": {
+        "roomId": "maintenance",
+        "port": "negativeX"
+      },
+      "openingSize": [
+        10,
+        8
+      ]
+    },
+    {
+      "id": "return-north",
+      "a": {
+        "roomId": "maintenance",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "return-tunnel",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "return-south",
+      "a": {
+        "roomId": "return-tunnel",
+        "port": "positiveZ"
+      },
+      "b": {
+        "roomId": "supply-bay",
+        "port": "negativeZ"
+      },
+      "openingSize": [
+        6,
+        6
+      ]
+    },
+    {
+      "id": "supply-loop",
+      "a": {
+        "roomId": "supply-bay",
+        "port": "negativeX"
+      },
+      "b": {
+        "roomId": "arrival",
+        "port": "positiveX"
+      },
+      "openingSize": [
+        10,
+        8
+      ]
+    },
+    {
+      "id": "extraction-gate",
+      "a": {
+        "roomId": "signal-hall",
+        "port": "negativeZ"
+      },
+      "b": {
+        "roomId": "extraction",
+        "port": "positiveZ"
+      },
+      "openingSize": [
+        8,
+        8
+      ]
+    }
+  ],
+  "entities": [
+    {
+      "id": "secret-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "repair-alcove",
+      "position": [
+        -2,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "secret-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "repair-alcove",
+      "position": [
+        -2,
+        0,
+        -2
+      ]
+    },
+    {
+      "id": "hall-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "signal-hall",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "maintenance-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "maintenance",
+      "position": [
+        5,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "arrival-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "arrival",
+      "position": [
+        -4,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "cache-health",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "supply-bay",
+      "position": [
+        -3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "exit",
+      "kind": "exit",
+      "roomId": "extraction",
+      "position": [
+        0,
+        0,
+        -4
+      ],
+      "radius": 1.5
+    }
+  ],
+  "devices": [
+    {
+      "id": "relay-signal",
+      "label": "Signal uplink",
+      "roomId": "signal-hall",
+      "position": [
+        2,
+        0,
+        2
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "entry-door",
+      "connectionId": "entry",
+      "activation": "shot"
+    },
+    {
+      "id": "cache-panel",
+      "connectionId": "secret-access",
+      "activation": "shot",
+      "concealed": true
+    },
+    {
+      "id": "signal-door",
+      "connectionId": "extraction-gate",
+      "deviceId": "relay-signal"
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "arrival",
+    "position": [
+      0,
+      0,
+      5
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [],
+    "requiredDeviceIds": [
+      "relay-signal"
+    ],
+    "exitId": "exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 80,
+    "maxPulseAmmo": 120
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "sb:msg-start",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "You're inside, Two. Asterion's Ridge relay has been dark for nine days and the Consortium wants its uplink back. Shoot the striped door, find the relay, get out. Easy money.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "sb:msg-foreman-seal",
+        "speaker": "FOREMAN",
+        "text": "NOTICE. THIS SECTION IS SEALED FOR WORKER SAFETY. UNAUTHORIZED CRAFT WILL BE REMOVED.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "entry-tunnel"
+        }
+      },
+      {
+        "id": "sb:msg-hall",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "That guard isn't on any Asterion manifest I have. It's flying security patterns, not mining ones. Use the doorway, or take the gallery overhead.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "signal-hall"
+        }
+      },
+      {
+        "id": "sb:msg-guard-down",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "Guard's down. The uplink is right beside you. Bring it online.",
+        "trigger": {
+          "on": "defeat",
+          "enemyId": "hall-fighter"
+        }
+      },
+      {
+        "id": "sb:msg-uplink",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "Uplink's live, and the gate is open. Odd: the first thing it's relaying isn't telemetry. It's a distress loop from inside the mine. Sweep the side bays before you leave.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "relay-signal"
+        }
+      },
+      {
+        "id": "sb:msg-alcove",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "A hidden cache. Somebody stocked this on purpose. Asterion doesn't hide supplies from its own crews.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "repair-alcove"
+        }
+      },
+      {
+        "id": "sb:msg-foreman-workers",
+        "speaker": "FOREMAN",
+        "text": "WORKERS IN THIS SECTOR ARE SAFE. DO NOT REMOVE THEM.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "maintenance"
+        }
+      },
+      {
+        "id": "sb:msg-life-signs",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "I'm reading life signs. If anyone's down there, fly close and take them aboard. There's room in the hold, and they only count if you get them out.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "supply-bay"
+        }
+      },
+      {
+        "id": "sb:msg-extraction",
+        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "text": "Gate's clear. Bring it home, Two. Then we talk about why a mining AI is guarding an empty relay.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "extraction"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "sb:log-okafor",
+        "roomId": "repair-alcove",
+        "position": [
+          2,
+          0,
+          0
+        ],
+        "title": "Shift log: R. Okafor",
+        "text": "Day 3 of the seal. FOREMAN dropped the bulkheads and says it's protecting us. From what? It won't say. We stocked this alcove with what we could carry. Dara's hiding in maintenance. If you're reading this, check the side bays."
+      },
+      {
+        "id": "sb:log-memo",
+        "roomId": "signal-hall",
+        "position": [
+          -6,
+          0,
+          5
+        ],
+        "title": "Consortium memo (fragment)",
+        "text": "...Ridge output no longer justifies life-support spend. Recommend controlled closure of the lower works by end of quarter. Personnel status to be handled by site automation. Do not route this through the public relay."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "sb:miner-dara",
+        "roomId": "maintenance",
+        "position": [
+          -5,
+          0,
+          4
+        ],
+        "name": "Dara Okafor"
+      },
+      {
+        "id": "sb:miner-teo",
+        "roomId": "supply-bay",
+        "position": [
+          4,
+          0,
+          3
+        ],
+        "name": "Teo Brandt"
+      }
+    ]
+  }
+}

@@ -8,11 +8,13 @@ import NavigationDisplay from './NavigationDisplay.js';
 import { formatMissionTime } from '../core/CampaignProgress.js';
 import { DIFFICULTIES } from '../core/Difficulty.js';
 import { keyLabel } from '../core/ControlBindings.js';
+import CommsPanel from './CommsPanel.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
     this.gameState = gameState;
     this.audioManager = audioManager;
+    this.comms = new CommsPanel();
 
     this.startScreen = null;
     this.transientElements = new Set();
@@ -1081,12 +1083,24 @@ class UIManager {
     this.game.togglePause();
   }
 
+  /** Version-13 story events: radio lines, data logs and rescued survivors.
+   * @param {import('../core/StoryController.js').StoryEvent} event */
+  showStoryEvent(event) {
+    if (event.kind === 'message') this.comms.push(event.speaker.toUpperCase(), event.text);
+    else if (event.kind === 'log') {
+      this.showMessage(`DATA LOG ${event.found}/${event.total} RECOVERED`, 2200, '#ffd27a');
+      this.comms.push(`LOG · ${event.title.toUpperCase()}`, event.text, 'log');
+    } else this.showMessage(`SURVIVOR ABOARD · ${event.name} (${event.aboard}/${event.total}) · Reach extraction to bring them home`, 3200, '#ffd27a');
+  }
+
   showPauseMenu() {
+    this.comms?.setPaused(true);
     this.createPauseMenu().style.display = 'flex';
   }
 
   hidePauseMenu() {
     if (this.pauseMenu) this.pauseMenu.style.display = 'none';
+    this.comms?.setPaused(false);
   }
 
   showArenaGuide() {
@@ -1221,6 +1235,7 @@ class UIManager {
   }
 
   resetSessionUI() {
+    this.comms?.clear();
     this.navigationDisplay?.reset();
     this.settingsDialog?.close(false);
     for (const timer of this.presentationTimers) clearTimeout(timer);
@@ -1285,6 +1300,11 @@ class UIManager {
     actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
       ['SELECT MISSION', () => this.game.showLevelSelection()]);
     const lines = [`Score: ${this.gameState.score} (includes 1,000 completion bonus)`];
+    const story = this.game?.lastStorySummary;
+    if (story && (story.logsTotal || story.survivorsTotal)) {
+      lines.push([story.survivorsTotal ? `Survivors rescued: ${story.rescued}/${story.survivorsTotal}` : '',
+        story.logsTotal ? `Data logs: ${story.logsFound}/${story.logsTotal}` : ''].filter(Boolean).join(' · '));
+    }
     if (progress) {
       const record = progress.record;
       lines.push(`Difficulty: ${progress.difficulty.label}`);

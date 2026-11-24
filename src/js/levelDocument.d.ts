@@ -35,6 +35,20 @@ export type EntityDocument = Placement & (
 );
 export interface DeviceDocument extends Placement { readonly id: string; readonly label: string; readonly kind?: 'reactor'; readonly health?: number }
 export interface DoorDocument { readonly id: string; readonly connectionId: string; readonly deviceId?: string; readonly activation?: 'shot'; readonly concealed?: boolean; readonly kind?: 'force-field' }
+/** Version 13 story layer: radio messages, collectible data logs and rescuable survivors. */
+export type StoryTrigger =
+  | { readonly on: 'start' }
+  | { readonly on: 'enter'; readonly roomId: string }
+  | { readonly on: 'device'; readonly deviceId: string }
+  | { readonly on: 'defeat'; readonly enemyId: string };
+export interface StoryMessage { readonly id: string; readonly speaker: string; readonly text: string; readonly trigger: StoryTrigger }
+export interface StoryLog extends Placement { readonly id: string; readonly title: string; readonly text: string }
+export interface StorySurvivor extends Placement { readonly id: string; readonly name: string }
+export interface StoryDocument {
+  readonly messages: readonly StoryMessage[];
+  readonly logs: readonly StoryLog[];
+  readonly survivors: readonly StorySurvivor[];
+}
 interface LevelDocumentBase {
   readonly id: string;
   readonly name: string;
@@ -65,6 +79,9 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 10 | 11 | 12; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
+  | { readonly formatVersion: 13; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition };
+      readonly story?: StoryDocument }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }
 export type ValidationResult = { readonly valid: true; readonly document: LevelDocument }
@@ -83,6 +100,12 @@ export interface ArenaLevel {
   readonly mission?: MissionDefinition;
   readonly combat?: LevelDocument['combat'];
   readonly sourceDocument?: LevelDocument;
+  /** Compiled story layer with world positions (version 13). */
+  readonly story?: {
+    readonly messages: readonly StoryMessage[];
+    readonly logs: readonly (StoryLog & { readonly world: Vec3 })[];
+    readonly survivors: readonly (StorySurvivor & { readonly world: Vec3 })[];
+  };
   readonly devices?: readonly { readonly id: string; readonly label: string; readonly kind?: 'reactor'; readonly health?: number; readonly position: Vec3 }[];
   readonly doors?: readonly (DoorDocument & { readonly solid: SolidDefinition; readonly sliding?: boolean; readonly slideAxis?: number; readonly reverseStyle?: { readonly color: number; readonly pattern?: SurfacePattern }; readonly normalAxis?: number; readonly direction?: number })[];
 }

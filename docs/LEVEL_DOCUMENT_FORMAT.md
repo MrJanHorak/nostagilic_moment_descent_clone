@@ -248,3 +248,41 @@ A door may add `kind: "force-field"` to create a translucent energy barrier inst
 ## Version 12: destructible reactor objectives
 
 A device can declare `kind: "reactor"` and integer `health: 10…1000`. Both fields require v12; ordinary relays omit them. Reactor placement reserves 1.5 units of clearance. Every reactor ID belongs to `mission.requiredDeviceIds`, and `mission.escape.triggerDeviceId` can reference it: destruction completes the system objective and starts the timer. The same ID may control entries in `doors`. Player swept shots damage the core; enemy fire and R do not. The escape-triggering core uses the existing prerequisite interlock/progression validation. Runtime health and deadlines never enter JSON. See [reactor authoring and Deepworks](DEEPWORKS.md).
+
+## Version 13: story messages, data logs and survivors
+
+Added November 24, 2026. Version 13 adds an optional top-level `story` object. Every list in it is optional. Older versions reject `story`, and v1–12 files keep their version on import.
+
+```json
+"story": {
+  "messages": [
+    { "id": "sb:msg-start", "speaker": "Vey · Kestrel dispatch", "text": "You're inside, Two…", "trigger": { "on": "start" } },
+    { "id": "sb:msg-hall", "speaker": "Vey · Kestrel dispatch", "text": "…", "trigger": { "on": "enter", "roomId": "signal-hall" } },
+    { "id": "sb:msg-uplink", "speaker": "Vey · Kestrel dispatch", "text": "…", "trigger": { "on": "device", "deviceId": "relay-signal" } },
+    { "id": "sb:msg-guard", "speaker": "Vey · Kestrel dispatch", "text": "…", "trigger": { "on": "defeat", "enemyId": "hall-fighter" } }
+  ],
+  "logs": [ { "id": "sb:log-okafor", "roomId": "repair-alcove", "position": [2, 0, 0], "title": "Shift log: R. Okafor", "text": "…" } ],
+  "survivors": [ { "id": "sb:miner-dara", "roomId": "maintenance", "position": [-5, 0, 4], "name": "Dara Okafor" } ]
+}
+```
+
+| Element | Fields and bounds | Runtime |
+| --- | --- | --- |
+| Message | `speaker` 1–32 chars, `text` 1–280 chars; trigger `start`, `enter` (room), `device` (relay/reactor activated or destroyed), or `defeat` (a robot killed by the player); at most 48 | Fires once per attempt in authored order; shown in the comms panel; the panel holds the current message during pause |
+| Data log | `title` 1–48 chars, `text` 1–700 chars, room-local position; clearance radius 0.5; at most 16 | Collected by flying within 1 unit; text shown in the comms panel; counted on the completion screen, with +100 score each on extraction |
+| Survivor | `name` 1–40 chars, room-local position; clearance radius 0.75; at most 16 | Taken aboard by flying within 1.25 units; counts only on successful extraction (+250 score each); lost on death or restart |
+
+Validation:
+- IDs are unique across the whole document.
+- References must name existing rooms, relays/devices and enemy entities. Rooms named by `enter` triggers must be reachable.
+- Logs and survivors must fit inside their room and must not overlap the spawn, exit, enemies, pickups, relays or each other.
+- Story meshes use emissive/unlit materials and add no lights. They are created and disposed with each attempt.
+
+Editor: version-13 documents open, export and undo normally.
+- Deleting a room removes its logs, its survivors and messages that wait for it.
+- Deleting a relay or robot removes messages triggered by it.
+- New editor IDs never collide with story IDs.
+
+Dedicated story authoring controls are the next step. Until then, add a `story` block to exported JSON and import it.
+
+Campaign progress records each mission's best rescue count (`mostRescued`) and every log ever recovered (`logIds`), for a future log archive.

@@ -9,7 +9,7 @@ import { overlappingRoomIds } from '../core/levels/document/RoomOverlap.js';
 import openResizeDialog from './ResizeDialog.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import deepworks from '../core/levels/documents/asterion-deepworks.v12.json';
-import sample from '../core/levels/documents/signal-breach.v8.json';
+import sample from '../core/levels/documents/signal-breach.v13.json';
 import ViewportMenu from './ViewportMenu.js';
 import openContextActions from './ContextActions.js';
 import EditorDraftStore from './EditorDraftStore.js';

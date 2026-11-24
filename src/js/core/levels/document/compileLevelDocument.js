@@ -80,6 +80,11 @@ export default function compileLevelDocument(input) {
     powerupSpawns: Object.freeze(document.entities.filter(entity => entity.kind === 'pickup').map(entity => Object.freeze({
       id: entity.id, powerupType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),
+    ...(document.formatVersion === 13 && document.story ? { story: Object.freeze({
+      messages: document.story.messages,
+      logs: Object.freeze(document.story.logs.map(log => Object.freeze({ ...log, world: Object.freeze(world(log)) }))),
+      survivors: Object.freeze(document.story.survivors.map(survivor => Object.freeze({ ...survivor, world: Object.freeze(world(survivor)) }))),
+    }) } : {}),
     mission: Object.freeze({ type: document.mission.type, requiredEnemyIds: document.mission.requiredEnemyIds,
       ...('escape' in document.mission && document.mission.escape ? { escape: document.mission.escape } : {}),
       ...(document.formatVersion !== 1 ? { requiredDeviceIds: document.mission.requiredDeviceIds } : {}),

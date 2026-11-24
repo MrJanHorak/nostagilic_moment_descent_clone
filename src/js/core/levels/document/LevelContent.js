@@ -7,6 +7,10 @@ export const EXIT_MARKER_MARGIN = 0.6;
 export const GRID = 0.5;
 /** @type {readonly import('../../../levelDocument.js').SurfacePattern[]} */
 export const SURFACE_PATTERNS = Object.freeze(['plain', 'grid', 'panels', 'hazard', 'lava', 'water']);
+/** Version 13 story layer bounds and collectible clearances. */
+export const STORY_LIMITS = Object.freeze({ messages: 48, logs: 16, survivors: 16, speaker: 32, message: 280, title: 48, logText: 700, name: 40 });
+export const LOG_RADIUS = 0.5;
+export const SURVIVOR_RADIUS = 0.75;
 export const LIMITS = Object.freeze({ rooms: 64, connections: 128, entities: 256, text: 1_000_000, errors: 100 });
 export const EXPANDED_LIMITS = Object.freeze({ ...LIMITS, rooms: 256, connections: 512 });
 /** Keep old documents' validation contract; expanded editing opts into v6.
