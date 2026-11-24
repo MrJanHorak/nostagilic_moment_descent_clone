@@ -8,6 +8,7 @@ import disposeObject from '../utils/disposeObject.js';
  *   | { kind: 'log', id: string, title: string, text: string, found: number, total: number }
  *   | { kind: 'survivor', id: string, name: string, aboard: number, total: number }} StoryEvent */
 /** @typedef {{ logsFound: number, logsTotal: number, logIds: readonly string[], rescued: number, survivorsTotal: number }} StorySummary */
+/** @typedef {{ kind: 'message' | 'log', label: string, text: string, timeMs: number }} StoryHistoryEntry */
 
 /** Version-13 story runtime for one attempt: radio messages fire once from simulation
  * events, data logs and survivors are collected by flying through them. Survivors count
@@ -24,6 +25,9 @@ export default class StoryController {
     /** @type {Set<string>} */ this.foundLogs = new Set();
     /** @type {Set<string>} */ this.aboard = new Set();
     /** @type {string | null} */ this.lastRoom = null;
+    /** Everything heard or read this attempt, oldest first, for the comms log.
+     * @type {StoryHistoryEntry[]} */ this.history = [];
+    this.now = 0;
     this.group = new THREE.Group();
     this.group.name = 'story-content';
     /** @type {Map<string, THREE.Object3D>} */ this.meshes = new Map();
@@ -52,6 +56,7 @@ export default class StoryController {
     for (const message of this.story.messages) {
       if (this.fired.has(message.id) || !matches(message.trigger)) continue;
       this.fired.add(message.id);
+      this.history.push({ kind: 'message', label: message.speaker, text: message.text, timeMs: this.now });
       this.emit({ kind: 'message', id: message.id, speaker: message.speaker, text: message.text });
     }
   }
@@ -67,11 +72,13 @@ export default class StoryController {
   /** Per simulation step: room-entry messages, collection and presentation.
    * @param {THREE.Vector3} position @param {number} timeMs */
   update(position, timeMs) {
+    this.now = timeMs;
     const room = this.navigation.roomAt(position);
     if (room !== null && room !== this.lastRoom) { this.lastRoom = room; this.fire(trigger => trigger.on === 'enter' && trigger.roomId === room); }
     for (const log of this.story.logs) {
       if (this.foundLogs.has(log.id) || !this.touching(log.world, position, LOG_RADIUS)) continue;
       this.foundLogs.add(log.id); this.remove(log.id);
+      this.history.push({ kind: 'log', label: log.title, text: log.text, timeMs });
       this.emit({ kind: 'log', id: log.id, title: log.title, text: log.text, found: this.foundLogs.size, total: this.story.logs.length });
     }
     for (const survivor of this.story.survivors) {

@@ -126,6 +126,7 @@ class InputManager {
       case 'fire': this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false }); break;
       case 'interact': this.game?.interact?.(); break;
       case 'map': this.game?.toggleMap?.(); break;
+      case 'missionLog': this.game?.openMissionLog?.(); break;
       case 'cameraView': case 'headlights': case 'showHUD': this.game?.toggleShipOption?.(action); break;
       case 'weapon1': case 'weapon2': case 'weapon3': case 'weapon4':
         this.gameState.switchWeapon(WEAPONS[Number(action.slice(6)) - 1]); break;
@@ -181,7 +182,11 @@ class InputManager {
       if (phase === 'playing') {
         const action = GAMEPAD_BUTTONS[index];
         if (action && !['up', 'down', 'rollLeft', 'rollRight', 'pause'].includes(action)) this.performAction(/** @type {any} */ (action));
-      } else this.navigateMenu(index, false);
+        continue;
+      }
+      // View/Share opens the comms log from the pause menu too.
+      if (index === 8 && phase === 'paused') { this.game?.openMissionLog?.(); continue; }
+      this.navigateMenu(index, false);
     }
     // A press may have paused or ended the run; never carry stick input out of active flight.
     if (this.gameState.session.phase !== 'playing') this.analog = neutralFlight();

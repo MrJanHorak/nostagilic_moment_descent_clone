@@ -38,6 +38,8 @@
     "src/js/core/StoryController.js",
     "src/js/ui/CommsPanel.js",
     "src/js/core/levels/document/validateStorySemantics.js",
+    "src/js/core/MissionStatus.js",
+    "src/js/ui/MissionLogPanel.js",
     "src/js/core/UserLevelLibrary.js",
     "src/js/ui/UserLevels.js",
     "src/js/core/ShipView.js",

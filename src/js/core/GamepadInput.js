@@ -4,7 +4,7 @@
 
 /** @typedef {{ axes: readonly number[], buttons: readonly ({ pressed: boolean, value: number } | undefined)[], mapping?: string, connected?: boolean, id?: string, index?: number }} GamepadSnapshot */
 /** @typedef {'fire' | 'interact' | 'up' | 'down' | 'rollLeft' | 'rollRight' | 'weaponPrevious' | 'weaponNext'
- *   | 'map' | 'headlights' | 'cameraView' | 'showHUD' | 'pause'} GamepadButtonAction */
+ *   | 'map' | 'headlights' | 'cameraView' | 'showHUD' | 'pause' | 'missionLog'} GamepadButtonAction */
 /** @typedef {{ forward: number, backward: number, left: number, right: number, up: number, down: number,
  *   yawLeft: number, yawRight: number, pitchUp: number, pitchDown: number, rollLeft: number, rollRight: number }} AnalogFlight */
 
@@ -15,7 +15,7 @@ export const TRIGGER_THRESHOLD = 0.5;
 /** @type {Readonly<Record<number, GamepadButtonAction>>} */
 export const GAMEPAD_BUTTONS = Object.freeze({
   0: 'up', 1: 'down', 2: 'interact', 3: 'weaponNext', 4: 'rollLeft', 5: 'rollRight',
-  6: 'weaponPrevious', 7: 'fire', 8: 'map', 9: 'pause', 12: 'map', 13: 'headlights', 14: 'cameraView', 15: 'showHUD',
+  6: 'weaponPrevious', 7: 'fire', 8: 'missionLog', 9: 'pause', 12: 'map', 13: 'headlights', 14: 'cameraView', 15: 'showHUD',
 });
 
 /** Every standard button index whose presses are reported (flight actions and menu navigation). */
@@ -34,7 +34,7 @@ export const GAMEPAD_LAYOUT = Object.freeze([
   ['X / Square', 'Activate relay'],
   ['D-pad ↑ ↓ ← →', 'Map · headlights · camera · HUD'],
   ['Menu / Options', 'Pause / resume'],
-  ['View / Share', 'Expand map'],
+  ['View / Share', 'Mission log (pauses)'],
   ['In menus', 'D-pad ↑ ↓ to move · A / Cross to select · B / Circle to go back'],
 ]);
 

@@ -1,8 +1,8 @@
 import { formatMissionTime } from '../core/CampaignProgress.js';
 import { DIFFICULTIES, DIFFICULTY_ORDER } from '../core/Difficulty.js';
 
-/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, hardestDifficulty?: import('../core/Difficulty.js').DifficultyId }} MissionProgress */
-/** @param {readonly {name: string, id?: string, campaignOrder?: number, briefing?: string}[]} levels
+/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, hardestDifficulty?: import('../core/Difficulty.js').DifficultyId, logIds?: readonly string[], mostRescued?: number }} MissionProgress */
+/** @param {readonly {name: string, id?: string, campaignOrder?: number, briefing?: string, story?: { logs: readonly { id: string, title: string, text: string }[], survivors: readonly unknown[] }}[]} levels
  * @param {(index: number) => void} choose @param {() => void} back
  * @param {{userLevels?: () => void, hiddenIndex?: number | null,
  *   progress?: (level: {name: string, id?: string, campaignOrder?: number}) => MissionProgress | null,
@@ -32,6 +32,10 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
     .mission-library .difficulty-row select { font:inherit; color:#d9f8ff; background:#24485c; border:1px solid #5e9cae; border-radius:5px; padding:8px 10px; }
     .mission-library .difficulty-row select:focus-visible { outline:2px solid #a4edf3; outline-offset:4px; }
     .mission-library .difficulty-summary { margin:0 0 16px; font-size:14px; }
+    .mission-library .log-archive { margin-top:10px; font-size:14px; }
+    .mission-library .log-archive summary { color:#ffd27a; padding:4px 0; }
+    .mission-library .log-archive article { border-left:3px solid #ffc04d; padding:2px 0 2px 10px; margin:8px 0; width:auto; max-height:none; }
+    .mission-library .log-archive b { display:block; color:#ffd27a; font-size:13px; letter-spacing:.06em; }
     .mission-library .reset-progress { margin-top:12px; font-size:14px; background:#3a2a2a; border-color:#9a6a6a; }
     .mission-library .reset-progress:hover { background:#4d3434; }
     .mission-library button:focus-visible, .mission-library summary:focus-visible { outline:2px solid #a4edf3; outline-offset:4px; }
@@ -75,7 +79,22 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
         const hardest = record.hardestDifficulty && record.hardestDifficulty !== 'pilot' ? ` on ${DIFFICULTIES[record.hardestDifficulty].label}` : '';
         status.textContent = `✓ COMPLETED${hardest}${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
         button.setAttribute('aria-description', 'Completed');
+        const survivors = level.story?.survivors.length ?? 0;
+        if (survivors) status.textContent += ` · Rescued ${record.mostRescued ?? 0}/${survivors}`;
         card.append(status);
+        const logs = level.story?.logs ?? [];
+        if (logs.length) {
+          const found = logs.filter(log => record.logIds?.includes(log.id));
+          const archive = document.createElement('details'); archive.className = 'log-archive';
+          const title = document.createElement('summary'); title.textContent = `Data logs recovered ${found.length}/${logs.length}`;
+          archive.append(title);
+          if (!found.length) { const none = document.createElement('p'); none.textContent = 'None yet. Logs count once you extract with them.'; archive.append(none); }
+          for (const log of found) {
+            const entry = document.createElement('article'), heading = document.createElement('b');
+            heading.textContent = log.title; entry.append(heading, log.text); archive.append(entry);
+          }
+          card.append(archive);
+        }
       }
       card.append(briefing); article.append(card);
     } else {

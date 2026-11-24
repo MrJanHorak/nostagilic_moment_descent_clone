@@ -6,7 +6,7 @@ Added November 23, 2026. Sources: `src/js/core/ControlBindings.js`, `src/js/core
 
 **Settings → Controls: keyboard and controller** lists every remappable action. Select a control, press a key. Escape cancels; Delete/Backspace clears it.
 
-- Defaults are the original layout (W/S/A/D, Space, Left Shift/Ctrl, arrows, Q/E, F, R, M, C, L, H, 1–4).
+- Defaults are the original layout (W/S/A/D, Space, Left Shift/Ctrl, arrows, Q/E, F, R, M, C, L, H, 1–4), plus J for the mission log (added November 24).
 - Each action holds up to two keys. A new key becomes the primary key and the previous primary stays as the secondary.
 - A key belongs to one action. Binding it elsewhere removes it from its old action, and the panel says so (and warns if that action now has no key).
 - Escape (pause/back), Tab, OS/meta keys, F5, F11 and F12 cannot be bound. The mouse always aims, and click always captures and fires.
@@ -29,7 +29,7 @@ Any controller the browser reports with the standard mapping (Xbox, PlayStation 
 | X / Square | Activate relay |
 | D-pad ↑ ↓ ← → | Map · headlights · camera · HUD |
 | Menu / Options | Pause / resume |
-| View / Share | Expand map |
+| View / Share | Mission log (pauses); D-pad ↑ still expands the map |
 | In menus | D-pad ↑ ↓ moves focus · A selects · B goes back |
 
 - **Stick look sensitivity** (0.25–3×) and **Invert stick Y** are in the Controls section. They are separate from the mouse settings.

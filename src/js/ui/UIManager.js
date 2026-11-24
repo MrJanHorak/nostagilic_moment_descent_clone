@@ -9,6 +9,8 @@ import { formatMissionTime } from '../core/CampaignProgress.js';
 import { DIFFICULTIES } from '../core/Difficulty.js';
 import { keyLabel } from '../core/ControlBindings.js';
 import CommsPanel from './CommsPanel.js';
+import MissionLogPanel from './MissionLogPanel.js';
+import { optionalSummary } from '../core/MissionStatus.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -815,7 +817,7 @@ class UIManager {
     contentContainer.style.boxShadow =
       '0 0 20px #0066aa, inset 0 0 30px rgba(0,100,200,0.3)';
     contentContainer.style.padding = '30px';
-    contentContainer.style.maxWidth = '400px';
+    contentContainer.style.maxWidth = '520px';
     contentContainer.style.width = '90%';
     contentContainer.style.textAlign = 'center';
     Object.assign(contentContainer.style, { boxSizing: 'border-box',
@@ -1070,6 +1072,8 @@ class UIManager {
     `;
     pauseMenu.appendChild(styleSheet);
 
+    this.missionLog = new MissionLogPanel();
+    contentContainer.appendChild(this.missionLog.root);
     contentContainer.appendChild(buttonContainer);
     pauseMenu.appendChild(contentContainer);
     document.body.appendChild(pauseMenu);
@@ -1093,9 +1097,13 @@ class UIManager {
     } else this.showMessage(`SURVIVOR ABOARD · ${event.name} (${event.aboard}/${event.total}) · Reach extraction to bring them home`, 3200, '#ffd27a');
   }
 
-  showPauseMenu() {
+  /** @param {{ openComms?: boolean }} [options] */
+  showPauseMenu(options = {}) {
     this.comms?.setPaused(true);
-    this.createPauseMenu().style.display = 'flex';
+    const menu = this.createPauseMenu();
+    this.missionLog?.render(this.game?.missionStatus?.() ?? null, this.game?.story?.history ?? [], options);
+    menu.style.display = 'flex';
+    if (options.openComms) this.missionLog?.comms.querySelector('summary')?.focus();
   }
 
   hidePauseMenu() {
@@ -1208,8 +1216,8 @@ class UIManager {
     const reactorStatus = reactors.filter(core => core.health > 0).map(core => ` · CORE ${core.health}/${core.device.health ?? 100}`).join('');
     const systemName = reactors.length ? 'Systems' : 'Relays';
     const relay = mission.requiredDeviceIds.size ? ` · ${systemName} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` +
-      (device ? ` · R: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
-        level.id === 'relay-gate' ? ' · Cyan relay: lower blue return chamber · R activates nearby' : reactors.length ? ' · Cyan: R activates · Orange reactor: shoot the core' : ' · Find a cyan relay · R activates nearby' : ' · Linked doors unlocked') : '';
+      (device ? ` · ${this.boundKey('interact', 'KeyR')}: activate ${device.label}` : mission.activatedDevices.size < mission.requiredDeviceIds.size ?
+        level.id === 'relay-gate' ? ` · Cyan relay: lower blue return chamber · ${this.boundKey('interact', 'KeyR')} activates nearby` : reactors.length ? ` · Cyan: ${this.boundKey('interact', 'KeyR')} activates · Orange reactor: shoot the core` : ` · Find a cyan relay · ${this.boundKey('interact', 'KeyR')} activates nearby` : ' · Linked doors unlocked') : '';
     const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
     const remaining = mission.remainingEscapeMs(this.game.session.timeMs);
     const escapeHint = mission.definition.escape && remaining === null ? ' · Reactor control starts the escape countdown after other objectives are clear' : '';
@@ -1223,15 +1231,22 @@ class UIManager {
         this.guideEscape.style.color = seconds <= 10 ? '#ff7777' : '#ffce77';
       }
     }
-    const text = `${level.name.toUpperCase()} · ${status}${relay}${reactorStatus}${escapeHint}${navigation ? ` · ${navigation}` : ''} · Click/F fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause`;
+    const extras = this.game?.missionStatus ? optionalSummary(this.game.missionStatus()) : '';
+    const text = `${level.name.toUpperCase()} · ${status}${relay}${reactorStatus}${escapeHint}${extras ? ` · ${extras}` : ''}${navigation ? ` · ${navigation}` : ''} · Click/${this.boundKey('fire', 'KeyF')} fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause · ${this.boundKey('missionLog', 'KeyJ')}: mission log`;
     if (this.guideDetails && this.guideDetails.textContent !== text) this.guideDetails.textContent = text;
     if (this.guideSummary) {
       const objective = mission.ready ? 'EXIT READY' : mission.activatedDevices.size < mission.requiredDeviceIds.size
         ? `${systemName.toUpperCase()} ${mission.activatedDevices.size}/${mission.requiredDeviceIds.size}` : `DRONES ${mission.defeats.size}/${mission.requiredIds.size}`;
-      const summary = `${level.name.toUpperCase()} · ${objective}${reactorStatus}${device ? ` · R: ${device.label}` : ''}`;
+      const summary = `${level.name.toUpperCase()} · ${objective}${reactorStatus}${extras ? ` · ${extras.toUpperCase()}` : ''}${device ? ` · ${this.boundKey('interact', 'KeyR')}: ${device.label}` : ''}`;
       if (this.guideSummary.textContent !== summary) this.guideSummary.textContent = summary;
     }
     this.arenaGuide.style.borderColor = mission.ready ? '#45ff96' : '#ffb343';
+  }
+
+  /** The player's current primary key label for an action. @param {string} action @param {string} fallback */
+  boundKey(action, fallback) {
+    const code = this.game?.controls?.values?.bindings?.[action]?.[0] ?? (this.game?.controls ? null : fallback);
+    return code ? keyLabel(code) : 'unbound';
   }
 
   resetSessionUI() {

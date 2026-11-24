@@ -62,6 +62,7 @@ export interface InputGameActions {
   interact?(): boolean;
   toggleShipOption?(option: 'cameraView' | 'headlights' | 'showHUD'): void;
   toggleMap?(): void;
+  openMissionLog?(): boolean;
 }
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;

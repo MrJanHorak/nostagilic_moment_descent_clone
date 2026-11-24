@@ -18,6 +18,7 @@ import UserSettings from './core/UserSettings.js';
 import CampaignProgress from './core/CampaignProgress.js';
 import ControlBindings from './core/ControlBindings.js';
 import StoryController from './core/StoryController.js';
+import { describeMissionStatus } from './core/MissionStatus.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
@@ -316,6 +317,24 @@ export default class Game {
   }
 
   togglePause() { return this.session.phase === 'paused' ? this.resumeGame() : this.pauseGame(); }
+
+  /** Read-only status of the current attempt for the pause menu and HUD. */
+  missionStatus() {
+    const level = this.levelManager?.currentLevel;
+    if (!level || this.isEndlessMode) return null;
+    const kills = Object.values(this.gameState.enemyKills).reduce((sum, count) => sum + count, 0);
+    return describeMissionStatus({ level, mission: this.mission, story: this.story?.summary() ?? null,
+      timeMs: this.session.timeMs, difficulty: this.gameState.difficulty.label, kills });
+  }
+
+  /** Pause and open the comms log; from the pause menu it simply expands the log. */
+  openMissionLog() {
+    if (this.session.phase === 'playing') {
+      if (!this.pauseGame()) return false;
+    } else if (this.session.phase !== 'paused') return false;
+    this.uiManager.showPauseMenu({ openComms: true });
+    return true;
+  }
 
   die(reason = 'combat') {
     if (this.session.phase !== 'playing') return false;

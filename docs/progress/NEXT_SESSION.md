@@ -11,6 +11,16 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 mission status and comms log
+
+From playtest feedback:
+- The pause menu shows mission status (required ✓/○, optional counts, time, difficulty, escape) and a comms log of every radio line and log this attempt.
+- J, or controller View, pauses and opens the log.
+- The HUD guide line adds Aboard/Logs counts and shows the current key bindings.
+- Completed mission cards show the best rescues and a data-log archive.
+
+See [mission log](../MISSION_LOG.md). Verify passes (551 tests). Browser checks pass.
+
 ## November 24 story layer (format v13)
 
 Optional `story` block: messages (start/enter/device/defeat triggers), data logs and survivors. Validated, compiled to world space, run by `src/js/core/StoryController.js`, shown in `src/js/ui/CommsPanel.js`. Survivors count only on extraction (+250 each) and logs add +100. The completion screen shows both, and campaign records keep `mostRescued` and `logIds`. Signal Breach is now v13 with 9 messages, 2 logs and 2 miners (`signal-breach.v13.json`; the v8 file is kept). The editor preserves story data, cleans up references on delete and avoids ID clashes; story authoring controls are not built yet. See [format v13](../LEVEL_DOCUMENT_FORMAT.md#version-13-story-messages-data-logs-and-survivors) and [story bible](../STORY.md). Verify passes (546 tests). Browser: Signal Breach start shows dispatch in the comms panel, pause holds it, console clean; Signal Breach hidden-wall, editor context-menu and mission-library tests pass (the mission-library count was updated for Bomber Drill).
