@@ -19,6 +19,8 @@ export interface RoomDocument {
   readonly endOffset?: readonly [number, number];
   readonly materialPreset: MaterialPreset;
   readonly surfaces?: Readonly<Partial<Record<Face, SurfaceStyle>>>;
+  /** Version 14: optional display name shown in the editor and in-mission guide. */
+  readonly label?: string;
 }
 export interface PortReference { readonly roomId: string; readonly port: Face; readonly offset?: readonly [number, number] }
 export interface ConnectionDocument {
@@ -79,7 +81,7 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 10 | 11 | 12; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
-  | { readonly formatVersion: 13; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+  | { readonly formatVersion: 13 | 14; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition };
       readonly story?: StoryDocument }
 );

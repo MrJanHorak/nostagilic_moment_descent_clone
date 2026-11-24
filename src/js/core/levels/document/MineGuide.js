@@ -13,6 +13,7 @@ export default class MineGuide {
    * @param {string} id */
   roomName(id) {
     const room = this.rooms.get(id);
+    if (room?.label) return room.label;
     const color = { 'industrial-blue': 'Blue', 'industrial-red': 'Amber', 'industrial-green': 'Green' }[room?.materialPreset ?? 'industrial-blue'];
     return `${color} ${id.replace(/[:_-]+/g, ' ').replace(/\b[a-z]/g, letter => letter.toUpperCase())}`;
   }

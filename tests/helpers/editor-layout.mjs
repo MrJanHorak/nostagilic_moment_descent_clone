@@ -5,4 +5,6 @@ export async function openAuthoringPanels(page) {
     const button = page.getByRole('button', { name, exact: true });
     if (await button.getAttribute('aria-pressed') === 'false') await button.click();
   }
+  // Exact placement coordinates live in a fold; long-form tests type them directly.
+  await page.locator('#place-exact').evaluate(node => { node.open = true; });
 }

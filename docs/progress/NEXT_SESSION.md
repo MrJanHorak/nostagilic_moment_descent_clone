@@ -11,6 +11,28 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 editor tutorial and Windows menu fix
+
+- **Windows right-click:** the browser's own menu no longer covers the editor's menu. Windows fires `contextmenu` after the button is released, when the editor menu is already under the cursor, so the canvas never received it. `ViewportMenu` now blocks it over its own popovers too.
+- **Tutorial:** ten steps in the editor (`src/js/editor/Tutorial.js`), opened by **Start the tutorial** on a new mine's hint bar or **Tutorial** next to the title. It checks each step against the level itself and remembers the current step. The written version is [level editor tutorial](../LEVEL_EDITOR_TUTORIAL.md).
+- **Tests:** a unit test walks a level through every tutorial step, and a browser test covers the blocked native menu and a real step ticking off. Verify passes (581 tests).
+
+## November 24 editor clean-up (all eight review items)
+
+Done in one pass; details in the [editor UX review](../EDITOR_UX_REVIEW.md#second-pass-the-eight-remaining-items-done):
+- calmer inspector;
+- duplicate controls removed;
+- Q/W/E/R and Delete shortcuts, with undo steps that name the edit;
+- multi-select (Shift/Ctrl-click) with group move and delete;
+- room names, which add level format 14;
+- a first-run hint;
+- toolbars that fit at 1366 and 1024;
+- **Playtest from this room**.
+
+New files: `EditorHistory.js`, `PlaytestStart.js` and `tests/editor-polish.test.mjs`; the second test is in `tests/browser/editor-layout.spec.js`. Verify passes (580 tests). 33 editor and My Levels browser tests pass in the VM. The playtest-from-room browser test reaches the playtest correctly; its final "Return to editor" step hits the known VM-only playtest-close problem, so confirm it on real hardware.
+
+Next: Phase 2 (multiplayer-ready refactor).
+
 ## November 24 editor UX pass
 
 Hands-on review with screenshots; see [editor UX review](../EDITOR_UX_REVIEW.md). Fixed: a one-row grouped top bar, about 30% taller 3D view at 1366×768, 3D/Top/Front/Side camera presets (keys 1–4), section headings in the right-click menu, and no false placement error when a menu opens. New `tests/browser/editor-layout.spec.js`; the 28 existing editor browser tests pass in the VM. The review lists eight remaining items in priority order.

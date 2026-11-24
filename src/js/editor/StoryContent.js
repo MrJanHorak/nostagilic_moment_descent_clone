@@ -7,7 +7,7 @@
 
 /** @param {LevelDocument} document @returns {import('../levelDocument.js').StoryDocument | undefined} */
 export function storyOf(document) {
-  return document.formatVersion === 13 ? document.story : undefined;
+  return document.formatVersion === 13 || document.formatVersion === 14 ? document.story : undefined;
 }
 
 /** Data logs and trapped miners as kind-tagged placements, in document order.
@@ -41,7 +41,7 @@ export function triggerOptions(document) {
   const devices = document.formatVersion === 1 ? [] : document.devices;
   return [
     { value: 'start', label: 'Mission start' },
-    ...document.rooms.map(room => ({ value: `enter:${room.id}`, label: `Pilot enters ${room.id}` })),
+    ...document.rooms.map(room => ({ value: `enter:${room.id}`, label: `Pilot enters ${room.label ? `${room.label} (${room.id})` : room.id}` })),
     ...devices.map(device => ({ value: `device:${device.id}`, label: `${device.kind === 'reactor' ? 'Reactor destroyed' : 'Relay activated'}: ${device.label}` })),
     ...document.entities.filter(entity => entity.kind === 'enemy').map(enemy => ({ value: `defeat:${enemy.id}`, label: `Robot destroyed: ${enemy.id} (${enemy.kind === 'enemy' ? enemy.type : ''})` })),
   ];

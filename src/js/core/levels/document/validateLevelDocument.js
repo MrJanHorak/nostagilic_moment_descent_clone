@@ -1,5 +1,5 @@
 import { enemyTypes } from '../../../entities/EnemyTypes.js';
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, STORY_LIMITS, documentLimits, openingRules, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, ROOM_LABEL_LIMIT, STORY_LIMITS, documentLimits, openingRules, MATERIALS, SURFACE_PATTERNS } from './LevelContent.js';
 import validateSemantics from './validateSemantics.js';
 
 class Reader {
@@ -16,7 +16,7 @@ class Reader {
       this.issue(path, 'object', 'Expected an object'); return null;
     }
     const record = /** @type {Record<string, unknown>} */ (value);
-    for (const key of Object.keys(record)) if (!keys.includes(key)) this.issue(`${path}.${key}`, 'field', 'Unknown field');
+    for (const key of Object.keys(record)) if (!keys.includes(key)) this.issue(`${path}.${key}`, 'field', `Unknown field "${key.slice(0, 40)}" at ${path} (it may need a newer formatVersion)`);
     return record;
   }
   /** @param {unknown} value @param {string} path @param {number} max @param {boolean} [id] */
@@ -106,7 +106,7 @@ function inspectJSON(input, reader) {
 /** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} oriented @param {boolean} shaped @param {boolean} expanded @param {number} version
  * @returns {import('../../../levelDocument.js').RoomDocument | null} */
 function readRoom(value, path, reader, modern, oriented, shaped, expanded, version) {
-  const object = reader.object(value, path, ['id', 'prefab', 'position', 'size', 'yaw', 'materialPreset', ...(modern ? ['surfaces'] : []), ...(oriented ? ['pitch', 'roll'] : []), ...(shaped ? ['endOffset'] : [])]);
+  const object = reader.object(value, path, ['id', 'prefab', 'position', 'size', 'yaw', 'materialPreset', ...(modern ? ['surfaces'] : []), ...(oriented ? ['pitch', 'roll'] : []), ...(shaped ? ['endOffset'] : []), ...(version >= 14 ? ['label'] : [])]);
   if (!object) return null;
   const id = reader.text(object.id, `${path}.id`, 64, true);
   const prefab = reader.choice(object.prefab, shaped ? /** @type {const} */ (['box-room', 'straight-corridor', 'offset-corridor']) : /** @type {const} */ (['box-room', 'straight-corridor']), `${path}.prefab`);
@@ -115,7 +115,8 @@ function readRoom(value, path, reader, modern, oriented, shaped, expanded, versi
   const pitch = oriented && 'pitch' in object ? reader.choice(object.pitch, /** @type {const} */ ([0, 90, 180, 270]), `${path}.pitch`) : undefined;
   const roll = oriented && 'roll' in object ? reader.choice(object.roll, /** @type {const} */ ([0, 90, 180, 270]), `${path}.roll`) : undefined;
   const materialPreset = reader.choice(object.materialPreset, /** @type {const} */ (['industrial-blue', 'industrial-red', 'industrial-green']), `${path}.materialPreset`);
-  if (!id || !prefab || !position || !size || yaw === null || !materialPreset) return null;
+  const label = version >= 14 && 'label' in object ? reader.text(object.label, `${path}.label`, ROOM_LABEL_LIMIT) : undefined;
+  if (!id || !prefab || !position || !size || yaw === null || !materialPreset || label === null) return null;
   const maxSize = expanded ? 256 : 64;
   if (size.some(dimension => dimension < 4 || dimension > maxSize)) reader.issue(`${path}.size`, 'size', `Room dimensions must be between 4 and ${maxSize}`);
   if (!expanded && prefab !== 'box-room' && (size[0] > 8 || size[1] > 8 || size[2] < Math.max(size[0], size[1]))) {
@@ -146,7 +147,7 @@ function readRoom(value, path, reader, modern, oriented, shaped, expanded, versi
       if (color !== null && pattern) surfaces[face] = { color, pattern };
     }
   }
-  return { id, prefab, position, size, yaw, materialPreset, ...(pitch !== undefined && pitch !== null ? { pitch } : {}), ...(roll !== undefined && roll !== null ? { roll } : {}), ...(endOffset ? { endOffset } : {}), ...(Object.keys(surfaces).length ? { surfaces } : {}) };
+  return { id, prefab, position, size, yaw, materialPreset, ...(pitch !== undefined && pitch !== null ? { pitch } : {}), ...(roll !== undefined && roll !== null ? { roll } : {}), ...(endOffset ? { endOffset } : {}), ...(Object.keys(surfaces).length ? { surfaces } : {}), ...(label ? { label } : {}) };
 }
 
 /** @param {unknown} value @param {string} path @param {Reader} reader @param {boolean} modern @param {boolean} expanded @param {number} version
@@ -300,7 +301,7 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors', 'story']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–13 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–14 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -336,8 +337,8 @@ function readLevelDocument(input, semantics) {
   const base = { id, name, rooms, connections, playerSpawn: { roomId, position, rotation }, entities, combat: { pulseDamage, initialPulseAmmo, maxPulseAmmo } };
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
-    ? version === 13
-      ? { ...base, formatVersion: 13, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) }, ...(story ? { story } : {}) }
+    ? version >= 13
+      ? { ...base, formatVersion: version === 14 ? 14 : 13, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) }, ...(story ? { story } : {}) }
       : { ...base, formatVersion: version === 12 ? 12 : version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));

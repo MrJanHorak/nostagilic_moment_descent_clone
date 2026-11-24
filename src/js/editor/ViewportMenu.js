@@ -12,6 +12,11 @@ export default class ViewportMenu {
     this.events = new AbortController();
     document.addEventListener('pointerdown', event => { if (this.root && event.target instanceof Node && !this.root.contains(event.target)) this.close(false); }, { signal: this.events.signal });
     window.addEventListener('resize', () => this.close(false), { signal: this.events.signal });
+    // Windows fires contextmenu after the right button is released, by which time
+    // this menu sits under the cursor and receives the event instead of the canvas.
+    document.addEventListener('contextmenu', event => {
+      if (event.target instanceof Node && (this.root?.contains(event.target) || this.opener.contains(event.target))) event.preventDefault();
+    }, { signal: this.events.signal });
   }
   /** @param {boolean} [focus] */
   close(focus = false) {

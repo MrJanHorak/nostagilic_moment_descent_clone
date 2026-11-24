@@ -1,5 +1,6 @@
-import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, STORY_LIMITS, SURFACE_PATTERNS, WALL_THICKNESS, openingRules } from '../core/levels/document/LevelContent.js';
+import { AUTHORED_PICKUPS, FACES, GRID, LIMITS, EXPANDED_LIMITS, MATERIALS, ROOM_LABEL_LIMIT, STORY_LIMITS, SURFACE_PATTERNS, WALL_THICKNESS, openingRules } from '../core/levels/document/LevelContent.js';
 import { storyOf } from './StoryContent.js';
+import { describeChange } from './EditorHistory.js';
 import { faceOverlap, sharedOpening, connectedBranch } from './ConnectionTools.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 import { connectableFace, distance, portFrame } from '../core/levels/document/RoomMath.js';
@@ -31,7 +32,7 @@ export function createDocument() {
 function nextId(document, prefix) {
   const ids = new Set([document.id, ...document.rooms.map(value => value.id), ...document.connections.map(value => value.id),
     ...document.entities.map(value => value.id), ...(document.formatVersion !== 1 ? [...document.devices, ...document.doors].map(value => value.id) : []),
-    ...(document.formatVersion === 13 && document.story ? [...document.story.messages, ...document.story.logs, ...document.story.survivors].map(value => value.id) : [])]);
+    ...[...(storyOf(document)?.messages ?? []), ...(storyOf(document)?.logs ?? []), ...(storyOf(document)?.survivors ?? [])].map(value => value.id)]);
   let index = 1;
   while (ids.has(`${prefix}-${index}`)) index++;
   return `${prefix}-${index}`;
@@ -46,7 +47,7 @@ function occupied(document, roomId, port) {
  * content never leaves an invalid version-13 document behind.
  * @param {LevelDocument} draft @param {{rooms?: ReadonlySet<string>, devices?: ReadonlySet<string>, enemies?: ReadonlySet<string>}} removed */
 function pruneStory(draft, removed) {
-  if (draft.formatVersion !== 13 || !draft.story) return;
+  if ((draft.formatVersion !== 13 && draft.formatVersion !== 14) || !draft.story) return;
   const rooms = removed.rooms ?? new Set(), devices = removed.devices ?? new Set(), enemies = removed.enemies ?? new Set();
   const story = /** @type {{ messages: import('../levelDocument.js').StoryMessage[], logs: import('../levelDocument.js').StoryLog[], survivors: import('../levelDocument.js').StorySurvivor[] }} */ (draft.story);
   story.messages = story.messages.filter(({ trigger }) => !(trigger.on === 'enter' && rooms.has(trigger.roomId))
@@ -61,8 +62,8 @@ function pruneStory(draft, removed) {
  * @param {LevelDocument} draft @returns {MutableStory} */
 function ensureStory(draft) {
   const modern = modernize(draft);
-  Object.assign(modern, { formatVersion: 13 });
-  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13}>} */ (modern);
+  Object.assign(modern, { formatVersion: Math.max(13, modern.formatVersion) });
+  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14}>} */ (modern);
   upgraded.story ??= { messages: [], logs: [], survivors: [] };
   return /** @type {MutableStory} */ (upgraded.story);
 }
@@ -71,7 +72,7 @@ function ensureStory(draft) {
  * @param {LevelDocument} document @param {string} id */
 function placed(document, id) {
   if (id === '@spawn') return document.playerSpawn;
-  const story = document.formatVersion === 13 ? /** @type {MutableStory | undefined} */ (document.story) : undefined;
+  const story = /** @type {MutableStory | undefined} */ (storyOf(document));
   return document.entities.find(value => value.id === id)
     ?? (document.formatVersion !== 1 ? document.devices.find(value => value.id === id) : undefined)
     ?? (story ? [...story.logs, ...story.survivors].find(value => value.id === id) : undefined);
@@ -91,14 +92,14 @@ function storyMessage(message) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -122,8 +123,14 @@ export default class EditorDocument {
     /** @type {LevelDocument} */ this.document = JSON.parse(serializeLevelDocument(initial));
     /** @type {LevelDocument[]} */ this.past = [];
     /** @type {LevelDocument[]} */ this.future = [];
+    /** Undo/redo step names, parallel to past and future. @type {string[]} */ this.pastLabels = [];
+    /** @type {string[]} */ this.futureLabels = [];
     this.saved = JSON.stringify(this.document);
   }
+  /** Name of the edit Undo would revert, or '' when there is none. */
+  get undoLabel() { return this.past.length ? this.pastLabels.at(-1) ?? 'Edit level' : ''; }
+  /** Name of the edit Redo would reapply, or '' when there is none. */
+  get redoLabel() { return this.future.length ? this.futureLabels.at(-1) ?? 'Edit level' : ''; }
   get dirty() { return JSON.stringify(this.document) !== this.saved; }
   get validation() { return validateLevelDocument(this.document); }
   /** Commands own their snapshots, including temporarily invalid semantic edits.
@@ -132,17 +139,29 @@ export default class EditorDocument {
     const draft = copy(this.document);
     edit(draft);
     if (JSON.stringify(draft) === JSON.stringify(this.document)) return;
+    this.pastLabels.length = this.past.length;
+    this.pastLabels.push(describeChange(this.document, draft));
     this.past.push(copy(this.document));
-    if (this.past.length > 100) this.past.shift();
-    this.document = draft; this.future = [];
+    if (this.past.length > 100) { this.past.shift(); this.pastLabels.shift(); }
+    this.document = draft; this.future = []; this.futureLabels = [];
   }
-  undo() { const previous = this.past.pop(); if (previous) { this.future.push(this.document); this.document = previous; } }
-  redo() { const next = this.future.pop(); if (next) { this.past.push(this.document); this.document = next; } }
+  undo() {
+    const previous = this.past.pop(); if (!previous) return '';
+    const label = this.pastLabels.pop() ?? 'Edit level';
+    this.future.push(this.document); this.futureLabels.push(label); this.document = previous;
+    return label;
+  }
+  redo() {
+    const next = this.future.pop(); if (!next) return '';
+    const label = this.futureLabels.pop() ?? 'Edit level';
+    this.past.push(this.document); this.pastLabels.push(label); this.document = next;
+    return label;
+  }
   /** Invalid imports leave the current document, history and dirty state intact.
    * @param {string} text */
   import(text) {
     /** @type {LevelDocument} */ const candidate = JSON.parse(serializeLevelDocument(parseLevelDocument(text)));
-    this.document = candidate; this.past = []; this.future = []; this.saved = JSON.stringify(candidate);
+    this.document = candidate; this.past = []; this.future = []; this.pastLabels = []; this.futureLabels = []; this.saved = JSON.stringify(candidate);
   }
   export() { return serializeLevelDocument(this.document); }
   markSaved() { this.saved = JSON.stringify(this.document); }
@@ -150,7 +169,7 @@ export default class EditorDocument {
    * @param {unknown} input */
   restoreDraft(input) {
     const result = validateLevelDraft(input); if (!result.valid) throw new Error('Saved draft is malformed or unsupported. Import a JSON backup instead.');
-    this.document = copy(/** @type {LevelDocument} */ (result.document)); this.past = []; this.future = []; this.saved = '';
+    this.document = copy(/** @type {LevelDocument} */ (result.document)); this.past = []; this.future = []; this.pastLabels = []; this.futureLabels = []; this.saved = '';
   }
   /** Compose a direct manipulation as one atomic, validated undo command.
    * @param {(candidate: EditorDocument) => void} action */
@@ -161,6 +180,57 @@ export default class EditorDocument {
     if (!result.valid) throw new Error(result.errors.slice(0, 3).map(issue => issue.message).join('\n'));
     this.change(draft => Object.assign(draft, candidate.document));
   }
+  /** Run several commands as one undo step without validating the result, so
+   * deleting from an already-invalid draft still works. Any thrown error aborts all.
+   * @param {(candidate: EditorDocument) => void} action */
+  batch(action) {
+    const candidate = new EditorDocument(); candidate.document = copy(this.document);
+    action(candidate);
+    this.change(draft => { for (const key of Object.keys(draft)) if (!(key in candidate.document)) delete /** @type {Record<string, unknown>} */ (draft)[key]; Object.assign(draft, candidate.document); });
+  }
+
+  /** Delete several items as one undo step. @param {readonly string[]} ids */
+  deleteContents(ids) {
+    for (const id of ids) { const kind = this.content(id).kind; if (kind === 'spawn' || kind === 'exit') throw new Error('Move the player spawn or exit instead of deleting it. Deselect it and try again.'); }
+    this.batch(candidate => { for (const id of ids) candidate.deleteContent(id); });
+  }
+
+  /** Delete several rooms and their contents as one undo step. @param {readonly string[]} ids */
+  deleteRooms(ids) {
+    if (ids.length >= this.document.rooms.length) throw new Error('Keep at least one room.');
+    this.batch(candidate => { for (const id of ids) candidate.deleteRoom(id); });
+  }
+
+  /** Move several items by the same world offset, validated together as one step.
+   * Each stays in its own room, snapped to that room's grid.
+   * @param {readonly string[]} ids @param {number[]} delta */
+  moveContentGroup(ids, delta) {
+    if (delta.length !== 3 || !delta.every(Number.isFinite)) throw new Error('Choose a finite offset.');
+    this.checked(candidate => candidate.change(draft => {
+      for (const id of ids) {
+        const item = placed(draft, id); if (!item) throw new Error('Select mission content.');
+        const room = draft.rooms.find(room => room.id === item.roomId); if (!room) throw new Error('Select a room first.');
+        const world = toWorld(room, item.position).map((value, axis) => value + delta[axis]);
+        item.position = /** @type {[number, number, number]} */ (toLocal(room, world).map(value => Math.round(value / GRID) * GRID));
+      }
+    }));
+  }
+
+  /** Move several rooms by the same offset in one step. Connections between the
+   * moved rooms stay aligned; links to other rooms may need Snap connections.
+   * @param {readonly string[]} ids @param {number[]} delta */
+  moveRooms(ids, delta) {
+    const grid = this.document.formatVersion >= 6 ? 0.25 : GRID;
+    if (delta.length !== 3 || !delta.every(value => Number.isFinite(value) && Number.isInteger(value / grid))) throw new Error(`Move by whole ${grid}-unit steps.`);
+    for (const id of ids) this.room(id);
+    this.change(draft => {
+      for (const room of draft.rooms) if (ids.includes(room.id)) {
+        room.position = /** @type {[number, number, number]} */ (room.position.map((value, axis) => value + delta[axis]));
+        if (room.position.some(value => Math.abs(value) > 4096)) throw new Error('Positions must stay within ±4096.');
+      }
+    });
+  }
+
   /** @param {string} roomId @param {number[]} point @param {import('./EditorPicking.js').PlacementKind} kind @param {import('../contracts.js').EnemyType} [type]
    * @param {{title?: string, text?: string, name?: string}} [story] Text for a data log or trapped miner. */
   placeAt(roomId, point, kind, type = 'scout', story = {}) {
@@ -247,6 +317,18 @@ export default class EditorDocument {
       }
     });
   }
+  /** Set or clear a room's display label. Labels upgrade a draft to format 14.
+   * @param {string} roomId @param {string} label */
+  setRoomLabel(roomId, label) {
+    this.room(roomId);
+    const text = label.trim();
+    if (text.length > ROOM_LABEL_LIMIT) throw new Error(`Room names are limited to ${ROOM_LABEL_LIMIT} characters.`);
+    this.change(draft => {
+      const room = draft.rooms.find(room => room.id === roomId); if (!room) return;
+      if (text) { modernize(draft); Object.assign(draft, { formatVersion: 14 }); room.label = text; } else delete room.label;
+    });
+  }
+
   /** @param {string} roomId */
   room(roomId) {
     const room = this.document.rooms.find(value => value.id === roomId);
@@ -530,7 +612,7 @@ export default class EditorDocument {
       const local = /** @type {[number, number, number]} */ ([...position]);
       if (kind === 'relay' || kind === 'reactor') {
         const modern = modernize(draft); if (modern.devices.length >= 16) throw new Error('Relay limit reached (16).');
-        if (kind === 'reactor') Object.assign(modern, { formatVersion: 12 });
+        if (kind === 'reactor') Object.assign(modern, { formatVersion: Math.max(12, modern.formatVersion) });
         modern.devices.push({ id, label: kind === 'reactor' ? 'Destroy reactor' : id, roomId, position: local, ...(kind === 'reactor' ? { kind, health: 100 } : {}) }); modern.mission.requiredDeviceIds.push(id);
       } else if (kind === 'enemy') {
         draft.entities.push({ id, kind, roomId, position: local, type: /** @type {import('../contracts.js').EnemyType} */ (type) }); draft.mission.requiredEnemyIds.push(id);
@@ -595,7 +677,7 @@ export default class EditorDocument {
         if ('escape' in modern.mission && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
         pruneStory(draft, { devices: new Set([id]), enemies: new Set([id]) });
       }
-      const story = draft.formatVersion === 13 ? /** @type {MutableStory | undefined} */ (draft.story) : undefined;
+      const story = /** @type {MutableStory | undefined} */ (storyOf(draft));
       if (story) { story.logs = story.logs.filter(log => log.id !== id); story.survivors = story.survivors.filter(survivor => survivor.id !== id); }
     });
   }

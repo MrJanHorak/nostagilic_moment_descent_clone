@@ -57,6 +57,8 @@ export default class EditorViewport {
     /** @type {THREE.Mesh[]} */ this.markers = [];
     /** @type {import('../levelDocument.js').Face | null} */ this.selectedFace = null;
     this.selectedContent = ''; this.selectedConnection = '';
+    /** Extra rooms or items selected with Shift/Ctrl-click, besides the primary selection. @type {Set<string>} */
+    this.group = new Set();
     this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
     this.placementOverlay = new THREE.Group(); this.scene.add(this.placementOverlay);
     this.selected = '';
@@ -76,8 +78,9 @@ export default class EditorViewport {
         down = null; return;
       }
       if (event.button !== 0 || !down || Math.hypot(event.clientX - down.x, event.clientY - down.y) > 4 || this.transform.axis) return;
-      const target = this.pick(event.clientX, event.clientY);
+      const target = /** @type {import('./EditorPicking.js').ViewportTarget | null} */ (this.pick(event.clientX, event.clientY));
       if (target) {
+        if (event.shiftKey || event.ctrlKey || event.metaKey) target.additive = true;
         if (this.interaction.selectTarget) this.interaction.selectTarget(target);
         else this.select(target.roomId);
       }
@@ -109,8 +112,11 @@ export default class EditorViewport {
     if (!marker || this.transform.object !== this.contentPivot) return;
     const preview = this.interaction.contentPreview?.(this.selectedContent, this.contentPivot.position.toArray());
     if (preview) {
+      const delta = new THREE.Vector3().fromArray(preview.world).sub(marker.position);
       marker.position.fromArray(preview.world); /** @type {THREE.MeshBasicMaterial} */ (marker.material).color.setHex(preview.error ? 0xff384b : 0xffffff);
       this.arenaGroup?.getObjectByName(this.selectedContent)?.position.fromArray(preview.world);
+      // Group members follow the primary item; the release validates them together.
+      for (const other of this.markers) if (other !== marker && this.group.has(String(other.userData.contentId))) other.position.add(delta);
     }
     this.render();
   }
@@ -246,9 +252,15 @@ export default class EditorViewport {
   setDetailSelection(face, contentId = '', connectionId = '') {
     this.selectedFace = face; this.selectedContent = contentId; this.selectedConnection = face ? connectionId : ''; this.setSelection(this.selected);
   }
+  /** Highlight extra selected rooms or items. @param {Iterable<string>} ids */
+  setGroup(ids) { this.group = new Set(ids); this.drawSelection(); this.render(); }
   drawSelection() {
     disposeObject(this.selectionOverlay); this.selectionOverlay = new THREE.Group(); this.scene.add(this.selectionOverlay);
-    for (const marker of this.markers) marker.scale.setScalar(marker.userData.contentId === this.selectedContent ? 1.5 : 1);
+    for (const marker of this.markers) marker.scale.setScalar(marker.userData.contentId === this.selectedContent || this.group.has(String(marker.userData.contentId)) ? 1.5 : 1);
+    for (const proxy of this.rooms) {
+      const edges = /** @type {THREE.LineSegments<THREE.EdgesGeometry, THREE.LineBasicMaterial>} */ (proxy.children[0]);
+      if (!proxy.userData.overlaps && proxy.userData.roomId !== this.selected) edges.material.color.setHex(this.group.has(String(proxy.userData.roomId)) ? 0xffd890 : 0x7d9aaf);
+    }
     const room = this.document?.rooms.find(room => room.id === this.selected);
     if (!room || !this.selectedFace) return;
     const frame = portFrame(room, this.selectedFace);

@@ -10,6 +10,8 @@ export const SURFACE_PATTERNS = Object.freeze(['plain', 'grid', 'panels', 'hazar
 /** Version 13 story layer bounds and collectible clearances. */
 export const STORY_LIMITS = Object.freeze({ messages: 48, logs: 16, survivors: 16, speaker: 32, message: 280, title: 48, logText: 700, name: 40 });
 export const LOG_RADIUS = 0.5;
+/** Version 14 room display label length. */
+export const ROOM_LABEL_LIMIT = 40;
 export const SURVIVOR_RADIUS = 1;
 export const LIMITS = Object.freeze({ rooms: 64, connections: 128, entities: 256, text: 1_000_000, errors: 100 });
 export const EXPANDED_LIMITS = Object.freeze({ ...LIMITS, rooms: 256, connections: 512 });

@@ -3,14 +3,15 @@ import doorDialog from './DoorDialog.js';
 import openResizeDialog from './ResizeDialog.js';
 import EditorDocument from './EditorDocument.js';
 import { faceLabel, placementPosition } from './EditorPicking.js';
-import { FACES, MATERIALS, STORY_LIMITS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
+import { FACES, MATERIALS, ROOM_LABEL_LIMIT, STORY_LIMITS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
 import { connectableFace, portFrame, openingFrame, toWorld } from '../core/levels/document/RoomMath.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
 
 /** @param {import('./EditorPicking.js').ViewportTarget} target
  * @param {{model: EditorDocument, viewport: import('./EditorViewport.js').default, menu: import('./ViewportMenu.js').default,
- * commit: (action: () => void) => void, select: (target: import('./EditorPicking.js').ViewportTarget) => void, inspect: () => void, moveSelected: () => void}} context */
-export default function openContextActions(target, { model, viewport, menu, commit, select, inspect, moveSelected }) {
+ * commit: (action: () => void) => void, select: (target: import('./EditorPicking.js').ViewportTarget) => void, inspect: () => void, moveSelected: () => void,
+ * group?: () => string[], deleteGroup?: () => void}} context */
+export default function openContextActions(target, { model, viewport, menu, commit, select, inspect, moveSelected, group = () => [], deleteGroup }) {
   const room = model.room(target.roomId), face = target.face;
   const worldPoint = toWorld(room, /** @type {[number, number, number]} */ (target.localPoint));
   const links = face ? model.document.connections.filter(link => [link.a, link.b].some(end => end.roomId === room.id && end.port === face)) : [];
@@ -70,7 +71,10 @@ export default function openContextActions(target, { model, viewport, menu, comm
     });
   };
   /** @type {import('./ViewportMenu.js').MenuAction[]} */ const actions = [];
-  if (target.contentId) {
+  const selected = group();
+  if (selected.length > 1 && deleteGroup) actions.push({ label: `Move ${selected.length} selected together`, action: moveSelected, section: 'Selection' },
+    { label: `Delete ${selected.length} selected`, action: deleteGroup });
+  else if (target.contentId) {
     const content = model.content(target.contentId), protectedContent = content.kind === 'spawn' || content.kind === 'exit';
     actions.push({ label: 'Move selected item', action: moveSelected, section: 'Selected item' }, { label: 'Edit selected item', action: inspect },
       ...(content.kind === 'log' ? [{ label: 'Edit log text…', action: () => menu.form(`Edit ${content.id}`, 'Data log text appears in the mission log after pickup.', [
@@ -116,6 +120,10 @@ export default function openContextActions(target, { model, viewport, menu, comm
     { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
     { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },
     { label: target.contentId ? 'Focus selected item' : 'Focus this room', action: () => viewport.frame(true), section: 'Room' },
+    { label: room.label ? `Rename room (${room.label})…` : 'Name this room…', action: () => menu.form('Name this room', `${room.id} · shown in lists, story triggers and the pilot's guide. Leave empty to remove the name.`, [
+      { id: 'label', label: 'Room name', value: room.label ?? '', maxLength: ROOM_LABEL_LIMIT },
+    ], values => commit(() => model.setRoomLabel(room.id, values.label)), 'Save name') },
+    { label: 'Playtest from this room', action: () => document.getElementById('playtest-here')?.click() },
     { label: 'Resize room…', action: () => openResizeDialog(room.id, model, viewport, menu, commit) },
     { label: 'Snap connections', disabled: !used.size, reason: !used.size ? 'This room has no existing connection to realign.' : undefined, action: () => commit(() => model.snapConnections(room.id)) },
     { label: 'Duplicate room', disabled: !duplicateFace, reason: !duplicateFace ? 'No unused face is available for an adjacent duplicate.' : undefined,

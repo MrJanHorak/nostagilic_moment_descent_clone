@@ -288,3 +288,8 @@ Editor: version-13 documents open, export and undo normally.
 - The first story edit upgrades a draft to version 13.
 
 Campaign progress records each mission's best rescue count (`mostRescued`) and every log ever recovered (`logIds`), for a future log archive.
+
+## Version 14: room display names
+
+Added November 24, 2026. A room may carry an optional `label`: non-empty plain text, at most 40 characters. The editor shows it in lists, the inspector and story triggers, and the in-mission guide uses it as the room's name ("Location: Pump hall") instead of the colour and ID. IDs stay the stable references for connections, content and triggers. Everything else is the same as version 13, including the optional `story` block. Older versions reject `label`. Setting a name in the editor upgrades the draft to 14; clearing every name keeps the version.
+
