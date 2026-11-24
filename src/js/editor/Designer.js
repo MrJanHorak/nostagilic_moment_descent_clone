@@ -26,11 +26,9 @@ host.innerHTML = `
   <header>
     <div class="brand"><span>DESCENDED</span><h1>Level designer</h1></div>
     <nav aria-label="Document controls">
-      <button id="new">New mine</button><button id="sample">Open example</button><button id="deepworks">Open Deepworks</button>
-      <button id="import">Import JSON</button><button id="export" class="primary">Export JSON</button>
-      <button id="save-library">Save to My Levels</button><button id="save-library-copy" hidden>Save a copy</button>
-      <button id="playtest">Playtest level</button>
-      <button id="escape-settings">Reactor escape…</button><button id="story-settings">Story &amp; radio…</button>
+      <div class="nav-group" role="group" aria-label="Open"><button id="new">New mine</button><button id="sample">Open example</button><button id="deepworks">Open Deepworks</button><button id="import">Import JSON</button></div>
+      <div class="nav-group" role="group" aria-label="Mission"><button id="story-settings">Story &amp; radio…</button><button id="escape-settings">Reactor escape…</button></div>
+      <div class="nav-group" role="group" aria-label="Test and save"><button id="playtest">Playtest level</button><button id="save-library">Save to My Levels</button><button id="save-library-copy" hidden>Save a copy</button><button id="export" class="primary">Export JSON</button></div>
       <a href="/">Back to game</a>
     </nav>
     <input id="file" type="file" accept=".json,application/json" hidden />
@@ -65,11 +63,12 @@ host.innerHTML = `
         <button id="select" aria-pressed="true">Select</button><button id="translate" aria-pressed="false">Move</button><button id="resize" aria-pressed="false" title="Drag a local axis to stretch; the first connected opening stays fixed">Stretch</button><button id="rotate" aria-pressed="false">Rotate XYZ</button>
         <button id="frame">Frame all</button><button id="undo">Undo</button><button id="redo">Redo</button>
         <button id="actions">Actions</button>
+        <div class="camera-presets" role="group" aria-label="Camera"><button id="camera-iso" title="3D view (1)">3D</button><button id="camera-top" title="Top view (2)">Top</button><button id="camera-front" title="Front view (3)">Front</button><button id="camera-side" title="Side view (4)">Side</button></div>
         <label class="view-label">View<select id="view"><option value="xray">X-ray edit</option><option value="cutaway" selected>Solid cutaway</option><option value="solid">Solid exterior</option></select></label>
       </div>
-      <p id="geometry-status" role="status"></p><p id="tool-status" role="status" aria-live="polite"></p>
+      <div class="status-strip"><p id="geometry-status" role="status"></p><p id="tool-status" role="status" aria-live="polite"></p></div>
       <div id="viewport"></div>
-      <div class="viewport-help">Select a wall or item → right-click for build, style and placement tools · Shift+F10: keyboard actions<br>Drag: orbit · Right-drag: pan · Scroll: zoom · F: focus · Build tools / Scene browser: optional panels</div>
+      <div class="viewport-help">Right-click a wall, room or item for tools · Shift+F10: keyboard actions · Drag: orbit · Right-drag: pan · Scroll: zoom · F: focus · 1–4: 3D/top/front/side</div>
       <div class="validation"><h2 id="validation-title">Validation</h2><p id="validation-help" hidden>Choose an issue to focus its room, opening or item and open the relevant properties. Fix it here or Undo the edit.</p><p id="notice" role="status" aria-live="polite"></p><div id="issues"></div></div>
     </main>
     <aside class="right-panel">
@@ -321,6 +320,7 @@ function refresh(rebuild = true) {
     row.append(edit, remove); return row;
   }));
   const result = model.validation;
+  document.querySelector('.validation')?.classList.toggle('is-valid', result.valid);
   element('validation-title').textContent = result.valid ? 'Valid level · Ready to export' : `${result.errors.length} validation issue(s) · Export blocked · Outline preview`;
   button('export').disabled = !result.valid;
   button('save-library').disabled = !result.valid;
@@ -430,6 +430,7 @@ element('move-content').onclick = () => { selectedId = model.content(selectedCon
 element('snap-connections').onclick = () => perform(() => model.snapConnections(selectedId));
 element('resize-room').onclick = () => { if (menu) { const bounds = element('viewport').getBoundingClientRect(); menu.x = bounds.left + bounds.width / 2; menu.y = bounds.top + 24; openResizeDialog(selectedId, model, viewport, menu, commit); } };
 element('frame').onclick = () => viewport.frame();
+for (const [id, preset] of /** @type {const} */ ([['camera-iso', 'iso'], ['camera-top', 'top'], ['camera-front', 'front'], ['camera-side', 'side']])) element(id).onclick = () => viewport.viewFrom(preset);
 element('actions').onclick = () => { const target = viewport.keyboardTarget(); if (target) { selectTarget(target); if (menu) openContextActions(target, { model, viewport, menu, commit, select: selectTarget, inspect: () => setInspector(selectionKind), moveSelected: () => setToolMode('translate') }); } };
 element('duplicate-room').onclick = () => perform(() => {
   const face = FACES.find(face => connectableFace(model.room(selectedId), face) && !model.document.connections.some(connection => [connection.a, connection.b].some(end => end.roomId === selectedId && end.port === face)));
@@ -568,6 +569,9 @@ window.addEventListener('keydown', event => {
   if ((event.ctrlKey || event.metaKey) && ['z', 'y'].includes(event.key.toLowerCase())) {
     event.preventDefault(); perform(() => event.key.toLowerCase() === 'y' || event.shiftKey ? model.redo() : model.undo());
   } else if (!event.ctrlKey && !event.metaKey && event.key.toLowerCase() === 'f') { event.preventDefault(); viewport.frame(true); }
+  else if (!event.ctrlKey && !event.metaKey && !event.altKey && ['1', '2', '3', '4'].includes(event.key)) {
+    event.preventDefault(); viewport.viewFrom(/** @type {const} */ (['iso', 'top', 'front', 'side'])[Number(event.key) - 1]);
+  }
 });
 setInspector('room'); refreshDraftStatus(); refresh(); viewport.frame();
 element('save-library-copy').hidden = !libraryKey;

@@ -72,7 +72,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
   /** @type {import('./ViewportMenu.js').MenuAction[]} */ const actions = [];
   if (target.contentId) {
     const content = model.content(target.contentId), protectedContent = content.kind === 'spawn' || content.kind === 'exit';
-    actions.push({ label: 'Move selected item', action: moveSelected }, { label: 'Edit selected item', action: inspect },
+    actions.push({ label: 'Move selected item', action: moveSelected, section: 'Selected item' }, { label: 'Edit selected item', action: inspect },
       ...(content.kind === 'log' ? [{ label: 'Edit log text…', action: () => menu.form(`Edit ${content.id}`, 'Data log text appears in the mission log after pickup.', [
         { id: 'title', label: 'Log title', value: content.title, maxLength: STORY_LIMITS.title },
         { id: 'text', label: 'Log text', type: /** @type {const} */ ('textarea'), value: content.text, maxLength: STORY_LIMITS.logText },
@@ -84,7 +84,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
       action: () => commit(() => model.checked(candidate => candidate.deleteContent(content.id))) });
   }
   if (face) actions.push(
-    { label: 'Wall color and pattern…', action: appearance },
+    { label: 'Wall color and pattern…', action: appearance, section: 'Wall' },
     ...(canAttach ? [{ label: 'Connect to existing room…', action: () => connectionDialog(room.id, face, model, menu, commit, worldPoint) }] : []),
     ...(connection ? [{ label: 'Add or edit door…', action: () => doorDialog(connection.id, model, menu, commit) }, { label: 'Use full shared opening', action: () => commit(() => model.fitOpening(connection.id)) }] : []),
     { label: 'Opening and door…', action: opening, disabled: !connection, reason: !connection ? canAttach ? 'Attach a neighbor here, or use Connections to join existing touching rooms.' : sideReason : undefined },
@@ -99,7 +99,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
     ] : []),
   );
   actions.push(
-    { label: 'Place enemy…', preview: () => preview('enemy'), action: () => menu.form('Place enemy', `${room.id} · white/red marker shows the planned position`, [
+    { label: 'Place enemy…', section: 'Place here', preview: () => preview('enemy'), action: () => menu.form('Place enemy', `${room.id} · white/red marker shows the planned position`, [
       { id: 'type', label: 'Enemy type', value: 'scout', options: enemyTypes.map(enemy => ({ value: enemy.name, label: enemy.name })) },
     ], values => place('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type)), 'Place enemy', values => preview('enemy', /** @type {import('../contracts.js').EnemyType} */ (values.type))) },
     { label: 'Place health here', preview: () => preview('health'), action: () => place('health') },
@@ -115,7 +115,7 @@ export default function openContextActions(target, { model, viewport, menu, comm
     ], values => place('survivor', 'scout', { name: values.name }), 'Place miner', () => preview('survivor')) },
     { label: 'Move player spawn here', preview: () => preview('spawn'), action: () => place('spawn') },
     { label: 'Move exit here', preview: () => preview('exit'), action: () => place('exit') },
-    { label: target.contentId ? 'Focus selected item' : 'Focus this room', action: () => viewport.frame(true) },
+    { label: target.contentId ? 'Focus selected item' : 'Focus this room', action: () => viewport.frame(true), section: 'Room' },
     { label: 'Resize room…', action: () => openResizeDialog(room.id, model, viewport, menu, commit) },
     { label: 'Snap connections', disabled: !used.size, reason: !used.size ? 'This room has no existing connection to realign.' : undefined, action: () => commit(() => model.snapConnections(room.id)) },
     { label: 'Duplicate room', disabled: !duplicateFace, reason: !duplicateFace ? 'No unused face is available for an adjacent duplicate.' : undefined,

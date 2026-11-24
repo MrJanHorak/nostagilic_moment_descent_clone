@@ -11,6 +11,10 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 editor UX pass
+
+Hands-on review with screenshots; see [editor UX review](../EDITOR_UX_REVIEW.md). Fixed: a one-row grouped top bar, about 30% taller 3D view at 1366×768, 3D/Top/Front/Side camera presets (keys 1–4), section headings in the right-click menu, and no false placement error when a menu opens. New `tests/browser/editor-layout.spec.js`; the 28 existing editor browser tests pass in the VM. The review lists eight remaining items in priority order.
+
 ## November 24 user campaigns
 
 My Levels now builds campaigns: an ordered list of saved levels with a briefing per mission, per-campaign progress, and a shareable `.campaign.json` bundle with every level embedded. See [My Levels → Campaigns](../USER_LEVELS.md#campaigns).

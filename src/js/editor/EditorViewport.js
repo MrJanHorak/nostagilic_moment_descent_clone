@@ -334,6 +334,19 @@ export default class EditorViewport {
     if (this.document) this.show(this.document);
   }
   /** @param {boolean} [selectedOnly] */
+  /** Look at the whole mine from a fixed direction, keeping the frame-all distance.
+   * @param {'iso' | 'top' | 'front' | 'side'} preset */
+  viewFrom(preset) {
+    const bounds = new THREE.Box3();
+    for (const room of this.rooms) bounds.union(new THREE.Box3().setFromObject(room));
+    if (bounds.isEmpty()) return;
+    const center = bounds.getCenter(new THREE.Vector3()), size = bounds.getSize(new THREE.Vector3()).length();
+    // A tiny offset keeps orbit controls stable when looking straight down.
+    const direction = { iso: new THREE.Vector3(1, 0.85, 1), top: new THREE.Vector3(0, 1, 0.001), front: new THREE.Vector3(0, 0, 1), side: new THREE.Vector3(1, 0, 0) }[preset].normalize();
+    this.camera.far = Math.max(3000, size * 8); this.camera.updateProjectionMatrix(); this.controls.maxDistance = Math.max(1500, size * 4);
+    this.controls.target.copy(center); this.camera.position.copy(center).add(direction.multiplyScalar(Math.max(20, size * 1.1)));
+    this.controls.update(); this.render();
+  }
   frame(selectedOnly = false) {
     const targets = selectedOnly ? this.selectedContent ? this.markers.filter(marker => marker.userData.contentId === this.selectedContent) : this.rooms.filter(room => room.userData.roomId === this.selected) : this.rooms;
     const bounds = new THREE.Box3();

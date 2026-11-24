@@ -1,4 +1,4 @@
-/** @typedef {{label: string, action: () => void, disabled?: boolean, reason?: string, preview?: () => void}} MenuAction */
+/** @typedef {{label: string, action: () => void, disabled?: boolean, reason?: string, preview?: () => void, section?: string}} MenuAction */
 /** @typedef {{id: string, label: string, value: string, type?: 'text' | 'color' | 'number' | 'textarea', options?: {value: string, label: string}[], min?: string, max?: string, step?: string, maxLength?: number}} MenuField */
 
 /** An anchored, keyboard-operable menu/editor. All dynamic labels are text.
@@ -55,14 +55,18 @@ export default class ViewportMenu {
   /** @param {number} x @param {number} y @param {string} title @param {string} detail @param {MenuAction[]} actions */
   open(x, y, title, detail, actions) {
     this.x = x; this.y = y; const root = this.panel(title, detail, 'menu');
+    // Opening focuses the first item; only a deliberate hover or arrow key previews it.
+    let opening = true;
     for (const action of actions) {
+      if (action.section) { const heading = document.createElement('p'); heading.className = 'menu-section'; heading.setAttribute('role', 'presentation'); heading.textContent = action.section; root.append(heading); }
       const button = document.createElement('button'); button.type = 'button'; button.textContent = action.label; button.setAttribute('role', 'menuitem'); button.disabled = !!action.disabled;
-      button.addEventListener('pointerenter', () => action.preview?.()); button.addEventListener('focus', () => action.preview?.());
+      button.addEventListener('pointerenter', () => action.preview?.()); button.addEventListener('focus', () => { if (!opening) action.preview?.(); });
       button.onclick = () => { try { action.action(); if (this.root === root) this.close(true); } catch (error) { this.error(error); } };
       root.append(button);
       if (action.reason) { const reason = document.createElement('p'); reason.className = 'menu-reason'; reason.textContent = action.reason; root.append(reason); }
     }
     this.position(); const first = root.querySelector('button:not(:disabled)'); if (first instanceof HTMLElement) first.focus();
+    opening = false;
   }
   /** @param {string} title @param {string} detail @param {MenuField[]} fields
    * @param {(values: Record<string, string>) => void} apply @param {string} [applyLabel]
