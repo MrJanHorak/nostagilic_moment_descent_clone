@@ -26,9 +26,22 @@ If browser saving is blocked or full, **MY LEVELS** clearly labels the collectio
 
 The library re-reads saved data before mutations. If another tab changed or deleted the level currently open in the editor, saving reports the conflict. Reopen the saved version or use **Save a copy** to keep your edited version separately.
 
+## Campaigns
+
+Chain your levels into an ordered campaign with a briefing before each mission. Campaigns are listed at the top of **MY LEVELS**.
+
+1. Choose **New campaign**, then give it a name and an optional description.
+2. Pick a level under **Level** and choose **Add mission**. Repeat for each mission. **Earlier** and **Later** reorder them; **Remove** drops one.
+3. Choose **Briefing** on a mission to write what the pilot reads before launch (up to 800 characters).
+4. Choose **Start campaign**. Each mission opens with its briefing screen: **LAUNCH MISSION** or **BACK TO MY LEVELS**. After extraction, **NEXT MISSION** opens the next briefing.
+
+Each campaign keeps its own progress: **Continue · Mission N** resumes at the first mission not yet extracted, and **Reset progress** starts over. Progress follows a mission when you reorder, so reordering never loses it. Campaigns refer to your saved levels, so editing a level in the designer updates every campaign that uses it. Deleting a level warns which campaigns use it; those campaigns then show it as missing until you remove or replace it.
+
+**Export campaign** downloads one `.campaign.json` file with every level embedded, plus the name, description and briefings (not your progress). **Import campaign** adds its levels to My Levels as new entries and creates the campaign; if the file is invalid or My Levels lacks room, nothing is added. Up to 16 campaigns of up to 16 missions each are saved in this browser (`descended.campaigns.v1`), alongside the 32-level limit. User campaigns never change built-in campaign progress.
+
 ## Next steps
 
-This is the first step toward user campaigns. Custom campaign ordering/briefings and campaign bundle import/export are not implemented yet. Built-in campaign progress is saved separately ([campaign progress](CAMPAIGN_PROGRESS.md)); custom levels never change it. Built-in missions already advance through the completion screen. [Mobile fighters](FIGHTER_MOVEMENT.md) and the [Crossfire Relay mixed encounter](CROSSFIRE_RELAY.md) are implemented; human balance feedback is the next encounter task. See the [current roadmap](ROADMAP.md#next-work-queue) for priorities.
+Built-in campaign progress is saved separately ([campaign progress](CAMPAIGN_PROGRESS.md)); custom levels never change it. Built-in missions already advance through the completion screen. [Mobile fighters](FIGHTER_MOVEMENT.md) and the [Crossfire Relay mixed encounter](CROSSFIRE_RELAY.md) are implemented; human balance feedback is the next encounter task. See the [current roadmap](ROADMAP.md#next-work-queue) for priorities.
 
 ## Verification
 

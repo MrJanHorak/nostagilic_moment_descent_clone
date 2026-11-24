@@ -93,6 +93,17 @@ export default class UserLevelLibrary {
     return copy(entry);
   }
 
+  /** Add several levels in one write, validating every one first.
+   * @param {unknown[]} inputs @returns {LibraryEntry[]} */
+  saveMany(inputs) {
+    const documents = inputs.map(input => typeof input === 'string' ? parseLevelDocument(input) : parseLevelDocument(serializeLevelDocument(input)));
+    this.sync();
+    if (this.entries.length + documents.length > LIBRARY_LIMITS.levels) throw new Error(`My Levels has room for ${LIBRARY_LIMITS.levels - this.entries.length} more level(s); this needs ${documents.length}. Delete some levels first.`);
+    const added = documents.map(document => ({ key: globalThis.crypto.randomUUID(), document }));
+    this.write([...this.entries, ...added]);
+    return copy(added);
+  }
+
   /** @param {string} key @param {string} name */
   rename(key, name) {
     this.sync();

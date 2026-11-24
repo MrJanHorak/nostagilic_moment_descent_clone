@@ -46,6 +46,8 @@
     "src/js/core/CommsSound.js",
     "src/js/core/UserLevelLibrary.js",
     "src/js/ui/UserLevels.js",
+    "src/js/ui/UserCampaigns.js",
+    "src/js/core/UserCampaignLibrary.js",
     "src/js/core/ShipView.js",
     "src/js/core/ExplorationMap.js",
     "src/js/ui/CockpitView.js",

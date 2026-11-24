@@ -11,6 +11,15 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 user campaigns
+
+My Levels now builds campaigns: an ordered list of saved levels with a briefing per mission, per-campaign progress, and a shareable `.campaign.json` bundle with every level embedded. See [My Levels → Campaigns](../USER_LEVELS.md#campaigns).
+- **Code:** `src/js/core/UserCampaignLibrary.js` (storage, validation, progress, bundle export/import), `src/js/ui/UserCampaigns.js` (campaign cards), `UserLevelLibrary.saveMany` (atomic multi-level import).
+- **Game:** `playUserCampaign` shows a briefing screen, then launches through `startLevelDocument(document, {key, missionId})`. Completion records progress, offers NEXT MISSION within the campaign and MY LEVELS instead of SELECT MISSION. Replay keeps the campaign; other entry points clear it.
+- **Tests:** `tests/user-campaigns.test.mjs` (8) and `tests/browser/user-campaigns.spec.js` (passes in the VM, with the existing My Levels browser tests). Verify passes (574 tests).
+
+Next: the hands-on editor UX review.
+
 ## November 24 second browser run on owner hardware
 
 61/62 passed, including the cockpit-shield test and editor-shapes:99, which the VM could not confirm. The one failure was the fighter drill's strafe check. Since commit 8865550 the fighter fires twice before its first strafe, and each cycle has up to 300 ms of random interval variation, so the strafe starts between about 2.8 and 3.4 s. The test only waited 3 s, so it was a coin flip on any machine. The window is now 5 s; the check that the strafe happens within the first four decisions is unchanged.

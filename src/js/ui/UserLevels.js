@@ -1,11 +1,15 @@
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
+import UserCampaignLibrary, { CAMPAIGN_LIMITS, importCampaignBundle } from '../core/UserCampaignLibrary.js';
+import campaignSection from './UserCampaigns.js';
 import { LIMITS } from '../core/levels/document/LevelContent.js';
 import { serializeLevelDocument } from '../core/levels/document/validateLevelDocument.js';
 
 /** @param {(document: import('../levelDocument.js').LevelDocument) => void} play
- * @param {() => void} back @param {UserLevelLibrary} [library] */
-export default function createUserLevels(play, back, library = new UserLevelLibrary()) {
+ * @param {() => void} back @param {UserLevelLibrary} [library]
+ * @param {{campaigns?: UserCampaignLibrary, playCampaign?: (campaignKey: string, index: number) => void}} [options] */
+export default function createUserLevels(play, back, library = new UserLevelLibrary(), options = {}) {
   library.sync();
+  const campaigns = options.campaigns ?? new UserCampaignLibrary(); campaigns.sync();
   const root = document.createElement('div'); root.className = 'user-level-library'; root.setAttribute('role', 'dialog');
   root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'user-levels-title');
   const style = document.createElement('style');
@@ -22,25 +26,55 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
     .user-level-library h2 { margin:0; font-size:21px; }
     .user-level-library input { font:inherit; max-width:100%; padding:7px; }
     .user-level-library [role=status] { color:#ffce86; }
+    .user-level-library button:disabled { opacity:.45; cursor:default; }
+    .user-level-library .group-title { font-size:15px; letter-spacing:.12em; color:#8fd0d6; margin:22px 0 4px; }
+    .user-level-library .campaign-card { border-color:#5e8aa0; background:#18304a; }
+    .user-level-library .campaign-progress { color:#bfe9c9; }
+    .user-level-library .campaign-warning { color:#ffb9a8; }
+    .user-level-library .campaign-missions { padding-left:20px; margin:8px 0; }
+    .user-level-library .campaign-missions li { margin:10px 0; }
+    .user-level-library .campaign-missions .level-actions { margin:6px 0; }
+    .user-level-library .campaign-missions button { padding:4px 10px; font-size:14px; }
+    .user-level-library .campaign-briefing { margin:4px 0; white-space:pre-line; }
+    .user-level-library .campaign-briefing.empty { font-style:italic; color:#7f98a8; }
+    .user-level-library textarea, .user-level-library select { font:inherit; width:100%; max-width:100%; padding:7px; background:#0d1a26; color:#deedf4; border:1px solid #45677b; border-radius:5px; }
+    .user-level-library label { display:block; margin:8px 0; }
+    .user-level-library .campaign-add label { flex:1 1 240px; margin:0; }
+    .user-level-library textarea:focus-visible, .user-level-library select:focus-visible { outline:2px solid #a4edf3; outline-offset:3px; }
   `;
   const article = document.createElement('article');
   const title = document.createElement('h1'); title.id = 'user-levels-title'; title.textContent = 'MY LEVELS';
-  const help = document.createElement('p'); help.textContent = 'Play your own mines or import a shared JSON level. Levels stay in this browser; export a file to share or back them up.';
+  const help = document.createElement('p'); help.textContent = 'Play your own mines, chain them into campaigns with briefings, or import shared files. Everything stays in this browser; export files to share or back them up.';
   const toolbar = document.createElement('div'); toolbar.className = 'level-actions';
   const importButton = document.createElement('button'); importButton.textContent = 'Import level JSON';
   const designer = document.createElement('a'); designer.href = '/editor.html'; designer.textContent = 'Create a level';
+  const newCampaign = document.createElement('button'); newCampaign.textContent = 'New campaign';
+  const importCampaign = document.createElement('button'); importCampaign.textContent = 'Import campaign';
+  const campaignFile = document.createElement('input'); campaignFile.id = 'user-campaign-file'; campaignFile.type = 'file'; campaignFile.accept = '.json,application/json'; campaignFile.hidden = true;
+  const campaignTitle = document.createElement('h2'); campaignTitle.className = 'group-title'; campaignTitle.textContent = 'CAMPAIGNS';
+  const levelTitle = document.createElement('h2'); levelTitle.className = 'group-title'; levelTitle.textContent = 'LEVELS';
+  /** @type {HTMLElement} */ let campaignList = document.createElement('div');
   const file = document.createElement('input'); file.id = 'user-level-file'; file.type = 'file'; file.accept = '.json,application/json'; file.hidden = true;
   const status = document.createElement('p'); status.setAttribute('role', 'status'); status.textContent = library.status;
   const list = document.createElement('div'); list.id = 'user-level-list';
   const returnButton = document.createElement('button'); returnButton.textContent = 'RETURN TO MAIN MENU'; returnButton.onclick = back;
-  toolbar.append(importButton, designer); article.append(title, help, toolbar, file, status, list, returnButton); root.append(style, article);
+  toolbar.append(importButton, designer, newCampaign, importCampaign);
+  article.append(title, help, toolbar, file, campaignFile, status, campaignTitle, campaignList, levelTitle, list, returnButton); root.append(style, article);
 
   /** @param {unknown} error */
   const report = error => { status.textContent = `${error instanceof Error ? error.message : String(error)} ${library.status}`; };
   /** @param {() => void} action */
   function run(action) { try { action(); } catch (error) { report(error); } }
   /** @param {string | null} [focusKey] */
-  function render(focusKey = null) {
+  function renderCampaigns(focusKey = null) {
+    const next = campaignSection({ levels: library, campaigns, play: (key, index) => options.playCampaign?.(key, index),
+      run, notify: message => { status.textContent = message; }, rerender: key => render(null, key ?? null) }, focusKey);
+    campaignList.replaceWith(next); campaignList = next;
+    if (focusKey) /** @type {HTMLElement | null} */ (next.querySelector(`[data-campaign-key="${CSS.escape(focusKey)}"] h2`))?.focus();
+  }
+  /** @param {string | null} [focusKey] @param {string | null} [campaignFocus] */
+  function render(focusKey = null, campaignFocus = null) {
+    renderCampaigns(campaignFocus);
     list.replaceChildren();
     const entries = library.list();
     if (!entries.length) { const empty = document.createElement('p'); empty.textContent = 'No saved levels yet. Import a JSON file or create a level in the designer.'; list.append(empty); }
@@ -69,7 +103,8 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
       rename.onsubmit = event => { event.preventDefault(); run(() => { library.rename(entry.key, name.value); status.textContent = library.status; render(entry.key); }); };
       label.append(name); rename.append(label, save, cancel);
       button('Delete', () => {
-        if (!window.confirm(`Delete "${entry.document.name}" from My Levels? Export JSON first if you want to keep a copy.`)) return;
+        const used = campaigns.usage(entry.key);
+        if (!window.confirm(`Delete "${entry.document.name}" from My Levels?${used.length ? ` It is a mission in: ${used.join(', ')}. Those campaigns will show it as missing.` : ''} Export JSON first if you want to keep a copy.`)) return;
         library.remove(entry.key); status.textContent = library.status; render(); importButton.focus();
       });
       card.append(heading, summary, actions, rename); list.append(card);
@@ -77,6 +112,23 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
     }
   }
   importButton.onclick = () => file.click();
+  newCampaign.onclick = () => run(() => {
+    const created = campaigns.create(`My campaign ${campaigns.campaigns.length + 1}`);
+    status.textContent = `Created ${created.name}. Add missions from your levels, then write a briefing for each. ${campaigns.status}`;
+    render(null, created.key);
+    const card = campaignList.querySelector(`[data-campaign-key="${CSS.escape(created.key)}"]`);
+    /** @type {HTMLButtonElement | null | undefined} */ (card?.querySelector('[aria-label^="Edit details"]'))?.click();
+  });
+  importCampaign.onclick = () => campaignFile.click();
+  campaignFile.onchange = async () => {
+    const selected = campaignFile.files?.[0]; if (!selected) return;
+    try {
+      if (selected.size > CAMPAIGN_LIMITS.bundle) throw new Error('Campaign file exceeds its size limit.');
+      const created = importCampaignBundle(await selected.text(), library, campaigns);
+      status.textContent = `Imported campaign ${created.name} with ${created.missions.length} level(s). ${campaigns.status}`; render(null, created.key);
+    } catch (error) { report(error); }
+    finally { campaignFile.value = ''; }
+  };
   file.onchange = async () => {
     const selected = file.files?.[0]; if (!selected) return;
     try {
@@ -89,7 +141,7 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
   root.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); back(); }
     if (event.key !== 'Tab') return;
-    const controls = [...root.querySelectorAll('button,a,input')].filter(node => node instanceof HTMLElement && node.getClientRects().length);
+    const controls = [...root.querySelectorAll('button,a,input,select,textarea')].filter(node => node instanceof HTMLElement && node.getClientRects().length);
     const first = controls[0], last = controls.at(-1);
     if (event.shiftKey && document.activeElement === first && last instanceof HTMLElement) { event.preventDefault(); last.focus(); }
     else if (!event.shiftKey && document.activeElement === last && first instanceof HTMLElement) { event.preventDefault(); first.focus(); }

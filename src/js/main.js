@@ -52,6 +52,8 @@ export default class Game {
     this.exploration = null;
     this.currentLevelIndex = 0;
     this.importedLevelIndex = null;
+    /** The user campaign mission being played, if any. @type {{key: string, missionId: string} | null} */
+    this.userCampaign = null;
     this.isEndlessMode = true;
     this.powerupSpawnInterval = 15000;
     this.diagnostics = new RuntimeDiagnostics(!!import.meta.env?.DEV &&
@@ -275,11 +277,13 @@ export default class Game {
     }
   }
 
-  startGame() { return this.startSession(); }
+  startGame() { this.userCampaign = null; return this.startSession(); }
   // The editor/file UI can call this after reading JSON. Invalid data or staging
   // failures leave the active session intact. Reuse one imported catalog slot.
-  startLevelDocument(input) {
+  // `campaign` marks a user campaign mission; replays keep it, other entries clear it.
+  startLevelDocument(input, campaign = null) {
     const prepared = prepareLevelDocument(input);
+    this.userCampaign = campaign;
     try {
       this.importedLevelIndex ??= this.levelManager.levels.length;
       this.levelManager.levels[this.importedLevelIndex] = prepared.level;
@@ -288,8 +292,8 @@ export default class Game {
       if (!prepared.world.claimed) disposeObject(prepared.world.group);
     }
   }
-  selectLevel(index) { return this.startSession({ endless: false, levelIndex: index }); }
-  selectEndlessMode() { return this.startSession({ endless: true }); }
+  selectLevel(index) { this.userCampaign = null; return this.startSession({ endless: false, levelIndex: index }); }
+  selectEndlessMode() { this.userCampaign = null; return this.startSession({ endless: true }); }
   restartLevel() { return this.startSession(); }
   restartGame() { return this.startSession(); }
 
@@ -361,13 +365,47 @@ export default class Game {
     this.lastStorySummary = this.story?.summary() ?? null;
     if (this.lastStorySummary) this.gameState.score += this.lastStorySummary.rescued * 250 + this.lastStorySummary.logsFound * 100;
     const progress = this.recordCampaignProgress();
+    const campaignProgress = this.recordUserCampaignProgress();
     this.inputManager.clearKeys();
     this.releasePointerLock();
     this.audioManager.stopAllSounds();
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.updateHUD();
-    this.uiManager.showCompletion(this.nextMissionIndex() !== -1, progress);
+    this.uiManager.showCompletion(this.userCampaign ? this.nextUserCampaignIndex() !== null : this.nextMissionIndex() !== -1, progress, campaignProgress);
     return true;
+  }
+
+  /** Show a user campaign mission's briefing; launching starts it from My Levels.
+   * @param {string} key @param {number} index */
+  playUserCampaign(key, index) {
+    const { levels, campaigns } = this.uiManager.userLibraries();
+    levels.sync(); campaigns.sync();
+    const campaign = campaigns.get(key), mission = campaign?.missions[index], entry = mission ? levels.get(mission.levelKey) : null;
+    if (!campaign || !mission || !entry) { this.uiManager.showMessage?.('That campaign mission is no longer available.', 2500, '#ffce77'); return false; }
+    this.uiManager.hideLevelSelect();
+    this.uiManager.showCampaignBriefing({ campaignName: campaign.name, index, total: campaign.missions.length, levelName: entry.document.name, briefing: mission.briefing },
+      () => this.startLevelDocument(entry.document, { key, missionId: mission.id }), () => this.showUserLevels());
+    return true;
+  }
+
+  /** Index of the mission after the current one in its campaign's present order. */
+  nextUserCampaignIndex() {
+    if (!this.userCampaign) return null;
+    const campaign = this.uiManager.userLibraries().campaigns.get(this.userCampaign.key);
+    const index = campaign?.missions.findIndex(mission => mission.id === this.userCampaign?.missionId) ?? -1;
+    return campaign && index >= 0 && index + 1 < campaign.missions.length ? index + 1 : null;
+  }
+
+  recordUserCampaignProgress() {
+    if (!this.userCampaign) return null;
+    const { campaigns } = this.uiManager.userLibraries();
+    try {
+      const result = campaigns.recordCompletion(this.userCampaign.key, this.userCampaign.missionId);
+      return { ...result, name: campaigns.get(this.userCampaign.key)?.name ?? 'Campaign' };
+    } catch (error) {
+      console.warn('Campaign progress was not recorded.', error);
+      return null;
+    }
   }
 
   /** Built-in campaign missions, in order. Imported/playtest documents are excluded even
@@ -395,6 +433,7 @@ export default class Game {
     const campaign = this.campaignMissions();
     const target = this.campaignProgress.nextMission(campaign) ?? campaign[0];
     const index = target ? this.levelManager.levels.findIndex((level, i) => level.id === target.id && level.campaignOrder && i !== this.importedLevelIndex) : -1;
+    this.userCampaign = null;
     return this.startSession({ endless: false, levelIndex: Math.max(0, index) });
   }
 
@@ -405,6 +444,10 @@ export default class Game {
 
   nextMission() {
     if (this.session.phase !== 'completed') return false;
+    if (this.userCampaign) {
+      const index = this.nextUserCampaignIndex();
+      return index !== null && this.playUserCampaign(this.userCampaign.key, index);
+    }
     const next = this.nextMissionIndex();
     if (next === -1) return false;
     return this.startSession({ endless: false, levelIndex: next });

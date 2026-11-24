@@ -4,6 +4,8 @@ import MineGuide from '../core/levels/document/MineGuide.js';
 import createMissionSelect from './MissionSelect.js';
 import createUserLevels from './UserLevels.js';
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
+import UserCampaignLibrary from '../core/UserCampaignLibrary.js';
+import { missionLabel } from './UserCampaigns.js';
 import NavigationDisplay from './NavigationDisplay.js';
 import { formatMissionTime } from '../core/CampaignProgress.js';
 import { DIFFICULTIES } from '../core/Difficulty.js';
@@ -761,10 +763,17 @@ class UIManager {
     this.levelSelectMenu.querySelector('button')?.focus();
     return this.levelSelectMenu;
   }
+  /** My Levels and user campaigns share one pair of libraries per page. */
+  userLibraries() {
+    this.userLevelLibrary ??= new UserLevelLibrary();
+    this.userCampaignLibrary ??= new UserCampaignLibrary();
+    return { levels: this.userLevelLibrary, campaigns: this.userCampaignLibrary };
+  }
   createUserLevels(game) {
     this.levelSelectMenu?.remove();
-    this.userLevelLibrary ??= new UserLevelLibrary();
-    this.levelSelectMenu = createUserLevels(document => game.startLevelDocument(document), () => game.showMainMenu(), this.userLevelLibrary);
+    const { levels, campaigns } = this.userLibraries();
+    this.levelSelectMenu = createUserLevels(document => game.startLevelDocument(document), () => game.showMainMenu(), levels,
+      { campaigns, playCampaign: (key, index) => game.playUserCampaign(key, index) });
     document.body.appendChild(this.levelSelectMenu);
     this.levelSelectMenu.querySelector('button')?.focus();
     return this.levelSelectMenu;
@@ -1317,7 +1326,7 @@ class UIManager {
     heading.textContent = title;
     const description = document.createElement('p');
     description.textContent = message;
-    Object.assign(description.style, { whiteSpace: 'pre-line', textAlign: 'center', margin: '0 16px' });
+    Object.assign(description.style, { whiteSpace: 'pre-line', textAlign: 'center', margin: '0 16px', maxWidth: '720px' });
     overlay.append(heading, description);
     for (const [label, action] of actions) {
       const button = document.createElement('button');
@@ -1330,11 +1339,21 @@ class UIManager {
     document.body.appendChild(overlay);
   }
 
-  showCompletion(hasNext, progress = null) {
+  /** Pre-mission briefing for a user campaign mission.
+   * @param {{campaignName: string, index: number, total: number, levelName: string, briefing: string}} info
+   * @param {() => void} launch @param {() => void} back */
+  showCampaignBriefing(info, launch, back) {
+    const lines = [`${info.campaignName} · Mission ${info.index + 1} of ${info.total}`];
+    if (info.briefing) lines.push('', info.briefing);
+    this.showResult(`${missionLabel(info.index).toUpperCase()} · ${info.levelName}`, lines.join('\n'), [['LAUNCH MISSION', launch], ['BACK TO MY LEVELS', back]]);
+    this.resultScreen?.querySelector('button')?.focus();
+  }
+
+  showCompletion(hasNext, progress = null, campaignProgress = null) {
     const actions = [];
     if (hasNext) actions.push(['NEXT MISSION', () => this.game.nextMission()]);
     actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
-      ['SELECT MISSION', () => this.game.showLevelSelection()]);
+      campaignProgress ? ['MY LEVELS', () => this.game.showUserLevels()] : ['SELECT MISSION', () => this.game.showLevelSelection()]);
     const lines = [`Score: ${this.gameState.score} (includes 1,000 completion bonus)`];
     const story = this.game?.lastStorySummary;
     if (story && (story.logsTotal || story.survivorsTotal)) {
@@ -1351,6 +1370,11 @@ class UIManager {
       lines.push(progress.completed === progress.total ? `Campaign complete: ${progress.total} of ${progress.total} missions`
         : `Campaign progress: ${progress.completed} of ${progress.total} missions`);
       lines.push(progress.saved ? 'Progress saved' : 'Browser storage unavailable: progress is kept for this visit only');
+    }
+    if (campaignProgress) {
+      lines.push(campaignProgress.completed === campaignProgress.total ? `${campaignProgress.name} complete: ${campaignProgress.total} of ${campaignProgress.total} missions`
+        : `${campaignProgress.name}: ${campaignProgress.completed} of ${campaignProgress.total} missions`);
+      if (!campaignProgress.saved) lines.push('Browser storage unavailable: campaign progress is kept for this visit only');
     }
     this.showResult('MISSION COMPLETE', lines.join('\n'), actions);
   }
