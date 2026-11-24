@@ -1245,7 +1245,8 @@ class UIManager {
     const lockedHint = mission.ready ? '' : ` · Amber ring ${destination}`;
     const doors = level.sourceDocument?.formatVersion >= 8 ? ' · Striped doors: shoot to open' : '';
     const remaining = mission.remainingEscapeMs(this.game.session.timeMs);
-    const escapeHint = mission.definition.escape && remaining === null ? ' · Reactor control starts the escape countdown after other objectives are clear' : '';
+    const trigger = mission.definition.escape ? level.devices?.find(candidate => candidate.id === mission.definition.escape?.triggerDeviceId) : undefined;
+    const escapeHint = mission.definition.escape && remaining === null ? ` · ${trigger?.label ?? 'Reactor control'} starts the escape countdown after other objectives are clear` : '';
     if (this.guideEscape) {
       this.guideEscape.hidden = remaining === null;
       this.guideEscape.style.display = remaining === null ? 'none' : 'block';

@@ -45,6 +45,13 @@ Radio lines are short (at most 280 characters) and never name keys, since contro
 
 Act 1 ends on Vey's line at the quay: "we need to talk about who we're actually working for." Act 2 picks up there.
 
+## Act 2 status
+
+- **The Seal (mission 05, v14): written.** Kestrel goes back without a contract to evacuate the lower works. FOREMAN cooperates openly. The Consortium's Asset Protection robots are already inside, and powering the evac lift triggers a Consortium flood with a 75-second escape. See [The Seal](THE_SEAL.md).
+  - 13 radio messages; logs: the shelter roll call, FOREMAN's seal log, Asset Protection's standing orders, and Inés's locker note.
+  - Miners: Hana Okafor, Luis Ferro (lower dorms), Pavel Ostrov (flood sump), Kit Brandt (old smelter).
+- **Next beats:** the Consortium escalates against Kestrel directly. The rescued miners give testimony. FOREMAN asks Two for help moving its core.
+
 ## Authoring story in the editor
 
 Open **Story & radio…** in the level designer to write radio messages and choose when each plays. Place data logs and trapped miners by right-clicking inside a room. The first story edit upgrades a level to format 13. See [level document format](LEVEL_DOCUMENT_FORMAT.md) for the fields and limits.

@@ -13,7 +13,7 @@ function memoryStorage(initial = null) {
 
 const campaign = Object.freeze([
   { id: 'signal-breach', campaignOrder: 1 }, { id: 'vector-foundry', campaignOrder: 2 },
-  { id: 'nightfall-reactor', campaignOrder: 3 }, { id: 'asterion-deepworks', campaignOrder: 4 },
+  { id: 'nightfall-reactor', campaignOrder: 3 }, { id: 'asterion-deepworks', campaignOrder: 4 }, { id: 'the-seal', campaignOrder: 5 },
 ]);
 
 test('built-in campaign missions have unique stable ids for saved progress', () => {
@@ -32,7 +32,7 @@ test('a fresh campaign starts at mission 1 and advances past completed missions 
   assert.equal(progress.nextMission(campaign)?.id, 'vector-foundry');
   for (const mission of campaign) progress.recordCompletion(mission, { score: 1000, timeMs: 1000 });
   assert.equal(progress.nextMission(campaign), null);
-  assert.equal(progress.completedCount(campaign), 4);
+  assert.equal(progress.completedCount(campaign), 5);
 });
 
 test('completions persist best score, best time and count, and report new records', () => {
@@ -126,22 +126,22 @@ test('the game records only built-in campaign completions and continues at the n
   assert.equal(game.started.at(-1), 1, 'fresh progress starts Signal Breach');
 
   const recorded = game.recordCampaignProgress();
-  assert.deepEqual([recorded?.firstCompletion, recorded?.completed, recorded?.total, recorded?.saved, recorded?.timeMs], [true, 1, 4, true, 101_000]);
+  assert.deepEqual([recorded?.firstCompletion, recorded?.completed, recorded?.total, recorded?.saved, recorded?.timeMs], [true, 1, 5, true, 101_000]);
   assert.equal(recorded?.record.hardestDifficulty, 'veteran'); assert.equal(recorded?.difficulty, DIFFICULTIES.veteran);
   game.continueCampaign();
   assert.equal(game.started.at(-1), 2, 'continue resumes at Vector Foundry');
 
   // An imported document reusing a campaign id and a practice level never change progress.
-  for (const index of [game.importedLevelIndex, 5, 0]) {
+  for (const index of [game.importedLevelIndex, campaign.length + 1, 0]) {
     game.currentLevelIndex = index;
     assert.equal(game.recordCampaignProgress(), null);
   }
   assert.equal(game.campaignProgress.completedCount(game.campaignMissions()), 1);
 
-  for (const index of [2, 3, 4]) { game.currentLevelIndex = index; game.recordCampaignProgress(); }
+  for (const index of [2, 3, 4, 5]) { game.currentLevelIndex = index; game.recordCampaignProgress(); }
   game.continueCampaign();
   assert.equal(game.started.at(-1), 1, 'a finished campaign replays from mission 1');
-  assert.equal(new CampaignProgress(() => storage).completedCount(game.campaignMissions()), 4);
+  assert.equal(new CampaignProgress(() => storage).completedCount(game.campaignMissions()), 5);
 
   assert.equal(game.resetCampaignProgress(), 'saved');
   game.continueCampaign();

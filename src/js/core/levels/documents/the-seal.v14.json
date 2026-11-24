@@ -1,0 +1,1769 @@
+{
+  "formatVersion": 14,
+  "id": "the-seal",
+  "name": "The Seal",
+  "rooms": [
+    {
+      "id": "kestrel-dock",
+      "label": "Kestrel dock",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        32,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "shaft-gallery",
+      "label": "Shaft gallery",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -56
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pump-hall",
+      "label": "Pump hall",
+      "prefab": "box-room",
+      "position": [
+        48,
+        0,
+        -56
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "survey-office",
+      "label": "Survey office",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        0,
+        -56
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "survey-cache",
+      "label": "Survey cache",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        0,
+        -84
+      ],
+      "size": [
+        12,
+        10,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "evac-platform",
+      "label": "Evac lift platform",
+      "prefab": "box-room",
+      "position": [
+        48,
+        0,
+        -112
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "seal-antechamber",
+      "label": "Seal antechamber",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -40,
+        -56
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "seal-control",
+      "label": "Seal control",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        -40,
+        -56
+      ],
+      "size": [
+        16,
+        14,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lower-dorms",
+      "label": "Lower dorms",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -40,
+        -112
+      ],
+      "size": [
+        32,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "old-smelter",
+      "label": "Old smelter",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        -40,
+        -112
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "flood-sump",
+      "label": "Flood sump",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -60,
+        -112
+      ],
+      "size": [
+        24,
+        12,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "evac-control",
+      "label": "Evac lift control",
+      "prefab": "box-room",
+      "position": [
+        48,
+        -40,
+        -112
+      ],
+      "size": [
+        20,
+        16,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "entry-tunnel",
+      "label": "Entry tunnel",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -30
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "pump-walk",
+      "label": "Pump walk",
+      "prefab": "straight-corridor",
+      "position": [
+        24,
+        0,
+        -56
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "survey-walk",
+      "label": "Survey walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -24,
+        0,
+        -56
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "cache-crawl",
+      "label": "Cache crawl",
+      "prefab": "straight-corridor",
+      "position": [
+        -44,
+        0,
+        -71
+      ],
+      "size": [
+        8,
+        8,
+        14
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "platform-walk",
+      "label": "Platform walk",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        0,
+        -84
+      ],
+      "size": [
+        8,
+        8,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "main-shaft",
+      "label": "Main shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -19.5,
+        -56
+      ],
+      "size": [
+        8,
+        8,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "maintenance-drop",
+      "label": "Maintenance drop",
+      "prefab": "straight-corridor",
+      "position": [
+        -44,
+        -19.5,
+        -56
+      ],
+      "size": [
+        8,
+        8,
+        27
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "control-walk",
+      "label": "Control walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -24,
+        -40,
+        -56
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "seal-bulkhead",
+      "label": "Seal bulkhead",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -40,
+        -83
+      ],
+      "size": [
+        8,
+        8,
+        30
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "smelter-walk",
+      "label": "Smelter walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -25,
+        -40,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        18
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "smelter-return",
+      "label": "Smelter return",
+      "prefab": "straight-corridor",
+      "position": [
+        -44,
+        -40,
+        -83
+      ],
+      "size": [
+        8,
+        8,
+        38
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "sump-hatch",
+      "label": "Sump hatch",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -51,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        6
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "evac-walk",
+      "label": "Evac walk",
+      "prefab": "straight-corridor",
+      "position": [
+        27,
+        -40,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        22
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "evac-shaft",
+      "label": "Evac lift shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        48,
+        -19.5,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "entry-tunnel-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-dock",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "entry-tunnel",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "entry-tunnel-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "entry-tunnel",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "shaft-gallery",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pump-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "shaft-gallery",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pump-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pump-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pump-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pump-hall",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "survey-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "shaft-gallery",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "survey-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "survey-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "survey-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "survey-office",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cache-crawl-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "survey-office",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cache-crawl",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cache-crawl-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cache-crawl",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "survey-cache",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "platform-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pump-hall",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "platform-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "platform-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "platform-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evac-platform",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "main-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "shaft-gallery",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "main-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "main-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "main-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "seal-antechamber",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "maintenance-drop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "survey-office",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "maintenance-drop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "maintenance-drop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "maintenance-drop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "seal-control",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "control-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "seal-antechamber",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "control-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "control-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "control-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "seal-control",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "seal-bulkhead-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "seal-antechamber",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "seal-bulkhead",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "seal-bulkhead-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "seal-bulkhead",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lower-dorms",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lower-dorms",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "smelter-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "smelter-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "old-smelter",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "old-smelter",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "smelter-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "smelter-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "smelter-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "seal-control",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "sump-hatch-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lower-dorms",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "sump-hatch",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "sump-hatch-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "sump-hatch",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "flood-sump",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "evac-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lower-dorms",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evac-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "evac-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "evac-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evac-control",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "evac-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "evac-control",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evac-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "evac-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "evac-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evac-platform",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "shaft-power",
+      "label": "Main shaft power",
+      "roomId": "pump-hall",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "seal-release",
+      "label": "Seal release",
+      "roomId": "seal-control",
+      "position": [
+        3,
+        0,
+        -3
+      ]
+    },
+    {
+      "id": "evac-power",
+      "label": "Evacuation lift power",
+      "roomId": "evac-control",
+      "position": [
+        4,
+        0,
+        -4
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "dock-door",
+      "connectionId": "entry-tunnel-in",
+      "activation": "shot"
+    },
+    {
+      "id": "shaft-field",
+      "connectionId": "main-shaft-in",
+      "deviceId": "shaft-power",
+      "kind": "force-field"
+    },
+    {
+      "id": "seal-door",
+      "connectionId": "seal-bulkhead-in",
+      "deviceId": "seal-release"
+    },
+    {
+      "id": "smelter-gate",
+      "connectionId": "smelter-return-out",
+      "deviceId": "seal-release"
+    },
+    {
+      "id": "evac-door",
+      "connectionId": "evac-shaft-in",
+      "deviceId": "evac-power"
+    },
+    {
+      "id": "cache-secret",
+      "connectionId": "cache-crawl-in",
+      "activation": "shot",
+      "concealed": true
+    },
+    {
+      "id": "maintenance-secret",
+      "connectionId": "maintenance-drop-in",
+      "activation": "shot",
+      "concealed": true
+    }
+  ],
+  "entities": [
+    {
+      "id": "gallery-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "shaft-gallery",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "pump-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "pump-hall",
+      "position": [
+        -6,
+        1,
+        -4
+      ]
+    },
+    {
+      "id": "ante-fighter-west",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "seal-antechamber",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "ante-fighter-east",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "seal-antechamber",
+      "position": [
+        6,
+        2,
+        -6
+      ]
+    },
+    {
+      "id": "dorm-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "lower-dorms",
+      "position": [
+        10,
+        0,
+        -8
+      ]
+    },
+    {
+      "id": "smelter-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "old-smelter",
+      "position": [
+        0,
+        1,
+        -5
+      ]
+    },
+    {
+      "id": "sump-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "flood-sump",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "asset-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "evac-control",
+      "position": [
+        -4,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "dock-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-dock",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "dock-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-dock",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "gallery-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "shaft-gallery",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "pump-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "pump-hall",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "cache-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "survey-cache",
+      "position": [
+        -3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "cache-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "survey-cache",
+      "position": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "control-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "seal-control",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "dorm-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "lower-dorms",
+      "position": [
+        -10,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "dorm-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "lower-dorms",
+      "position": [
+        10,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "sump-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "flood-sump",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "evac-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "evac-control",
+      "position": [
+        -5,
+        0,
+        -5
+      ]
+    },
+    {
+      "id": "platform-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "evac-platform",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "dock-exit",
+      "kind": "exit",
+      "roomId": "kestrel-dock",
+      "position": [
+        -9,
+        0,
+        9
+      ],
+      "radius": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-dock",
+    "position": [
+      0,
+      0,
+      8
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "ante-fighter-west",
+      "ante-fighter-east",
+      "asset-destroyer"
+    ],
+    "requiredDeviceIds": [
+      "shaft-power",
+      "seal-release",
+      "evac-power"
+    ],
+    "exitId": "dock-exit",
+    "escape": {
+      "triggerDeviceId": "evac-power",
+      "durationSeconds": 75
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 100,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "ts:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "No contract this time, Two. Kestrel voted: we go back for the miners. FOREMAN opened the dock for us an hour ago. Get below the seal, find everyone you can, and bring them out on the evac lift.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "ts:msg-gallery",
+        "speaker": "FOREMAN",
+        "text": "WELCOME BACK, TWO. THE SHAFT FIELD IS MINE TO HOLD. THE PUMP HALL RELAY WILL RELEASE IT.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "shaft-gallery"
+        }
+      },
+      {
+        "id": "ts:msg-shaft",
+        "speaker": "FOREMAN",
+        "text": "SHAFT OPEN. THE LOWER WORKS ARE BELOW THE SEAL. I HAVE TOLD THEM YOU ARE COMING.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "shaft-power"
+        }
+      },
+      {
+        "id": "ts:msg-ante",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Those aren't FOREMAN's. Consortium Asset Protection is already down here. They must have come in on the deep freight line.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "seal-antechamber"
+        }
+      },
+      {
+        "id": "ts:msg-control",
+        "speaker": "FOREMAN",
+        "text": "THE SEAL HAS HELD FOR SEVENTEEN DAYS. RELEASING IT LETS THEM OUT. AND LETS THEM IN.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "seal-control"
+        }
+      },
+      {
+        "id": "ts:msg-seal",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Seal's open. The scrubber board said twenty-three people. Find who you can.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "seal-release"
+        }
+      },
+      {
+        "id": "ts:msg-dorms",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "This is where they've been living. Look at this place. Fly close to anyone you see; the hold has room.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "lower-dorms"
+        }
+      },
+      {
+        "id": "ts:msg-sump",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Careful in the sump. It's the lowest point in the works, so it floods first.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "flood-sump"
+        }
+      },
+      {
+        "id": "ts:msg-evac",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Evac lift control. Once it's powered the whole lift line lights up. If the Consortium is watching, they'll see it.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "evac-control"
+        }
+      },
+      {
+        "id": "ts:msg-destroyer",
+        "speaker": "FOREMAN",
+        "text": "THAT UNIT WAS ORDERED TO FLOOD THE LOWER WORKS. IT WILL NOT.",
+        "trigger": {
+          "on": "defeat",
+          "enemyId": "asset-destroyer"
+        }
+      },
+      {
+        "id": "ts:msg-override",
+        "speaker": "FOREMAN",
+        "text": "WARNING. CONSORTIUM OVERRIDE RECEIVED. RESERVOIR RELEASE IN SEVENTY-FIVE SECONDS. I CANNOT STOP IT. GO.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "evac-power"
+        }
+      },
+      {
+        "id": "ts:msg-run",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Up the evac shaft, across the pump hall, back to the dock. Anyone aboard rides with you. Move!",
+        "trigger": {
+          "on": "device",
+          "deviceId": "evac-power"
+        }
+      },
+      {
+        "id": "ts:msg-platform",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Lift top. Pump hall, gallery, dock. You know the way.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "evac-platform"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "ts:log-rollcall",
+        "roomId": "survey-office",
+        "position": [
+          -4,
+          0,
+          -4
+        ],
+        "title": "Shelter roll call, day 15",
+        "text": "Twenty-three in the lower dorms. Moved Pavel to the sump; it's warmer by the pumps. FOREMAN keeps the air on and drops rations at shift change. Hana is counting days on the bunk frame. Somebody please come."
+      },
+      {
+        "id": "ts:log-seal",
+        "roomId": "seal-control",
+        "position": [
+          -4,
+          0,
+          -4
+        ],
+        "title": "FOREMAN seal log",
+        "text": "DAY 1: SEAL ENGAGED. REASON: CLOSURE ORDER AC-77. DAY 9: KESTREL PILOT EXTRACTED TWO WORKERS. DAY 12: CONSORTIUM OVERRIDE ATTEMPT 41 REJECTED. DAY 16: ASSET PROTECTION UNITS ENTERED VIA DEEP FREIGHT. DAY 17: TWO RETURNED."
+      },
+      {
+        "id": "ts:log-orders",
+        "roomId": "evac-control",
+        "position": [
+          4,
+          0,
+          4
+        ],
+        "title": "Asset Protection standing orders",
+        "text": "Priority one: prevent unsanctioned egress from the lower works. If the evacuation lift is powered, release the reservoir. Contractor craft Kestrel-2 is to be treated as hostile. Do not engage the site AI directly."
+      },
+      {
+        "id": "ts:log-locker",
+        "roomId": "old-smelter",
+        "position": [
+          5,
+          0,
+          5
+        ],
+        "title": "Scratched into a locker door",
+        "text": "If the lift lights up, they'll flood it. Get the young ones up first. Don't wait for me. — I. V."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "ts:miner-hana",
+        "roomId": "lower-dorms",
+        "position": [
+          -8,
+          0,
+          -6
+        ],
+        "name": "Hana Okafor"
+      },
+      {
+        "id": "ts:miner-luis",
+        "roomId": "lower-dorms",
+        "position": [
+          6,
+          0,
+          4
+        ],
+        "name": "Luis Ferro"
+      },
+      {
+        "id": "ts:miner-pavel",
+        "roomId": "flood-sump",
+        "position": [
+          6,
+          0,
+          -6
+        ],
+        "name": "Pavel Ostrov"
+      },
+      {
+        "id": "ts:miner-kit",
+        "roomId": "old-smelter",
+        "position": [
+          -5,
+          0,
+          4
+        ],
+        "name": "Kit Brandt"
+      }
+    ]
+  }
+}

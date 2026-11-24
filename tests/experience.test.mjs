@@ -97,7 +97,7 @@ test('original music is deterministic stereo with bounded samples and a continuo
 for (const level of createCampaign()) test(`${level.name}: valid round trip, gated progression and all physical portals traverse after activation`, () => {
   const document = level.sourceDocument;
   assert.equal(validateLevelDocument(JSON.parse(JSON.stringify(document))).valid, true);
-  assert.equal(document.rooms.length, level.id === 'asterion-deepworks' ? 48 : level.id === 'signal-breach' ? 11 : 7);
+  assert.equal(document.rooms.length, level.id === 'asterion-deepworks' ? 48 : level.id === 'the-seal' ? 26 : level.id === 'signal-breach' ? 11 : 7);
   const world = buildArena(level), session = new GameSession(); session.begin(); session.transition('playing');
   const relay = new RelayController(level, world.group, world.colliders, session), mission = new MissionObjective(level.mission);
   assert.equal(mission.ready, false); assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), false);
@@ -111,6 +111,9 @@ for (const level of createCampaign()) test(`${level.name}: valid round trip, gat
     }
     return rooms;
   };
+  // Visible striped doors open to any shot; hidden panels stay closed until the end.
+  for (const slide of relay.slides) if (slide.door.activation === 'shot' && !slide.door.concealed) relay.hitDoor(slide.panels[0].collider);
+  relay.update(1);
   for (const device of document.devices) {
     assert(reachable().has(device.roomId), `Relay ${device.id} must be accessible before its door opens`);
     const runtime = level.devices.find(item => item.id === device.id);
