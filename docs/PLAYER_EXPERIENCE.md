@@ -48,7 +48,7 @@ This pass passes lint, strict types (66 modules), production build, 17 targeted 
 
 ## Campaign
 
-The mission library leads with four authored shared-document missions. The main Start route defaults to Signal Breach. Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors. Saved campaign progression is not yet implemented.
+The mission library leads with four authored shared-document missions. The main campaign button starts Signal Breach on a fresh profile and later continues at the first unfinished mission ([campaign progress](CAMPAIGN_PROGRESS.md)). Completed missions advance through the campaign in order; replay restores authored enemies, pickups, relay state and doors. Saved campaign progression is not yet implemented.
 
 | Mission | Layout and objective |
 | --- | --- |

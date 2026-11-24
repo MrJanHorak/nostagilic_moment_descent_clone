@@ -15,6 +15,7 @@ import RuntimeDiagnostics from './utils/RuntimeDiagnostics.js';
 import MissionObjective from './core/MissionObjective.js';
 import RelayController from './core/RelayController.js';
 import UserSettings from './core/UserSettings.js';
+import CampaignProgress from './core/CampaignProgress.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
 import CockpitView from './ui/CockpitView.js';
@@ -34,6 +35,7 @@ export default class Game {
       this.shipView?.apply(values);
       this.uiManager?.updateShipView?.();
     });
+    this.campaignProgress = new CampaignProgress();
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
@@ -319,13 +321,46 @@ export default class Game {
     this.session.transition('completed');
     this.session.tasks.clear();
     this.gameState.score += 1000;
+    const progress = this.recordCampaignProgress();
     this.inputManager.clearKeys();
     this.releasePointerLock();
     this.audioManager.stopAllSounds();
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.updateHUD();
-    this.uiManager.showCompletion(this.nextMissionIndex() !== -1);
+    this.uiManager.showCompletion(this.nextMissionIndex() !== -1, progress);
     return true;
+  }
+
+  /** Built-in campaign missions, in order. Imported/playtest documents are excluded even
+   * when they reuse a campaign document's id. */
+  campaignMissions() {
+    return (this.levelManager?.levels ?? []).filter((level, index) => level.campaignOrder && index !== this.importedLevelIndex)
+      .map(level => ({ id: level.id, name: level.name, campaignOrder: level.campaignOrder }))
+      .sort((a, b) => a.campaignOrder - b.campaignOrder);
+  }
+
+  recordCampaignProgress() {
+    const level = this.levelManager?.levels[this.currentLevelIndex];
+    if (!level?.campaignOrder || !level.id || this.currentLevelIndex === this.importedLevelIndex) return null;
+    const result = this.campaignProgress.recordCompletion({ id: level.id, campaignOrder: level.campaignOrder },
+      { score: this.gameState.score, timeMs: this.session.timeMs });
+    if (!result) return null;
+    const campaign = this.campaignMissions();
+    return { ...result, timeMs: this.session.timeMs, saved: this.campaignProgress.saveStatus === 'saved',
+      completed: this.campaignProgress.completedCount(campaign), total: campaign.length };
+  }
+
+  /** Main-menu campaign entry: resume at the first uncompleted mission, or replay from the start. */
+  continueCampaign() {
+    const campaign = this.campaignMissions();
+    const target = this.campaignProgress.nextMission(campaign) ?? campaign[0];
+    const index = target ? this.levelManager.levels.findIndex((level, i) => level.id === target.id && level.campaignOrder && i !== this.importedLevelIndex) : -1;
+    return this.startSession({ endless: false, levelIndex: Math.max(0, index) });
+  }
+
+  resetCampaignProgress() {
+    this.campaignProgress.reset();
+    return this.campaignProgress.saveStatus;
   }
 
   nextMission() {

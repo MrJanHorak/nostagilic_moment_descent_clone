@@ -81,7 +81,7 @@ DESCENDED is a six-degree-of-freedom 3D shooter inspired by Descent. Navigate fi
 - Spatial audio for immersive gameplay
 - Five enemy models, wall-aware navigation, scout strikes and mobile fighter encounters
 - Authored health pickups restore up to 25% shields; pulse refills add up to 20 rounds within capacity
-- Four-mission progression through the completion screen; saved campaign progress is future work
+- Four-mission campaign with saved progress: the main button continues at the first unfinished mission, and the mission library shows completion, best time and best score (see [campaign progress](docs/CAMPAIGN_PROGRESS.md))
 - Sliding/shot/concealed doors, relay force fields, lava hazards and reactor escape countdowns
 - Browser-local custom level library with JSON sharing, rename, update and copy
 - Local level designer with portable JSON export, autosave recovery and real-runtime preview

@@ -2,6 +2,19 @@
 
 Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons after implementation baseline `164bf41` (October 21) and documentation commit `5a044ec`. Start with the [current roadmap](../ROADMAP.md); the October 14 [assessment](../PROJECT_ASSESSMENT.md) and older checkpoint reports describe history.
 
+## November 23 housekeeping
+
+- Local `*.log` captures moved from the repository root into `logs/` (already gitignored); keep new local logs there.
+- Historical `PERFORMANCE_OPTIMIZATIONS.md` moved to `docs/` with links updated. The root now holds only README, DEVELOPER_GUIDE, entry pages/scripts and configuration.
+- Package renamed from `2ndaigameattempt` to `descended` (package.json and lockfile name fields only; no dependency changes).
+- Root `main.js` entry keeps the same behavior without startup debug logging.
+- `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
+- Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
+
+## November 23 campaign progress
+
+Built-in campaign progress now persists (`src/js/core/CampaignProgress.js`, storage key `descended.campaign.v1`). The main button continues at the first unfinished mission; the mission library shows completion, best time and best score with a two-click reset; the completion screen reports time, records and save status. Imported, playtest and practice levels never change progress. See [campaign progress](../CAMPAIGN_PROGRESS.md). Lint (84 modules) and all 515 unit/simulation tests pass on Linux; typecheck/build and browser checks of the new menus still need a run on the owner's machine.
+
 ## Accepted and delivered
 
 M1, M3 and M4's functional workflow are owner-accepted. The owner reported hosted CI passing October 18; do not request those acceptances again. M2's broader hardware performance acceptance remains open. Earlier CI failures and pending editor-sign-off statements are historical, not current blockers.

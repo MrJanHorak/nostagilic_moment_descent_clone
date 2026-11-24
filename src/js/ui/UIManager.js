@@ -5,6 +5,7 @@ import createMissionSelect from './MissionSelect.js';
 import createUserLevels from './UserLevels.js';
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
 import NavigationDisplay from './NavigationDisplay.js';
+import { formatMissionTime } from '../core/CampaignProgress.js';
 
 class UIManager {
   constructor(gameState, audioManager) {
@@ -663,15 +664,33 @@ class UIManager {
       }
 
       const startButton = document.getElementById('start-game-btn');
-      startButton.addEventListener('click', () => {
-        const campaign = this.game.levelManager.levels.findIndex(level => level.campaignOrder === 1);
-        this.game.startSession({ endless: false, levelIndex: Math.max(0, campaign) });
-      });
+      this.describeCampaignStart(startButton);
+      startButton.addEventListener('click', () => this.game.continueCampaign());
       return startButton;
     } catch (error) {
       console.error('Error creating start screen:', error);
       return null;
     }
+  }
+
+  /** Label the main campaign button from saved progress and show a short status line. */
+  describeCampaignStart(startButton) {
+    const campaign = this.game?.campaignMissions?.() ?? [];
+    const progress = this.game?.campaignProgress;
+    if (!startButton || !progress || !campaign.length) return;
+    const completed = progress.completedCount(campaign), next = progress.nextMission(campaign);
+    const label = startButton.querySelector('span') ?? startButton;
+    label.textContent = completed === 0 ? 'START CAMPAIGN'
+      : next ? `CONTINUE · MISSION ${String(next.campaignOrder).padStart(2, '0')}` : 'REPLAY CAMPAIGN';
+    startButton.setAttribute('aria-label', completed === 0 ? 'Start campaign at mission 1'
+      : next ? `Continue campaign at mission ${next.campaignOrder}, ${next.name}` : 'Replay campaign from mission 1');
+    if (completed === 0) return;
+    const status = document.createElement('p');
+    status.id = 'campaign-progress-status';
+    status.textContent = next ? `Campaign progress: ${completed} of ${campaign.length} missions · Next: ${next.name}`
+      : `Campaign complete: all ${campaign.length} missions extracted`;
+    Object.assign(status.style, { margin: '10px auto 0', color: '#9fd8e6', textAlign: 'center', font: '15px system-ui, sans-serif', position: 'relative', zIndex: '2' });
+    startButton.parentElement?.after(status);
   }
 
   // Update weapon UI to reflect current weapon selection and ammo counts
@@ -725,7 +744,9 @@ class UIManager {
     this.levelSelectMenu?.remove();
     this.levelSelectMenu = createMissionSelect(game.levelManager.levels,
       index => game.startSession({ endless: false, levelIndex: index }), () => game.showMainMenu(),
-      { userLevels: () => game.showUserLevels(), hiddenIndex: game.importedLevelIndex });
+      { userLevels: () => game.showUserLevels(), hiddenIndex: game.importedLevelIndex,
+        progress: level => (level.campaignOrder && level.id ? game.campaignProgress?.get(level.id) ?? null : null),
+        resetProgress: () => { game.resetCampaignProgress(); this.createLevelSelect(game); } });
     document.body.appendChild(this.levelSelectMenu);
     this.levelSelectMenu.querySelector('button')?.focus();
     return this.levelSelectMenu;
@@ -1235,6 +1256,7 @@ class UIManager {
     heading.textContent = title;
     const description = document.createElement('p');
     description.textContent = message;
+    Object.assign(description.style, { whiteSpace: 'pre-line', textAlign: 'center', margin: '0 16px' });
     overlay.append(heading, description);
     for (const [label, action] of actions) {
       const button = document.createElement('button');
@@ -1247,12 +1269,22 @@ class UIManager {
     document.body.appendChild(overlay);
   }
 
-  showCompletion(hasNext) {
+  showCompletion(hasNext, progress = null) {
     const actions = [];
     if (hasNext) actions.push(['NEXT MISSION', () => this.game.nextMission()]);
     actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
       ['SELECT MISSION', () => this.game.showLevelSelection()]);
-    this.showResult('MISSION COMPLETE', `Score: ${this.gameState.score} (includes 1,000 completion bonus)`, actions);
+    const lines = [`Score: ${this.gameState.score} (includes 1,000 completion bonus)`];
+    if (progress) {
+      const record = progress.record;
+      lines.push(`Time: ${formatMissionTime(progress.timeMs)} · Best: ${formatMissionTime(record.bestTimeMs)} · Best score: ${record.bestScore}`);
+      const highlights = [progress.newBestTime && 'NEW BEST TIME', progress.newBestScore && 'NEW BEST SCORE'].filter(Boolean);
+      if (highlights.length) lines.push(highlights.join(' · '));
+      lines.push(progress.completed === progress.total ? `Campaign complete: ${progress.total} of ${progress.total} missions`
+        : `Campaign progress: ${progress.completed} of ${progress.total} missions`);
+      lines.push(progress.saved ? 'Progress saved' : 'Browser storage unavailable: progress is kept for this visit only');
+    }
+    this.showResult('MISSION COMPLETE', lines.join('\n'), actions);
   }
 
   showSessionError(error) {

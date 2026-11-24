@@ -1,6 +1,11 @@
-/** @param {readonly {name: string, campaignOrder?: number, briefing?: string}[]} levels
+import { formatMissionTime } from '../core/CampaignProgress.js';
+
+/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number }} MissionProgress */
+/** @param {readonly {name: string, id?: string, campaignOrder?: number, briefing?: string}[]} levels
  * @param {(index: number) => void} choose @param {() => void} back
- * @param {{userLevels?: () => void, hiddenIndex?: number | null}} [options] */
+ * @param {{userLevels?: () => void, hiddenIndex?: number | null,
+ *   progress?: (level: {name: string, id?: string, campaignOrder?: number}) => MissionProgress | null,
+ *   resetProgress?: () => void}} [options] */
 export default function createMissionSelect(levels, choose, back, options = {}) {
   const root = document.createElement('div'); root.className = 'mission-library'; root.setAttribute('role', 'dialog');
   root.setAttribute('aria-modal', 'true'); root.setAttribute('aria-labelledby', 'mission-library-title');
@@ -20,6 +25,9 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
     .mission-library summary { cursor:pointer; padding:8px 0; }
     .mission-library details button { display:block; width:100%; margin:8px 0; font-size:14px; }
     .mission-library button:hover { background:#315b70; }
+    .mission-library .mission-status { margin:10px 0 0; color:#8fe3a8; font-size:13px; letter-spacing:.06em; }
+    .mission-library .reset-progress { margin-top:12px; font-size:14px; background:#3a2a2a; border-color:#9a6a6a; }
+    .mission-library .reset-progress:hover { background:#4d3434; }
     .mission-library button:focus-visible, .mission-library summary:focus-visible { outline:2px solid #a4edf3; outline-offset:4px; }
   `;
   const article = document.createElement('article');
@@ -39,14 +47,34 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
       const card = document.createElement('section'); card.className = 'mission-card';
       const number = document.createElement('div'); number.className = 'eyebrow'; number.textContent = `MISSION ${String(level.campaignOrder).padStart(2, '0')}`;
       const briefing = document.createElement('p'); briefing.textContent = level.briefing ?? '';
-      card.append(number, button, briefing); article.append(card);
+      card.append(number, button);
+      const record = options.progress?.(level);
+      if (record) {
+        const status = document.createElement('div'); status.className = 'mission-status';
+        status.textContent = `✓ COMPLETED${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
+        button.setAttribute('aria-description', 'Completed');
+        card.append(status);
+      }
+      card.append(briefing); article.append(card);
     } else {
       practice.append(button);
       if (level.briefing) { const briefing = document.createElement('p'); briefing.textContent = level.briefing; practice.append(briefing); }
     }
   }
   const returnButton = document.createElement('button'); returnButton.textContent = 'RETURN TO MAIN MENU'; returnButton.onclick = back;
-  article.append(practice, returnButton); root.append(style, article);
+  article.append(practice, returnButton);
+  const anyProgress = options.progress && levels.some((level, index) => index !== options.hiddenIndex && options.progress?.(level));
+  if (options.resetProgress && anyProgress) {
+    const reset = document.createElement('button'); reset.className = 'reset-progress'; reset.textContent = 'Reset campaign progress';
+    let armed = false;
+    reset.onclick = () => {
+      if (!armed) { armed = true; reset.textContent = 'Click again to erase saved campaign progress'; return; }
+      options.resetProgress?.();
+    };
+    reset.onblur = () => { armed = false; reset.textContent = 'Reset campaign progress'; };
+    article.append(document.createElement('br'), reset);
+  }
+  root.append(style, article);
   root.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); back(); }
     if (event.key !== 'Tab') return;
