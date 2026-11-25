@@ -208,7 +208,7 @@ test('rescuing one miner keeps the shared figure resources for the others; dispo
 test('every campaign mission carries a complete, valid story', async () => {
   const { campaignDocuments } = await import('../src/js/core/levels/Campaign.js');
   const { validateLevelDocument: validate } = await import('../src/js/core/levels/document/validateLevelDocument.js');
-  const prefixes = ['sb:', 'vf:', 'nr:', 'dw:', 'ts:'], seen = new Set();
+  const prefixes = ['sb:', 'vf:', 'nr:', 'dw:', 'ts:', 'wi:', 'fb:', 'md:'], seen = new Set();
   for (const [index, document] of campaignDocuments.entries()) {
     assert.ok(document.formatVersion >= 13, `${document.id} uses the story format`);
     assert.equal(validate(document).valid, true, `${document.id} validates`);

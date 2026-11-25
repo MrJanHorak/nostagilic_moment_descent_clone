@@ -1,0 +1,1191 @@
+{
+  "formatVersion": 16,
+  "id": "witness",
+  "name": "Witness",
+  "rooms": [
+    {
+      "id": "kestrel-pad",
+      "label": "Kestrel pad",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        14,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "reception",
+      "label": "Reception",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -50
+      ],
+      "size": [
+        24,
+        12,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "records-hall",
+      "label": "Records hall",
+      "prefab": "box-room",
+      "position": [
+        -50,
+        0,
+        -50
+      ],
+      "size": [
+        28,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "security-wing",
+      "label": "Security wing",
+      "prefab": "box-room",
+      "position": [
+        50,
+        0,
+        -50
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "records-vault",
+      "label": "Records vault",
+      "prefab": "box-room",
+      "position": [
+        -50,
+        0,
+        -96
+      ],
+      "size": [
+        16,
+        12,
+        16
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "executive-suite",
+      "label": "Executive suite",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -96
+      ],
+      "size": [
+        26,
+        14,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "dorm-annex",
+      "label": "Dorm annex",
+      "prefab": "box-room",
+      "position": [
+        50,
+        0,
+        -96
+      ],
+      "size": [
+        20,
+        12,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "evidence-locker",
+      "label": "Evidence locker",
+      "prefab": "box-room",
+      "position": [
+        50,
+        0,
+        -132
+      ],
+      "size": [
+        12,
+        10,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pad-walk",
+      "label": "Pad walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -26
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "records-walk",
+      "label": "Records walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -24,
+        0,
+        -50
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "security-walk",
+      "label": "Security walk",
+      "prefab": "straight-corridor",
+      "position": [
+        25,
+        0,
+        -50
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "vault-stair",
+      "label": "Vault corridor",
+      "prefab": "straight-corridor",
+      "position": [
+        -50,
+        0,
+        -75
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "vault-suite",
+      "label": "Vault passage",
+      "prefab": "straight-corridor",
+      "position": [
+        -27.5,
+        0,
+        -96
+      ],
+      "size": [
+        8,
+        8,
+        29
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "suite-annex",
+      "label": "Annex passage",
+      "prefab": "straight-corridor",
+      "position": [
+        26.5,
+        0,
+        -96
+      ],
+      "size": [
+        8,
+        8,
+        27
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "annex-security",
+      "label": "Annex stair",
+      "prefab": "straight-corridor",
+      "position": [
+        50,
+        0,
+        -74
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "suite-return",
+      "label": "Suite return",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -72.5
+      ],
+      "size": [
+        8,
+        8,
+        21
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "locker-crawl",
+      "label": "Locker crawl",
+      "prefab": "straight-corridor",
+      "position": [
+        50,
+        0,
+        -116
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    }
+  ],
+  "connections": [
+    {
+      "id": "pad-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-pad",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pad-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pad-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pad-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reception",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "records-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reception",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "records-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "records-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "records-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "records-hall",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "security-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "reception",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "security-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "security-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "security-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "security-wing",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-stair-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "records-hall",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "vault-stair",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-stair-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "vault-stair",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "records-vault",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-suite-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "records-vault",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "vault-suite",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-suite-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "vault-suite",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "executive-suite",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "suite-annex-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "executive-suite",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "suite-annex",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "suite-annex-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "suite-annex",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "dorm-annex",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "annex-security-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "dorm-annex",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "annex-security",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "annex-security-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "annex-security",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "security-wing",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "suite-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "executive-suite",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "suite-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "suite-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "suite-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "reception",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "locker-crawl-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "dorm-annex",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "locker-crawl",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "locker-crawl-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "locker-crawl",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "evidence-locker",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "archive-power",
+      "label": "Archive power",
+      "roomId": "records-hall",
+      "position": [
+        -8,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "ledger-download",
+      "label": "Ledger download",
+      "roomId": "records-vault",
+      "position": [
+        0,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "uplink",
+      "label": "Kestrel uplink",
+      "roomId": "executive-suite",
+      "position": [
+        0,
+        0,
+        -9
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "pad-door",
+      "connectionId": "pad-walk-in",
+      "activation": "shot"
+    },
+    {
+      "id": "vault-door",
+      "connectionId": "vault-stair-in",
+      "deviceId": "archive-power"
+    },
+    {
+      "id": "suite-door",
+      "connectionId": "vault-suite-out",
+      "deviceId": "ledger-download"
+    },
+    {
+      "id": "return-field",
+      "connectionId": "suite-return-in",
+      "deviceId": "uplink",
+      "kind": "force-field"
+    },
+    {
+      "id": "locker-secret",
+      "connectionId": "locker-crawl-in",
+      "activation": "shot",
+      "concealed": true
+    }
+  ],
+  "entities": [
+    {
+      "id": "reception-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "reception",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "records-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "records-hall",
+      "position": [
+        8,
+        1,
+        6
+      ]
+    },
+    {
+      "id": "security-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "security-wing",
+      "position": [
+        -6,
+        2,
+        -6
+      ]
+    },
+    {
+      "id": "suite-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "executive-suite",
+      "position": [
+        5,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "annex-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "dorm-annex",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "pad-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-pad",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "pad-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-pad",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "records-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "records-hall",
+      "position": [
+        10,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "vault-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "records-vault",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "suite-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "executive-suite",
+      "position": [
+        -9,
+        0,
+        9
+      ]
+    },
+    {
+      "id": "annex-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "dorm-annex",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "locker-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "evidence-locker",
+      "position": [
+        -3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "locker-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "evidence-locker",
+      "position": [
+        3,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "pad-exit",
+      "kind": "exit",
+      "roomId": "kestrel-pad",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "radius": 2
+    }
+  ],
+  "generators": [
+    {
+      "id": "suite-fabricator",
+      "roomId": "executive-suite",
+      "position": [
+        -9,
+        0,
+        -9
+      ],
+      "enemyType": "scout",
+      "count": 4,
+      "intervalSeconds": 8,
+      "maxAlive": 2
+    },
+    {
+      "id": "security-fabricator",
+      "roomId": "security-wing",
+      "position": [
+        8,
+        0,
+        8
+      ],
+      "enemyType": "fighter",
+      "count": 3,
+      "intervalSeconds": 9,
+      "maxAlive": 1
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-pad",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "suite-destroyer"
+    ],
+    "requiredDeviceIds": [
+      "archive-power",
+      "ledger-download",
+      "uplink"
+    ],
+    "exitId": "pad-exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 120,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "wi:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Twenty-three people say the Consortium left them to die. Nobody off-world will believe a salvage crew. We need their own ledger. Admin block, records vault, then send it home through the executive uplink.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "wi:msg-records",
+        "speaker": "FOREMAN",
+        "text": "THE ARCHIVE IS SEALED BY CONSORTIUM ORDER. I DID NOT SEAL IT. I CAN STILL POWER IT.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "records-hall"
+        }
+      },
+      {
+        "id": "wi:msg-ledger",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "That's it. Closure costings, line by line. 'Personnel: not recovered.' Get it to the uplink.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "ledger-download"
+        }
+      },
+      {
+        "id": "wi:msg-suite",
+        "speaker": "FOREMAN",
+        "text": "THOSE MACHINES IN THE WALLS ARE NOT MINE. THE CONSORTIUM INSTALLED FABRICATORS. THEY WILL KEEP MAKING GUARDS UNTIL THEY RUN OUT.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "executive-suite"
+        }
+      },
+      {
+        "id": "wi:msg-uplink",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Uplink's live. The ledger is on Kestrel's servers and three news feeds. Whatever happens now, they can't bury it. Come home.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "uplink"
+        }
+      },
+      {
+        "id": "wi:msg-annex",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Someone's in the annex. Hana says her brother stayed behind to watch the dorms. He'll talk to us if we get him out.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "dorm-annex"
+        }
+      },
+      {
+        "id": "wi:msg-security",
+        "speaker": "FOREMAN",
+        "text": "SECURITY WING. ANOTHER FABRICATOR. YOU DO NOT NEED TO GO IN THERE. I KNOW YOU WILL ANYWAY.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "security-wing"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "wi:log-ledger",
+        "roomId": "records-vault",
+        "position": [
+          -4,
+          0,
+          -4
+        ],
+        "title": "Closure ledger AC-77 (extract)",
+        "text": "Lower works closure. Equipment recovery: 2.1M. Reservoir release: 0.4M. Personnel: not recovered (23). Site AI: decommission on completion. Approved."
+      },
+      {
+        "id": "wi:log-testimony",
+        "roomId": "dorm-annex",
+        "position": [
+          -6,
+          0,
+          -6
+        ],
+        "title": "Testimony of Joel Okafor",
+        "text": "We asked for the lift on day two. They said maintenance. Day five they said the AI had locked it. FOREMAN told us the truth on day six: the lift was fine. They just weren't sending it."
+      },
+      {
+        "id": "wi:log-fabricators",
+        "roomId": "evidence-locker",
+        "position": [
+          0,
+          0,
+          -4
+        ],
+        "title": "Asset Protection installation order",
+        "text": "Install guard fabricators in admin and security wings. Units to be finite: four per wall. Do not connect to site AI. If the ledger is accessed, priority is the uplink."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "wi:miner-joel",
+        "roomId": "dorm-annex",
+        "position": [
+          5,
+          0,
+          5
+        ],
+        "name": "Joel Okafor"
+      },
+      {
+        "id": "wi:miner-amara",
+        "roomId": "evidence-locker",
+        "position": [
+          0,
+          2,
+          3
+        ],
+        "name": "Amara Diallo"
+      }
+    ]
+  }
+}

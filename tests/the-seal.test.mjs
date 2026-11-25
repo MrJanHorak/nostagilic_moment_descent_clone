@@ -14,7 +14,7 @@ const level = () => createCampaign().find(level => level.id === 'the-seal');
 
 test('The Seal is mission 05: a valid, labelled two-level mine with loops, secrets and the full objective chain', () => {
   const mission = level(), doc = mission.sourceDocument;
-  assert.equal(mission.campaignOrder, 5); assert.equal(campaignDocuments.at(-1), campaignDocuments.find(d => d.id === 'the-seal'));
+  assert.equal(mission.campaignOrder, 5); assert.equal(campaignDocuments[4], campaignDocuments.find(d => d.id === 'the-seal'), 'The Seal opens Act 2 as mission 05');
   assert.equal(validateLevelDocument(doc).valid, true); assert.equal(doc.formatVersion, 14);
   assert.equal(doc.rooms.length, 26); assert.equal(doc.connections.length - doc.rooms.length + 1, 3, 'three independent loops');
   assert(doc.rooms.every(room => room.label), 'every space has a readable name for the pilot guide');

@@ -50,7 +50,18 @@ Act 1 ends on Vey's line at the quay: "we need to talk about who we're actually 
 - **The Seal (mission 05, v14): written.** Kestrel goes back without a contract to evacuate the lower works. FOREMAN cooperates openly. The Consortium's Asset Protection robots are already inside, and powering the evac lift triggers a Consortium flood with a 75-second escape. See [The Seal](THE_SEAL.md).
   - 13 radio messages; logs: the shelter roll call, FOREMAN's seal log, Asset Protection's standing orders, and Inés's locker note.
   - Miners: Hana Okafor, Luis Ferro (lower dorms), Pavel Ostrov (flood sump), Kit Brandt (old smelter).
-- **Next beats:** the Consortium escalates against Kestrel directly. The rescued miners give testimony. FOREMAN asks Two for help moving its core.
+- **Witness (mission 06, v16): written.** Kestrel needs proof nobody can bury. Two pulls closure ledger AC-77 from the admin block's records vault and sends it home through the executive uplink. Consortium guard fabricators in the walls keep releasing Asset Protection units. Joel Okafor (Hana's brother) testifies.
+  - 7 radio messages; logs: the ledger extract ("Personnel: not recovered (23)"), Joel's testimony, and the fabricator installation order.
+  - Miners: Joel Okafor (dorm annex), Amara Diallo (evidence locker).
+- **Fabricator (mission 07, v16): written.** With the ledger public, the Consortium stops pretending: it has retooled ore line 2 to build Asset Protection units inside the mine. Two cuts the coolant and the grid, flanks two destroyers and ruptures the fabricator core (75-second escape).
+  - 7 radio messages; logs: the retooling work order and a miner's note that FOREMAN left the breaker unlocked.
+  - Miners: Min-ji Rhee (power hall), Kofi Osei (cooling tanks), both forced to run the line.
+- **Moving Day (mission 08, v16): written. Ends Act 2.** FOREMAN asks for a favour: a hard override is coming for its core.
+  - Two transfer stations hand the core over together (a linked pair), the cradle takes it, and the old lift carries it out under a 90-second purge.
+  - The Consortium declares Kestrel a hostile contractor.
+  - 8 radio messages (FOREMAN opens it); logs: the hard-override authorisation, FOREMAN's maintenance journal, and Hana's offer of a bunk for the machine.
+  - Miners: Eva Lund (cable run), Oskar Brandt (old lift).
+- **Act 3 beats (next):** FOREMAN's core travels with Kestrel. The Consortium sends everything after it, including the first boss. The choice at the core comes at the end: destroy it (finish the contract) or free it (expose the Consortium). Rescues across the campaign change the ending.
 
 ## Authoring story in the editor
 

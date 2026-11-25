@@ -5,10 +5,26 @@ Phase 4 finished the co-op campaign. Phase 5 finishes the story and gives player
 | Step | What | Status |
 | --- | --- | --- |
 | 1 | Robot roster: destroyer directional armour, boss phases, finite robot generators (format v16) | Done (November 25) |
-| 2 | Act 2 missions 06–08, using generators and heavy robots | Planned |
+| 2 | Act 2 missions 06–08, using generators and heavy robots | Done (November 25) |
 | 3 | Act 3 and the ending: FOREMAN's core, destroy or free it; rescues change the ending | Planned |
 | 4 | Mission rating: medals and par times; server leaderboards | Planned |
 | 5 | Online sharing for My Levels | Planned |
+
+## Step 2: Act 2 missions 06–08
+
+Built by `scripts/build-act2.mjs` (shared helpers in `scripts/lib/missionKit.mjs`, also used by the team missions) and registered in `src/js/core/levels/Campaign.js` as campaign missions 6–8. The story is in [STORY.md](STORY.md#act-2-status).
+
+| Mission | Spaces | Fabricators | Heavy robots | Objective | Escape |
+| --- | --- | --- | --- | --- | --- |
+| 06 Witness | 17 | 2 (suite scouts, security fighters) | 1 destroyer (required) | Archive power → ledger download → uplink | None (the generators supply the pressure) |
+| 07 Fabricator | 19 (two levels) | 3 (fighters, bombers, core scouts) | 2 destroyers (required) | Coolant cutoff, grid breaker, then shoot the fabricator core (reactor, 300) | 75 s |
+| 08 Moving Day | 17 (two levels) | 3 (scouts, fighters, vault fighters) | 2 destroyers (required) | West and East transfer (linked, 12 s / 48 s solo) → core cradle → lift release | 90 s |
+
+- Each mission has 7–8 radio messages, 2–3 data logs, 2 miners, a hidden or optional side area, and at least two loops.
+- After Moving Day, "next mission" ends the campaign until Act 3 exists.
+- **Tests** (`tests/act2.test.mjs`): the campaign order, story, generators, heavy robots and loops of each mission; a simulated play-through of each (fabricators wake, objectives complete including the linked pair and the reactor, extraction); next-mission chaining.
+- The existing per-mission portal traversal tests (`tests/experience.test.mjs`) also cover the three missions.
+- Updated tests for an 8-mission campaign: campaign progress counts, The Seal no longer last, and story ID prefixes.
 
 ## Step 1: heavy robots and generators
 

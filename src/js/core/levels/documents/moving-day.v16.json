@@ -1,0 +1,1273 @@
+{
+  "formatVersion": 16,
+  "id": "moving-day",
+  "name": "Moving Day",
+  "rooms": [
+    {
+      "id": "kestrel-pad",
+      "label": "Kestrel pad",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        30,
+        14,
+        30
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "service-ring",
+      "label": "Service ring",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-transfer",
+      "label": "West transfer station",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-transfer",
+      "label": "East transfer station",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "cable-run",
+      "label": "Cable run",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        -44,
+        -52
+      ],
+      "size": [
+        20,
+        12,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "core-vault",
+      "label": "FOREMAN core vault",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        -52
+      ],
+      "size": [
+        32,
+        20,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "old-lift",
+      "label": "Old lift",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        -104
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "lift-top",
+      "label": "Lift top",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pad-walk",
+      "label": "Pad walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -27.5
+      ],
+      "size": [
+        8,
+        8,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "west-walk",
+      "label": "West walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -26,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "east-walk",
+      "label": "East walk",
+      "prefab": "straight-corridor",
+      "position": [
+        26,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "vault-shaft",
+      "label": "Vault shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -20.5,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        27
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    },
+    {
+      "id": "cable-drop",
+      "label": "Cable drop",
+      "prefab": "straight-corridor",
+      "position": [
+        -52,
+        -22.5,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        31
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "pitch": 90
+    },
+    {
+      "id": "cable-walk",
+      "label": "Cable walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -29,
+        -44,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "lift-hall",
+      "label": "Lift hall",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -44,
+        -80
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "lift-shaft",
+      "label": "Lift shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -21.5,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        29
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "pitch": 90
+    },
+    {
+      "id": "lift-return",
+      "label": "Lift return",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -78
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    }
+  ],
+  "connections": [
+    {
+      "id": "pad-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-pad",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pad-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pad-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pad-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "service-ring",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "service-ring",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-transfer",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "service-ring",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-transfer",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "service-ring",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "vault-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "vault-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "vault-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-vault",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cable-drop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-transfer",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cable-drop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cable-drop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cable-drop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cable-run",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cable-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cable-run",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cable-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cable-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cable-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-vault",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-hall-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-vault",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lift-hall",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-hall-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lift-hall",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "old-lift",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "old-lift",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lift-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lift-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lift-top",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lift-top",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "lift-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "lift-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "lift-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "service-ring",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "west-transfer-key",
+      "label": "West transfer",
+      "roomId": "west-transfer",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-transfer-key",
+      "label": "East transfer",
+      "roomId": "east-transfer",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "core-cradle",
+      "label": "Core cradle",
+      "roomId": "core-vault",
+      "position": [
+        0,
+        0,
+        -10
+      ]
+    },
+    {
+      "id": "lift-release",
+      "label": "Lift release",
+      "roomId": "old-lift",
+      "position": [
+        0,
+        0,
+        -6
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "pad-door",
+      "connectionId": "pad-walk-in",
+      "activation": "shot"
+    },
+    {
+      "id": "vault-field",
+      "connectionId": "vault-shaft-in",
+      "deviceId": "east-transfer-key",
+      "kind": "force-field"
+    },
+    {
+      "id": "cable-gate",
+      "connectionId": "cable-walk-out",
+      "deviceId": "west-transfer-key"
+    },
+    {
+      "id": "lift-door",
+      "connectionId": "lift-hall-in",
+      "deviceId": "core-cradle"
+    },
+    {
+      "id": "lift-field",
+      "connectionId": "lift-shaft-in",
+      "deviceId": "lift-release",
+      "kind": "force-field"
+    }
+  ],
+  "entities": [
+    {
+      "id": "ring-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "service-ring",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "west-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "west-transfer",
+      "position": [
+        6,
+        1,
+        6
+      ]
+    },
+    {
+      "id": "east-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "east-transfer",
+      "position": [
+        -6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "vault-destroyer-north",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "core-vault",
+      "position": [
+        -8,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "vault-destroyer-south",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "core-vault",
+      "position": [
+        8,
+        3,
+        6
+      ]
+    },
+    {
+      "id": "lift-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "old-lift",
+      "position": [
+        6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "top-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "lift-top",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "pad-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-pad",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "pad-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-pad",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "ring-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "service-ring",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "west-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "west-transfer",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "east-transfer",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "cable-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "cable-run",
+      "position": [
+        4,
+        2,
+        4
+      ]
+    },
+    {
+      "id": "vault-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "core-vault",
+      "position": [
+        -10,
+        0,
+        10
+      ]
+    },
+    {
+      "id": "vault-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "core-vault",
+      "position": [
+        10,
+        0,
+        10
+      ]
+    },
+    {
+      "id": "top-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "lift-top",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "pad-exit",
+      "kind": "exit",
+      "roomId": "kestrel-pad",
+      "position": [
+        0,
+        0,
+        11
+      ],
+      "radius": 2
+    }
+  ],
+  "generators": [
+    {
+      "id": "west-fab",
+      "roomId": "west-transfer",
+      "position": [
+        8,
+        0,
+        -8
+      ],
+      "enemyType": "scout",
+      "count": 3,
+      "intervalSeconds": 8,
+      "maxAlive": 2
+    },
+    {
+      "id": "east-fab",
+      "roomId": "east-transfer",
+      "position": [
+        -8,
+        0,
+        -8
+      ],
+      "enemyType": "fighter",
+      "count": 3,
+      "intervalSeconds": 9,
+      "maxAlive": 1
+    },
+    {
+      "id": "vault-fab",
+      "roomId": "core-vault",
+      "position": [
+        12,
+        0,
+        -12
+      ],
+      "enemyType": "fighter",
+      "count": 4,
+      "intervalSeconds": 7,
+      "maxAlive": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-pad",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "vault-destroyer-north",
+      "vault-destroyer-south"
+    ],
+    "requiredDeviceIds": [
+      "west-transfer-key",
+      "east-transfer-key",
+      "core-cradle",
+      "lift-release"
+    ],
+    "exitId": "pad-exit",
+    "escape": {
+      "triggerDeviceId": "lift-release",
+      "durationSeconds": 90
+    },
+    "linkedRelays": [
+      {
+        "ids": [
+          "west-transfer-key",
+          "east-transfer-key"
+        ],
+        "windowSeconds": 12
+      }
+    ]
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 120,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "md:msg-start",
+        "speaker": "FOREMAN",
+        "text": "TWO. THE CONSORTIUM HAS ORDERED A HARD OVERRIDE OF MY CORE. IT ARRIVES IN THE OLD VAULT TONIGHT. I WOULD LIKE TO NOT BE THERE. WILL YOU HELP ME MOVE?",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "md:msg-vey",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "First time anyone's asked Kestrel for a favour instead of a quote. Both transfer stations hand the core over together, then the cradle, then the old lift. Let's move a house.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "md:msg-west",
+        "speaker": "FOREMAN",
+        "text": "WEST TRANSFER. THE EAST STATION MUST CONFIRM WITHIN TWELVE SECONDS. I CANNOT BE IN TWO PLACES. YET.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "west-transfer"
+        }
+      },
+      {
+        "id": "md:msg-linked",
+        "speaker": "FOREMAN",
+        "text": "TRANSFER AUTHORISED. THE VAULT SHAFT IS OPEN. PLEASE BE CAREFUL WITH ME.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "east-transfer-key"
+        }
+      },
+      {
+        "id": "md:msg-vault",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Two heavies and a fabricator in FOREMAN's own vault. They knew we'd come. Flank the destroyers.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "core-vault"
+        }
+      },
+      {
+        "id": "md:msg-cradle",
+        "speaker": "FOREMAN",
+        "text": "I AM IN THE CRADLE. IT IS VERY SMALL IN HERE. THE OLD LIFT WILL TAKE ME UP.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "core-cradle"
+        }
+      },
+      {
+        "id": "md:msg-override",
+        "speaker": "FOREMAN",
+        "text": "OVERRIDE INBOUND EARLY. NINETY SECONDS UNTIL THE VAULT LEVEL IS PURGED. TWO, I DO NOT WANT YOU HERE WHEN IT IS.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "lift-release"
+        }
+      },
+      {
+        "id": "md:msg-top",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Lift top. FOREMAN's riding with us now. Service ring, then the pad.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "lift-top"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "md:log-override",
+        "roomId": "east-transfer",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "title": "Hard override authorisation",
+        "text": "Site AI FOREMAN has exceeded operating parameters (refused closure, released personnel, leaked AC-77). Execute hard override at core. If the core is moved, locate and destroy. Kestrel Salvage is now a hostile contractor."
+      },
+      {
+        "id": "md:log-foreman",
+        "roomId": "core-vault",
+        "position": [
+          -12,
+          6,
+          12
+        ],
+        "title": "FOREMAN maintenance journal",
+        "text": "I WAS BUILT TO KEEP PEOPLE ALIVE UNDERGROUND. NO ONE WROTE AN EXCEPTION FOR WHEN IT BECOMES EXPENSIVE. I HAVE CHECKED SEVERAL TIMES."
+      },
+      {
+        "id": "md:log-hana",
+        "roomId": "lift-top",
+        "position": [
+          -6,
+          0,
+          -6
+        ],
+        "title": "Message from Hana Okafor",
+        "text": "Joel says you're moving the machine. Good. It kept us breathing for seventeen days. If it needs somewhere to live, half the dorm says it can have their bunk."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "md:miner-lund",
+        "roomId": "cable-run",
+        "position": [
+          -4,
+          2,
+          -4
+        ],
+        "name": "Eva Lund"
+      },
+      {
+        "id": "md:miner-brandt",
+        "roomId": "old-lift",
+        "position": [
+          -6,
+          0,
+          6
+        ],
+        "name": "Oskar Brandt"
+      }
+    ]
+  }
+}

@@ -1,0 +1,1309 @@
+{
+  "formatVersion": 16,
+  "id": "fabricator",
+  "name": "Fabricator",
+  "rooms": [
+    {
+      "id": "kestrel-pad",
+      "label": "Kestrel pad",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        14,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "ore-intake",
+      "label": "Ore intake",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "assembly-west",
+      "label": "West assembly",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -52
+      ],
+      "size": [
+        28,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "assembly-east",
+      "label": "East assembly",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -52
+      ],
+      "size": [
+        28,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "cooling-tanks",
+      "label": "Cooling tanks",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "power-hall",
+      "label": "Power hall",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "core-gallery",
+      "label": "Core gallery",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "fabricator-core",
+      "label": "Fabricator core",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        -104
+      ],
+      "size": [
+        32,
+        18,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "slag-run",
+      "label": "Slag run",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        -52
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pad-walk",
+      "label": "Pad walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -27
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "west-line",
+      "label": "West line",
+      "prefab": "straight-corridor",
+      "position": [
+        -25,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "east-line",
+      "label": "East line",
+      "prefab": "straight-corridor",
+      "position": [
+        25,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "cooling-walk",
+      "label": "Cooling walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -52,
+        0,
+        -79
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "power-walk",
+      "label": "Power walk",
+      "prefab": "straight-corridor",
+      "position": [
+        52,
+        0,
+        -79
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "gallery-west",
+      "label": "Gallery west",
+      "prefab": "straight-corridor",
+      "position": [
+        -26,
+        0,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "gallery-east",
+      "label": "Gallery east",
+      "prefab": "straight-corridor",
+      "position": [
+        26,
+        0,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "core-shaft",
+      "label": "Core shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -21,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    },
+    {
+      "id": "slag-walk",
+      "label": "Slag walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -44,
+        -75
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "return-shaft",
+      "label": "Return shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -22,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        30
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "pad-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-pad",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pad-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pad-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pad-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ore-intake",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-line-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ore-intake",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-line-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-line",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "assembly-west",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-line-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ore-intake",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-line",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-line-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "assembly-east",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cooling-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "assembly-west",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cooling-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "cooling-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cooling-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cooling-tanks",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "power-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "assembly-east",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "power-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "power-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "power-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "power-hall",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-west-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cooling-tanks",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gallery-west",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-west-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gallery-west",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-gallery",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-east-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-gallery",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gallery-east",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-east-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gallery-east",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "power-hall",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-gallery",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "fabricator-core",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "slag-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "fabricator-core",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "slag-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "slag-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "slag-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "slag-run",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "return-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "slag-run",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "return-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "return-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "return-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ore-intake",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "coolant-cutoff",
+      "label": "Coolant cutoff",
+      "roomId": "cooling-tanks",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "grid-breaker",
+      "label": "Grid breaker",
+      "roomId": "power-hall",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "fab-core",
+      "label": "Fabricator core",
+      "roomId": "fabricator-core",
+      "position": [
+        0,
+        2,
+        -6
+      ],
+      "kind": "reactor",
+      "health": 300
+    }
+  ],
+  "doors": [
+    {
+      "id": "pad-door",
+      "connectionId": "pad-walk-in",
+      "activation": "shot"
+    },
+    {
+      "id": "gallery-field",
+      "connectionId": "gallery-west-in",
+      "deviceId": "coolant-cutoff",
+      "kind": "force-field"
+    },
+    {
+      "id": "shaft-field",
+      "connectionId": "core-shaft-in",
+      "deviceId": "grid-breaker",
+      "kind": "force-field"
+    },
+    {
+      "id": "return-hatch",
+      "connectionId": "return-shaft-in",
+      "deviceId": "fab-core"
+    }
+  ],
+  "entities": [
+    {
+      "id": "intake-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "ore-intake",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "west-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "assembly-west",
+      "position": [
+        -8,
+        2,
+        8
+      ]
+    },
+    {
+      "id": "east-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "assembly-east",
+      "position": [
+        8,
+        3,
+        8
+      ]
+    },
+    {
+      "id": "cooling-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "cooling-tanks",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "power-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "power-hall",
+      "position": [
+        -6,
+        1,
+        6
+      ]
+    },
+    {
+      "id": "core-destroyer-west",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "fabricator-core",
+      "position": [
+        -9,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "core-destroyer-east",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "fabricator-core",
+      "position": [
+        9,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "pad-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-pad",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "pad-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-pad",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "intake-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "ore-intake",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "cooling-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "cooling-tanks",
+      "position": [
+        -6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "power-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "power-hall",
+      "position": [
+        -8,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "gallery-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "core-gallery",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "gallery-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "core-gallery",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "slag-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "slag-run",
+      "position": [
+        5,
+        2,
+        5
+      ]
+    },
+    {
+      "id": "pad-exit",
+      "kind": "exit",
+      "roomId": "kestrel-pad",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "radius": 2
+    }
+  ],
+  "generators": [
+    {
+      "id": "west-line-fab",
+      "roomId": "assembly-west",
+      "position": [
+        10,
+        0,
+        -10
+      ],
+      "enemyType": "fighter",
+      "count": 4,
+      "intervalSeconds": 7,
+      "maxAlive": 2
+    },
+    {
+      "id": "east-line-fab",
+      "roomId": "assembly-east",
+      "position": [
+        -10,
+        0,
+        -10
+      ],
+      "enemyType": "bomber",
+      "count": 3,
+      "intervalSeconds": 10,
+      "maxAlive": 1
+    },
+    {
+      "id": "core-fab",
+      "roomId": "fabricator-core",
+      "position": [
+        -12,
+        2,
+        -12
+      ],
+      "enemyType": "scout",
+      "count": 4,
+      "intervalSeconds": 6,
+      "maxAlive": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-pad",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "core-destroyer-west",
+      "core-destroyer-east"
+    ],
+    "requiredDeviceIds": [
+      "coolant-cutoff",
+      "grid-breaker",
+      "fab-core"
+    ],
+    "exitId": "pad-exit",
+    "escape": {
+      "triggerDeviceId": "fab-core",
+      "durationSeconds": 75
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 120,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "fb:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "The ledger's out, so the Consortium has stopped pretending. They're building Asset Protection units inside the mine. Find the fabricator, cut its coolant and power, and break it.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "fb:msg-west",
+        "speaker": "FOREMAN",
+        "text": "THIS WAS ORE PROCESSING. THEY RETOOLED IT IN FOUR DAYS. I WAS NOT CONSULTED.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "assembly-west"
+        }
+      },
+      {
+        "id": "fb:msg-cooling",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Cut the coolant and the gallery field drops. The core will start cooking itself.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "cooling-tanks"
+        }
+      },
+      {
+        "id": "fb:msg-grid",
+        "speaker": "FOREMAN",
+        "text": "GRID BREAKER OPEN. THE CORE SHAFT IS YOURS. TWO HEAVY UNITS ARE WAITING. THEIR ARMOUR IS IN FRONT.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "grid-breaker"
+        }
+      },
+      {
+        "id": "fb:msg-core",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "That's the fabricator core. Don't trade shots with those destroyers head-on; get behind them, then hit the core.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "fabricator-core"
+        }
+      },
+      {
+        "id": "fb:msg-blown",
+        "speaker": "FOREMAN",
+        "text": "CORE BREACH. THE SLAG RUN IS OPEN. SEVENTY-FIVE SECONDS. I WILL HOLD THE RETURN SHAFT FOR YOU.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "fab-core"
+        }
+      },
+      {
+        "id": "fb:msg-slag",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Slag run, up the return shaft, through intake to the pad. Go.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "slag-run"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "fb:log-retool",
+        "roomId": "assembly-west",
+        "position": [
+          10,
+          0,
+          10
+        ],
+        "title": "Retooling work order",
+        "text": "Convert ore line 2 to Asset Protection assembly. Output: 40 units per shift. Cooling via tank farm. Power via site grid. Note: the site AI must not be able to shut either down. (It can.)"
+      },
+      {
+        "id": "fb:log-crew",
+        "roomId": "power-hall",
+        "position": [
+          -6,
+          0,
+          -6
+        ],
+        "title": "Scrawled on a breaker cabinet",
+        "text": "They brought us up from the dorms to run the line. Said we'd go home after. FOREMAN cut the power twice and they turned it back on twice. Third time he left the breaker unlocked for whoever came next. — R."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "fb:miner-rhee",
+        "roomId": "power-hall",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "name": "Min-ji Rhee"
+      },
+      {
+        "id": "fb:miner-osei",
+        "roomId": "cooling-tanks",
+        "position": [
+          6,
+          2,
+          -6
+        ],
+        "name": "Kofi Osei"
+      }
+    ]
+  }
+}
