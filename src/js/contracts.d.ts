@@ -65,6 +65,11 @@ export interface InputGameActions {
   toggleShipOption?(option: 'cameraView' | 'headlights' | 'showHUD'): void;
   toggleMap?(): void;
   openMissionLog?(): boolean;
+  /** Team signals (co-op and online). */
+  readonly quickChatOpen?: boolean;
+  toggleQuickChat?(): boolean;
+  sendQuickChat?(index: number): boolean;
+  markTarget?(): boolean;
   /** Online play, when connected: mouse turns and shots go to the game server. */
   readonly online?: { addLook(yaw: number, pitch: number): void; canFire(): boolean; queueFire(): void } | null;
 }

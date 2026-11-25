@@ -20,6 +20,8 @@ export const NAME_LIMIT = 16;
 export const ROOM_CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ';
 export const ROOM_CODE_LENGTH = 4;
 
+import { cleanSignal } from '../core/TeamSignals.js';
+
 const FLIGHT_KEYS = /** @type {const} */ (['left', 'right', 'up', 'down', 'forward', 'backward', 'yawLeft', 'yawRight', 'pitchUp', 'pitchDown', 'rollLeft', 'rollRight']);
 const WEAPONS = new Set(['pulse', 'laser', 'missile', 'plasma']);
 
@@ -48,7 +50,8 @@ const finite = value => typeof value === 'number' && Number.isFinite(value);
 /** @typedef {{t: 'hello', protocol: number, name: string, room: string | null, mode: 'anarchy' | 'coop', map: string | null}} HelloMessage */
 /** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null, interact: boolean}} InputMessage */
 /** @typedef {{t: 'ping', time: number}} PingMessage */
-/** @typedef {HelloMessage | InputMessage | PingMessage} ClientMessage */
+/** @typedef {{t: 'signal', signal: import('../core/TeamSignals.js').TeamSignal}} SignalMessage */
+/** @typedef {HelloMessage | InputMessage | PingMessage | SignalMessage} ClientMessage */
 
 /** Parse and clean one client frame. Unknown fields are dropped and amounts clamped,
  * so the server never trusts a client's numbers.
@@ -79,6 +82,10 @@ export function parseClientMessage(text) {
     const look = Array.isArray(raw.look) ? raw.look : [];
     return { ok: true, message: { t: 'input', seq: raw.seq, input, look: [clampLook(look[0]), clampLook(look[1])], fire: raw.fire === true,
       weapon: WEAPONS.has(raw.weapon) ? raw.weapon : null, interact: raw.interact === true } };
+  }
+  if (raw.t === 'signal') {
+    const signal = cleanSignal(raw);
+    return signal ? { ok: true, message: { t: 'signal', signal } } : { ok: false, error: 'bad-signal' };
   }
   if (raw.t === 'ping') return { ok: true, message: { t: 'ping', time: finite(raw.time) ? raw.time : 0 } };
   return { ok: false, error: 'unknown-type' };

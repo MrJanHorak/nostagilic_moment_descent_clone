@@ -20,7 +20,9 @@ import ControlBindings from './core/ControlBindings.js';
 import StoryController from './core/StoryController.js';
 import { describeMissionStatus } from './core/MissionStatus.js';
 import AnarchyMatch from './core/AnarchyMatch.js';
-import CoopMatch, { enemyToughness } from './core/CoopMatch.js';
+import CoopMatch, { PER_PILOT_PICKUPS, enemyToughness } from './core/CoopMatch.js';
+import { QUICK_CHAT, SignalLimiter, aimPoint, cleanSignal } from './core/TeamSignals.js';
+import TeamMarkers from './ui/TeamMarkers.js';
 import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
 import createOnlineLobby from './ui/OnlineLobby.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
@@ -53,6 +55,11 @@ export default class Game {
     this.coop = null;
     /** Whether the next start (and restarts) is co-op. */
     this.coopMode = false;
+    /** Pings and wrecks drawn in the world. */
+    this.teamMarkers = new TeamMarkers(this.scene);
+    /** Quick-chat strip open (number keys send a phrase instead of switching weapons). */
+    this.quickChatOpen = false;
+    this.signalLimiter = new SignalLimiter();
     /** A game server's simulation: the host's own ship never flies, fights or scores. */
     this.dedicated = false;
     /** Online Anarchy: the connection to the game server, while in a room. @type {OnlineMatch | null} */
@@ -175,6 +182,8 @@ export default class Game {
     this.mission = null;
     this.anarchy = null;
     this.coop = null;
+    this.teamMarkers?.clear();
+    this.closeQuickChat?.();
     this.story?.dispose();
     this.story = null;
     this.exploration = null;
@@ -286,6 +295,8 @@ export default class Game {
       this.coop = coop && !endless && this.mission ? new CoopMatch(this.spaceship.group.position) : null;
       if (this.coop) for (const pilot of this.team()) this.coop.join(pilot.id);
       this.enemyManager.toughness = this.coop ? enemyToughness(this.team().length) : 1;
+      // Co-op: everyone gets their own share of ammunition pickups.
+      this.powerUpManager.perPilot = this.coop ? PER_PILOT_PICKUPS : null;
       if (this.anarchy) for (const pilot of this.gameState.pilots) {
         if (pilot.local && this.dedicated) continue;
         this.armPilot(pilot); this.anarchy.standing(pilot.id);
@@ -349,6 +360,7 @@ export default class Game {
     this.diagnostics.invalidateCapture?.('Paused during capture');
     this.stepper.reset();
     this.session.transition('paused');
+    this.closeQuickChat();
     this.online?.holdStill();
     this.inputManager.clearKeys();
     this.audioManager.setPaused(true);
@@ -667,7 +679,7 @@ export default class Game {
     this.powerUpManager.update(delta);
     if (!this.online) this.updateAnarchy();
     if (this.session.phase !== 'playing') return;
-    this.updateCoop();
+    this.updateCoop(delta);
     if (this.session.phase !== 'playing') return;
     this.updateMission();
     if (this.session.phase !== 'playing') return;
@@ -720,25 +732,106 @@ export default class Game {
     if (ship) this.enemyManager.effectsManager?.createExplosion?.(ship.group.position.clone(), 0xffaa33, true, 3);
     if (ship && !pilot.local) ship.group.visible = false;
     if (pilot.local) this.spaceship.velocity.set(0, 0, 0);
-    const queued = coop.recordDown(pilot.id, this.session.timeMs);
+    const queued = coop.recordDown(pilot.id, this.session.timeMs, ship?.group.position);
     const seconds = Math.round(coop.rules.respawnMs / 1000);
-    if (pilot.local) this.uiManager?.showMessage(queued ? `SHIP LOST · Respawning at ${coop.checkpointLabel ?? 'the drop point'} in ${seconds}s · ${coop.lives} team lives left` : 'SHIP LOST · No team lives left · Your wingmates fly on', 3000, '#ff7755');
+    if (pilot.local) this.uiManager?.showMessage(queued ? `SHIP LOST · Respawning at ${coop.checkpointLabel ?? 'the drop point'} in ${seconds}s · ${coop.lives} team lives left` : 'SHIP LOST · No team lives left · A wingmate can revive you at your wreck', 3000, '#ff7755');
     else this.uiManager?.showMessage(queued ? `${pilot.id.toUpperCase()} DOWN · back in ${seconds}s · ${coop.lives} team lives left` : `${pilot.id.toUpperCase()} DOWN · no team lives left`, 2200, '#ffaa66');
     if (coop.checkWipe(this.team())) this.die('combat');
     return true;
   }
 
-  /** Co-op each step: robot toughness for the team size, respawns, and the wipe check. */
-  updateCoop() {
+  /** Co-op each step: robot toughness for the team size, revives, respawns, and the wipe check.
+   * @param {number} [delta] seconds */
+  updateCoop(delta = 1 / 60) {
     const coop = this.coop;
     if (!coop || this.online || this.session.phase !== 'playing') return;
     const team = this.team();
     this.enemyManager.toughness = enemyToughness(team.length);
+    for (const revive of coop.updateRevives(team, delta * 1000)) {
+      const pilot = this.gameState.pilot(revive.id);
+      if (pilot) this.reviveTeamPilot(pilot, revive.position, revive.by);
+    }
     for (const id of coop.dueRespawns(this.session.timeMs)) {
       const pilot = this.gameState.pilot(id);
       if (pilot) this.respawnTeamPilot(pilot);
     }
     if (coop.checkWipe(team)) this.die('combat');
+  }
+
+  /** A teammate stayed by the wreck: back in where they fell, with half shields and
+   * the weapons they had. @param {import('./core/Pilot.js').default} pilot
+   * @param {THREE.Vector3} position @param {string} by */
+  reviveTeamPilot(pilot, position, by) {
+    const coop = this.coop;
+    if (!coop) return;
+    pilot.alive = true; pilot.health = Math.min(pilot.maxHealth, coop.rules.reviveHealth); pilot.input = {};
+    const ship = pilot.local ? this.spaceship : pilot.ship;
+    if (ship) { ship.velocity.set(0, 0, 0); ship.group.visible = true; ship.group.position.copy(position); }
+    if (pilot.local) { this.gameState.playerVelocity = this.spaceship.velocity; this.uiManager?.updateHUD(); this.uiManager?.showMessage(`REVIVED by ${by.toUpperCase()} · Half shields`, 2000, '#45ff96'); }
+    else this.uiManager?.showMessage(by === this.gameState.localPilot.id ? `You revived ${pilot.id.toUpperCase()}` : `${pilot.id.toUpperCase()} revived`, 1800, '#45ff96', 70);
+  }
+
+  /** Quick-chat: open or close the phrase strip. */
+  toggleQuickChat() {
+    if (this.quickChatOpen) { this.closeQuickChat(); return false; }
+    if (this.session.phase !== 'playing') return false;
+    this.quickChatOpen = true;
+    this.uiManager?.showQuickChat?.(QUICK_CHAT);
+    return true;
+  }
+
+  closeQuickChat() {
+    if (!this.quickChatOpen) return;
+    this.quickChatOpen = false;
+    this.uiManager?.hideQuickChat?.();
+  }
+
+  /** Send phrase `index` from the open strip. @param {number} index */
+  sendQuickChat(index) {
+    this.closeQuickChat();
+    return this.sendSignal({ kind: 'quick', phrase: index });
+  }
+
+  /** Ping the point the ship is aiming at. */
+  markTarget() {
+    if (this.session.phase !== 'playing' || !this.gameState.localPilot.alive) return false;
+    return this.sendSignal({ kind: 'mark', p: aimPoint(this.spaceship.group.position, this.spaceship.group.quaternion, this.levelManager?.solidColliders ?? []) });
+  }
+
+  /** Online the server relays the signal to the room (and back here); offline it shows at once.
+   * @param {any} raw */
+  sendSignal(raw) {
+    const signal = cleanSignal(raw);
+    if (!signal) return false;
+    if (this.online) return this.online.sendSignal(signal);
+    if (!this.signalLimiter.allow(this.gameState.localPilot.id, this.session.timeMs)) return false;
+    this.showSignal(this.gameState.localPilot.id, signal);
+    return true;
+  }
+
+  /** Show a teammate's (or our own) signal: a line in their colour, and a marker for pings.
+   * @param {string} from @param {import('./core/TeamSignals.js').TeamSignal} signal */
+  showSignal(from, signal) {
+    const name = this.online?.nameOf(from) ?? (from === this.gameState.localPilot.id ? 'You' : from.toUpperCase());
+    const colour = this.online?.colours.get(from) ?? (from === this.gameState.localPilot.id ? 0x45ff96 : 0xffce77);
+    const css = `#${colour.toString(16).padStart(6, '0')}`;
+    if (signal.kind === 'quick') this.uiManager?.showMessage(`${name}: ${QUICK_CHAT[signal.phrase]}`, 2600, css, -60);
+    else {
+      this.teamMarkers.mark(from, signal.p, colour, this.wallClock());
+      this.uiManager?.showMessage(`${name} marked a spot`, 1600, css, -60);
+    }
+    this.audioManager?.playSound?.('weaponSwitch', { volume: 0.25 });
+  }
+
+  /** Real time for presentation (markers keep fading while paused). */
+  wallClock() { return globalThis.performance?.now?.() ?? Date.now(); }
+
+  /** Each frame: animate pings and show wrecks (from the server when online). */
+  updateTeamMarkers() {
+    const wrecks = this.online ? (this.online.coopState?.wrecks ?? [])
+      : this.coop ? [...this.coop.wrecks].map(([id, wreck]) => ({ id, p: wreck.position.toArray(), progress: wreck.progressMs / this.coop.rules.reviveMs })) : [];
+    this.teamMarkers.syncWrecks(wrecks, id => this.online?.colours.get(id) ?? 0xffaa66);
+    this.teamMarkers.update(this.wallClock());
   }
 
   /** Back in at the team's checkpoint with full shields and the mission's starting ammunition.
@@ -931,6 +1024,7 @@ export default class Game {
       this.inputManager?.pollGamepad?.();
       this.advanceFrame(this.clock.getDelta());
       this.online?.frame();
+      this.updateTeamMarkers();
       if (this.shipView && this.levelManager) {
         const aim = this.shipView.update(this.levelManager.solidColliders);
         this.uiManager?.updateShipView?.(aim);

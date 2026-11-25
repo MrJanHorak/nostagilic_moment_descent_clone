@@ -45,6 +45,8 @@ test('a two-pilot co-op mission: tougher robots, shared lives, relay checkpoint,
   assert.ok(Math.abs(before - robot.health - 1) < 1e-9, 'a 1.6 hit does 1 damage for a team of two');
 
   // The local pilot goes down: the session goes on and they come back at the checkpoint.
+  // (The wingmate flies off, or they would revive the wreck first.)
+  wing.ship.group.position.copy(game.coop.spawn).add(new THREE.Vector3(0, 0, -30)); wing.input = {};
   game.gameState.takeDamage(1000);
   assert.equal(game.session.phase, 'playing'); assert.equal(game.gameState.localPilot.alive, false);
   assert.equal(game.coop.lives, 3);

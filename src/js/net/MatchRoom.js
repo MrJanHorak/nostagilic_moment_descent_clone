@@ -1,4 +1,5 @@
 import createHeadlessGame, { disposeHeadlessGame } from './HeadlessGame.js';
+import { SignalLimiter } from '../core/TeamSignals.js';
 import { MAX_COOP_PLAYERS, MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQuaternion, packVector } from './Protocol.js';
 
 /** Seconds between the end of a match and the automatic rematch. */
@@ -31,6 +32,7 @@ export default class MatchRoom {
     /** Enemy shots already announced. @type {WeakSet<object>} */ this.seenEnemyShots = new WeakSet();
     /** Relays already announced. @type {Set<string>} */ this.announcedRelays = new Set();
     /** Pilots announced as down. @type {Set<string>} */ this.downIds = new Set();
+    this.signals = new SignalLimiter();
     /** @type {Map<string, RoomPlayer>} */ this.players = new Map();
     /** Events since the last snapshot. @type {RoomEvent[]} */ this.events = [];
     this.tick = 0; this.nextId = 1; this.seed = 0;
@@ -116,6 +118,13 @@ export default class MatchRoom {
     this.tick++;
   }
 
+  /** A pilot's quick-chat or ping, to relay to the room; null when they signal too fast.
+   * @param {string} id @param {import('../core/TeamSignals.js').TeamSignal} signal */
+  signal(id, signal) {
+    if (!this.players.has(id) || !this.signals.allow(id, this.tick * STEP * 1000)) return null;
+    return { t: 'signal', from: id, ...signal };
+  }
+
   /** Co-op bookkeeping after a step: new robot shots, pilots who went down, relays opened. */
   noteCoop() {
     const game = this.game;
@@ -155,6 +164,7 @@ export default class MatchRoom {
       ready: !!mission?.ready, escapeMs: mission?.remainingEscapeMs(game.session.timeMs) ?? null,
       lives: coop.lives, respawnInMs: respawnAt === undefined ? null : Math.max(0, respawnAt - game.session.timeMs),
       checkpoint: coop.checkpointLabel, toughness: game.enemyManager.toughness,
+      wrecks: [...coop.wrecks].map(([id, wreck]) => ({ id, p: packVector(wreck.position), progress: Math.round(wreck.progressMs / coop.rules.reviveMs * 100) / 100 })),
       logs: story ? [...story.foundLogs] : [], aboard: story ? [...story.aboard] : [],
       phase: game.session.phase,
     };
@@ -179,7 +189,7 @@ export default class MatchRoom {
       pilots,
       pickups: game.powerUpManager.powerups.map(/** @param {any} powerup */ powerup => powerup.spawnId).filter(Boolean),
       // Placed pickups someone has taken and that are waiting to return (clients hide these).
-      taken: game.powerUpManager.takenIds(),
+      taken: game.powerUpManager.takenIds(forId),
       coop: this.coopState(forId),
       match: match ? { over: match.over, winner: match.winnerId, fragLimit: match.rules.fragLimit, timeLeftMs: Math.max(0, match.rules.timeLimitMs - game.session.timeMs),
         standings: match.standings(), respawnInMs: match.respawns.has(forId) ? Math.max(0, /** @type {number} */ (match.respawns.get(forId)) - game.session.timeMs) : null,

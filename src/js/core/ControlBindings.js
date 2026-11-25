@@ -2,7 +2,7 @@ export const CONTROLS_KEY = 'descended.controls.v1';
 
 /** @typedef {'forward' | 'backward' | 'left' | 'right' | 'up' | 'down' | 'yawLeft' | 'yawRight' | 'pitchUp' | 'pitchDown'
  *   | 'rollLeft' | 'rollRight' | 'fire' | 'interact' | 'map' | 'cameraView' | 'headlights' | 'showHUD'
- *   | 'missionLog' | 'weapon1' | 'weapon2' | 'weapon3' | 'weapon4'} ControlAction */
+ *   | 'missionLog' | 'quickChat' | 'markTarget' | 'weapon1' | 'weapon2' | 'weapon3' | 'weapon4'} ControlAction */
 /** @typedef {{ id: ControlAction, label: string, group: 'Flight' | 'Turning' | 'Actions' | 'Weapons', hold: boolean }} ControlDefinition */
 /** @typedef {Readonly<Record<ControlAction, readonly string[]>>} KeyBindings */
 /** @typedef {{ bindings: KeyBindings, stickSensitivity: number, invertStickY: boolean }} ControlValues */
@@ -29,6 +29,8 @@ export const CONTROL_ACTIONS = Object.freeze([
   { id: 'headlights', label: 'Headlights', group: 'Actions', hold: false },
   { id: 'showHUD', label: 'Toggle HUD', group: 'Actions', hold: false },
   { id: 'missionLog', label: 'Mission log (pause)', group: 'Actions', hold: false },
+  { id: 'quickChat', label: 'Quick-chat (then 1–8)', group: 'Actions', hold: false },
+  { id: 'markTarget', label: 'Ping where you aim', group: 'Actions', hold: false },
   { id: 'weapon1', label: 'Pulse cannon', group: 'Weapons', hold: false },
   { id: 'weapon2', label: 'Laser', group: 'Weapons', hold: false },
   { id: 'weapon3', label: 'Missiles', group: 'Weapons', hold: false },
@@ -45,6 +47,7 @@ export const DEFAULT_BINDINGS = Object.freeze({
   rollLeft: Object.freeze(['KeyQ']), rollRight: Object.freeze(['KeyE']),
   fire: Object.freeze(['KeyF']), interact: Object.freeze(['KeyR']), map: Object.freeze(['KeyM']),
   cameraView: Object.freeze(['KeyC']), headlights: Object.freeze(['KeyL']), showHUD: Object.freeze(['KeyH']), missionLog: Object.freeze(['KeyJ']),
+  quickChat: Object.freeze(['KeyT']), markTarget: Object.freeze(['KeyG']),
   weapon1: Object.freeze(['Digit1']), weapon2: Object.freeze(['Digit2']), weapon3: Object.freeze(['Digit3']), weapon4: Object.freeze(['Digit4']),
 });
 

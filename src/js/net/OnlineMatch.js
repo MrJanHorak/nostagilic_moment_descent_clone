@@ -122,6 +122,7 @@ export default class OnlineMatch {
   handle(message) {
     if (message.t === 'snapshot') this.onSnapshot(message);
     else if (message.t === 'roster') this.onRoster(message.players);
+    else if (message.t === 'signal') { const { from, kind, phrase, p } = message; this.game.showSignal?.(from, kind === 'quick' ? { kind, phrase } : { kind, p }); }
     else if (message.t === 'pong') this.rttMs = Math.max(0, this.now() - message.time);
     else if (message.t === 'error') console.warn('Game server:', message.error);
   }
@@ -174,6 +175,14 @@ export default class OnlineMatch {
   /** Shots are limited to the server's rate, so every shot drawn here is a real one. */
   canFire() { return this.now() - this.lastFireAt >= MIN_FIRE_INTERVAL_MS; }
   queueFire() { this.fireQueued = true; this.lastFireAt = this.now(); }
+  /** Quick-chat or a ping, relayed by the server to everyone (including us).
+   * @param {import('../core/TeamSignals.js').TeamSignal} signal */
+  sendSignal(signal) {
+    if (!this.id || !this.socket || this.socket.readyState !== 1) return false;
+    this.send({ t: 'signal', ...signal });
+    return true;
+  }
+
   /** The relay key goes with the next input (co-op). */
   queueInteract() { this.interactQueued = true; }
 

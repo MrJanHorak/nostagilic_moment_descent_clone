@@ -55,6 +55,8 @@
     "src/js/core/Pilot.js",
     "src/js/core/AnarchyMatch.js",
     "src/js/core/CoopMatch.js",
+    "src/js/core/TeamSignals.js",
+    "src/js/ui/TeamMarkers.js",
     "src/js/core/levels/Anarchy.js",
     "src/js/net/Protocol.js",
     "src/js/net/ClientPrediction.js",

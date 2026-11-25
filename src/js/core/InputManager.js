@@ -102,6 +102,11 @@ class InputManager {
     const playing = this.gameState.session.phase === 'playing';
     // Bound keys (Space, arrows...) must not scroll the page or trigger browser shortcuts in flight.
     if (playing && action) event.preventDefault?.();
+    // Quick-chat open: number keys send a phrase instead of switching weapons.
+    const quick = /^Digit([1-8])$/.exec(event.code ?? '');
+    if (playing && quick && this.game?.quickChatOpen && !event.repeat) {
+      event.preventDefault?.(); this.game.sendQuickChat?.(Number(quick[1]) - 1); return;
+    }
     // Always set keyStates, even if pointer lock is not active
     this.keyStates[event.code] = true;
 
@@ -130,6 +135,8 @@ class InputManager {
       case 'interact': this.game?.interact?.(); break;
       case 'map': this.game?.toggleMap?.(); break;
       case 'missionLog': this.game?.openMissionLog?.(); break;
+      case 'quickChat': this.game?.toggleQuickChat?.(); break;
+      case 'markTarget': this.game?.markTarget?.(); break;
       case 'cameraView': case 'headlights': case 'showHUD': this.game?.toggleShipOption?.(action); break;
       case 'weapon1': case 'weapon2': case 'weapon3': case 'weapon4':
         this.gameState.switchWeapon(WEAPONS[Number(action.slice(6)) - 1]); break;

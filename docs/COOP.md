@@ -1,13 +1,13 @@
 # Co-op (Phase 4)
 
-Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps; steps 1–3 are done.
+Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps; steps 1–4 are done.
 
 | Step | What | Status |
 | --- | --- | --- |
 | 1 | Co-op rules in the simulation: shared lives, relay respawns, team extraction, per-pilot hazards and story, robot scaling | Done (November 25) |
 | 2 | Co-op rooms on the game server: missions, robots and mission state in snapshots, relay key | Done (November 25) |
 | 3 | Co-op in the browser: puppet robots, shared relays, robot fire, team HUD, lobby mission choice | Done (November 25) |
-| 4 | Team-play polish: map pings and quick-chat, tow a disabled wingmate, per-player ammo pickups | Planned |
+| 4 | Team-play polish: quick-chat, map pings, revive a downed wingmate, per-player ammo pickups | Done (November 25) |
 | 5 | 2–3 missions designed for teams (two-relay "hold together" objectives, split routes) | Planned |
 
 ## Rules (`src/js/core/CoopMatch.js`)
@@ -25,6 +25,23 @@ Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps
 - **Relays:** any pilot can activate a relay (`Game.pilotInteract(id)`).
 - **Menus:** `startSession({ coop: true })` starts co-op, and restarts keep it. Choosing a mission from the menu is solo again.
 
+## Team play (step 4)
+
+- **Quick-chat** (T, then 1–8): eight fixed phrases: *Follow me, Wait for me, Need repairs, Robot here!, Relay here, On my way, Heading to extraction, Thanks!* (`src/js/core/TeamSignals.js`).
+  - While the strip is open, number keys send a phrase instead of switching weapons. T closes it, and pausing closes it too.
+  - Fixed phrases mean there is no free text to moderate.
+- **Pings** (G): mark the point you aim at, the first wall along your nose or 80 units ahead.
+  - Everyone sees a ring and a beam in your colour, drawn through walls, for 8 s. A new ping replaces your old one (`src/js/ui/TeamMarkers.js`).
+- **Rate limit:** one signal per pilot every 750 ms, on the server and offline.
+- **Revive:** a downed pilot leaves a wreck marker. A living teammate within 4 units for 3 s brings them back where they fell, with half shields and the weapons they had.
+  - Progress drains at half speed when the teammate moves away, and the ring shrinks as the revive fills.
+  - A revive costs no life. If the pilot was waiting to respawn, the respawn is cancelled and its life refunded.
+  - With no lives left, a revive is the only way back.
+- **Ammunition for everyone:** in co-op, pulse ammunition, ammo pickups and weapon salvage (`PER_PILOT_PICKUPS`) can be collected once by every pilot.
+  - The pickup stays in the world for the others and disappears from your screen once you take it. Repairs and boosts still go to whoever reaches them first.
+  - Online, the server lists your taken shares in your own `taken`.
+- **Keys:** `quickChat` (T) and `markTarget` (G) are remappable in Settings → Controls.
+
 ## Game server
 
 A new room plays Anarchy by default; `hello` may ask for `mode: 'coop'` and a `map` (a mission id, default Asterion Deepworks). Joining a room takes its mode and map. Co-op rooms hold 4 pilots; an unknown mission is refused with `unknown-map`.
@@ -36,6 +53,8 @@ A new room plays Anarchy by default; `hello` may ask for `mode: 'coop'` and a `m
   - `defeated` robot ids and activated `relays`;
   - `ready`, `escapeMs`, team `lives`, your `respawnInMs`, the `checkpoint` label and robot `toughness`;
   - recovered `logs` and rescued miners (`aboard`), and the mission `phase`.
+- **Signals:** a client sends `{t:'signal', kind:'quick', phrase}` or `{t:'signal', kind:'mark', p}`; the server relays `{t:'signal', from, ...}` to everyone in the room at once (outside snapshots), or drops it when the pilot signals too fast. Bad signals get `bad-signal`.
+- Snapshot `coop.wrecks` lists `{id, p, progress}` for wrecks a teammate can revive.
 - **Events:** `eshot` (robot fire: kind, position, velocity), `down`, `relay` (with who opened it), `respawn`, `mission-over` (`extracted` or `failed`).
 - `taken` now lists every named pickup placed this attempt that is gone, including robot salvage (named `salvage:<robot id>` on every machine).
 
@@ -64,6 +83,7 @@ Choose **PLAY ONLINE · ANARCHY & CO-OP**, then pick a mission under *New room p
   - robot fire events;
   - the server creating co-op rooms and refusing unknown maps;
   - live: a headless client game joins a co-op room with a second pilot. Robots stay near the server's, a relay opened by the wingmate opens here, a robot destroyed on the server disappears here, drawn robot fire never hurts the ship, local shots never damage robots, and the server's failure and restart reach the client.
+- `tests/team-play.test.mjs` (4): signal cleaning, aim points stopping at walls and the rate limit; revive progress, draining, refunds and revives with no lives; in a mission: reviving a wingmate at their wreck, per-pilot ammunition and first-come repairs, quick-chat keys not switching weapons, and pings that fade; the server relaying signals with a rate limit and listing wrecks.
 - `tests/browser/online-lobby.spec.js` adds a co-op room for Signal Breach with team lives in the HUD.
 
 ## Known gaps

@@ -250,6 +250,8 @@ class PowerUpManager {
     this.remoteTaken = null;
     /** Named pickups that have been placed this attempt (placed items and robot salvage). @type {Set<string>} */
     this.seenSpawnIds = new Set();
+    /** Co-op: these pickup types can be collected once by every pilot (ammunition). @type {ReadonlySet<string> | null} */
+    this.perPilot = null;
     this.nextId = 0;
   }
 
@@ -351,10 +353,10 @@ class PowerUpManager {
    * @returns {{position: THREE.Vector3, state: any, ui: any, local: boolean}[]} */
   collectors() {
     const local = this.gameState?.localPilot ?? null, list = [];
-    if (!local || local.alive) list.push({ position: this.playerTransform.getWorldPosition(new THREE.Vector3()), state: this.gameState, ui: this.uiManager, local: true });
+    if (!local || local.alive) list.push({ id: local?.id ?? 'local', position: this.playerTransform.getWorldPosition(new THREE.Vector3()), state: this.gameState, ui: this.uiManager, local: true });
     for (const pilot of this.gameState?.pilots ?? []) {
       if (pilot === local || !pilot.alive || !pilot.ship) continue;
-      list.push({ position: pilot.ship.group.position.clone(), state: pilotPickupState(this.gameState, pilot), ui: SILENT_UI, local: false });
+      list.push({ id: pilot.id, position: pilot.ship.group.position.clone(), state: pilotPickupState(this.gameState, pilot), ui: SILENT_UI, local: false });
     }
     return list;
   }
@@ -392,7 +394,9 @@ class PowerUpManager {
       powerup.mesh.children[1].rotation.x += powerup.rotationSpeed * delta * 0.7;
       powerup.mesh.children[1].rotation.z += powerup.rotationSpeed * delta * 0.5;
       // The first pilot in reach who can use it takes it (0.5 is about a ship's radius).
-      const collector = collectors.find(candidate => powerup.mesh.position.distanceTo(candidate.position) < powerup.collisionRadius + 0.5 &&
+      const shared = !!this.perPilot?.has(powerup.type.name);
+      const collector = collectors.find(candidate => !(shared && powerup.collectedBy?.has(candidate.id)) &&
+        powerup.mesh.position.distanceTo(candidate.position) < powerup.collisionRadius + 0.5 &&
         (powerup.type.canCollect?.(candidate.state) ?? true) &&
         hasLineOfSight(candidate.position, powerup.mesh.position, this.levelManager?.solidColliders));
       if (collector) {
@@ -403,6 +407,12 @@ class PowerUpManager {
           this.audioManager.playSound('powerup', { volume: 0.5 });
         }
 
+        if (shared) {
+          // Everyone gets their own share: it stays for the others, and disappears for this pilot.
+          (powerup.collectedBy ??= new Set()).add(collector.id);
+          if (collector.local) powerup.mesh.visible = false;
+          continue;
+        }
         if (powerup.spawnId && this.respawnMs !== null) this.respawnAt.set(powerup.spawnId, (this.gameState.session?.timeMs ?? 0) + this.respawnMs);
         // Remove power-up
         this.removePowerup(powerup.id);
@@ -486,10 +496,14 @@ class PowerUpManager {
     }
   }
 
-  /** Named pickups placed this attempt that are gone now (collected; a placed one may return later). */
-  takenIds() {
+  /** Named pickups placed this attempt that are gone now (collected; a placed one may return later).
+   * With a pilot id, also the per-pilot ammunition that pilot has already taken (co-op).
+   * @param {string} [forId] */
+  takenIds(forId) {
     const present = new Set(this.powerups.map(powerup => powerup.spawnId).filter(Boolean));
-    return [...this.seenSpawnIds].filter(id => !present.has(id));
+    const taken = [...this.seenSpawnIds].filter(id => !present.has(id));
+    if (forId) for (const powerup of this.powerups) if (powerup.spawnId && powerup.collectedBy?.has(forId)) taken.push(powerup.spawnId);
+    return taken;
   }
 
   clear() {

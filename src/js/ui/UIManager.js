@@ -1536,6 +1536,25 @@ class UIManager {
     }
   }
 
+  /** The quick-chat strip: numbered phrases; the next number key sends one.
+   * @param {readonly string[]} phrases */
+  showQuickChat(phrases) {
+    this.quickChat?.remove();
+    const strip = document.createElement('aside');
+    strip.id = 'quick-chat'; strip.setAttribute('aria-label', 'Quick-chat');
+    Object.assign(strip.style, { position: 'fixed', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: '150', padding: '10px 14px',
+      background: '#001624e6', border: '1px solid #45e5ed', borderRadius: '6px', color: '#e3fbff', font: '14px Arial, sans-serif', lineHeight: '1.6', pointerEvents: 'none' });
+    const title = document.createElement('strong'); title.textContent = 'QUICK-CHAT · press a number'; title.style.display = 'block';
+    strip.append(title, ...phrases.map((phrase, index) => { const line = document.createElement('div'); line.textContent = `${index + 1}  ${phrase}`; return line; }));
+    const close = document.createElement('small'); close.textContent = `${this.boundKey('quickChat', 'KeyT')} closes`; close.style.color = '#9fc6d6';
+    strip.append(close);
+    document.body.appendChild(strip);
+    this.transientElements.add(strip);
+    this.quickChat = strip;
+  }
+
+  hideQuickChat() { this.quickChat?.remove(); this.quickChat = null; }
+
   /** Online co-op result: the server restarts the mission by itself.
    * @param {string} title @param {string} detail */
   showOnlineMissionResult(title, detail) {

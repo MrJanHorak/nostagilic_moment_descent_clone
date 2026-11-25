@@ -80,6 +80,10 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
         return;
       }
       if (message.t === 'input' && pilotId) entry.room.input(pilotId, message);
+      if (message.t === 'signal' && pilotId) {
+        const relay = entry.room.signal(pilotId, message.signal);
+        if (relay) for (const other of entry.sockets.values()) send(other, relay);
+      }
     });
     connection.on('close', () => {
       clearTimeout(timer);
