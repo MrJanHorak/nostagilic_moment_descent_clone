@@ -18,6 +18,10 @@ import { DIFFICULTIES, scaleEnemyHealth, scaleFireInterval } from '../core/Diffi
 import { MINE_BOMBER, advanceBomberAttack, bomberCommitted, createBomberAttack, presentBomberAttack } from './BomberAttack.js';
 import { MINE_SALVAGE } from './EnemySalvage.js';
 
+/** How long a robot keeps its chosen pilot before looking again (simulation ms). */
+export const TARGET_HOLD_MS = 500;
+/** @typedef {import('../combatContracts.js').EnemyTargetChoice} TargetChoice */
+
 /** Mine robots read better slightly smaller than the original tunnel models, next to miners and doorways. */
 export const AUTHORED_ROBOT_SCALE = 0.8;
 
@@ -75,6 +79,9 @@ class EnemyManager {
     this.randomSpawnInterval = 5000; // 5 seconds between spawns in endless mode
   }
 
+  /** Gameplay randomness from the session seed (Math.random only without a session). */
+  random() { return this.gameState?.session?.random?.() ?? Math.random(); }
+
   /** Difficulty snapshot for the current run; Pilot when no game state provides one. */
   get difficulty() { return this.gameState?.difficulty ?? DIFFICULTIES.pilot; }
 
@@ -95,15 +102,61 @@ class EnemyManager {
     this.levelSegments = segments;
   }
 
+  /** Pilots robots can target: the local ship (this manager's transform) and any
+   * other live pilot with a ship. @returns {{id: string, transform: Pick<THREE.Object3D, 'position'>, pilot: import('../core/Pilot.js').default | null}[]} */
+  targets() {
+    const local = this.gameState.localPilot ?? null, list = [];
+    if (!local || local.alive) list.push({ id: local?.id ?? 'local', transform: this.playerTransform, pilot: local });
+    for (const pilot of this.gameState.pilots ?? []) if (pilot !== local && pilot.alive && pilot.ship) list.push({ id: pilot.id, transform: pilot.ship.group, pilot });
+    return list;
+  }
+
+  /** Pick the nearest pilot this robot can see, else the nearest live one. The choice
+   * holds for half a second so a robot does not flicker between two ships.
+   * @param {import('../combatContracts.js').EnemyShooter & {target?: TargetChoice, targetUntil?: number}} enemy */
+  chooseTarget(enemy) {
+    const now = this.gameState.session.timeMs, targets = this.targets();
+    const current = targets.find(candidate => candidate.id === enemy.target?.id);
+    if (current && now < (enemy.targetUntil ?? 0)) { enemy.target = current; return current; }
+    const colliders = this.levelManager?.solidColliders;
+    let best = null, bestVisible = false, bestDistance = Infinity;
+    for (const candidate of targets) {
+      const distance = enemy.mesh.position.distanceTo(candidate.transform.position);
+      const visible = hasLineOfSight(enemy.mesh.position, candidate.transform.position, colliders);
+      if ((visible && !bestVisible) || (visible === bestVisible && distance < bestDistance)) { best = candidate; bestVisible = visible; bestDistance = distance; }
+    }
+    enemy.target = best ?? undefined; enemy.targetUntil = now + TARGET_HOLD_MS;
+    return best;
+  }
+
+  /** The transform this robot is attacking: its chosen pilot, or the local ship.
+   * @param {import('../combatContracts.js').EnemyShooter & {target?: TargetChoice}} enemy */
+  aimOf(enemy) { return enemy.target?.transform ?? this.playerTransform; }
+
+  /** Damage the pilot this robot is attacking.
+   * @param {import('../combatContracts.js').EnemyShooter & {target?: TargetChoice}} enemy @param {number} amount */
+  damageTarget(enemy, amount) {
+    const pilot = enemy.target?.pilot;
+    if (pilot && pilot !== this.gameState.localPilot) this.gameState.takeDamage(amount, pilot);
+    else this.gameState.takeDamage(amount);
+  }
+
+  /** Where the pilot who fired a shot is, if the shot names its owner.
+   * @param {{ownerId?: string} | null | undefined} projectile */
+  shooterPosition(projectile) {
+    const id = projectile?.ownerId;
+    return id ? this.gameState.pilot?.(id)?.position ?? null : null;
+  }
+
   /** @param {import('../combatContracts.js').EnemyShooter} enemy */
   canSeePlayer(enemy) {
-    return hasLineOfSight(enemy.mesh.position, this.playerTransform.position, this.levelManager?.solidColliders);
+    return hasLineOfSight(enemy.mesh.position, this.aimOf(enemy).position, this.levelManager?.solidColliders);
   }
 
   /** @param {import('../combatContracts.js').EnemyInstance} enemy
    * @param {number} delta @param {boolean} visible */
   updateArenaEnemy(enemy, delta, visible) {
-    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position);
+    const direction = this.aimOf(enemy).position.clone().sub(enemy.mesh.position);
     const committed = fighterCommitted(enemy);
     const pursue = !committed && visible && direction.length() < 30 && (enemy.type.name === 'scout' || direction.length() > 8);
     // Legacy type speeds are units/frame at 60 Hz. Keep stored velocity in that convention.
@@ -114,7 +167,7 @@ class EnemyManager {
     moveSphere(enemy.mesh.position, worldVelocity, delta, this.levelManager?.solidColliders ?? [], enemy.collisionRadius);
     enemy.velocity.copy(worldVelocity).divideScalar(60);
     animateEnemy(enemy, delta, this.gameState.session.timeMs / 1000);
-    if (visible) enemy.mesh.lookAt(this.playerTransform.position);
+    if (visible) enemy.mesh.lookAt(this.aimOf(enemy).position);
   }
 
   /** @private @param {import('../combatContracts.js').EnemyInstance} enemy */
@@ -159,17 +212,17 @@ class EnemyManager {
   updateMineEnemy(enemy, delta, visible) {
     const navigation = this.mineNavigation;
     if (!navigation) return;
-    const pursuit = this.minePursuit(enemy);
-    const distance = enemy.mesh.position.distanceTo(this.playerTransform.position);
+    const pursuit = this.minePursuit(enemy), aim = this.aimOf(enemy).position;
+    const distance = enemy.mesh.position.distanceTo(aim);
     const enemyRoom = enemy.type.name === 'fighter' && visible ? navigation.roomAt(enemy.mesh.position) : null;
-    const tactical = enemyRoom !== null && distance < getEnemyFiringRange('fighter') && enemyRoom === navigation.roomAt(this.playerTransform.position);
+    const tactical = enemyRoom !== null && distance < getEnemyFiringRange('fighter') && enemyRoom === navigation.roomAt(aim);
     // A local dodge leaves the old route's starting waypoint behind. Rebuild
     // once on returning to navigation, rather than backtracking or replanning every frame.
     if (pursuit.tactical && !tactical) pursuit.goalRoom = undefined;
     pursuit.tactical = tactical;
     if (visible && distance < 30) {
-      if (pursuit.lastSeen) pursuit.lastSeen.copy(this.playerTransform.position);
-      else pursuit.lastSeen = this.playerTransform.position.clone();
+      if (pursuit.lastSeen) pursuit.lastSeen.copy(aim);
+      else pursuit.lastSeen = aim.clone();
       this.reportMineSighting(enemy, pursuit);
     }
     if (pursuit.lastSeen) {
@@ -197,7 +250,7 @@ class EnemyManager {
     // Bombers hang back to lob; fighters and heavier robots stop at close range.
     const holdDistance = enemy.bomberAttack ? MINE_BOMBER.holdRange : 8;
     const holdRange = fighterCommitted(enemy) || bomberCommitted(enemy) || visible && distance < holdDistance && enemy.type.name !== 'scout';
-    if (tactical) updateFighterMovement(enemy, this.playerTransform.position, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta, true);
+    if (tactical) updateFighterMovement(enemy, aim, this.levelManager?.solidColliders ?? [], navigation, this.gameState.session.timeMs, delta, true);
     else if (target && !holdRange && delta > 0) {
       const travel = target.clone().sub(enemy.mesh.position);
       const speed = Math.min(mineSpeed(enemy), travel.length() / delta);
@@ -206,19 +259,19 @@ class EnemyManager {
       enemy.velocity.copy(velocity).divideScalar(60);
     }
     animateEnemy(enemy, delta, this.gameState.session.timeMs / 1000);
-    if (visible) enemy.mesh.lookAt(this.playerTransform.position);
+    if (visible) enemy.mesh.lookAt(aim);
     else if (target && target.distanceToSquared(enemy.mesh.position) > 1e-6) enemy.mesh.lookAt(target);
   }
 
   /** @param {import('../combatContracts.js').EnemyCombatTarget} enemy
-   * @param {Pick<import('../combatContracts.js').PlayerProjectile, 'power'>} projectile
+   * @param {Pick<import('../combatContracts.js').PlayerProjectile, 'power' | 'ownerId'>} projectile
    * @param {THREE.Vector3} position */
   hitEnemy(enemy, projectile, position) {
     const index = this.enemies.findIndex(candidate => candidate === enemy);
     if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
     const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
     enemy.health -= projectile.power * resistance;
-    if (this.mineNavigation) this.minePursuit(this.enemies[index]).lastSeen = this.playerTransform.position.clone();
+    if (this.mineNavigation) this.minePursuit(this.enemies[index]).lastSeen = (this.shooterPosition(projectile) ?? this.aimOf(enemy).position).clone();
     this.effectsManager.createHitEffect(position.clone());
     if (this.audioManager?.initialized) {
       try { this.audioManager.playSound('hit', { volume: 0.3 }); }
@@ -227,6 +280,8 @@ class EnemyManager {
     if (enemy.health > 0 || !enemy.isActive || !this.enemies.some(candidate => candidate === enemy)) return;
     this.gameState.score += enemy.type.pointValue;
     this.gameState.recordEnemyKill?.(enemy.type.name);
+    const shooter = projectile.ownerId ? this.gameState.pilot?.(projectile.ownerId) : null;
+    if (shooter) shooter.kills++;
     this.destroyEnemy(this.enemies.findIndex(candidate => candidate === enemy));
   }
 
@@ -238,7 +293,7 @@ class EnemyManager {
     // If no specific type requested, choose randomly
     const enemyType = typeName
       ? enemyTypes.find((t) => t.name === typeName)
-      : enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+      : enemyTypes[Math.floor(this.random() * enemyTypes.length)];
     if (!enemyType) throw new RangeError(`Unknown enemy type: ${typeName}`);
 
     // Use the factory to create the enemy
@@ -282,7 +337,7 @@ class EnemyManager {
     // Choose a random segment closer to the player (between 20-60% of the way through the tunnel)
     const segmentIndex =
       Math.floor(validSegments.length * 0.2) +
-      Math.floor(Math.random() * (validSegments.length * 0.4));
+      Math.floor(this.random() * (validSegments.length * 0.4));
 
     if (!validSegments[segmentIndex]) return;
 
@@ -308,7 +363,7 @@ class EnemyManager {
       // If we have alternatives, pick one randomly
       if (trySegments.length > 0) {
         const altSegment =
-          trySegments[Math.floor(Math.random() * trySegments.length)];
+          trySegments[Math.floor(this.random() * trySegments.length)];
         if (altSegment) segment = altSegment;
       }
     }
@@ -342,11 +397,11 @@ class EnemyManager {
     }
 
     // Use more conservative position bounds within the segment
-    const x = (Math.random() - 0.5) * segmentWidth * 0.8;
-    const y = (Math.random() - 0.5) * segmentHeight * 0.8;
+    const x = (this.random() - 0.5) * segmentWidth * 0.8;
+    const y = (this.random() - 0.5) * segmentHeight * 0.8;
 
     // Position along the segment length (avoid edges)
-    const z = -segmentLength * (Math.random() * 0.6 + 0.2); // Position between 20% and 80% through segment
+    const z = -segmentLength * (this.random() * 0.6 + 0.2); // Position between 20% and 80% through segment
 
     // Convert local coordinates to world coordinates
     // Apply the segment's world matrix to get the correct position
@@ -371,7 +426,7 @@ class EnemyManager {
     const enemyTypesForCurrentProgress = this.getEnemyTypesForCurrentProgress();
     const enemyType =
       enemyTypesForCurrentProgress[
-        Math.floor(Math.random() * enemyTypesForCurrentProgress.length)
+        Math.floor(this.random() * enemyTypesForCurrentProgress.length)
       ];
 
     // Create and return the enemy
@@ -436,9 +491,7 @@ class EnemyManager {
       }
 
       // Check if enemy should be visible now (based on player position)
-      const distanceToPlayer = spawnPoint.position.distanceTo(
-        this.playerTransform.position
-      );
+      const distanceToPlayer = Math.min(...this.targets().map(candidate => spawnPoint.position.distanceTo(candidate.transform.position)), Infinity);
 
       // Only spawn if within reasonable distance and not already spawned
       if (persistent || (distanceToPlayer < 50 && distanceToPlayer > 5)) {
@@ -549,22 +602,22 @@ class EnemyManager {
       const enemy = this.enemies[i];
       if (!enemy.isActive) continue;
       const arena = !this.levelManager?.isEndless && this.levelManager?.currentLevel?.kind === 'arena';
+      this.chooseTarget(enemy);
+      const aim = this.aimOf(enemy);
       const visible = this.canSeePlayer(enemy);
 
       // Update enemy position
-      const distanceToPlayer = enemy.mesh.position.distanceTo(
-        this.playerTransform.position
-      );
+      const distanceToPlayer = enemy.mesh.position.distanceTo(aim.position);
 
       // Apply enemy type-specific movement
-      const scout = enemy.type.name === 'scout' ? updateScoutAttack(enemy, this.playerTransform.position, PLAYER_RADIUS,
+      const scout = enemy.type.name === 'scout' ? updateScoutAttack(enemy, aim.position, PLAYER_RADIUS,
         this.levelManager?.solidColliders ?? [], currentTime, delta, visible) : null;
       if (scout?.warning && this.audioManager?.initialized) {
         try { this.audioManager.playSound('enemyCharge', { volume: 0.18 }); }
         catch (error) { console.warn('Unable to play scout warning:', error); }
       }
       if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
-      if (scout?.hit) this.gameState.takeDamage(enemy.type.damage);
+      if (scout?.hit) this.damageTarget(enemy, enemy.type.damage);
       if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
       if (scout?.handled) { /* Movement and aim belong to the committed strike. */ }
       else if (arena && this.mineNavigation) this.updateMineEnemy(enemy, delta, visible);
@@ -573,7 +626,7 @@ class EnemyManager {
         // Get direction to player
         const direction = new THREE.Vector3();
         direction
-          .subVectors(this.playerTransform.position, enemy.mesh.position)
+          .subVectors(aim.position, enemy.mesh.position)
           .normalize();
 
         // Apply movement patterns based on enemy type
@@ -584,9 +637,9 @@ class EnemyManager {
         switch (enemy.type.name) {
           case 'boss': {
             // Boss moves more deliberately with minimal randomness
-            direction.x += (Math.random() - 0.5) * 0.05;
-            direction.y += (Math.random() - 0.5) * 0.05;
-            direction.z += (Math.random() - 0.5) * 0.05;
+            direction.x += (this.random() - 0.5) * 0.05;
+            direction.y += (this.random() - 0.5) * 0.05;
+            direction.z += (this.random() - 0.5) * 0.05;
 
             // Boss tries to maintain a certain distance from player
             const optimalDistance = 15;
@@ -599,15 +652,15 @@ class EnemyManager {
           case 'bomber':
             // Bombers tend to move to positions above the player to drop bombs
             direction.y += 0.1; // Slight upward bias
-            direction.x += (Math.random() - 0.5) * 0.3;
-            direction.z += (Math.random() - 0.5) * 0.1;
+            direction.x += (this.random() - 0.5) * 0.3;
+            direction.z += (this.random() - 0.5) * 0.1;
             break;
 
           case 'destroyer': {
             // Destroyers move more deliberately with less randomness
-            direction.x += (Math.random() - 0.5) * 0.1;
-            direction.y += (Math.random() - 0.5) * 0.1;
-            direction.z += (Math.random() - 0.5) * 0.1;
+            direction.x += (this.random() - 0.5) * 0.1;
+            direction.y += (this.random() - 0.5) * 0.1;
+            direction.z += (this.random() - 0.5) * 0.1;
 
             // Destroyers also prefer a certain engagement distance
             const destroyerOptimalDistance = 10;
@@ -619,9 +672,9 @@ class EnemyManager {
 
           default:
             // Default for scouts and fighters - more erratic movement
-            direction.x += (Math.random() - 0.5) * 0.2;
-            direction.y += (Math.random() - 0.5) * 0.2;
-            direction.z += (Math.random() - 0.5) * 0.2;
+            direction.x += (this.random() - 0.5) * 0.2;
+            direction.y += (this.random() - 0.5) * 0.2;
+            direction.z += (this.random() - 0.5) * 0.2;
         }
 
         // Update velocity with smoothing - different smoothing per enemy type
@@ -637,8 +690,8 @@ class EnemyManager {
         // Apply velocity
         enemy.mesh.position.add(enemy.velocity);
 
-        // Make enemy face the player
-        enemy.mesh.lookAt(this.playerTransform.position);
+        // Make enemy face its target
+        enemy.mesh.lookAt(aim.position);
 
         // Apply animations to enemy mesh based on its type
         animateEnemy(enemy, delta, currentTime / 1000);
@@ -650,9 +703,11 @@ class EnemyManager {
 
       // Check collision with player
       const collisionDistance = arena ? enemy.collisionRadius + PLAYER_RADIUS : enemy.type.size * 2;
-      if (enemy.type.name !== 'scout' && !this.gameState.isGameOver && visible && enemy.mesh.position.distanceTo(this.playerTransform.position) < collisionDistance) {
-        // Player takes damage
-        this.gameState.takeDamage(enemy.type.damage);
+      // Any pilot the robot collides with takes the hit, not only its target.
+      const rammed = enemy.type.name !== 'scout' && !this.gameState.isGameOver && visible
+        ? this.targets().find(candidate => enemy.mesh.position.distanceTo(candidate.transform.position) < collisionDistance) : undefined;
+      if (rammed) {
+        enemy.target = rammed; this.damageTarget(enemy, enemy.type.damage);
         if (!this.isCurrent(generation, sessionId)) return;
 
         // Destroy the enemy
@@ -690,42 +745,42 @@ class EnemyManager {
             .getWorldDirection(new THREE.Vector3())
             .dot(
               new THREE.Vector3()
-                .subVectors(this.playerTransform.position, enemy.mesh.position)
+                .subVectors(aim.position, enemy.mesh.position)
                 .normalize()
             ) > 0;
 
         if (distanceToPlayer < firingRange && inFrontOf && this.canSeePlayer(enemy)) {
-          this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform);
+          this.projectileManager.fireEnemyProjectile(enemy, this.aimOf(enemy));
           enemy.lastFireTime = currentTime;
 
           // Set next fire rate based on enemy type
           if (enemy.type.name === 'bomber') {
             // Bombers fire slower but with more powerful explosives
-            enemy.fireRate = 3000 + Math.random() * 1000;
+            enemy.fireRate = 3000 + this.random() * 1000;
           } else if (enemy.type.name === 'destroyer') {
             // Destroyers fire at medium rate with accurate shots
-            enemy.fireRate = 2000 + Math.random() * 1000;
+            enemy.fireRate = 2000 + this.random() * 1000;
           } else if (enemy.type.name === 'boss') {
             // Boss fires faster and more frequently
-            enemy.fireRate = 800 + Math.random() * 700;
+            enemy.fireRate = 800 + this.random() * 700;
 
             // Boss occasionally fires from multiple weapons at once
-            if (Math.random() < 0.3) {
+            if (this.random() < 0.3) {
               this.gameState.session.schedule(200, () => {
                 if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                   this.projectileManager.fireEnemyProjectile(
                     enemy,
-                    this.playerTransform
+                    this.aimOf(enemy)
                   );
                 }
               });
 
-              if (Math.random() < 0.2) {
+              if (this.random() < 0.2) {
                 this.gameState.session.schedule(400, () => {
                   if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                     this.projectileManager.fireEnemyProjectile(
                       enemy,
-                      this.playerTransform
+                      this.aimOf(enemy)
                     );
                   }
                 });
@@ -733,7 +788,7 @@ class EnemyManager {
             }
           } else {
             // Default fire rate for others
-            enemy.fireRate = 2000 + Math.random() * 1000;
+            enemy.fireRate = 2000 + this.random() * 1000;
           }
         }
       }
@@ -752,7 +807,7 @@ class EnemyManager {
   /** @param {import('../combatContracts.js').EnemyInstance} enemy @param {number} now */
   updateFighterAttack(enemy, now) {
     enemy.fighterAttack ??= createFighterAttack(now, enemy.fireRate);
-    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position), distance = direction.length();
+    const direction = this.aimOf(enemy).position.clone().sub(enemy.mesh.position), distance = direction.length();
     const eligible = distance < getEnemyFiringRange('fighter') && this.canSeePlayer(enemy)
       && enemy.mesh.getWorldDirection(new THREE.Vector3()).dot(direction.normalize()) > 0;
     const event = advanceFighterAttack(enemy.fighterAttack, now, eligible, enemy.fireRate);
@@ -763,8 +818,8 @@ class EnemyManager {
     } else if (event === 'fire') {
       const authored = !!this.levelManager?.currentLevel?.sourceDocument;
       enemy.lastFireTime = now;
-      enemy.fireRate = authored ? this.fighterInterval(MINE_FIGHTER.intervalMs + Math.random() * MINE_FIGHTER.intervalVariationMs) : 2000 + Math.random() * 1000;
-      this.projectileManager.fireEnemyProjectile(enemy, this.playerTransform,
+      enemy.fireRate = authored ? this.fighterInterval(MINE_FIGHTER.intervalMs + this.random() * MINE_FIGHTER.intervalVariationMs) : 2000 + this.random() * 1000;
+      this.projectileManager.fireEnemyProjectile(enemy, this.aimOf(enemy),
         authored ? { speed: MINE_FIGHTER.projectileSpeed, inaccuracy: MINE_FIGHTER.inaccuracy } : undefined);
     }
   }
@@ -773,7 +828,7 @@ class EnemyManager {
    * @param {import('../combatContracts.js').EnemyInstance} enemy @param {number} now */
   updateBomberAttack(enemy, now) {
     const state = enemy.bomberAttack; if (!state) return;
-    const direction = this.playerTransform.position.clone().sub(enemy.mesh.position), distance = direction.length();
+    const direction = this.aimOf(enemy).position.clone().sub(enemy.mesh.position), distance = direction.length();
     const eligible = distance < MINE_BOMBER.firingRange && this.canSeePlayer(enemy)
       && enemy.mesh.getWorldDirection(new THREE.Vector3()).dot(direction.normalize()) > 0;
     const event = advanceBomberAttack(state, now, eligible, enemy.fireRate);
@@ -783,8 +838,8 @@ class EnemyManager {
       catch (error) { console.warn('Unable to play bomber warning:', error); }
     } else if (event === 'fire') {
       enemy.lastFireTime = now;
-      enemy.fireRate = this.bomberInterval(MINE_BOMBER.intervalMs + Math.random() * MINE_BOMBER.intervalVariationMs);
-      this.projectileManager.fireBomb(enemy, this.playerTransform.position.clone());
+      enemy.fireRate = this.bomberInterval(MINE_BOMBER.intervalMs + this.random() * MINE_BOMBER.intervalVariationMs);
+      this.projectileManager.fireBomb(enemy, this.aimOf(enemy).position.clone());
     }
   }
 
@@ -875,10 +930,10 @@ class EnemyManager {
     }
 
     // Determine if we should drop something
-    if (Math.random() > dropChance) return;
+    if (this.random() > dropChance) return;
 
     // Determine what type of item to drop
-    if (Math.random() < weaponDropChance) {
+    if (this.random() < weaponDropChance) {
       // Weapon drop
       const weaponFound =
         this.gameState.weaponInventory.laser.unlocked &&
@@ -904,7 +959,7 @@ class EnemyManager {
       const weights = [0.4, 0.2, 0.2, 0.2]; // 40% health, 20% others
 
       // Weighted random selection
-      const rand = Math.random();
+      const rand = this.random();
       let powerup = powerupTypes[powerupTypes.length - 1];
       let cumulativeWeight = 0;
 

@@ -88,11 +88,13 @@ export interface MissionDefinition {
 export interface ConvexHull { readonly vertices: readonly Vector3[]; readonly planes: readonly Plane[]; readonly triangles: readonly Triangle[]; readonly box: Box3 }
 export type SolidCollider = Box3 | { readonly box: Box3; readonly id?: string; readonly convex?: ConvexHull };
 export interface ShotTarget { readonly isActive: boolean; readonly collider: Box3 }
-export interface ShotPlayer { readonly position: Vector3; readonly radius: number }
+export interface ShotPlayer { readonly position: Vector3; readonly radius: number; /** The pilot this body belongs to (multiplayer damage routing). */ readonly pilot?: import('./core/Pilot.js').default | null }
 export interface ShotOptions<T extends ShotTarget = ShotTarget> {
   colliders?: readonly SolidCollider[];
   targets?: readonly T[];
   player?: ShotPlayer | null;
+  /** Several pilots (multiplayer); each is tested like `player`. */
+  players?: readonly ShotPlayer[];
   radius?: number;
 }
 export type TraceContact<T extends ShotTarget = ShotTarget> =

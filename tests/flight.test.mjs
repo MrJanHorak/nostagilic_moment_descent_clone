@@ -156,8 +156,8 @@ test('mouse input rotates the root without pitch clamping and is ignored outside
 });
 
 test('shots and pickups use the authoritative root, ignoring visual camera shake', (t) => {
-  t.mock.method(Math, 'random', () => 0.5); // Remove enemy weapon spread for the direction assertion.
   const game = flight();
+  t.mock.method(game.session, 'random', () => 0.5); // Remove enemy weapon spread for the direction assertion.
   const root = game.spaceship.group;
   root.position.set(10, 4, -8); game.spaceship.rotate(Math.PI / 2);
   game.spaceship.viewEffects.position.set(3, 2, 1);

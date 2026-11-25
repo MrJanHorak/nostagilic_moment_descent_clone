@@ -43,7 +43,7 @@ export function segmentSphereFraction(start, end, center, radius) {
  * @param {import('../contracts.js').ShotOptions<T>} [options]
  * @returns {import('../contracts.js').ShotHit<T> | null}
  */
-export function traceShot(start, end, { colliders = [], targets = [], player = null, radius = 0.05 } = {}) {
+export function traceShot(start, end, { colliders = [], targets = [], player = null, players = [], radius = 0.05 } = {}) {
   /** @type {import('../contracts.js').ShotHit<T> | null} */
   let hit = null;
   /** @param {number | null} fraction @param {import('../contracts.js').TraceContact<T>} contact */
@@ -58,7 +58,7 @@ export function traceShot(start, end, { colliders = [], targets = [], player = n
   for (const target of targets) {
     if (target.isActive) consider(segmentBoxFraction(start, end, target.collider, radius), { kind: 'enemy', target });
   }
-  if (player) consider(segmentSphereFraction(start, end, player.position, player.radius + radius), { kind: 'player', target: player });
+  for (const body of player ? [player, ...players] : players) consider(segmentSphereFraction(start, end, body.position, body.radius + radius), { kind: 'player', target: body });
   return hit;
 }
 

@@ -51,6 +51,8 @@
     "src/js/ui/UserLevels.js",
     "src/js/ui/UserCampaigns.js",
     "src/js/core/UserCampaignLibrary.js",
+    "src/js/core/SessionRandom.js",
+    "src/js/core/Pilot.js",
     "src/js/core/ShipView.js",
     "src/js/core/ExplorationMap.js",
     "src/js/ui/CockpitView.js",

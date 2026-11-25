@@ -11,6 +11,19 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 Phase 2: multiplayer-ready simulation
+
+The simulation now runs several pilots in one session, headless and deterministically, with single-player play unchanged. Details, APIs and the remaining gaps are in [the Phase 2 plan](../MULTIPLAYER_REFACTOR.md#status-november-24).
+- Seeded per-session randomness (`startSession({ seed })`).
+- A `Pilot` model, with the old single-player properties kept as views of the local pilot.
+- Robots target the nearest pilot they can see.
+- Enemy fire and bombs hit any pilot; shots carry their owner and credit kills.
+- Pickups go to the pilot who touches them.
+- `Game.addPilot`, `setPilotInput` and `pilotFire` drive extra pilots.
+- `tests/multiplayer.test.mjs` (10 tests). Verify passes (598 tests). Sampled browser tests and the fighter-drill opening pass in the VM.
+
+Next: Phase 3, online Anarchy. That means a small authoritative Node server running this simulation, WebSocket rooms, client prediction and interpolation, and a lobby. Remaining per-pilot gaps (hazards, exit, story pickups) are listed in the plan.
+
 ## November 24 mission 05: The Seal
 
 A new campaign mission after Deepworks, and the first of Act 2. See [The Seal](../THE_SEAL.md).

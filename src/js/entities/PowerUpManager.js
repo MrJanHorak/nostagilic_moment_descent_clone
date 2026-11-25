@@ -88,7 +88,7 @@ export const powerupTypes = [
       };
 
       // Weighted random selection
-      const rand = Math.random();
+      const rand = (gameState.session?.random?.() ?? Math.random());
       let weapon;
       let cumulativeWeight = 0;
 
@@ -165,7 +165,7 @@ export const powerupTypes = [
 
         if (unlockedWeapons.length > 0) {
           const weapon =
-            unlockedWeapons[Math.floor(Math.random() * unlockedWeapons.length)];
+            unlockedWeapons[Math.floor((gameState.session?.random?.() ?? Math.random()) * unlockedWeapons.length)];
           const ammoAmounts = {
             laser: 15,
             missile: 8,
@@ -201,6 +201,28 @@ export const powerupTypes = [
   },
 ];
 
+/** A pickup effect's UI for a pilot on another screen: nothing to show here. */
+const SILENT_UI = Object.freeze({ updateHUD() {}, updateWeaponUI() {}, showMessage() {}, flash() {} });
+
+/** The loadout fields pickup effects read and write, mapped onto one pilot.
+ * @param {import('../core/GameState.js').default} gameState @param {import('../core/Pilot.js').default} pilot */
+export function pilotPickupState(gameState, pilot) {
+  return {
+    pilot, session: gameState.session,
+    get weaponInventory() { return pilot.weaponInventory; },
+    get currentWeapon() { return pilot.currentWeapon; }, set currentWeapon(value) { pilot.currentWeapon = value; },
+    get playerHealth() { return pilot.health; }, set playerHealth(value) { pilot.health = value; },
+    get maxPlayerHealth() { return pilot.maxHealth; },
+    get pulseAmmoCapacity() { return pilot.pulseAmmoCapacity; },
+    /** @param {import('../contracts.js').TimedModifier} property @param {number} value @param {number} durationMs @param {string} message */
+    applyTimedModifier: (property, value, durationMs, message) => gameState.applyTimedModifier(property, value, durationMs, message, pilot),
+    /** @param {Exclude<import('../contracts.js').WeaponType, 'pulse'>} type */
+    recordWeaponPickup: type => gameState.recordWeaponPickup(type),
+    /** @param {import('../contracts.js').WeaponType} type @param {number} amount */
+    addWeaponAmmo: (type, amount) => gameState.addWeaponAmmo(type, amount, pilot),
+  };
+}
+
 class PowerUpManager {
   constructor(
     scene,
@@ -220,6 +242,9 @@ class PowerUpManager {
     this.spawnedIds = new Set();
     this.nextId = 0;
   }
+
+  /** Gameplay randomness from the session seed (Math.random only without a session). */
+  random() { return this.gameState?.session?.random?.() ?? Math.random(); }
 
   // Create a power-up mesh
   createPowerupMesh(powerupType) {
@@ -277,7 +302,7 @@ class PowerUpManager {
     const randomTypes = powerupTypes.filter(type => type.name !== 'pulseAmmo' || Number.isFinite(this.gameState?.weaponInventory.pulse.ammo));
     const powerupType = typeName
       ? powerupTypes.find((t) => t.name === typeName)
-      : randomTypes[Math.floor(Math.random() * randomTypes.length)];
+      : randomTypes[Math.floor(this.random() * randomTypes.length)];
 
     if (!powerupType) {
       throw new RangeError(`Unknown power-up type: ${typeName}`);
@@ -309,12 +334,25 @@ class PowerUpManager {
     return powerup;
   }
 
-  // Update power-ups, check for collisions with player
+  /** Pilots who can collect: the local ship, then any other live pilot with a ship.
+   * Each comes with the state and UI its pickup effect should act on: another
+   * pilot gets a view of their own loadout and a silent UI.
+   * @returns {{position: THREE.Vector3, state: any, ui: any, local: boolean}[]} */
+  collectors() {
+    const local = this.gameState?.localPilot ?? null, list = [];
+    if (!local || local.alive) list.push({ position: this.playerTransform.getWorldPosition(new THREE.Vector3()), state: this.gameState, ui: this.uiManager, local: true });
+    for (const pilot of this.gameState?.pilots ?? []) {
+      if (pilot === local || !pilot.alive || !pilot.ship) continue;
+      list.push({ position: pilot.ship.group.position.clone(), state: pilotPickupState(this.gameState, pilot), ui: SILENT_UI, local: false });
+    }
+    return list;
+  }
+
+  // Update power-ups, check for collisions with every pilot
   update(delta = 0) {
     if (this.gameState?.session.phase !== 'playing') return;
     if (!this.levelManager?.isEndless) this.spawnPredefinedPowerUps();
-    const playerPosition = new THREE.Vector3();
-    this.playerTransform.getWorldPosition(playerPosition);
+    const collectors = this.collectors();
 
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const powerup = this.powerups[i];
@@ -327,18 +365,15 @@ class PowerUpManager {
       powerup.mesh.position.y = powerup.baseY + Math.sin(powerup.age * powerup.floatFrequency) * powerup.floatAmplitude;
       powerup.mesh.children[1].rotation.x += powerup.rotationSpeed * delta * 0.7;
       powerup.mesh.children[1].rotation.z += powerup.rotationSpeed * delta * 0.5;
-      const distance = powerup.mesh.position.distanceTo(playerPosition);
+      // The first pilot in reach who can use it takes it (0.5 is about a ship's radius).
+      const collector = collectors.find(candidate => powerup.mesh.position.distanceTo(candidate.position) < powerup.collisionRadius + 0.5 &&
+        (powerup.type.canCollect?.(candidate.state) ?? true) &&
+        hasLineOfSight(candidate.position, powerup.mesh.position, this.levelManager?.solidColliders));
+      if (collector) {
+        powerup.type.effect(collector.state, collector.ui);
 
-      // Check collision with player
-      if (distance < powerup.collisionRadius + 0.5 &&
-        (powerup.type.canCollect?.(this.gameState) ?? true) &&
-        hasLineOfSight(playerPosition, powerup.mesh.position, this.levelManager?.solidColliders)) {
-        // 0.5 is approx. player radius
-        // Apply power-up effect
-        powerup.type.effect(this.gameState, this.uiManager);
-
-        // Play sound
-        if (this.audioManager && this.audioManager.initialized) {
+        // Play sound for this screen's pilot only
+        if (collector.local && this.audioManager && this.audioManager.initialized) {
           this.audioManager.playSound('powerup', { volume: 0.5 });
         }
 
@@ -381,14 +416,14 @@ class PowerUpManager {
     playerDirection.applyQuaternion(this.playerTransform.quaternion);
 
     // Position 10-20 units ahead of player
-    const distance = 10 + Math.random() * 10;
+    const distance = 10 + this.random() * 10;
     const position = playerPosition
       .clone()
       .add(playerDirection.multiplyScalar(distance));
 
     // Add some randomness to position
-    position.x += (Math.random() - 0.5) * 8;
-    position.y += (Math.random() - 0.5) * 4;
+    position.x += (this.random() - 0.5) * 8;
+    position.y += (this.random() - 0.5) * 4;
 
     return this.spawnPowerup(position);
   }
@@ -402,9 +437,7 @@ class PowerUpManager {
     for (const [index, spawnPoint] of level.powerupSpawns.entries()) {
       const spawnId = spawnPoint.id ?? `pickup:${index}`;
       // Check if power-up should be visible now (based on player position)
-      const distanceToPlayer = spawnPoint.position.distanceTo(
-        this.playerTransform.position
-      );
+      const distanceToPlayer = Math.min(...this.collectors().map(candidate => spawnPoint.position.distanceTo(candidate.position)), Infinity);
 
       // Only spawn if within reasonable distance and not already spawned
       if (distanceToPlayer < 50 && !this.spawnedIds.has(spawnId)) {

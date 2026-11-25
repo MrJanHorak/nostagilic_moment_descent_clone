@@ -175,19 +175,21 @@ export default class Game {
     this.uiManager?.resetSessionUI();
   }
 
-  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex, preparedWorld = null } = {}) {
+  /** @param {{endless?: boolean, levelIndex?: number, preparedWorld?: unknown, seed?: number}} [options] `seed` repeats a session exactly (replays, shared matches). */
+  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex, preparedWorld = null, seed = undefined } = {}) {
     if (!endless && (!Number.isInteger(levelIndex) || !this.levelManager?.levels[levelIndex])) {
       throw new RangeError(`Unknown mission index: ${levelIndex}`);
     }
     this.endSession();
     this.isEndlessMode = endless;
     this.currentLevelIndex = levelIndex;
-    this.session.begin();
+    this.session.begin(seed);
     try {
       this.gameState.resetForSession();
       this.gameState.difficulty = getDifficulty(this.settings.values.difficulty);
       this.failureReason = null;
       this.spaceship.reset();
+      this.gameState.localPilot.ship = this.spaceship;
       this.lastMovement = null;
       this.camera.position.set(0, 0, 0);
       this.camera.quaternion.identity();
@@ -243,6 +245,7 @@ export default class Game {
         this.spaceship.group.position.fromArray(this.levelManager.currentLevel.spawn);
         if (this.levelManager.currentLevel.spawnRotation) this.spaceship.group.quaternion.fromArray(this.levelManager.currentLevel.spawnRotation);
       }
+      for (const pilot of this.gameState.pilots) this.placeAtSpawn(pilot);
       this.exploration = !endless && level.sourceDocument ? new ExplorationMap(level.sourceDocument) : null;
       this.exploration?.update(this.spaceship.group.position);
       if (this.cockpit) this.cockpit.lastUpdate = -Infinity;
@@ -541,6 +544,7 @@ export default class Game {
       if (collision) this.spaceship.velocity.set(0, 0, 0);
       else this.spaceship.group.position.add(intended);
     }
+    this.moveRemotePilots(delta);
     this.levelManager.updateLevel();
     const environment = this.levelManager.environment?.update(this.session, this.spaceship.group.position, this.spaceship.radius);
     if (environment?.entered) this.uiManager.showMessage(environment.entered === 'lava'
@@ -567,6 +571,64 @@ export default class Game {
     }
     this.uiManager.updateHUD();
     this.diagnostics.recordUpdate();
+  }
+
+  /** Add another pilot with their own ship (a remote player, or a second ship in
+   * a headless test). They start at the mission spawn and are flown by setPilotInput.
+   * @param {string} id @returns {import('./core/Pilot.js').default} */
+  addPilot(id) {
+    const ship = new Spaceship();
+    const pilot = this.gameState.addPilot({ id, ship });
+    this.scene.add(ship.group);
+    this.placeAtSpawn(pilot);
+    return pilot;
+  }
+
+  /** @param {string} id */
+  removePilot(id) {
+    const pilot = this.gameState.pilot(id);
+    if (!pilot || !this.gameState.removePilot(id)) return false;
+    if (pilot.ship) this.scene.remove(pilot.ship.group);
+    return true;
+  }
+
+  /** Give a pilot a new flight command; it holds until the next one.
+   * @param {string} id @param {import('./contracts.js').FlightInput} input */
+  setPilotInput(id, input) {
+    const pilot = this.gameState.pilot(id);
+    if (!pilot || pilot.local) throw new Error(`No remote pilot ${id}`);
+    pilot.input = { ...input };
+  }
+
+  /** Fire a remote pilot's selected weapon from their ship. @param {string} id */
+  pilotFire(id) {
+    const pilot = this.gameState.pilot(id);
+    if (!pilot || pilot.local) throw new Error(`No remote pilot ${id}`);
+    return this.projectileManager.fireProjectile(this.gameState, { pilot });
+  }
+
+  /** Reset a remote pilot's ship and put it at the mission spawn.
+   * @param {import('./core/Pilot.js').default} pilot */
+  placeAtSpawn(pilot) {
+    if (!pilot.ship || pilot.local) return;
+    pilot.ship.reset();
+    const level = this.levelManager?.currentLevel;
+    if (level?.kind === 'arena' && !this.isEndlessMode) {
+      pilot.ship.group.position.fromArray(level.spawn);
+      if (level.spawnRotation) pilot.ship.group.quaternion.fromArray(level.spawnRotation);
+    }
+  }
+
+  /** Each remote pilot flies with their held command, colliding with walls like the
+   * local ship. Pilots who are down stay where they are. @param {number} delta */
+  moveRemotePilots(delta) {
+    const arena = !this.isEndlessMode && this.levelManager.currentLevel?.kind === 'arena';
+    for (const pilot of this.gameState.pilots) {
+      if (pilot.local || !pilot.alive || !pilot.ship) continue;
+      pilot.ship.update(delta, pilot.input, pilot.speedMultiplier);
+      if (arena) moveSphere(pilot.ship.group.position, pilot.ship.velocity, delta, this.levelManager.solidColliders, pilot.ship.radius);
+      else pilot.ship.group.position.addScaledVector(pilot.ship.velocity, delta);
+    }
   }
 
   advanceFrame(delta) {

@@ -417,7 +417,7 @@ test('defeat callback that resets the level cannot overwrite replacement enemy c
 
 test('boss burst callbacks remain paused with the session and cannot fire after their enemy is removed', t => {
   const { manager, state } = managerFixture(t);
-  t.mock.method(Math, 'random', () => 0.1);
+  t.mock.method(state.session, 'random', () => 0.1); // Gameplay draws come from the session seed.
   const boss = manager.spawnEnemy(v(0, 0, 20), 'boss');
   state.session.advance(3); manager.updateEnemies(1 / 60);
   assert.equal(state.session.tasks.size, 2); assert.equal(manager.projectileManager.enemyProjectiles.length, 1);

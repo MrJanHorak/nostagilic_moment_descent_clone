@@ -55,6 +55,9 @@ class ProjectileManager {
     this.canvas = null; // Will be set from outside
   }
 
+  /** Gameplay randomness from the session seed (Math.random only without a session). */
+  random() { return this.session?.random?.() ?? Math.random(); }
+
   // Set the canvas reference for pointer lock checking
   /** @param {HTMLCanvasElement | null} canvas */
   setCanvas(canvas) {
@@ -68,6 +71,24 @@ class ProjectileManager {
   isProjectileActive(projectile) {
     if (projectile.ownerManager !== this || this.disposed) return false;
     return projectile.faction === 'enemy' ? this.enemyProjectiles.includes(projectile) : this.projectiles.includes(projectile);
+  }
+
+  /** Every pilot's body that enemy fire can hit: the local ship (given transform)
+   * and any other live pilot with a ship.
+   * @param {Pick<THREE.Object3D, 'position'> | null | undefined} playerTransform
+   * @param {import('../core/GameState.js').default | null | undefined} gameState
+   * @returns {import('../contracts.js').ShotPlayer[]} */
+  pilotBodies(playerTransform, gameState) {
+    const local = gameState?.localPilot ?? null, bodies = [];
+    if (playerTransform && (!local || local.alive)) bodies.push({ position: playerTransform.position, radius: PLAYER_HIT_RADIUS, pilot: local });
+    for (const pilot of gameState?.pilots ?? []) if (pilot !== local && pilot.alive && pilot.ship) bodies.push({ position: pilot.ship.group.position, radius: PLAYER_HIT_RADIUS, pilot });
+    return bodies;
+  }
+
+  /** @private @param {import('../core/GameState.js').default} gameState @param {import('../contracts.js').ShotPlayer} body @param {number} amount */
+  damageBody(gameState, body, amount) {
+    if (body.pilot && body.pilot !== gameState.localPilot) gameState.takeDamage(amount, body.pilot);
+    else gameState.takeDamage(amount);
   }
 
   // Remove before dispatch: a lethal hit can synchronously end/clear the session.
@@ -84,14 +105,14 @@ class ProjectileManager {
     const hit = traceShot(start, end, {
       colliders: this.combatWorld.getColliders?.() ?? [],
       targets: hostile ? [] : this.combatWorld.getTargets?.() ?? [],
-      player: hostile && playerTransform ? { position: playerTransform.position, radius: 0.5 } : null,
+      players: hostile ? this.pilotBodies(playerTransform, gameState) : [],
       radius: 0.05,
     });
     if (!hit) { projectile.mesh.position.copy(end); return false; }
     projectile.mesh.position.copy(hit.point);
     this.removeEnemyProjectile(this.enemyProjectiles.indexOf(projectile));
     if (hit.kind === 'player' && gameState && !gameState.isGameOver) {
-      gameState.takeDamage(projectile.power ?? 10);
+      this.damageBody(gameState, hit.target, projectile.power ?? 10);
       if (!this.session || this.session.phase === 'playing') effectsManager?.createExplosion(hit.point, 0xff0000, true, 1);
     }
     return true;
@@ -245,11 +266,15 @@ class ProjectileManager {
       try { this.audioManager.playSound('explosion', { volume: 0.5 }); }
       catch (error) { console.warn('Unable to play bomb explosion:', error); }
     }
-    if (!playerTransform || !gameState || gameState.isGameOver) return;
-    const distance = Math.max(0, center.distanceTo(playerTransform.position) - PLAYER_HIT_RADIUS);
-    const damage = blastDamage(distance, { blastRadius: bomb.radius, blastDamage: bomb.damage, edgeFactor: bomb.edgeFactor });
-    if (damage <= 0 || !hasLineOfSight(center, playerTransform.position, this.combatWorld.getColliders?.() ?? [])) return;
-    gameState.takeDamage(damage);
+    if (!gameState || gameState.isGameOver) return;
+    // The blast reaches every pilot in range with a clear line to the bomb.
+    for (const body of this.pilotBodies(playerTransform, gameState)) {
+      const distance = Math.max(0, center.distanceTo(body.position) - PLAYER_HIT_RADIUS);
+      const damage = blastDamage(distance, { blastRadius: bomb.radius, blastDamage: bomb.damage, edgeFactor: bomb.edgeFactor });
+      if (damage <= 0 || !hasLineOfSight(center, body.position, this.combatWorld.getColliders?.() ?? [])) continue;
+      this.damageBody(gameState, body, damage);
+      if (gameState.isGameOver) return;
+    }
   }
 
   /** Launch an area-denial bomb from a bomber toward a fixed point (where the player was).
@@ -339,9 +364,9 @@ class ProjectileManager {
 
     // For unstable projectiles, add some randomness
     if (unstable) {
-      velocity.x += (Math.random() - 0.5) * 0.1;
-      velocity.y += (Math.random() - 0.5) * 0.1;
-      velocity.z += (Math.random() - 0.5) * 0.1;
+      velocity.x += (this.random() - 0.5) * 0.1;
+      velocity.y += (this.random() - 0.5) * 0.1;
+      velocity.z += (this.random() - 0.5) * 0.1;
     }
 
     // A changing light count recompiles every lit material in the mine.
@@ -353,6 +378,7 @@ class ProjectileManager {
     /** @type {import('../combatContracts.js').PlayerProjectile} */
     const projectileData = {
       faction: 'player',
+      ...(options.ownerId ? { ownerId: options.ownerId } : {}),
       lastTrailUpdate: 0,
       mesh: projectile,
       velocity: velocity,
@@ -481,12 +507,22 @@ class ProjectileManager {
     });
   }
   // Fire a projectile from the player's viewpoint
-  /** @param {import('../core/GameState.js').default} gameState @param {{requirePointerLock?: boolean}} [options] */
-  fireProjectile(gameState, { requirePointerLock = true } = {}) {
+  /** Fire the local pilot's weapon, or another pilot's when `pilot` is given (a
+   * remote player or a test ship). Each shot carries its pilot's id. Only the local
+   * pilot needs pointer lock, and only the local pilot's shots make sounds and HUD changes.
+   * @param {import('../core/GameState.js').default} gameState
+   * @param {{requirePointerLock?: boolean, pilot?: import('../core/Pilot.js').default | null}} [options] */
+  fireProjectile(gameState, { requirePointerLock = true, pilot = null } = {}) {
     this.assertUsable();
+    const remote = !!pilot && !pilot.local;
+    if (remote && (!pilot.alive || !pilot.ship)) return;
+    /** Loadout fields (weapon, inventory, power) come from the firing pilot. */
+    const loadout = remote ? pilot : gameState;
+    const feedback = remote ? null : gameState.uiManager;
+    const audio = remote ? null : this.audioManager;
     if (
-      !this.canvas ||
-      (requirePointerLock && document.pointerLockElement !== this.canvas) ||
+      (!remote && !this.canvas) ||
+      (!remote && requirePointerLock && document.pointerLockElement !== this.canvas) ||
       gameState.isGameOver ||
       gameState.session.phase !== 'playing' ||
       !gameState.isGameStarted
@@ -494,9 +530,9 @@ class ProjectileManager {
       return;
 
     // Check if we have the weapon and ammo
-    const currentWeapon = gameState.currentWeapon || 'pulse';
+    const currentWeapon = loadout.currentWeapon || 'pulse';
     const rules = this.combatWorld.getRules?.();
-    const weaponInventory = gameState.weaponInventory || {
+    const weaponInventory = loadout.weaponInventory || {
       pulse: { unlocked: true, ammo: Infinity },
     };
 
@@ -510,18 +546,18 @@ class ProjectileManager {
       weaponInventory[currentWeapon].ammo !== Infinity
     ) {
       // Out of ammo, play click sound and show message
-      if (this.audioManager && this.audioManager.initialized) {
-        this.audioManager.playSound('empty', { volume: 0.2 });
+      if (audio && audio.initialized) {
+        audio.playSound('empty', { volume: 0.2 });
       }
 
-      if (gameState.uiManager) {
-        gameState.uiManager.showMessage('NO AMMO', 1500, '#ff6600');
+      if (feedback) {
+        feedback.showMessage('NO AMMO', 1500, '#ff6600');
       }
 
       // Fallback to pulse weapon
-      gameState.currentWeapon = 'pulse';
-      if (gameState.uiManager) {
-        gameState.uiManager.updateWeaponUI();
+      loadout.currentWeapon = 'pulse';
+      if (feedback) {
+        feedback.updateWeaponUI();
       }
       return;
     }
@@ -531,13 +567,13 @@ class ProjectileManager {
       weaponInventory[currentWeapon].ammo--;
 
       // Update UI if low on ammo
-      if (gameState.uiManager) {
-        gameState.uiManager.updateWeaponUI();
+      if (feedback) {
+        feedback.updateWeaponUI();
       }
     }
 
     // Use weapon power from gameState
-    const weaponPower = gameState.weaponPower || 1;
+    const weaponPower = loadout.weaponPower || 1;
 
     // Configure weapon properties based on type
     /** @type {THREE.ColorRepresentation} */
@@ -593,19 +629,19 @@ class ProjectileManager {
     }
 
     // Play appropriate weapon sound based on weapon type
-    if (this.audioManager && this.audioManager.initialized) {
+    if (audio && audio.initialized) {
       switch (currentWeapon) {
         case 'pulse':
-          this.audioManager.playSound('shoot', { volume: 0.3 });
+          audio.playSound('shoot', { volume: 0.3 });
           break;
         case 'laser':
-          this.audioManager.playSound('shoot', { volume: 0.4, pitch: 1.2 });
+          audio.playSound('shoot', { volume: 0.4, pitch: 1.2 });
           break;
         case 'missile':
-          this.audioManager.playSound('shoot', { volume: 0.5, pitch: 0.8 });
+          audio.playSound('shoot', { volume: 0.5, pitch: 0.8 });
           break;
         case 'plasma':
-          this.audioManager.playSound('shoot', { volume: 0.4, pitch: 1.4 });
+          audio.playSound('shoot', { volume: 0.4, pitch: 1.4 });
           break;
       }
     }
@@ -613,8 +649,9 @@ class ProjectileManager {
     // Get world position and quaternion of the playerTransform (spaceship's viewpoint)
     const startPosition = new THREE.Vector3();
     const startQuaternion = new THREE.Quaternion();
-    this.playerTransform.getWorldPosition(startPosition);
-    this.playerTransform.getWorldQuaternion(startQuaternion);
+    const origin = remote && pilot?.ship ? pilot.ship.group : this.playerTransform;
+    origin.getWorldPosition(startPosition);
+    origin.getWorldQuaternion(startQuaternion);
     const launchOrigin = startPosition.clone();
 
     // Offset slightly forward from the playerTransform to avoid immediate collision with spaceship model
@@ -624,8 +661,9 @@ class ProjectileManager {
 
     // Calculate player's current velocity
     const playerVelocity = new THREE.Vector3();
-    if (gameState.playerVelocity) {
-      playerVelocity.copy(gameState.playerVelocity);
+    const shipVelocity = remote ? pilot?.velocity : gameState.playerVelocity;
+    if (shipVelocity) {
+      playerVelocity.copy(shipVelocity);
     }
 
     // Create projectile with configured options
@@ -643,6 +681,7 @@ class ProjectileManager {
       pulsate: projectileOptions.pulsate || false,
       unstable: projectileOptions.unstable || false,
       guided: false,
+      ownerId: remote && pilot ? pilot.id : gameState.localPilot?.id ?? 'local',
     };
 
     return this.createProjectile(startPosition, startQuaternion, options);
@@ -674,7 +713,7 @@ class ProjectileManager {
         // Bosses have a chance to fire different projectile types
         const bossProjectiles = /** @type {const} */ (['heavylaser', 'plasma', 'missile']);
         projectileType =
-          bossProjectiles[Math.floor(Math.random() * bossProjectiles.length)];
+          bossProjectiles[Math.floor(this.random() * bossProjectiles.length)];
         break;
       }
       default:
@@ -727,9 +766,9 @@ class ProjectileManager {
 
     // Add a slight inaccuracy to make it more fair
     const inaccuracy = aim?.inaccuracy ?? 0.05;
-    direction.x += (Math.random() * 2 - 1) * inaccuracy;
-    direction.y += (Math.random() * 2 - 1) * inaccuracy;
-    direction.z += (Math.random() * 2 - 1) * inaccuracy;
+    direction.x += (this.random() * 2 - 1) * inaccuracy;
+    direction.y += (this.random() * 2 - 1) * inaccuracy;
+    direction.z += (this.random() * 2 - 1) * inaccuracy;
     direction.normalize();
 
     // Scale by projectile speed
@@ -839,9 +878,9 @@ class ProjectileManager {
 
       // Unstable projectile wobbling
       if (projectile.unstable) {
-        projectile.velocity.x += (Math.random() - 0.5) * 0.002;
-        projectile.velocity.y += (Math.random() - 0.5) * 0.002;
-        projectile.velocity.z += (Math.random() - 0.5) * 0.002;
+        projectile.velocity.x += (this.random() - 0.5) * 0.002;
+        projectile.velocity.y += (this.random() - 0.5) * 0.002;
+        projectile.velocity.z += (this.random() - 0.5) * 0.002;
       }
 
       // Make projectile face the direction it's moving

@@ -11,9 +11,13 @@ export interface EnemyDefinition {
   readonly damage: number;
   readonly pointValue: number;
 }
+/** The pilot a robot is attacking (multiplayer: the nearest visible pilot). */
+export interface EnemyTargetChoice { readonly id: string; readonly transform: Pick<Object3D, 'position'>; readonly pilot: import('./core/Pilot.js').default | null }
 export interface EnemyShooter {
   readonly mesh: Object3D;
   readonly type: Pick<EnemyDefinition, 'name' | 'size'>;
+  target?: EnemyTargetChoice;
+  targetUntil?: number;
 }
 export interface EnemyCombatTarget extends ShotTarget, EnemyShooter {
   readonly type: EnemyDefinition;
@@ -88,6 +92,8 @@ export interface EnemyDropSink {
 export type ProjectileType = 'standard' | 'laser' | 'plasma' | 'bomb' | 'missile' | 'heavylaser' | 'nova';
 export type TrailType = 'standard' | 'pulse' | 'laser' | 'missile' | 'plasma' | null;
 export interface ProjectileOptions {
+  /** Pilot who fired it. */
+  ownerId?: string;
   type?: ProjectileType;
   color?: ColorRepresentation;
   power?: number;
@@ -120,6 +126,8 @@ export interface ProjectileBase {
 }
 export interface PlayerProjectile extends ProjectileBase {
   readonly faction: 'player';
+  /** Pilot who fired it, for kill credit and shooter memory. */
+  readonly ownerId?: string;
   createdAt: number;
   explosive: boolean;
   explosionRadius: number;

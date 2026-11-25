@@ -5,7 +5,9 @@ const transitions = {
   dead: [], completed: [], error: [],
 };
 
-// Owns phase, simulation time, and callbacks. end() invalidates every old token.
+import SessionRandom from './SessionRandom.js';
+
+// Owns phase, simulation time, callbacks and gameplay randomness. end() invalidates every old token.
 export default class GameSession {
   constructor() {
     /** @type {import('../contracts.js').SessionPhase} */
@@ -16,7 +18,15 @@ export default class GameSession {
     /** @type {Map<number, import('../contracts.js').SessionTask>} */
     this.tasks = new Map();
     this.nextTaskId = 0;
+    /** Seeded gameplay randomness, reseeded by begin(). */
+    this.rng = new SessionRandom();
   }
+
+  /** The seed of the current session; replays and network matches reuse it. */
+  get seed() { return this.rng.seed; }
+
+  /** Gameplay random number in [0, 1), from this session's seed. Cosmetic effects may use Math.random. */
+  random() { return this.rng.next(); }
 
   /** @param {import('../contracts.js').SessionPhase} next */
   transition(next) {
@@ -26,11 +36,13 @@ export default class GameSession {
     return true;
   }
 
-  begin() {
+  /** @param {number} [seed] Reuse a seed for replays or a shared match; otherwise a fresh one is drawn. */
+  begin(seed) {
     this.transition('loading');
     this.id++;
     this.timeMs = 0;
     this.steps = 0;
+    this.rng.reseed(seed ?? Math.floor(Math.random() * 4294967296));
   }
 
   end() {
