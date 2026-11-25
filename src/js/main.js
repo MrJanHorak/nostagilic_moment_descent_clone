@@ -21,6 +21,7 @@ import StoryController from './core/StoryController.js';
 import { describeMissionStatus } from './core/MissionStatus.js';
 import AnarchyMatch from './core/AnarchyMatch.js';
 import CoopMatch, { PER_PILOT_PICKUPS, enemyToughness } from './core/CoopMatch.js';
+import { SOLO_LINK_SCALE } from './core/RelayController.js';
 import { QUICK_CHAT, SignalLimiter, aimPoint, cleanSignal } from './core/TeamSignals.js';
 import TeamMarkers from './ui/TeamMarkers.js';
 import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
@@ -295,6 +296,8 @@ export default class Game {
       this.coop = coop && !endless && this.mission ? new CoopMatch(this.spaceship.group.position) : null;
       if (this.coop) for (const pilot of this.team()) this.coop.join(pilot.id);
       this.enemyManager.toughness = this.coop ? enemyToughness(this.team().length) : 1;
+      // Linked relays: a team must be at both; a solo pilot gets a longer window to make the run.
+      if (this.levelManager.interaction) this.levelManager.interaction.linkScale = this.coop ? 1 : SOLO_LINK_SCALE;
       // Co-op: everyone gets their own share of ammunition pickups.
       this.powerUpManager.perPilot = this.coop ? PER_PILOT_PICKUPS : null;
       if (this.anarchy) for (const pilot of this.gameState.pilots) {
@@ -519,7 +522,9 @@ export default class Game {
     if (level?.campaignOrder) return this.levelManager.levels.findIndex(candidate => candidate.campaignOrder === level.campaignOrder + 1);
     const next = this.currentLevelIndex + 1;
     // Practice missions chain to the next practice mission, never into an Anarchy arena.
-    return next < this.levelManager.levels.length && next !== this.importedLevelIndex && this.levelManager.levels[next]?.mode !== 'anarchy' ? next : -1;
+    return next < this.levelManager.levels.length && next !== this.importedLevelIndex && this.levelManager.levels[next]?.mode !== 'anarchy'
+      // Team missions chain only to each other; practice never runs on into them.
+      && !!this.levelManager.levels[next]?.team === !!this.levelManager.levels[this.currentLevelIndex]?.team ? next : -1;
   }
 
   showUserLevels() {
@@ -553,7 +558,7 @@ export default class Game {
   interact() {
     // Online, the relay key goes to the server with the next input.
     if (this.online) { if (this.session.phase !== 'playing') return false; this.online.queueInteract(); return true; }
-    return this.interactAt(this.spaceship.group.position, true);
+    return !!this.interactAt(this.spaceship.group.position, true);
   }
 
   /** A remote pilot presses the relay key (co-op). @param {string} id */
@@ -573,8 +578,18 @@ export default class Game {
     }
     const device = this.levelManager.interaction?.tryActivate(position);
     if (!device) return false;
+    if (device.armed) {
+      const seconds = Math.round((device.windowMs ?? 0) / 1000);
+      this.uiManager?.showMessage(`${device.label.toUpperCase()} ARMED · ${device.partnerLabel} must be activated within ${seconds}s`, 3000, '#ffb347');
+      return device;
+    }
+    if (device.linked) {
+      for (const part of device.linked) this.completeDeviceObjective(part);
+      this.uiManager?.showMessage(`LINKED RELAYS ONLINE · ${device.linked.map(part => part.label).join(' + ')}`, 2600, '#45ff96');
+      return device;
+    }
     this.completeDeviceObjective(device);
-    return true;
+    return device;
   }
 
   completeDeviceObjective(device) {
@@ -637,6 +652,10 @@ export default class Game {
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     if (!this.online && (this.mission?.failed || this.mission?.updateEscape(this.session.timeMs))) { this.die('reactor'); return; }
     this.levelManager.interaction?.update(delta);
+    for (const id of this.levelManager.interaction?.expired ?? []) {
+      const label = this.levelManager.interaction?.devices.find(/** @param {any} device */ device => device.id === id)?.label ?? id;
+      this.uiManager?.showMessage(`LINK LOST · ${label} disarmed · both relays must be activated together`, 2600, '#ff9944');
+    }
     for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }

@@ -63,7 +63,7 @@ function pruneStory(draft, removed) {
 function ensureStory(draft) {
   const modern = modernize(draft);
   Object.assign(modern, { formatVersion: Math.max(13, modern.formatVersion) });
-  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14}>} */ (modern);
+  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14 | 15}>} */ (modern);
   upgraded.story ??= { messages: [], logs: [], survivors: [] };
   return /** @type {MutableStory} */ (upgraded.story);
 }
@@ -92,14 +92,14 @@ function storyMessage(message) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -325,7 +325,7 @@ export default class EditorDocument {
     if (text.length > ROOM_LABEL_LIMIT) throw new Error(`Room names are limited to ${ROOM_LABEL_LIMIT} characters.`);
     this.change(draft => {
       const room = draft.rooms.find(room => room.id === roomId); if (!room) return;
-      if (text) { modernize(draft); Object.assign(draft, { formatVersion: 14 }); room.label = text; } else delete room.label;
+      if (text) { modernize(draft); Object.assign(draft, { formatVersion: Math.max(14, draft.formatVersion) }); room.label = text; } else delete room.label;
     });
   }
 

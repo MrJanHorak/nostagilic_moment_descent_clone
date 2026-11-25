@@ -65,6 +65,8 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
   }
   const practice = document.createElement('details'), summary = document.createElement('summary');
   summary.textContent = 'Practice & prototypes'; practice.append(summary);
+  // Missions built for a team, shown as cards after the campaign; solo pilots can fly them with longer linked-relay windows.
+  const team = document.createElement('section'); team.className = 'team-missions';
   for (const [index, level] of levels.entries()) {
     if (index === options.hiddenIndex) continue;
     const button = document.createElement('button'); button.textContent = level.name; button.onclick = () => choose(index);
@@ -97,12 +99,18 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
         }
       }
       card.append(briefing); article.append(card);
+    } else if (/** @type {any} */ (level).team) {
+      const card = document.createElement('section'); card.className = 'mission-card';
+      const label = document.createElement('div'); label.className = 'eyebrow'; label.textContent = 'TEAM MISSION · 2–4 PILOTS · PLAY ONLINE → CO-OP';
+      const briefing = document.createElement('p'); briefing.textContent = level.briefing ?? '';
+      card.append(label, button, briefing); team.append(card);
     } else {
       practice.append(button);
       if (level.briefing) { const briefing = document.createElement('p'); briefing.textContent = level.briefing; practice.append(briefing); }
     }
   }
   const returnButton = document.createElement('button'); returnButton.textContent = 'RETURN TO MAIN MENU'; returnButton.onclick = back;
+  if (team.querySelector('button')) article.append(team);
   article.append(practice, returnButton);
   const anyProgress = options.progress && levels.some((level, index) => index !== options.hiddenIndex && options.progress?.(level));
   if (options.resetProgress && anyProgress) {

@@ -58,7 +58,7 @@ test('a two-pilot co-op mission: tougher robots, shared lives, relay checkpoint,
   const relay = game.levelManager.interaction.devices.find(device => device.kind !== 'reactor' && game.mission.canActivateDevice(device.id));
   assert.ok(relay, 'Signal Breach has a relay');
   wing.ship.group.position.copy(relay.position).add(new THREE.Vector3(0, 0, 0.5));
-  assert.equal(game.pilotInteract('p2'), true);
+  assert.ok(game.pilotInteract('p2'));
   assert.ok(game.coop.checkpoint.distanceTo(relay.position) < 1e-6);
   assert.equal(game.mission.activatedDevices.has(relay.id), true);
 

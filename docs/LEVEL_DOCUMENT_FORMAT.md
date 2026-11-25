@@ -293,3 +293,11 @@ Campaign progress records each mission's best rescue count (`mostRescued`) and e
 
 Added November 24, 2026. A room may carry an optional `label`: non-empty plain text, at most 40 characters. The editor shows it in lists, the inspector and story triggers, and the in-mission guide uses it as the room's name ("Location: Pump hall") instead of the colour and ID. IDs stay the stable references for connections, content and triggers. Everything else is the same as version 13, including the optional `story` block. Older versions reject `label`. Setting a name in the editor upgrades the draft to 14; clearing every name keeps the version.
 
+
+## Version 15: linked relays (team missions)
+
+Added November 25, 2026. The mission may list `linkedRelays`: up to 8 pairs `{ "ids": [a, b], "windowSeconds": n }` (1–60 s). A linked relay does not switch on when activated: it **arms** (its light turns amber) and waits for its partner. If the partner is activated before the window runs out, both switch on together, opening their doors and counting for the mission. Otherwise the first relay disarms and must be activated again.
+
+- **Window:** a team gets `windowSeconds`. A solo pilot gets four times as long (`SOLO_LINK_SCALE`), enough to fly between the two relays alone.
+- **Rules:** each pair names two different required relays (no reactors), and each relay may be in one pair at most. Older versions reject `linkedRelays`. Everything else is the same as version 14.
+- The editor opens and plays version 15 documents and keeps the version when rooms are renamed, but it cannot author linked pairs yet. The team missions are built by `scripts/build-team-missions.mjs`.

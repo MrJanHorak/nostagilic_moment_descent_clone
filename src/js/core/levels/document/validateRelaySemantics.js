@@ -47,6 +47,19 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   // unlock additional connections. A self-lock or cycle cannot bootstrap itself.
   const active = new Set();
   if (escape && !required.has(escape.triggerDeviceId)) issue('$.mission.escape.triggerDeviceId', 'reference', 'The escape trigger must identify a required relay');
+  // Version 15 linked pairs: two different required relays (not reactors), each in one pair at most.
+  const linked = new Set();
+  for (const [index, link] of ('linkedRelays' in document.mission ? document.mission.linkedRelays ?? [] : []).entries()) {
+    if (link.ids[0] === link.ids[1]) issue(`$.mission.linkedRelays[${index}].ids`, 'linked', 'A linked pair needs two different relays');
+    for (const [j, id] of link.ids.entries()) {
+      const path = `$.mission.linkedRelays[${index}].ids[${j}]`;
+      if (!devices.has(id)) issue(path, 'reference', `Unknown linked relay: ${id}`);
+      else if (devices.get(id)?.kind === 'reactor') issue(path, 'linked', 'A reactor cannot be linked; it is destroyed by fire');
+      else if (!required.has(id)) issue(path, 'linked', 'Linked relays must be required relays');
+      if (linked.has(id)) issue(path, 'duplicate-id', `Relay ${id} is in more than one linked pair`);
+      linked.add(id);
+    }
+  }
   let reachable = new Set([document.playerSpawn.roomId]);
   for (let pass = 0; pass <= document.devices.length; pass++) {
     reachable = new Set([document.playerSpawn.roomId]);

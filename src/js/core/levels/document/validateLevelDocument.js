@@ -301,7 +301,7 @@ function readLevelDocument(input, semantics) {
   if (reader.errors.length) return { valid: false, errors: reader.errors };
   const root = reader.object(input, '$', ['formatVersion', 'id', 'name', 'rooms', 'connections', 'playerSpawn', 'entities', 'mission', 'combat', 'devices', 'doors', 'story']);
   if (!root) return { valid: false, errors: reader.errors };
-  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–14 is supported');
+  if (![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(/** @type {number} */ (root.formatVersion))) reader.issue('$.formatVersion', 'version', 'Only level formatVersion 1–15 is supported');
   const version = Number(root.formatVersion), expanded = version >= 6, limits = documentLimits(expanded ? 6 : 1);
   const shaped = root.formatVersion === 5 || expanded, oriented = root.formatVersion === 4 || shaped, modern = root.formatVersion === 3 || oriented, relay = root.formatVersion === 2 || modern;
   if (!relay) for (const key of ['devices', 'doors']) if (key in root) reader.issue(`$.${key}`, 'field', 'Devices and doors require formatVersion 2');
@@ -317,7 +317,7 @@ function readLevelDocument(input, semantics) {
   if (!rooms.length) reader.issue('$.rooms', 'rooms', 'At least one room is required');
   const spawn = reader.object(root.playerSpawn, '$.playerSpawn', ['roomId', 'position', 'rotation']);
   const roomId = reader.text(spawn?.roomId, '$.playerSpawn.roomId', 64, true), position = reader.vector(spawn?.position, '$.playerSpawn.position'), rotation = reader.rotation(spawn?.rotation, '$.playerSpawn.rotation');
-  const mission = reader.object(root.mission, '$.mission', relay ? ['type', 'requiredEnemyIds', 'requiredDeviceIds', 'exitId', ...(version >= 10 ? ['escape'] : [])] : ['type', 'requiredEnemyIds', 'exitId']);
+  const mission = reader.object(root.mission, '$.mission', relay ? ['type', 'requiredEnemyIds', 'requiredDeviceIds', 'exitId', ...(version >= 10 ? ['escape'] : []), ...(version >= 15 ? ['linkedRelays'] : [])] : ['type', 'requiredEnemyIds', 'exitId']);
   const missionType = reader.choice(mission?.type, relay ? /** @type {const} */ (['relay-clear-and-exit']) : /** @type {const} */ (['clear-and-exit']), '$.mission.type');
   const exitId = reader.text(mission?.exitId, '$.mission.exitId', 64, true);
   const requiredEnemyIds = (reader.array(mission?.requiredEnemyIds, '$.mission.requiredEnemyIds', LIMITS.entities) ?? []).map((value, i) => reader.text(value, `$.mission.requiredEnemyIds[${i}]`, 64, true)).filter(value => value !== null);
@@ -329,6 +329,18 @@ function readLevelDocument(input, semantics) {
     const durationSeconds = reader.number(settings?.durationSeconds, '$.mission.escape.durationSeconds', 10, 600, true);
     if (triggerDeviceId && durationSeconds !== null) escape = { triggerDeviceId, durationSeconds };
   }
+  // Version 15: pairs of relays that count only when both are activated within a window (team missions).
+  /** @type {{ids: [string, string], windowSeconds: number}[]} */ const linkedRelays = [];
+  if (version >= 15 && mission && 'linkedRelays' in mission) {
+    for (const [i, value] of (reader.array(mission.linkedRelays, '$.mission.linkedRelays', 8) ?? []).entries()) {
+      const link = reader.object(value, `$.mission.linkedRelays[${i}]`, ['ids', 'windowSeconds']);
+      const ids = reader.array(link?.ids, `$.mission.linkedRelays[${i}].ids`, 2) ?? [];
+      if (ids.length !== 2) reader.issue(`$.mission.linkedRelays[${i}].ids`, 'linked', 'A linked pair names exactly two relays');
+      const names = ids.map((id, j) => reader.text(id, `$.mission.linkedRelays[${i}].ids[${j}]`, 64, true));
+      const windowSeconds = reader.number(link?.windowSeconds, `$.mission.linkedRelays[${i}].windowSeconds`, 1, 60);
+      if (names.length === 2 && names[0] && names[1] && windowSeconds !== null) linkedRelays.push({ ids: [names[0], names[1]], windowSeconds });
+    }
+  }
   const combat = reader.object(root.combat, '$.combat', ['pulseDamage', 'initialPulseAmmo', 'maxPulseAmmo']);
   const pulseDamage = reader.number(combat?.pulseDamage, '$.combat.pulseDamage', 1, 100);
   const initialPulseAmmo = reader.number(combat?.initialPulseAmmo, '$.combat.initialPulseAmmo', 0, 2000, true), maxPulseAmmo = reader.number(combat?.maxPulseAmmo, '$.combat.maxPulseAmmo', 1, 2000, true);
@@ -338,7 +350,8 @@ function readLevelDocument(input, semantics) {
   /** @type {import('../../../levelDocument.js').LevelDocument} */
   const document = relay
     ? version >= 13
-      ? { ...base, formatVersion: version === 14 ? 14 : 13, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) }, ...(story ? { story } : {}) }
+      ? { ...base, formatVersion: version >= 15 ? 15 : version === 14 ? 14 : 13, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId,
+        ...(escape ? { escape } : {}), ...(linkedRelays.length ? { linkedRelays } : {}) }, ...(story ? { story } : {}) }
       : { ...base, formatVersion: version === 12 ? 12 : version === 11 ? 11 : version === 10 ? 10 : version === 9 ? 9 : version === 8 ? 8 : version === 7 ? 7 : expanded ? 6 : shaped ? 5 : oriented ? 4 : modern ? 3 : 2, devices, doors, mission: { type: 'relay-clear-and-exit', requiredEnemyIds, requiredDeviceIds, exitId, ...(escape ? { escape } : {}) } }
     : { ...base, formatVersion: 1, mission: { type: 'clear-and-exit', requiredEnemyIds, exitId } };
   if (semantics) validateSemantics(document, (path, code, message) => reader.issue(path, code, message));

@@ -1,6 +1,6 @@
 # Co-op (Phase 4)
 
-Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps; steps 1–4 are done.
+Fly the campaign as a team of up to four pilots. Phase 4 built it in five steps; all five are done.
 
 | Step | What | Status |
 | --- | --- | --- |
@@ -8,7 +8,7 @@ Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps
 | 2 | Co-op rooms on the game server: missions, robots and mission state in snapshots, relay key | Done (November 25) |
 | 3 | Co-op in the browser: puppet robots, shared relays, robot fire, team HUD, lobby mission choice | Done (November 25) |
 | 4 | Team-play polish: quick-chat, map pings, revive a downed wingmate, per-player ammo pickups | Done (November 25) |
-| 5 | 2–3 missions designed for teams (two-relay "hold together" objectives, split routes) | Planned |
+| 5 | Missions designed for teams: linked relays (format v15), Twin Valves and Deep Freight | Done (November 25) |
 
 ## Rules (`src/js/core/CoopMatch.js`)
 
@@ -41,6 +41,32 @@ Fly the campaign as a team of up to four pilots. Phase 4 builds it in five steps
   - The pickup stays in the world for the others and disappears from your screen once you take it. Repairs and boosts still go to whoever reaches them first.
   - Online, the server lists your taken shares in your own `taken`.
 - **Keys:** `quickChat` (T) and `markTarget` (G) are remappable in Settings → Controls.
+
+## Team missions (step 5)
+
+**Linked relays** (format v15, see [LEVEL_DOCUMENT_FORMAT.md](LEVEL_DOCUMENT_FORMAT.md#version-15-linked-relays-team-missions)) are pairs that switch on only when both are activated within a window.
+
+- The first relay arms (amber light, message naming its partner and the time left) and disarms if the partner is not reached in time.
+- A team gets the authored window; a solo pilot gets four times as long.
+- Online, the server sends `armed` (`id`, `by`, `partner`, `ms`) and `disarmed` events, and snapshots list `coop.armed`.
+
+**Missions** (built by `scripts/build-team-missions.mjs`, registered in `src/js/core/levels/TeamMissions.js`):
+
+| Mission | Spaces | Linked pairs | Robots | Escape |
+| --- | --- | --- | --- | --- |
+| **Twin Valves** | 13 | West + East valve, 10 s (40 s solo) | 6, warden destroyer required | 60 s |
+| **Deep Freight** | 14 on two levels | North + South crane, 12 s; West + East rail switch, 8 s | 8, two fighters and a destroyer required | 90 s |
+
+- **Twin Valves:** the pump station's valves sit at the ends of the west and east wings and open both core lines together.
+  - Clear the warden, pull Pressure release, and return to the drop through the core return line.
+  - Solo, the 40-second window covers the long way round through the drop.
+- **Deep Freight:** the freight line Asset Protection used.
+  - The cranes at either end of the dock lower the freight shaft. The rail switches either side of the cargo hold open the freight lock; the switch room has a slag floor.
+  - The line release seals the tunnel and opens the maintenance lift straight up to the north crane.
+  - Its logs tie into The Seal: the freight manifest for Closure Order AC-77.
+- Both missions have radio, data logs and miners.
+- **Where they appear:** in the mission picker as *TEAM MISSION* cards after the campaign (solo play allowed), and first in the online co-op mission list, marked "(team)".
+- Team missions chain to each other with "next mission"; practice missions never run on into them.
 
 ## Game server
 
@@ -84,6 +110,7 @@ Choose **PLAY ONLINE · ANARCHY & CO-OP**, then pick a mission under *New room p
   - the server creating co-op rooms and refusing unknown maps;
   - live: a headless client game joins a co-op room with a second pilot. Robots stay near the server's, a relay opened by the wingmate opens here, a robot destroyed on the server disappears here, drawn robot fire never hurts the ship, local shots never damage robots, and the server's failure and restart reach the client.
 - `tests/team-play.test.mjs` (4): signal cleaning, aim points stopping at walls and the rate limit; revive progress, draining, refunds and revives with no lives; in a mission: reviving a wingmate at their wreck, per-pilot ammunition and first-come repairs, quick-chat keys not switching weapons, and pings that fade; the server relaying signals with a rate limit and listing wrecks.
+- `tests/team-missions.test.mjs` (5): v15 validation and its errors; solo arming, disarming after 40 s and opening the pair (core gates open); a two-pilot pair inside the 10 s team window; both team missions played through in the simulation (pairs, relays, escape clock, extraction) and listed first for co-op; the server's armed and disarmed events and `coop.armed`.
 - `tests/browser/online-lobby.spec.js` adds a co-op room for Signal Breach with team lives in the HUD.
 
 ## Known gaps

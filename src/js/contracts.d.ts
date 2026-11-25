@@ -91,6 +91,8 @@ export interface MissionDefinition {
   readonly requiredEnemyIds: readonly string[];
   readonly requiredDeviceIds?: readonly string[];
   readonly escape?: EscapeDefinition;
+  /** Pairs of relays that count only when both are activated within a window (team missions). */
+  readonly linkedRelays?: readonly { readonly ids: readonly [string, string]; readonly windowSeconds: number }[];
   readonly exit: { readonly id?: string; readonly position: readonly [number, number, number]; readonly radius: number };
 }
 

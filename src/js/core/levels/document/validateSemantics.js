@@ -81,5 +81,5 @@ export default function validateSemantics(document, issue) {
   if (entities.get(document.mission.exitId)?.kind !== 'exit') issue('$.mission.exitId', 'reference', 'Mission exitId must identify an exit entity');
   if (document.entities.filter(entity => entity.kind === 'exit').length !== 1) issue('$.entities', 'exit', 'Exactly one exit is required');
   if (document.formatVersion !== 1) validateRelaySemantics(document, issue, ids, placements);
-  if (document.formatVersion === 13 || document.formatVersion === 14) validateStorySemantics(document, issue, ids, placements, reachable);
+  if (document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15) validateStorySemantics(document, issue, ids, placements, reachable);
 }

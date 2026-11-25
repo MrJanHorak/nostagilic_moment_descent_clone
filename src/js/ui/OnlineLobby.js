@@ -52,7 +52,9 @@ export function inviteLink(href, room, server) {
  * @param {any} game @returns {{id: string, name: string}[]} */
 export function coopMissions(game) {
   const levels = (game?.levelManager?.levels ?? []).filter(/** @param {any} level */ level => level.mission && level.mode !== 'anarchy' && level.sourceDocument);
-  return [...levels].sort((a, b) => (a.campaignOrder ?? 99) - (b.campaignOrder ?? 99)).map(level => ({ id: level.id, name: level.name ?? level.id }));
+  // Team missions first (built for co-op), then the campaign in order, then the rest.
+  const rank = /** @param {any} level */ level => level.team ? 0 : level.campaignOrder ?? 99;
+  return [...levels].sort((a, b) => rank(a) - rank(b)).map(level => ({ id: level.id, name: `${level.name ?? level.id}${level.team ? ' (team)' : ''}` }));
 }
 
 /** @param {any} storage */

@@ -1,0 +1,1084 @@
+{
+  "formatVersion": 15,
+  "id": "team-deep-freight",
+  "name": "Deep Freight",
+  "rooms": [
+    {
+      "id": "freight-dock",
+      "label": "Freight dock",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        32,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "north-crane",
+      "label": "North crane",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-crane",
+      "label": "South crane",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "cargo-hold",
+      "label": "Cargo hold",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        0
+      ],
+      "size": [
+        32,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "rail-control",
+      "label": "Rail control",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        -44,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "switch-room",
+      "label": "Switch room",
+      "prefab": "box-room",
+      "position": [
+        52,
+        -44,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "deep-line",
+      "label": "Deep freight line",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -44,
+        -52
+      ],
+      "size": [
+        24,
+        16,
+        32
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "north-gantry",
+      "label": "North gantry",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -28
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "south-gantry",
+      "label": "South gantry",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        28
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "freight-shaft",
+      "label": "Freight shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -22,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "rail-walk",
+      "label": "Rail walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -29,
+        -44,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "switch-walk",
+      "label": "Switch walk",
+      "prefab": "straight-corridor",
+      "position": [
+        29,
+        -44,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "freight-lock",
+      "label": "Freight lock",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -44,
+        -26
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "maintenance-lift",
+      "label": "Maintenance lift",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -21.5,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        29
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "north-gantry-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-gantry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-gantry-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-gantry",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-crane",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-gantry-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-gantry",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-gantry-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-gantry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-crane",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-dock",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "freight-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "cargo-hold",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rail-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cargo-hold",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "rail-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "rail-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "rail-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "rail-control",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "switch-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cargo-hold",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "switch-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "switch-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "switch-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "switch-room",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-lock-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "cargo-hold",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "freight-lock",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "freight-lock-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "freight-lock",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "deep-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "maintenance-lift-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "deep-line",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "maintenance-lift",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "maintenance-lift-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "maintenance-lift",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-crane",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "crane-north",
+      "label": "North crane",
+      "roomId": "north-crane",
+      "position": [
+        0,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "crane-south",
+      "label": "South crane",
+      "roomId": "south-crane",
+      "position": [
+        0,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "rail-west",
+      "label": "West rail switch",
+      "roomId": "rail-control",
+      "position": [
+        -4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "rail-east",
+      "label": "East rail switch",
+      "roomId": "switch-room",
+      "position": [
+        4,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "line-release",
+      "label": "Line release",
+      "roomId": "deep-line",
+      "position": [
+        0,
+        0,
+        -10
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "dock-door",
+      "connectionId": "north-gantry-in",
+      "activation": "shot"
+    },
+    {
+      "id": "shaft-field",
+      "connectionId": "freight-shaft-in",
+      "deviceId": "crane-north",
+      "kind": "force-field"
+    },
+    {
+      "id": "lock-door",
+      "connectionId": "freight-lock-in",
+      "deviceId": "rail-west"
+    },
+    {
+      "id": "lift-field",
+      "connectionId": "maintenance-lift-in",
+      "deviceId": "line-release",
+      "kind": "force-field"
+    }
+  ],
+  "entities": [
+    {
+      "id": "north-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "north-crane",
+      "position": [
+        6,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "south-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "south-crane",
+      "position": [
+        -6,
+        2,
+        -4
+      ]
+    },
+    {
+      "id": "hold-fighter-west",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "cargo-hold",
+      "position": [
+        -8,
+        0,
+        -8
+      ]
+    },
+    {
+      "id": "hold-fighter-east",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "cargo-hold",
+      "position": [
+        8,
+        2,
+        -8
+      ]
+    },
+    {
+      "id": "rail-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "rail-control",
+      "position": [
+        4,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "switch-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "switch-room",
+      "position": [
+        -4,
+        2,
+        -4
+      ]
+    },
+    {
+      "id": "line-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "deep-line",
+      "position": [
+        0,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "line-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "deep-line",
+      "position": [
+        -6,
+        3,
+        -4
+      ]
+    },
+    {
+      "id": "dock-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "freight-dock",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "dock-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "freight-dock",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "north-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "north-crane",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "south-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "south-crane",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "hold-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "cargo-hold",
+      "position": [
+        -10,
+        0,
+        10
+      ]
+    },
+    {
+      "id": "hold-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "cargo-hold",
+      "position": [
+        10,
+        0,
+        10
+      ]
+    },
+    {
+      "id": "rail-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "rail-control",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "switch-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "switch-room",
+      "position": [
+        6,
+        3,
+        -6
+      ]
+    },
+    {
+      "id": "line-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "deep-line",
+      "position": [
+        8,
+        0,
+        10
+      ]
+    },
+    {
+      "id": "dock-exit",
+      "kind": "exit",
+      "roomId": "freight-dock",
+      "position": [
+        -10,
+        0,
+        -2
+      ],
+      "radius": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "freight-dock",
+    "position": [
+      0,
+      0,
+      8
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "hold-fighter-west",
+      "hold-fighter-east",
+      "line-destroyer"
+    ],
+    "requiredDeviceIds": [
+      "crane-north",
+      "crane-south",
+      "rail-west",
+      "rail-east",
+      "line-release"
+    ],
+    "exitId": "dock-exit",
+    "escape": {
+      "triggerDeviceId": "line-release",
+      "durationSeconds": 90
+    },
+    "linkedRelays": [
+      {
+        "ids": [
+          "crane-north",
+          "crane-south"
+        ],
+        "windowSeconds": 12
+      },
+      {
+        "ids": [
+          "rail-west",
+          "rail-east"
+        ],
+        "windowSeconds": 8
+      }
+    ]
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 120,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "df:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "This is where Asset Protection got in: the deep freight line. Close it for good. The cranes lower the freight shaft, but only both at once. Someone take north, someone take south.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "df:msg-shaft",
+        "speaker": "FOREMAN",
+        "text": "SHAFT LOWERED. THE CARGO HOLD IS STILL THEIRS.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "crane-north"
+        }
+      },
+      {
+        "id": "df:msg-hold",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Two rail switches, west and east. Same trick: together, inside eight seconds. The switch room floor is slag, so mind your shields.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "cargo-hold"
+        }
+      },
+      {
+        "id": "df:msg-lock",
+        "speaker": "FOREMAN",
+        "text": "FREIGHT LOCK OPEN. THE DEEP LINE RUNS STRAIGHT TO THE CONSORTIUM YARD. I HAVE NEVER SEEN THE OTHER END.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "rail-west"
+        }
+      },
+      {
+        "id": "df:msg-line",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Line release is at the far end. Pull it and the whole line seals. Then the maintenance lift takes you straight up to the north crane.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "deep-line"
+        }
+      },
+      {
+        "id": "df:msg-release",
+        "speaker": "FOREMAN",
+        "text": "LINE SEALING. THE YARD WILL VENT THE TUNNEL IN NINETY SECONDS. THE LIFT IS OPEN. TAKE YOUR FRIENDS.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "line-release"
+        }
+      },
+      {
+        "id": "df:msg-destroyer",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "That was their heavy unit. They'll know we're here now.",
+        "trigger": {
+          "on": "defeat",
+          "enemyId": "line-destroyer"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "df:log-manifest",
+        "roomId": "cargo-hold",
+        "position": [
+          12,
+          0,
+          0
+        ],
+        "title": "Freight manifest AC-77-14",
+        "text": "Cargo: 6 × Asset Protection units (fighter), 1 × heavy (destroyer), reservoir release charges. Destination: Asterion lower works. Authority: Closure Order AC-77. Note: site AI not to be informed."
+      },
+      {
+        "id": "df:log-yard",
+        "roomId": "deep-line",
+        "position": [
+          8,
+          0,
+          -10
+        ],
+        "title": "Yard dispatcher, private channel",
+        "text": "If anyone asks, the line was never here. If the Kestrel pilots come through it, we seal the yard end and they can find their own way home."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "df:miner-ilse",
+        "roomId": "rail-control",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "name": "Ilse Varga"
+      },
+      {
+        "id": "df:miner-tomas",
+        "roomId": "south-crane",
+        "position": [
+          -6,
+          0,
+          6
+        ],
+        "name": "Tomas Reyes"
+      }
+    ]
+  }
+}

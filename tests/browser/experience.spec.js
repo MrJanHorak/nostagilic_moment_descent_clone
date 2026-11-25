@@ -41,8 +41,10 @@ test('production: new campaign is primary; camera, headlights and HUD persist an
   await page.locator('#select-level-btn').click();
   for (const title of ['Signal Breach', 'Vector Foundry', 'Nightfall Reactor']) await expect(button(page, title)).toBeVisible();
   await expect(button(page, 'Arena Escape')).toBeHidden(); await expect(page.getByRole('button', { name: /Legacy level/ })).toHaveCount(0);
-  // Practice & prototypes (collapsed): eight drills plus the Anarchy arena.
+  // Practice & prototypes (collapsed): eight drills plus the Anarchy arena. Team missions are cards after the campaign.
   await expect(page.locator('.mission-library details button')).toHaveCount(9);
+  await expect(page.locator('.mission-library .team-missions button')).toHaveCount(2);
+  await expect(button(page, 'Twin Valves')).toBeVisible();
   await expect(button(page, 'Crossfire Relay')).toBeHidden();
   await expect(button(page, 'Anarchy · Foundry Ring')).toBeHidden();
   await expect(button(page, 'Bomber Drill')).toBeHidden();

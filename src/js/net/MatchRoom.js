@@ -10,7 +10,8 @@ const STEP = 1 / TICK_RATE;
 /** @typedef {{t: 'shot', owner: string, weapon: string, p: number[], q: number[]} | {t: 'kill', victim: string, attacker: string | null}
  *  | {t: 'respawn', id: string} | {t: 'match-start', seed: number} | {t: 'match-over', winner: string | null}
  *  | {t: 'eshot', kind: string, p: number[], v: number[]} | {t: 'down', id: string} | {t: 'relay', id: string, by: string | null}
- *  | {t: 'mission-over', result: 'extracted' | 'failed'}} RoomEvent */
+ *  | {t: 'mission-over', result: 'extracted' | 'failed'} | {t: 'armed', id: string, by: string, partner: string | null, ms: number}
+ *  | {t: 'disarmed', id: string}} RoomEvent */
 
 /** The missions a co-op room may fly by default. */
 export const DEFAULT_COOP_MAP = 'asterion-deepworks';
@@ -83,7 +84,11 @@ export default class MatchRoom {
     if (this.game.session.phase !== 'playing' || !pilot.alive || !pilot.ship) { pilot.input = {}; return true; }
     pilot.ship.rotate(message.look[0], message.look[1]);
     this.game.setPilotInput(id, message.input);
-    if (message.interact && this.game.coop && this.game.pilotInteract(id)) this.noteRelays(id);
+    if (message.interact && this.game.coop) {
+      const result = this.game.pilotInteract(id);
+      if (result?.armed) this.events.push({ t: 'armed', id: result.id, by: id, partner: result.partnerId ?? null, ms: result.windowMs ?? 0 });
+      if (result) this.noteRelays(id);
+    }
     if (message.weapon) this.game.gameState.switchWeapon(/** @type {any} */ (message.weapon), pilot);
     const now = this.game.session.timeMs;
     if (message.fire && now - player.lastFireMs >= MIN_FIRE_INTERVAL_MS) {
@@ -139,6 +144,7 @@ export default class MatchRoom {
       else if (!this.downIds.has(pilot.id)) { this.downIds.add(pilot.id); this.events.push({ t: 'down', id: pilot.id }); }
     }
     this.noteRelays(null);
+    for (const relay of game.levelManager.interaction?.expired ?? []) this.events.push({ t: 'disarmed', id: relay });
   }
 
   /** @param {string | null} by */
@@ -161,6 +167,7 @@ export default class MatchRoom {
         hp: Math.max(0, Math.round(enemy.health * 10) / 10), a: !!enemy.isActive })),
       defeated: [...game.enemyManager.destroyedPredefinedEnemies],
       relays: [...(game.levelManager.interaction?.activatedIds ?? [])],
+      armed: game.levelManager.interaction?.armedState() ?? [],
       ready: !!mission?.ready, escapeMs: mission?.remainingEscapeMs(game.session.timeMs) ?? null,
       lives: coop.lives, respawnInMs: respawnAt === undefined ? null : Math.max(0, respawnAt - game.session.timeMs),
       checkpoint: coop.checkpointLabel, toughness: game.enemyManager.toughness,

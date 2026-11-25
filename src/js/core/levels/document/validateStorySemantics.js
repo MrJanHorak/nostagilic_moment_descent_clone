@@ -3,7 +3,7 @@ import { distance, fitsInside, toWorld } from './RoomMath.js';
 
 /** Version 13 story references and placements. Runs after relay semantics, so devices
  * already appear in `ids` and `placements`.
- * @param {Extract<import('../../../levelDocument.js').LevelDocument, {formatVersion: 13 | 14}>} document
+ * @param {Extract<import('../../../levelDocument.js').LevelDocument, {formatVersion: 13 | 14 | 15}>} document
  * @param {(path: string, code: string, message: string) => void} issue
  * @param {Set<string>} ids
  * @param {{id: string, path: string, position: import('../../../levelDocument.js').Vec3, radius: number}[]} placements

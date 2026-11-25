@@ -7,7 +7,7 @@
 
 /** @param {LevelDocument} document @returns {import('../levelDocument.js').StoryDocument | undefined} */
 export function storyOf(document) {
-  return document.formatVersion === 13 || document.formatVersion === 14 ? document.story : undefined;
+  return document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15 ? document.story : undefined;
 }
 
 /** Data logs and trapped miners as kind-tagged placements, in document order.

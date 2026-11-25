@@ -333,6 +333,12 @@ export default class OnlineMatch {
       else ui?.showMessage?.(`${this.nameOf(event.id)} is down · ${lives ?? 0} team lives left`, 2200, '#ffaa66');
       return;
     }
+    if (event.t === 'armed' || event.t === 'disarmed') {
+      const label = /** @param {string | null} id */ id => game.levelManager?.interaction?.devices.find(/** @param {any} device */ device => device.id === id)?.label ?? id ?? 'its partner';
+      if (event.t === 'armed') ui?.showMessage?.(`${event.by === this.id ? 'You' : this.nameOf(event.by)} armed ${label(event.id)} · ${label(event.partner)} within ${Math.round(event.ms / 1000)}s`, 3000, '#ffb347');
+      else ui?.showMessage?.(`LINK LOST · ${label(event.id)} disarmed · activate both together`, 2600, '#ff9944');
+      return;
+    }
     if (event.t === 'relay') { if (event.by && event.by !== this.id) ui?.showMessage?.(`${this.nameOf(event.by)} opened a relay`, 1800, '#45ff96', 70); return; }
     if (event.t === 'respawn' && this.mode === 'coop' && event.id !== this.id) { ui?.showMessage?.(`${this.nameOf(event.id)} is back`, 1500, '#45ff96', 70); return; }
     if (event.t === 'shot' && event.owner !== this.id) this.drawShot(event);

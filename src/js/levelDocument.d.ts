@@ -35,6 +35,7 @@ export type EntityDocument = Placement & (
   | { readonly id: string; readonly kind: 'pickup'; readonly type: PickupType }
   | { readonly id: string; readonly kind: 'exit'; readonly radius: number }
 );
+export interface LinkedRelays { readonly ids: readonly [string, string]; readonly windowSeconds: number }
 export interface DeviceDocument extends Placement { readonly id: string; readonly label: string; readonly kind?: 'reactor'; readonly health?: number }
 export interface DoorDocument { readonly id: string; readonly connectionId: string; readonly deviceId?: string; readonly activation?: 'shot'; readonly concealed?: boolean; readonly kind?: 'force-field' }
 /** Version 13 story layer: radio messages, collectible data logs and rescuable survivors. */
@@ -81,8 +82,10 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 10 | 11 | 12; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
-  | { readonly formatVersion: 13 | 14; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
-      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition };
+  | { readonly formatVersion: 13 | 14 | 15; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+      readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition;
+        /** Version 15: relays that count only when both are activated within a window. */
+        readonly linkedRelays?: readonly LinkedRelays[] };
       readonly story?: StoryDocument }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }

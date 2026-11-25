@@ -3,6 +3,9 @@ import { hasLineOfSight } from '../utils/combatTrace.js';
 import { DOOR_OPEN_SECONDS } from './SlidingDoor.js';
 
 export const INTERACTION_DISTANCE = 2.5;
+/** A solo pilot gets this many times a linked pair's window, to make the run between the two relays alone. */
+export const SOLO_LINK_SCALE = 4;
+const ARMED_COLOUR = 0xffb347;
 
 /** Session-owned one-way doors. Old documents retain instant relay gates;
  * v8 panels slide with matching colliders and never close on a ship. */
@@ -16,6 +19,16 @@ export default class RelayController {
     this.devices = (level.devices ?? []).map(device => ({ ...device, position: new Vector3(...device.position) }));
     this.doors = level.doors ?? [];
     /** @type {Set<string>} */ this.activatedIds = new Set();
+    /** Linked relays (v15): each relay's partner and window. @type {Map<string, {partner: string, windowMs: number}>} */
+    this.links = new Map();
+    for (const link of level.mission?.linkedRelays ?? []) {
+      this.links.set(link.ids[0], { partner: link.ids[1], windowMs: link.windowSeconds * 1000 });
+      this.links.set(link.ids[1], { partner: link.ids[0], windowMs: link.windowSeconds * 1000 });
+    }
+    /** Window multiplier: 1 for a team, SOLO_LINK_SCALE alone (set by the game). */
+    this.linkScale = 1;
+    /** Armed linked relays and when they disarm (simulation ms). @type {Map<string, number>} */ this.armed = new Map();
+    /** Relays that disarmed during the last update (read by the game and the server). @type {string[]} */ this.expired = [];
     this.closedConnections = new Set(this.doors.map(door => door.connectionId));
     this.revision = 0;
     this.sessionId = session.id;
@@ -90,7 +103,12 @@ export default class RelayController {
    * remains closed until the passage is fully clear; pause freezes the motion.
    * @param {number} delta */
   update(delta) {
+    this.expired = [];
     if (!this.isLive() || !Number.isFinite(delta) || delta <= 0) return;
+    for (const [id, until] of this.armed) {
+      if (this.session.timeMs <= until) continue;
+      this.armed.delete(id); this.expired.push(id); this.paint(id, null);
+    }
     this.fieldTime += delta;
     for (const material of this.fieldMaterials) material.uniforms.time.value = this.fieldTime;
     for (const slide of this.slides) {
@@ -125,12 +143,39 @@ export default class RelayController {
     return nearest;
   }
 
-  /** @param {Vector3} position */
+  /** @param {Vector3} position
+   * @returns {{id: string, label: string, armed?: boolean, partnerId?: string, partnerLabel?: string, windowMs?: number,
+   *   linked?: {id: string, label: string}[]} | null} A linked relay arms (and waits for its partner) or completes the pair. */
   tryActivate(position) {
     const device = this.nearest(position);
     if (!device) return null;
+    const link = this.links.get(device.id);
+    if (link) {
+      const partner = this.devices.find(candidate => candidate.id === link.partner);
+      const partnerUntil = this.armed.get(link.partner);
+      if (partner && partnerUntil !== undefined && this.session.timeMs <= partnerUntil) {
+        this.armed.delete(link.partner); this.armed.delete(device.id);
+        this.activate(partner); this.activate(device);
+        return { id: device.id, label: device.label, linked: [{ id: partner.id, label: partner.label }, { id: device.id, label: device.label }] };
+      }
+      const windowMs = link.windowMs * this.linkScale;
+      this.armed.set(device.id, this.session.timeMs + windowMs); this.paint(device.id, ARMED_COLOUR);
+      return { id: device.id, label: device.label, armed: true, partnerId: link.partner, partnerLabel: partner?.label ?? link.partner, windowMs };
+    }
     this.activate(device);
     return { id: device.id, label: device.label };
+  }
+
+  /** Armed linked relays and the time each has left. @returns {{id: string, ms: number}[]} */
+  armedState() { return [...this.armed].map(([id, until]) => ({ id, ms: Math.max(0, Math.round(until - this.session.timeMs)) })); }
+
+  /** Tint a relay's light (null restores its idle colour). @param {string} id @param {number | null} colour */
+  paint(id, colour) {
+    this.root.children.find(child => child.name === id)?.traverse(child => {
+      if (!(child instanceof Mesh) || !(child.material instanceof MeshBasicMaterial)) return;
+      child.userData.idleColour ??= child.material.color.getHex();
+      child.material.color.setHex(colour ?? child.userData.idleColour);
+    });
   }
 
   /** @param {(typeof this.devices)[number]} device */

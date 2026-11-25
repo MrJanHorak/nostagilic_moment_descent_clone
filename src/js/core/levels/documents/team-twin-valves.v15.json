@@ -1,0 +1,955 @@
+{
+  "formatVersion": 15,
+  "id": "team-twin-valves",
+  "name": "Twin Valves",
+  "rooms": [
+    {
+      "id": "kestrel-drop",
+      "label": "Kestrel drop",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        14,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "west-pumphouse",
+      "label": "West pumphouse",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-pumphouse",
+      "label": "East pumphouse",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        0
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-valve-room",
+      "label": "West valve room",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -48
+      ],
+      "size": [
+        20,
+        12,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-valve-room",
+      "label": "East valve room",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -48
+      ],
+      "size": [
+        20,
+        12,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pressure-core",
+      "label": "Pressure core",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -48
+      ],
+      "size": [
+        24,
+        16,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "west-walk",
+      "label": "West walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -27,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "east-walk",
+      "label": "East walk",
+      "prefab": "straight-corridor",
+      "position": [
+        27,
+        0,
+        0
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "west-riser",
+      "label": "West riser",
+      "prefab": "straight-corridor",
+      "position": [
+        -52,
+        0,
+        -25
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "east-riser",
+      "label": "East riser",
+      "prefab": "straight-corridor",
+      "position": [
+        52,
+        0,
+        -25
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "west-core-line",
+      "label": "West core line",
+      "prefab": "straight-corridor",
+      "position": [
+        -27,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        30
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "east-core-line",
+      "label": "East core line",
+      "prefab": "straight-corridor",
+      "position": [
+        27,
+        0,
+        -48
+      ],
+      "size": [
+        8,
+        8,
+        30
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "core-return",
+      "label": "Core return",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -25
+      ],
+      "size": [
+        8,
+        8,
+        22
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    }
+  ],
+  "connections": [
+    {
+      "id": "west-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-drop",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-pumphouse",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-drop",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-pumphouse",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-riser-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-pumphouse",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-riser",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-riser-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-riser",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-valve-room",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-riser-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-pumphouse",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-riser",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-riser-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-riser",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-valve-room",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-core-line-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-valve-room",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-core-line",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-core-line-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-core-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pressure-core",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-core-line-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pressure-core",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-core-line",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-core-line-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-core-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-valve-room",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-return-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pressure-core",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "core-return",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "core-return-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "core-return",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "kestrel-drop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "west-valve",
+      "label": "West valve",
+      "roomId": "west-valve-room",
+      "position": [
+        4,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "east-valve",
+      "label": "East valve",
+      "roomId": "east-valve-room",
+      "position": [
+        -4,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "core-release",
+      "label": "Pressure release",
+      "roomId": "pressure-core",
+      "position": [
+        0,
+        0,
+        -6
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "west-core-gate",
+      "connectionId": "west-core-line-in",
+      "deviceId": "west-valve"
+    },
+    {
+      "id": "east-core-gate",
+      "connectionId": "east-core-line-out",
+      "deviceId": "east-valve"
+    },
+    {
+      "id": "return-gate",
+      "connectionId": "core-return-in",
+      "deviceId": "core-release",
+      "kind": "force-field"
+    }
+  ],
+  "entities": [
+    {
+      "id": "west-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "west-pumphouse",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "east-pumphouse",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "west-guard",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "west-valve-room",
+      "position": [
+        -4,
+        1,
+        4
+      ]
+    },
+    {
+      "id": "east-guard",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "east-valve-room",
+      "position": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "id": "core-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "pressure-core",
+      "position": [
+        -6,
+        2,
+        4
+      ]
+    },
+    {
+      "id": "core-warden",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "pressure-core",
+      "position": [
+        5,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "drop-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-drop",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "drop-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-drop",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "west-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "west-pumphouse",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "east-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "east-pumphouse",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "west-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "west-valve-room",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "east-valve-room",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "core-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "pressure-core",
+      "position": [
+        -8,
+        0,
+        -8
+      ]
+    },
+    {
+      "id": "drop-exit",
+      "kind": "exit",
+      "roomId": "kestrel-drop",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "radius": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-drop",
+    "position": [
+      0,
+      0,
+      6
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "core-warden"
+    ],
+    "requiredDeviceIds": [
+      "west-valve",
+      "east-valve",
+      "core-release"
+    ],
+    "exitId": "drop-exit",
+    "escape": {
+      "triggerDeviceId": "core-release",
+      "durationSeconds": 60
+    },
+    "linkedRelays": [
+      {
+        "ids": [
+          "west-valve",
+          "east-valve"
+        ],
+        "windowSeconds": 10
+      }
+    ]
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 100,
+    "maxPulseAmmo": 250
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "tv:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Side job while the Seal survivors recover: Asterion's west pump station is leaking pressure into the lower works. The core only vents if both valves turn together. Split up: one of you west, one east.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "tv:msg-west",
+        "speaker": "FOREMAN",
+        "text": "WEST VALVE. IT WILL HOLD FOR TEN SECONDS. THE EAST VALVE MUST TURN BEFORE IT LETS GO.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "west-valve-room"
+        }
+      },
+      {
+        "id": "tv:msg-east",
+        "speaker": "FOREMAN",
+        "text": "EAST VALVE. THE CONSORTIUM BUILT THIS STATION SO NO ONE PILOT COULD OPEN IT. THEY DID NOT EXPECT FRIENDS.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "east-valve-room"
+        }
+      },
+      {
+        "id": "tv:msg-linked",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Both valves are open, and so are the core lines. Meet in the middle.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "east-valve"
+        }
+      },
+      {
+        "id": "tv:msg-core",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "That's a destroyer in the pressure core. Take it down together, then pull the release.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "pressure-core"
+        }
+      },
+      {
+        "id": "tv:msg-release",
+        "speaker": "FOREMAN",
+        "text": "PRESSURE VENTING. THE CORE WILL FLOOD WITH STEAM IN SIXTY SECONDS. THE RETURN LINE IS OPEN. GO HOME.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "core-release"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "tv:log-design",
+        "roomId": "west-pumphouse",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "title": "Station design note",
+        "text": "Two-valve interlock per Consortium safety standard 12: no single operator may vent the core. Valves must be turned within ten seconds of each other. Lone technicians: request a partner or don't touch it."
+      },
+      {
+        "id": "tv:log-shift",
+        "roomId": "east-valve-room",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "title": "Shift note",
+        "text": "Mara's on west, I'm on east, radio check every five minutes. If FOREMAN shuts the station again we turn them together and walk out through the core. — D."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "tv:miner-dario",
+        "roomId": "east-pumphouse",
+        "position": [
+          -6,
+          0,
+          6
+        ],
+        "name": "Dario Mensah"
+      }
+    ]
+  }
+}
