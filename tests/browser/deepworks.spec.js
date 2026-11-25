@@ -84,7 +84,7 @@ test('production: Attach corridor creates two usable same-wall doorways and Deep
   await expect(page.locator('#validation-title')).toContainText('Valid level');
   const pending = page.waitForEvent('download'); await button(page, 'Export JSON').click(); const path = info.outputPath('two-lanes.json'); await (await pending).saveAs(path);
   const doc = JSON.parse(await readFile(path, 'utf8')); expect(doc.connections).toHaveLength(2); expect(doc.connections[0].a.port).toBe(doc.connections[1].a.port); expect(doc.connections[0].a.offset ?? [0, 0]).not.toEqual(doc.connections[1].a.offset);
-  page.on('dialog', d => d.accept()); await button(page, 'Open Deepworks').click(); await expect(page.locator('#format-version')).toContainText('Format 12');
+  page.on('dialog', d => d.accept()); await button(page, 'Open Deepworks').click(); await expect(page.locator('#format-version')).toContainText('Format 13'); // v13 since Deepworks gained its story
   await expect(page.getByLabel('Mine name', { exact: true })).toHaveValue('Asterion Deepworks');
   await page.screenshot({ path: info.outputPath('deepworks-editor.png'), fullPage: true });
 });

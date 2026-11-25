@@ -17,6 +17,10 @@ export default class AnarchyMatch {
     this.over = false;
     /** The most recent kill, for the feed. @type {{victimId: string, attackerId: string | null, timeMs: number} | null} */
     this.lastKill = null;
+    /** Display names by pilot id (online play); the HUD falls back to ids. @type {Map<string, string> | null} */
+    this.names = null;
+    /** Online: time until the server's automatic rematch. @type {number | null} */
+    this.rematchInMs = null;
   }
 
   /** @param {string} id */

@@ -3,6 +3,7 @@ import SettingsDialog from './SettingsDialog.js';
 import MineGuide from '../core/levels/document/MineGuide.js';
 import createMissionSelect from './MissionSelect.js';
 import createUserLevels from './UserLevels.js';
+import createOnlineLobby, { inviteLink, parseInvite } from './OnlineLobby.js';
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
 import UserCampaignLibrary from '../core/UserCampaignLibrary.js';
 import { missionLabel } from './UserCampaigns.js';
@@ -660,6 +661,11 @@ class UIManager {
       Object.assign(myLevelsButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#dcf8ff', background: '#24485c', border: '1px solid #5e9cae', borderRadius: '5px', font: '16px system-ui', cursor: 'pointer' });
       myLevelsButton.onclick = () => this.game.showUserLevels();
       startScreen.firstElementChild.appendChild(myLevelsButton);
+      const onlineButton = document.createElement('button');
+      onlineButton.id = 'play-online-btn'; onlineButton.textContent = 'PLAY ONLINE · ANARCHY';
+      Object.assign(onlineButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#001018', background: '#38d0f0', border: '1px solid #8be8f0', borderRadius: '5px', font: 'bold 16px system-ui', cursor: 'pointer', letterSpacing: '1px' });
+      onlineButton.onclick = () => this.game.showOnlineLobby();
+      startScreen.firstElementChild.appendChild(onlineButton);
       const settingsButton = this.createSettingsButton();
       Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
       startScreen.querySelector('.title-container').appendChild(settingsButton);
@@ -677,6 +683,8 @@ class UIManager {
       const startButton = document.getElementById('start-game-btn');
       this.describeCampaignStart(startButton);
       startButton.addEventListener('click', () => this.game.continueCampaign());
+      // An invite link (?room=ABCD) opens the lobby straight away, once per page load.
+      if (!this.inviteHandled && parseInvite(globalThis.location?.search ?? '').room) { this.inviteHandled = true; this.game.showOnlineLobby(); }
       return startButton;
     } catch (error) {
       console.error('Error creating start screen:', error);
@@ -1119,9 +1127,36 @@ class UIManager {
   showPauseMenu(options = {}) {
     this.comms?.setPaused(true);
     const menu = this.createPauseMenu();
+    this.updateOnlinePause(menu);
     this.missionLog?.render(this.game?.missionStatus?.() ?? null, this.game?.story?.history ?? [], options);
     menu.style.display = 'flex';
     if (options.openComms) this.missionLog?.comms.querySelector('summary')?.focus();
+  }
+
+  /** Online: the room code, an invite link to copy, and a reminder that the match
+   * goes on while this menu is open. Restart is hidden: the server runs the match.
+   * @param {HTMLElement} menu */
+  updateOnlinePause(menu) {
+    const online = this.game?.online;
+    const restart = /** @type {HTMLElement | null} */ (menu.querySelector('.restart-btn'));
+    if (restart) restart.style.display = online ? 'none' : '';
+    let info = /** @type {HTMLElement | null} */ (menu.querySelector('#online-pause-info'));
+    if (!online) { info?.remove(); return; }
+    if (!info) {
+      info = document.createElement('div'); info.id = 'online-pause-info';
+      Object.assign(info.style, { margin: '0 0 18px', padding: '10px 14px', border: '1px solid #45e5ed', borderRadius: '6px', color: '#cafaff', textAlign: 'center', font: '15px system-ui' });
+      menu.querySelector('h1')?.after(info);
+    }
+    const text = document.createElement('p');
+    text.textContent = `ONLINE · Room ${online.room} · The match keeps running while you are paused.`;
+    text.style.margin = '0 0 8px';
+    const copy = document.createElement('button'); copy.type = 'button'; copy.id = 'copy-invite-btn'; copy.textContent = 'COPY INVITE LINK';
+    Object.assign(copy.style, { padding: '8px 14px', cursor: 'pointer', font: 'bold 14px system-ui' });
+    copy.onclick = async () => {
+      const link = inviteLink(globalThis.location.href, online.room ?? '', online.url);
+      try { await navigator.clipboard.writeText(link); copy.textContent = 'COPIED'; } catch { copy.textContent = link; }
+    };
+    info.replaceChildren(text, copy);
   }
 
   hidePauseMenu() {
@@ -1385,12 +1420,14 @@ class UIManager {
    * @param {import('../core/AnarchyMatch.js').default} match */
   updateAnarchyUI(match) {
     const game = this.game, local = game.gameState.localPilot, me = match.standing(local.id), leader = match.standings()[0];
+    const nameOf = /** @param {string} id */ id => match.names?.get(id) ?? id;
     const left = Math.max(0, Math.ceil((match.rules.timeLimitMs - game.session.timeMs) / 1000));
     const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
-    const lead = leader && leader.id !== local.id ? ` · Leader ${leader.id} ${leader.frags}` : leader ? ' · You lead' : '';
+    const lead = leader && leader.id !== local.id ? ` · Leader ${nameOf(leader.id)} ${leader.frags}` : leader ? ' · You lead' : '';
     const primary = `ANARCHY · ${me.frags}/${match.rules.fragLimit} frags · ${me.deaths} deaths${lead} · ${clock}`;
     const respawn = match.respawns.get(local.id);
     const nav = respawn !== undefined ? `Respawning in ${Math.max(0, Math.ceil((respawn - game.session.timeMs) / 1000))}s`
+      : game.online ? `ONLINE · ${game.online.status()} · ${game.gameState.pilots.length} pilot${game.gameState.pilots.length === 1 ? '' : 's'} · Esc for menu`
       : `${game.gameState.pilots.length} pilots · Repairs in the corners · Weapons on the gantries, crane deck and slag pit`;
     if (this.guidePrimary && this.guidePrimary.textContent !== primary) this.guidePrimary.textContent = primary;
     if (this.guideNav && this.guideNav.textContent !== nav) this.guideNav.textContent = nav;
@@ -1401,8 +1438,15 @@ class UIManager {
   /** Final Anarchy standings. @param {readonly {id: string, frags: number, deaths: number}[]} standings
    * @param {string | null} winnerId @param {string} localId */
   showAnarchyResult(standings, winnerId, localId) {
-    const lines = standings.map((entry, index) => `${index + 1}. ${entry.id === localId ? `${entry.id} (you)` : entry.id} · ${entry.frags} frags · ${entry.deaths} deaths`);
-    this.showResult(winnerId === localId ? 'YOU WIN THE MATCH' : winnerId ? `${winnerId.toUpperCase()} WINS` : 'MATCH OVER', lines.join('\n'), [
+    const names = this.game.anarchy?.names, nameOf = /** @param {string} id */ id => names?.get(id) ?? id;
+    const lines = standings.map((entry, index) => `${index + 1}. ${entry.id === localId ? `${nameOf(entry.id)} (you)` : nameOf(entry.id)} · ${entry.frags} frags · ${entry.deaths} deaths`);
+    const title = winnerId === localId ? 'YOU WIN THE MATCH' : winnerId ? `${nameOf(winnerId).toUpperCase()} WINS` : 'MATCH OVER';
+    if (this.game.online) {
+      lines.push('', `Room ${this.game.online.room} · The rematch starts automatically in a few seconds.`);
+      this.showResult(title, lines.join('\n'), [['LEAVE ROOM', () => this.game.showMainMenu()]]);
+      return;
+    }
+    this.showResult(title, lines.join('\n'), [
       ['REMATCH', () => this.game.restartLevel()], ['SELECT MISSION', () => this.game.showLevelSelection()],
     ]);
   }

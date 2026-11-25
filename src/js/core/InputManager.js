@@ -90,7 +90,10 @@ class InputManager {
 
     const sensitivity = this.mouseSensitivity * (this.settings?.values.mouseSensitivity ?? 1);
     const pitchSign = this.settings?.values.invertY ? 1 : -1;
-    this.game?.spaceship.rotate(-movementX * sensitivity, pitchSign * movementY * sensitivity);
+    const yaw = -movementX * sensitivity, pitch = pitchSign * movementY * sensitivity;
+    this.game?.spaceship.rotate(yaw, pitch);
+    // Online: the same turn goes to the server with the next input.
+    this.game?.online?.addLook(yaw, pitch);
   } // Handle key down
   /** @param {import('../contracts.js').KeyboardInput} event */
   onKeyDown(event) {
@@ -123,7 +126,7 @@ class InputManager {
    * @param {ControlAction | 'weaponNext' | 'weaponPrevious'} action */
   performAction(action) {
     switch (action) {
-      case 'fire': this.projectileManager?.fireProjectile(this.gameState, { requirePointerLock: false }); break;
+      case 'fire': this.fireWeapon({ requirePointerLock: false }); break;
       case 'interact': this.game?.interact?.(); break;
       case 'map': this.game?.toggleMap?.(); break;
       case 'missionLog': this.game?.openMissionLog?.(); break;
@@ -240,8 +243,19 @@ class InputManager {
       document.pointerLockElement === this.canvas &&
       this.projectileManager
     ) {
-      this.projectileManager.fireProjectile(this.gameState);
+      this.fireWeapon();
     }
+  }
+
+  /** Fire the selected weapon. Online, shots keep to the server's rate and go with the
+   * next input; the shot drawn here is this screen's prediction of it.
+   * @param {{requirePointerLock?: boolean}} [options] */
+  fireWeapon(options) {
+    const online = this.game?.online;
+    if (online && !online.canFire()) return;
+    const shot = this.projectileManager?.fireProjectile(this.gameState, options);
+    if (shot && online) online.queueFire();
+    return shot;
   }
 
   requestPointerLock() {
@@ -323,7 +337,7 @@ class InputManager {
     if (this.game && this.game.spaceship) {
       this.game.spaceship.update(delta, input, this.gameState.speedMultiplier);
     }
-
+    return input;
   } // Provide feedback when player collides with an obstacle
   activateCollisionFeedback() {
     if (this.gameState.session.phase !== 'playing') return;

@@ -1,14 +1,14 @@
 # Anarchy (Phase 3)
 
-Free-for-all deathmatch: every pilot for themselves. Phase 3 builds it in five steps; steps 1–3 are done.
+Free-for-all deathmatch: every pilot for themselves. Phase 3 built it in five steps; all five are done, so friends can now play each other online.
 
 | Step | What | Status |
 | --- | --- | --- |
 | 1 | Anarchy rules in the simulation | Done (November 24) |
 | 2 | Foundry Ring arena | Done (November 24) |
 | 3 | Authoritative Node game server (WebSocket rooms, room codes) | Done (November 24) |
-| 4 | Client networking: sequenced inputs, prediction and reconciliation, interpolated remote ships | Next |
-| 5 | Lobby with room codes and a server address | Planned |
+| 4 | Client networking: sequenced inputs, prediction and reconciliation, interpolated remote ships | Done (November 25) |
+| 5 | Lobby with room codes and a server address | Done (November 25) |
 
 ## Rules
 
@@ -56,6 +56,33 @@ Run it with `npm run server` (default port 8787). `PORT`, `HOST` and `ALLOW_ORIG
 
 **Hosting:** Netlify serves static files only, so the server needs a Node host that allows WebSockets (Fly.io, Render, Railway, or any small VPS behind TLS, giving `wss://`). Bandwidth is small: a full 8-pilot snapshot is about 1–2 KB, 20 times a second per player.
 
+## Playing online
+
+1. Start a server: `npm run server` (port 8787), or deploy it to a Node host with WebSockets.
+2. In the game, choose **PLAY ONLINE · ANARCHY** on the start screen.
+3. Enter a pilot name and the server address. `localhost:8787`, `host:port`, `http(s)://` and `ws(s)://` all work; `/play` is added. A page served over https needs a `wss://` server.
+   - The address defaults to the last one used, then to `VITE_GAME_SERVER` (set it at build time for the hosted site), then to `ws://<this host>:8787/play` when the page is local.
+4. **CREATE ROOM** makes a room; **JOIN ROOM** joins one by its four-letter code.
+5. Once in a room, the address bar becomes an invite link (`?room=ABCD&server=…`). The pause menu shows the room and has **COPY INVITE LINK**. Opening an invite link opens the lobby filled in.
+6. **RETURN TO BASE** (pause menu) or **LEAVE ROOM** (result screen) leaves. A dropped connection shows *Connection lost*.
+
+The HUD guide bar shows the room code, the round trip in milliseconds and the pilot count. Pausing does not stop the match: the server holds your ship still (thrust off) while the menu is open. After a match, the server starts the rematch by itself.
+
+## Client networking (`src/js/net/ClientPrediction.js`, `src/js/net/OnlineMatch.js`)
+
+The server stays authoritative for damage, frags, respawns, pickups and ammunition. The browser predicts only its own flight and draws its own shots at once.
+
+- **Inputs:** every 60 Hz client step sends one numbered input: the held flight keys, the mouse turn since the last input (capped at 0.6 rad like the server), the fire flag and the selected weapon. Firing locally is limited to the server's 100 ms, so every shot drawn is a real one.
+- **Prediction and reconciliation:** unacknowledged inputs are kept (`InputHistory`). On each snapshot the ship is put at the server's pose for the acknowledged input, the newer inputs are replayed with the same flight model and wall collision, and the live ship moves toward the result:
+  - more than 3 units away (respawn, big lag): snap;
+  - otherwise: close 35% of the gap per snapshot, so corrections never jerk;
+  - aim within 0.03 rad of the server's is left alone (the client owns its aim); larger differences ease in, and more than 0.6 rad snaps;
+  - mouse turn not yet sent is kept.
+- **Other ships:** each snapshot's poses go into a buffer (`SnapshotInterpolator`). Every frame they are drawn 100 ms behind the estimated server time (`ServerClock`), blended between the two snapshots around that time. With no newer snapshot they coast on their velocity for up to 150 ms. A respawn is never blended (no sliding across the map).
+- **Other pilots' shots:** `shot` events are drawn from the server's muzzle position. They do no damage here; hits come back in snapshots.
+- **Server-owned state:** shields, ammunition and unlocked weapons are copied from each snapshot. Damage flashes the screen. Deaths and respawns come from the `alive` flags. The HUD's frags, clock and respawn countdown come from `match`. Placed pickups are hidden while the server lists them in `taken`; one that vanishes beside your ship plays the pickup sound.
+- **Ships and names:** other ships are drawn in a colour by join order (red, blue, green, yellow, …) with a name tag. The HUD, kill messages and result screen use pilot names.
+
 ### Protocol (`src/js/net/Protocol.js`, version 1)
 
 One JSON text frame per message, each with a type field `t`.
@@ -71,7 +98,8 @@ One JSON text frame per message, each with a type field `t`.
 **Server to client:**
 - `welcome`: `{id, name, room, map, seed, tick, tickRate, snapshotEvery, rules}`.
 - `roster`: `{players:[{id, name}]}`, sent on every join and leave.
-- `snapshot`: `{tick, timeMs, ack, ammo, pilots:[{id, name, alive, hp, weapon, p, q, v}], pickups, match, events}`.
+- `snapshot`: `{tick, timeMs, ack, ammo, pilots:[{id, name, alive, hp, weapon, p, q, v}], pickups, taken, match, events}`.
+  - `taken` lists placed pickups that someone collected and that are waiting to return (added November 25; older clients ignore it).
   - `ack` is the last input sequence number the server applied, used for reconciliation.
   - `match` holds standings, the time left, the respawn countdown, the winner and the rematch countdown.
   - `events` lists `shot`, `kill`, `respawn`, `match-start` and `match-over` since the previous snapshot.
@@ -96,12 +124,22 @@ One JSON text frame per message, each with a type field `t`.
   - pickup return after 20 s.
 - `tests/net-room.test.mjs` (6): message cleaning, room codes, spawning apart, inputs and sequence numbers, turn cap, fire-rate cap, kill and respawn events, automatic rematch, leaving and the 8-pilot limit.
 - `tests/net-server.test.mjs` (4): WebSocket frame encoding; two real clients creating and joining a room, flying and seeing each other, about 20 snapshots a second, ping, and the roster after leaving; refused hellos; a full room; the origin allow-list.
+- `tests/net-client.test.mjs` (7):
+  - input numbering, turn cap and acknowledgement;
+  - reconciliation: replay agrees with the server exactly, small errors ease in, big ones snap, unsent mouse turn is kept;
+  - the server clock and its reset on a rematch;
+  - interpolation, coasting and no blending across a respawn;
+  - lobby address handling, defaults and invite links;
+  - readable server errors;
+  - live: a headless browser-side game joins a real server, is refused a missing room, flies with prediction that settles within 1 unit of the server, sees a second pilot (named, coloured, interpolated near the server's pose), draws their shot, and leaves.
 - `tests/browser/anarchy.spec.js` opens the arena from the menu and checks the scoreline.
+- `tests/browser/online-lobby.spec.js` starts a game server, opens the lobby, checks the bad-code and missing-room messages, creates a room, sees the room code and a second pilot join and leave, and returns to base (the server sees the pilot leave).
 - `tests/helpers/headlessGame.mjs` is the shared headless game, used by the multiplayer and Anarchy tests.
 
 ## Known gaps
 
-- Lava and water damage only the local ship; a remote pilot crossing the slag pit is unhurt until the server applies the environment to every pilot (step 3).
-- Remote ships have no name tag or colour, and the kill feed is a message line.
-- The browser game cannot connect to the server yet (step 4). Until then, flying the arena alone is a scouting run.
-- Shots are not yet predicted on the client: they will appear when the server's snapshot arrives.
+- Lava and water damage only the local ship. Online every pilot on the server is remote, so the slag pit's lava hurts nobody yet. Per-pilot hazards (planned for Phase 4) fix this.
+- No lag compensation: you hit what the server sees, so with high latency you must lead targets by your round trip. Other ships are drawn 100 ms in the past.
+- The kill feed is a message line.
+- There is no room browser or public matchmaking; rooms are shared by code or invite link.
+- The hosted site needs a deployed server and `VITE_GAME_SERVER` set at build time before strangers can play without typing an address.

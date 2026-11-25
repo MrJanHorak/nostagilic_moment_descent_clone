@@ -244,6 +244,10 @@ class PowerUpManager {
     this.respawnAt = new Map();
     /** How long a collected placed pickup stays away; null: it never returns. @type {number | null} */
     this.respawnMs = null;
+    /** Online play: the server decides who collects what. When set, this game never
+     * collects, and placed pickups in this set (taken, waiting to return) are hidden.
+     * @type {Set<string> | null} */
+    this.remoteTaken = null;
     this.nextId = 0;
   }
 
@@ -352,11 +356,26 @@ class PowerUpManager {
     return list;
   }
 
+  /** Online play: the placed pickups the server says are taken. A pickup that vanishes
+   * next to this screen's ship was ours, so it gets the pickup sound.
+   * @param {Set<string>} taken */
+  setRemoteTaken(taken) {
+    this.remoteTaken = taken;
+    const near = this.playerTransform.getWorldPosition(new THREE.Vector3());
+    for (const powerup of [...this.powerups]) {
+      if (!powerup.spawnId || !taken.has(powerup.spawnId)) continue;
+      if (powerup.mesh.position.distanceTo(near) < powerup.collisionRadius + 1.5 && this.audioManager?.initialized) this.audioManager.playSound('powerup', { volume: 0.5 });
+      this.removePowerup(powerup.id);
+    }
+    // Returned pickups may be spawned again.
+    for (const spawnId of [...this.spawnedIds]) if (!taken.has(spawnId) && !this.powerups.some(powerup => powerup.spawnId === spawnId)) this.spawnedIds.delete(spawnId);
+  }
+
   // Update power-ups, check for collisions with every pilot
   update(delta = 0) {
     if (this.gameState?.session.phase !== 'playing') return;
     if (!this.levelManager?.isEndless) this.spawnPredefinedPowerUps();
-    const collectors = this.collectors();
+    const collectors = this.remoteTaken ? [] : this.collectors();
 
     for (let i = this.powerups.length - 1; i >= 0; i--) {
       const powerup = this.powerups[i];
@@ -447,7 +466,7 @@ class PowerUpManager {
       const distanceToPlayer = Math.min(...this.collectors().map(candidate => spawnPoint.position.distanceTo(candidate.position)), Infinity);
 
       // Only spawn if within reasonable distance and not already spawned
-      if (distanceToPlayer < 50 && !this.spawnedIds.has(spawnId)) {
+      if (distanceToPlayer < 50 && !this.spawnedIds.has(spawnId) && !this.remoteTaken?.has(spawnId)) {
         this.spawnPowerup(spawnPoint.position, spawnPoint.powerupType, { persistent: true, spawnId });
         this.spawnedIds.add(spawnId);
       }
@@ -465,6 +484,7 @@ class PowerUpManager {
   }
 
   clear() {
+    this.remoteTaken = null;
     for (const powerup of [...this.powerups]) this.removePowerup(powerup.id);
     this.spawnedIds.clear();
     this.respawnAt.clear();

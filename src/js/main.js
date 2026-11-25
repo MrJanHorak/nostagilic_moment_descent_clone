@@ -20,6 +20,8 @@ import ControlBindings from './core/ControlBindings.js';
 import StoryController from './core/StoryController.js';
 import { describeMissionStatus } from './core/MissionStatus.js';
 import AnarchyMatch from './core/AnarchyMatch.js';
+import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
+import createOnlineLobby from './ui/OnlineLobby.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
@@ -48,6 +50,8 @@ export default class Game {
     this.anarchy = null;
     /** A game server's simulation: the host's own ship never flies, fights or scores. */
     this.dedicated = false;
+    /** Online Anarchy: the connection to the game server, while in a room. @type {OnlineMatch | null} */
+    this.online = null;
     /** @type {StoryController | null} */
     this.story = null;
     /** @type {import('./core/StoryController.js').StorySummary | null} */
@@ -214,6 +218,8 @@ export default class Game {
       this.anarchy = !endless && level.mode === 'anarchy' ? new AnarchyMatch(level.anarchySpawns) : null;
       if (this.anarchy) this.gameState.difficulty = getDifficulty('pilot');
       this.powerUpManager.respawnMs = this.anarchy ? this.anarchy.rules.pickupRespawnMs : null;
+      // Online, the server decides pickups, damage, frags and respawns; this game predicts flight only.
+      this.powerUpManager.remoteTaken = this.online ? new Set() : null;
       this.mission = !endless && level.mission && !this.anarchy ? new MissionObjective(level.mission) : null;
       if (this.anarchy) this.story = null;
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
@@ -236,7 +242,7 @@ export default class Game {
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
-        ...(this.anarchy ? {
+        ...(this.anarchy && !this.online ? {
           getPilotTargets: ownerId => this.projectileManager.pilotBodies(this.spaceship.group, this.gameState).filter(body => !ownerId || body.pilot?.id !== ownerId),
           onPilotHit: (pilot, power, attackerId, position) => {
             this.gameState.takeDamage(power, pilot, attackerId);
@@ -327,6 +333,7 @@ export default class Game {
     this.diagnostics.invalidateCapture?.('Paused during capture');
     this.stepper.reset();
     this.session.transition('paused');
+    this.online?.holdStill();
     this.inputManager.clearKeys();
     this.audioManager.setPaused(true);
     this.releasePointerLock();
@@ -488,18 +495,29 @@ export default class Game {
   }
 
   showUserLevels() {
+    this.leaveOnline();
     this.endSession();
     this.uiManager.hideStartScreen();
     this.uiManager.createUserLevels(this);
   }
 
   showLevelSelection() {
+    this.leaveOnline();
     this.endSession();
     this.uiManager.hideStartScreen();
     this.uiManager.createLevelSelect(this);
   }
 
+  /** The online lobby: pick a server, then create or join a room. */
+  showOnlineLobby() {
+    this.leaveOnline();
+    this.endSession();
+    this.uiManager.hideStartScreen();
+    return createOnlineLobby(this, { onBack: () => this.showMainMenu() });
+  }
+
   showMainMenu() {
+    this.leaveOnline();
     this.endSession();
     this.uiManager.createStartScreen();
   }
@@ -557,8 +575,9 @@ export default class Game {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }
     const grounded = this.anarchy && !this.gameState.localPilot.alive;
+    /** @type {import('./contracts.js').FlightInput | null | undefined} */ let input = null;
     if (grounded) this.spaceship.velocity.set(0, 0, 0);
-    else this.inputManager.updateMovement(delta);
+    else input = this.inputManager.updateMovement(delta);
     if (grounded) { /* Down in Anarchy: wait for the respawn. */ } else if (!this.isEndlessMode && this.levelManager.currentLevel?.kind === 'arena') {
       this.lastMovement = moveSphere(this.spaceship.group.position, this.spaceship.velocity,
         delta, this.levelManager.solidColliders, this.spaceship.radius);
@@ -569,12 +588,14 @@ export default class Game {
       if (collision) this.spaceship.velocity.set(0, 0, 0);
       else this.spaceship.group.position.add(intended);
     }
-    this.moveRemotePilots(delta);
+    // Online: send this step's input; other ships are posed from snapshots each frame.
+    if (this.online) this.online.step(input ?? null, delta);
+    else this.moveRemotePilots(delta);
     this.levelManager.updateLevel();
     const environment = this.levelManager.environment?.update(this.session, this.spaceship.group.position, this.spaceship.radius);
     if (environment?.entered) this.uiManager.showMessage(environment.entered === 'lava'
       ? 'LAVA CONTACT · Move clear of the surface' : 'WATER / COOLANT · Surface contact', 1800, environment.entered === 'lava' ? '#ff9944' : '#70dce8');
-    if (environment?.damage) this.gameState.takeDamage(environment.damage);
+    if (environment?.damage && !this.online) this.gameState.takeDamage(environment.damage);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     this.exploration?.update(this.spaceship.group.position);
     this.story?.update(this.spaceship.group.position, this.session.timeMs);
@@ -584,7 +605,7 @@ export default class Game {
     this.projectileManager.updateProjectiles(delta);
     if (this.session.phase !== 'playing') return;
     this.powerUpManager.update(delta);
-    this.updateAnarchy();
+    if (!this.online) this.updateAnarchy();
     if (this.session.phase !== 'playing') return;
     this.updateMission();
     if (this.session.phase !== 'playing') return;
@@ -663,6 +684,37 @@ export default class Game {
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.showAnarchyResult?.(match.standings(), match.winnerId, this.gameState.localPilot.id);
     return true;
+  }
+
+  /** Join (or create, with no room code) an online Anarchy room on a game server.
+   * Resolves once the match is running here; rejects with a readable message.
+   * @param {{url: string, name?: string, room?: string | null}} options */
+  async joinOnline(options) {
+    this.leaveOnline();
+    const match = new OnlineMatch(this, options);
+    try { await match.connect(); return match; } catch (error) {
+      if (this.online === match) this.leaveOnline(); else match.close();
+      throw error;
+    }
+  }
+
+  /** Leave the online room and drop the other players' ships. */
+  leaveOnline() {
+    const match = this.online;
+    if (!match) return false;
+    this.online = null;
+    match.close();
+    this.endSession();
+    for (const pilot of [...this.gameState.pilots]) if (!pilot.local) this.removePilot(pilot.id);
+    this.gameState.localPilot.id = 'local';
+    return true;
+  }
+
+  /** @param {OnlineMatch} match */
+  onlineConnectionLost(match) {
+    if (this.online !== match) return;
+    this.leaveOnline();
+    this.uiManager?.showResult?.('CONNECTION LOST', describeNetError('connection-lost'), [['MAIN MENU', () => this.showMainMenu()]]);
   }
 
   /** Add another pilot with their own ship (a remote player, or a second ship in
@@ -744,6 +796,7 @@ export default class Game {
       const frameStart = this.diagnostics.enabled ? performance.now() : 0;
       this.inputManager?.pollGamepad?.();
       this.advanceFrame(this.clock.getDelta());
+      this.online?.frame();
       if (this.shipView && this.levelManager) {
         const aim = this.shipView.update(this.levelManager.solidColliders);
         this.uiManager?.updateShipView?.(aim);

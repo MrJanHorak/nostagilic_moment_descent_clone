@@ -65,6 +65,8 @@ export interface InputGameActions {
   toggleShipOption?(option: 'cameraView' | 'headlights' | 'showHUD'): void;
   toggleMap?(): void;
   openMissionLog?(): boolean;
+  /** Online play, when connected: mouse turns and shots go to the game server. */
+  readonly online?: { addLook(yaw: number, pitch: number): void; canFire(): boolean; queueFire(): void } | null;
 }
 export interface PlayerFire {
   fireProjectile(state: GameState, options?: { requirePointerLock?: boolean }): unknown;

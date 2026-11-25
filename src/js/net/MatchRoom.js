@@ -116,6 +116,8 @@ export default class MatchRoom {
       t: 'snapshot', tick: this.tick, timeMs: Math.round(game.session.timeMs), ack: player?.lastSeq ?? -1, ammo,
       pilots,
       pickups: game.powerUpManager.powerups.map(/** @param {any} powerup */ powerup => powerup.spawnId).filter(Boolean),
+      // Placed pickups someone has taken and that are waiting to return (clients hide these).
+      taken: [...game.powerUpManager.respawnAt.keys()],
       match: match ? { over: match.over, winner: match.winnerId, fragLimit: match.rules.fragLimit, timeLeftMs: Math.max(0, match.rules.timeLimitMs - game.session.timeMs),
         standings: match.standings(), respawnInMs: match.respawns.has(forId) ? Math.max(0, /** @type {number} */ (match.respawns.get(forId)) - game.session.timeMs) : null,
         rematchInMs: this.overTick === null ? null : Math.max(0, REMATCH_DELAY_MS - (this.tick - this.overTick) * STEP * 1000) } : null,

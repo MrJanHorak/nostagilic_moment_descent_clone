@@ -64,6 +64,8 @@ test('designer polish: shortcuts, named undo, multi-select, room names, first-ru
   const frame = page.frameLocator('iframe[title="Mission playtest"]');
   await frame.getByRole('button', { name: 'Start playtest', exact: true }).press('Enter');
   await expect(frame.locator('#arena-guide')).toContainText('Location: Green Supply Bay', { timeout: 15000 });
+  // The playtest holds the mouse (pointer lock); like a player, press Esc to release it before clicking.
+  await frame.locator('body').press('Escape');
   await page.getByRole('button', { name: 'Return to editor', exact: true }).click();
   await expect(page.locator('#playtest-panel')).toBeHidden({ timeout: 15000 });
   await expect(page.locator('#entities button').first()).toHaveText(/Spawn · arrival/);
