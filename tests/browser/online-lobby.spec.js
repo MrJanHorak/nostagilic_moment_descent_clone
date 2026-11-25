@@ -49,3 +49,26 @@ test('development: the online lobby creates a room, shows the room code and anot
     expect(errors).toEqual([]);
   } finally { await server.close(); }
 });
+
+test('development: the lobby creates a co-op room for a mission and shows team status', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
+  const server = await startGameServer({ port: 0, host: '127.0.0.1', log: () => {} });
+  try {
+    await page.goto('http://127.0.0.1:5183/?smoke=1');
+    await page.locator('#play-online-btn').click();
+    await page.locator('#online-name').fill('Ana');
+    await page.locator('#online-server').fill(`127.0.0.1:${server.port}`);
+    await page.locator('#online-mode').selectOption('coop:signal-breach');
+    await page.locator('#online-create').click();
+    await expect(page.locator('#online-lobby')).toHaveCount(0);
+    await expect(page.locator('#arena-guide')).toContainText('SIGNAL BREACH');
+    await expect(page.locator('#arena-guide')).toContainText('CO-OP · Room');
+    await expect(page.locator('#arena-guide')).toContainText('Team lives 2');
+    const room = new URL(page.url()).searchParams.get('room');
+    const ben = await joinRaw(server.port, room, 'Ben');
+    await expect(page.locator('#arena-guide')).toContainText('Team lives 4');
+    ben.close();
+    expect(errors).toEqual([]);
+  } finally { await server.close(); }
+});

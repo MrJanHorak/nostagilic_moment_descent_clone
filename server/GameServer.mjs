@@ -41,10 +41,11 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
   const send = (connection, message) => connection.send(JSON.stringify(message));
   const fail = (connection, error) => { send(connection, { t: 'error', error }); connection.close(4000, error); };
 
-  function newRoom() {
+  /** @param {'anarchy' | 'coop'} mode @param {string | null} map */
+  function newRoom(mode = 'anarchy', map = null) {
     let code;
     do code = makeRoomCode(); while (rooms.has(code));
-    const entry = { room: new MatchRoom({ code, rules }), sockets: new Map(), emptySince: Date.now() };
+    const entry = { room: new MatchRoom({ code, rules, mode, mapId: map }), sockets: new Map(), emptySince: Date.now() };
     rooms.set(code, entry);
     log(`room ${code} opened`);
     return entry;
@@ -65,14 +66,14 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
       if (message.t === 'ping') { send(connection, { t: 'pong', time: message.time, tick: entry?.room.tick ?? 0 }); return; }
       if (message.t === 'hello') {
         if (pilotId) return;
-        entry = message.room ? rooms.get(message.room) : newRoom();
+        try { entry = message.room ? rooms.get(message.room) : newRoom(message.mode, message.map); } catch { fail(connection, 'unknown-map'); return; }
         if (!entry) { fail(connection, 'room-not-found'); return; }
         if (entry.room.full) { fail(connection, 'room-full'); return; }
         clearTimeout(timer);
         const player = entry.room.join(message.name);
         pilotId = player.id; players++;
         entry.sockets.set(pilotId, connection); entry.emptySince = null;
-        send(connection, { t: 'welcome', id: pilotId, name: player.name, room: entry.room.code, map: entry.room.mapId, seed: entry.room.seed,
+        send(connection, { t: 'welcome', id: pilotId, name: player.name, room: entry.room.code, mode: entry.room.mode, map: entry.room.mapId, seed: entry.room.seed,
           tick: entry.room.tick, tickRate: TICK_RATE, snapshotEvery: SNAPSHOT_EVERY, rules: entry.room.match?.rules ?? null });
         log(`room ${entry.room.code}: ${player.name} joined as ${pilotId}`);
         roster(entry);

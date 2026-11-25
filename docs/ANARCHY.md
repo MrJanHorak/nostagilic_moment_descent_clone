@@ -138,7 +138,8 @@ One JSON text frame per message, each with a type field `t`.
 
 ## Known gaps
 
-- Lava and water damage only the local ship. Online every pilot on the server is remote, so the slag pit's lava hurts nobody yet. Per-pilot hazards (planned for Phase 4) fix this.
+- Fixed November 25: lava and water now hurt every pilot on the server (Phase 4 per-pilot hazards); a lava death costs a frag.
+
 - No lag compensation: you hit what the server sees, so with high latency you must lead targets by your round trip. Other ships are drawn 100 ms in the past.
 - The kill feed is a message line.
 - There is no room browser or public matchmaking; rooms are shared by code or invite link.

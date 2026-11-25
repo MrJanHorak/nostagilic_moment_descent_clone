@@ -87,7 +87,7 @@ export interface EnemyLevelView {
 }
 export type EnemyDropType = 'health' | 'pulseAmmo' | 'speedBoost' | 'weaponUpgrade' | 'ammoPickup' | 'weaponPickup' | 'laserSalvage' | 'missileSalvage' | 'plasmaSalvage';
 export interface EnemyDropSink {
-  spawnPowerup(position: Vector3, type: EnemyDropType, options?: { persistent?: boolean }): unknown;
+  spawnPowerup(position: Vector3, type: EnemyDropType, options?: { persistent?: boolean; spawnId?: string | null }): unknown;
 }
 export type ProjectileType = 'standard' | 'laser' | 'plasma' | 'bomb' | 'missile' | 'heavylaser' | 'nova';
 export type TrailType = 'standard' | 'pulse' | 'laser' | 'missile' | 'plasma' | null;

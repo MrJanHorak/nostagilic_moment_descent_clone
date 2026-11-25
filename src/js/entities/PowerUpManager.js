@@ -248,6 +248,8 @@ class PowerUpManager {
      * collects, and placed pickups in this set (taken, waiting to return) are hidden.
      * @type {Set<string> | null} */
     this.remoteTaken = null;
+    /** Named pickups that have been placed this attempt (placed items and robot salvage). @type {Set<string>} */
+    this.seenSpawnIds = new Set();
     this.nextId = 0;
   }
 
@@ -337,6 +339,7 @@ class PowerUpManager {
     };
 
     this.powerups.push(powerup);
+    if (spawnId) this.seenSpawnIds.add(spawnId);
     this.scene.add(powerupMesh);
 
     return powerup;
@@ -483,8 +486,15 @@ class PowerUpManager {
     }
   }
 
+  /** Named pickups placed this attempt that are gone now (collected; a placed one may return later). */
+  takenIds() {
+    const present = new Set(this.powerups.map(powerup => powerup.spawnId).filter(Boolean));
+    return [...this.seenSpawnIds].filter(id => !present.has(id));
+  }
+
   clear() {
     this.remoteTaken = null;
+    this.seenSpawnIds.clear();
     for (const powerup of [...this.powerups]) this.removePowerup(powerup.id);
     this.spawnedIds.clear();
     this.respawnAt.clear();

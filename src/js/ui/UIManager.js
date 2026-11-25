@@ -662,7 +662,7 @@ class UIManager {
       myLevelsButton.onclick = () => this.game.showUserLevels();
       startScreen.firstElementChild.appendChild(myLevelsButton);
       const onlineButton = document.createElement('button');
-      onlineButton.id = 'play-online-btn'; onlineButton.textContent = 'PLAY ONLINE · ANARCHY';
+      onlineButton.id = 'play-online-btn'; onlineButton.textContent = 'PLAY ONLINE · ANARCHY & CO-OP';
       Object.assign(onlineButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#001018', background: '#38d0f0', border: '1px solid #8be8f0', borderRadius: '5px', font: 'bold 16px system-ui', cursor: 'pointer', letterSpacing: '1px' });
       onlineButton.onclick = () => this.game.showOnlineLobby();
       startScreen.firstElementChild.appendChild(onlineButton);
@@ -1298,7 +1298,8 @@ class UIManager {
     // Control hints only for the first seconds of an attempt; the pause menu keeps the full picture.
     const hints = this.game.session.timeMs < GUIDE_HINT_MS
       ? ` · Click/${this.boundKey('fire', 'KeyF')} fire${doors} · Mouse/arrows aim · Orange: ammo · Green: repair · Esc pause` : '';
-    const nav = `${[relayHint, lockedHint, navigation ? ` · ${navigation}` : '', escapeHint].join('').replace(/^ · /, '')}${relayHint || lockedHint || navigation || escapeHint ? ' · ' : ''}${this.boundKey('missionLog', 'KeyJ')}: mission log${hints}`;
+    const team = this.game.online?.coopState ? `CO-OP · ${this.game.online.status()} · ` : this.game.coop ? `CO-OP · Team lives ${this.game.coop.lives} · ` : '';
+    const nav = `${team}${[relayHint, lockedHint, navigation ? ` · ${navigation}` : '', escapeHint].join('').replace(/^ · /, '')}${relayHint || lockedHint || navigation || escapeHint ? ' · ' : ''}${this.boundKey('missionLog', 'KeyJ')}: mission log${hints}`;
     if (this.guidePrimary && this.guidePrimary.textContent !== primary) this.guidePrimary.textContent = primary;
     if (this.guideNav && this.guideNav.textContent !== nav) this.guideNav.textContent = nav;
     if (this.guideSummary) {
@@ -1387,6 +1388,7 @@ class UIManager {
   }
 
   showCompletion(hasNext, progress = null, campaignProgress = null) {
+    if (this.game.online) { this.showOnlineMissionResult('TEAM EXTRACTED', 'Every living pilot made it out.'); return; }
     const actions = [];
     if (hasNext) actions.push(['NEXT MISSION', () => this.game.nextMission()]);
     actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
@@ -1534,7 +1536,15 @@ class UIManager {
     }
   }
 
+  /** Online co-op result: the server restarts the mission by itself.
+   * @param {string} title @param {string} detail */
+  showOnlineMissionResult(title, detail) {
+    const online = this.game.online;
+    this.showResult(title, `${detail}\n\nRoom ${online?.room ?? ''} · The mission restarts automatically in a few seconds.`, [['LEAVE ROOM', () => this.game.showMainMenu()]]);
+  }
+
   showGameOver() {
+    if (this.game.online) { this.showOnlineMissionResult('MISSION FAILED', 'The whole team is down and no lives are left.'); return; }
     const meltdown = this.game?.failureReason === 'reactor';
     this.hudElements.gameOverDisplay.querySelector('h2').textContent = meltdown ? 'REACTOR MELTDOWN' : 'SYSTEM FAILURE';
     this.hudElements.finalScore.textContent = `${meltdown ? 'Escape time expired · ' : ''}Final Score: ${this.gameState.score}`;

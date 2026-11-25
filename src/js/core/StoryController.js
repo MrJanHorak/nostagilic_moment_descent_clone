@@ -70,19 +70,23 @@ export default class StoryController {
   enemyDefeated(id) { this.fire(trigger => trigger.on === 'defeat' && trigger.enemyId === id); }
 
   /** Per simulation step: room-entry messages, collection and presentation.
-   * @param {THREE.Vector3} position @param {number} timeMs */
-  update(position, timeMs) {
+   * @param {THREE.Vector3} position @param {number} timeMs
+   * @param {readonly THREE.Vector3[]} [wingmates] other pilots' positions (co-op), who can also collect */
+  update(position, timeMs, wingmates = []) {
     this.now = timeMs;
     const room = this.navigation.roomAt(position);
     if (room !== null && room !== this.lastRoom) { this.lastRoom = room; this.fire(trigger => trigger.on === 'enter' && trigger.roomId === room); }
+    // Logs and miners count for the team: any pilot may pick them up. Radio triggers follow this screen's pilot.
+    const reached = /** @param {import('../levelDocument.js').Vec3} at @param {number} radius */ (at, radius) =>
+      this.touching(at, position, radius) || wingmates.some(other => this.touching(at, other, radius));
     for (const log of this.story.logs) {
-      if (this.foundLogs.has(log.id) || !this.touching(log.world, position, LOG_RADIUS)) continue;
+      if (this.foundLogs.has(log.id) || !reached(log.world, LOG_RADIUS)) continue;
       this.foundLogs.add(log.id); this.remove(log.id);
       this.history.push({ kind: 'log', label: log.title, text: log.text, timeMs });
       this.emit({ kind: 'log', id: log.id, title: log.title, text: log.text, found: this.foundLogs.size, total: this.story.logs.length });
     }
     for (const survivor of this.story.survivors) {
-      if (this.aboard.has(survivor.id) || !this.touching(survivor.world, position, SURVIVOR_RADIUS)) continue;
+      if (this.aboard.has(survivor.id) || !reached(survivor.world, SURVIVOR_RADIUS)) continue;
       this.aboard.add(survivor.id); this.remove(survivor.id);
       this.emit({ kind: 'survivor', id: survivor.id, name: survivor.name, aboard: this.aboard.size, total: this.story.survivors.length });
     }

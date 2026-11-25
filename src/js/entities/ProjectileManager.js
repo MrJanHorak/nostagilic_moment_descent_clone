@@ -16,6 +16,8 @@ class ProjectileManager {
     this.playerTransform = playerTransform;
     this.audioManager = audioManager;
     this.session = session;
+    /** Online client: hostile shots are pictures only and hit no pilot. */
+    this.harmless = false;
     this.elapsedMs = 0;
     /** @type {import('../combatContracts.js').PlayerProjectile[]} */
     this.projectiles = [];
@@ -79,7 +81,10 @@ class ProjectileManager {
    * @param {import('../core/GameState.js').default | null | undefined} gameState
    * @returns {import('../contracts.js').ShotPlayer[]} */
   pilotBodies(playerTransform, gameState) {
-    const local = gameState?.localPilot ?? null, bodies = [];
+    const local = gameState?.localPilot ?? null;
+    /** @type {import('../contracts.js').ShotPlayer[]} */ const bodies = [];
+    // Online client: these shots are pictures of the server's; hits come back in snapshots.
+    if (this.harmless) return bodies;
     if (playerTransform && (!local || local.alive)) bodies.push({ position: playerTransform.position, radius: PLAYER_HIT_RADIUS, pilot: local });
     for (const pilot of gameState?.pilots ?? []) if (pilot !== local && pilot.alive && pilot.ship) bodies.push({ position: pilot.ship.group.position, radius: PLAYER_HIT_RADIUS, pilot });
     return bodies;
@@ -696,6 +701,25 @@ class ProjectileManager {
     };
 
     return this.createProjectile(startPosition, startQuaternion, options);
+  }
+
+  /** Online co-op: draw a robot's shot the server fired. It hurts nobody here.
+   * @param {string} kind @param {readonly number[]} position @param {readonly number[]} velocity */
+  spawnRemoteShot(kind, position, velocity) {
+    this.assertUsable();
+    const bomb = kind === 'bomb';
+    const mesh = new THREE.Mesh(this.projectileGeometries?.standard ?? new THREE.SphereGeometry(bomb ? 0.25 : 0.12, 8, 8),
+      new THREE.MeshStandardMaterial({ color: bomb ? 0xffaa22 : 0xff0000, emissive: bomb ? 0xff7700 : 0xff0000, emissiveIntensity: 0.8, metalness: 0.5, roughness: 0.2 }));
+    if (bomb) mesh.scale.setScalar(2);
+    mesh.position.fromArray(position);
+    const v = new THREE.Vector3().fromArray(velocity);
+    mesh.lookAt(mesh.position.clone().add(v));
+    /** @type {any} */
+    const projectile = { faction: 'enemy', lastTrailUpdate: 0, mesh, velocity: v, type: 'standard', power: 0, life: 3000,
+      timestamp: this.now(), ownerManager: this, launchOrigin: mesh.position.clone(), remote: true };
+    this.scene.add(mesh);
+    this.enemyProjectiles.push(projectile);
+    return projectile;
   }
 
   // Enemy projectile shooting method

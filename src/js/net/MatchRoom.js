@@ -1,5 +1,5 @@
 import createHeadlessGame, { disposeHeadlessGame } from './HeadlessGame.js';
-import { MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQuaternion, packVector } from './Protocol.js';
+import { MAX_COOP_PLAYERS, MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQuaternion, packVector } from './Protocol.js';
 
 /** Seconds between the end of a match and the automatic rematch. */
 export const REMATCH_DELAY_MS = 10000;
@@ -7,19 +7,30 @@ const STEP = 1 / TICK_RATE;
 
 /** @typedef {{id: string, name: string, lastSeq: number, lastFireMs: number}} RoomPlayer */
 /** @typedef {{t: 'shot', owner: string, weapon: string, p: number[], q: number[]} | {t: 'kill', victim: string, attacker: string | null}
- *  | {t: 'respawn', id: string} | {t: 'match-start', seed: number} | {t: 'match-over', winner: string | null}} RoomEvent */
+ *  | {t: 'respawn', id: string} | {t: 'match-start', seed: number} | {t: 'match-over', winner: string | null}
+ *  | {t: 'eshot', kind: string, p: number[], v: number[]} | {t: 'down', id: string} | {t: 'relay', id: string, by: string | null}
+ *  | {t: 'mission-over', result: 'extracted' | 'failed'}} RoomEvent */
 
-/** One online Anarchy match: the authoritative simulation for a room. It knows
- * nothing of sockets; the server feeds it inputs and sends its snapshots.
- * Pilots are flown only by their inputs, so every client sees the same match. */
+/** The missions a co-op room may fly by default. */
+export const DEFAULT_COOP_MAP = 'asterion-deepworks';
+
+/** One online match: the authoritative simulation for a room, either an Anarchy
+ * deathmatch or a co-op mission. It knows nothing of sockets; the server feeds it
+ * inputs and sends its snapshots. Pilots are flown only by their inputs, so every
+ * client sees the same match. */
 export default class MatchRoom {
-  /** @param {{code: string, mapId?: string, seed?: number, random?: () => number, rules?: Partial<import('../core/AnarchyMatch.js').ANARCHY_RULES>}} options */
-  constructor({ code, mapId = 'foundry-ring', seed, random = Math.random, rules = {} }) {
-    this.code = code; this.mapId = mapId; this.random = random; this.rules = rules;
+  /** @param {{code: string, mode?: 'anarchy' | 'coop', mapId?: string | null, seed?: number, random?: () => number, rules?: Partial<import('../core/AnarchyMatch.js').ANARCHY_RULES>}} options */
+  constructor({ code, mode = 'anarchy', mapId = null, seed, random = Math.random, rules = {} }) {
+    this.code = code; this.mode = mode; this.random = random; this.rules = rules;
+    this.mapId = mapId ?? (mode === 'coop' ? DEFAULT_COOP_MAP : 'foundry-ring');
     this.game = createHeadlessGame();
     this.game.dedicated = true;
-    this.levelIndex = this.game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === mapId && level.mode === 'anarchy');
-    if (this.levelIndex < 0) throw new Error(`No Anarchy map ${mapId}`);
+    this.levelIndex = this.game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === this.mapId &&
+      (mode === 'coop' ? level.mission && level.mode !== 'anarchy' : level.mode === 'anarchy'));
+    if (this.levelIndex < 0) throw new Error(mode === 'coop' ? `No co-op mission ${this.mapId}` : `No Anarchy map ${this.mapId}`);
+    /** Enemy shots already announced. @type {WeakSet<object>} */ this.seenEnemyShots = new WeakSet();
+    /** Relays already announced. @type {Set<string>} */ this.announcedRelays = new Set();
+    /** Pilots announced as down. @type {Set<string>} */ this.downIds = new Set();
     /** @type {Map<string, RoomPlayer>} */ this.players = new Map();
     /** Events since the last snapshot. @type {RoomEvent[]} */ this.events = [];
     this.tick = 0; this.nextId = 1; this.seed = 0;
@@ -28,14 +39,16 @@ export default class MatchRoom {
   }
 
   get match() { return this.game.anarchy; }
-  get full() { return this.players.size >= MAX_PLAYERS; }
+  get coop() { return this.game.coop; }
+  get maxPlayers() { return this.mode === 'coop' ? MAX_COOP_PLAYERS : MAX_PLAYERS; }
+  get full() { return this.players.size >= this.maxPlayers; }
 
   /** Starts (or restarts) the match with every connected pilot. @param {number} seed */
   start(seed) {
     this.seed = seed;
-    if (!this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed })) throw new Error('Unable to start the match');
-    Object.assign(this.game.anarchy.rules, this.rules);
-    this.overTick = null; this.lastKill = null;
+    if (!this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed, coop: this.mode === 'coop' })) throw new Error('Unable to start the match');
+    if (this.game.anarchy) Object.assign(this.game.anarchy.rules, this.rules);
+    this.overTick = null; this.lastKill = null; this.announcedRelays.clear(); this.downIds.clear(); this.seenEnemyShots = new WeakSet();
     for (const player of this.players.values()) { player.lastFireMs = -Infinity; }
     this.events.push({ t: 'match-start', seed });
   }
@@ -68,6 +81,7 @@ export default class MatchRoom {
     if (this.game.session.phase !== 'playing' || !pilot.alive || !pilot.ship) { pilot.input = {}; return true; }
     pilot.ship.rotate(message.look[0], message.look[1]);
     this.game.setPilotInput(id, message.input);
+    if (message.interact && this.game.coop && this.game.pilotInteract(id)) this.noteRelays(id);
     if (message.weapon) this.game.gameState.switchWeapon(/** @type {any} */ (message.weapon), pilot);
     const now = this.game.session.timeMs;
     if (message.fire && now - player.lastFireMs >= MIN_FIRE_INTERVAL_MS) {
@@ -89,13 +103,61 @@ export default class MatchRoom {
       const kill = this.match?.lastKill;
       if (kill && kill !== this.lastKill) { this.lastKill = kill; this.events.push({ t: 'kill', victim: kill.victimId, attacker: kill.attackerId }); }
       for (const id of before) if (game.gameState.pilot(id)?.alive) this.events.push({ t: 'respawn', id });
-      if (game.session.phase === 'completed' && this.overTick === null) {
-        this.overTick = this.tick; this.events.push({ t: 'match-over', winner: this.match?.winnerId ?? null });
-      }
-    } else if (this.overTick !== null && (this.tick - this.overTick) * STEP * 1000 >= REMATCH_DELAY_MS) {
+    }
+    if (this.game.coop) this.noteCoop();
+    // The end, however it came (a step, or damage applied between steps).
+    if (this.overTick === null && ['completed', 'dead'].includes(game.session.phase)) {
+      this.overTick = this.tick;
+      this.events.push(this.mode === 'coop' ? { t: 'mission-over', result: game.session.phase === 'completed' ? 'extracted' : 'failed' }
+        : { t: 'match-over', winner: this.match?.winnerId ?? null });
+    } else if (this.overTick !== null && game.session.phase !== 'playing' && (this.tick - this.overTick) * STEP * 1000 >= REMATCH_DELAY_MS) {
       this.start(Math.floor(this.random() * 4294967296));
     }
     this.tick++;
+  }
+
+  /** Co-op bookkeeping after a step: new robot shots, pilots who went down, relays opened. */
+  noteCoop() {
+    const game = this.game;
+    for (const shot of game.enemyManager.projectileManager.enemyProjectiles) {
+      if (this.seenEnemyShots.has(shot)) continue;
+      this.seenEnemyShots.add(shot);
+      this.events.push({ t: 'eshot', kind: shot.type ?? 'standard', p: packVector(shot.mesh.position), v: packVector(shot.velocity) });
+    }
+    for (const pilot of game.gameState.pilots) {
+      if (!this.players.has(pilot.id)) continue;
+      if (pilot.alive) this.downIds.delete(pilot.id);
+      else if (!this.downIds.has(pilot.id)) { this.downIds.add(pilot.id); this.events.push({ t: 'down', id: pilot.id }); }
+    }
+    this.noteRelays(null);
+  }
+
+  /** @param {string | null} by */
+  noteRelays(by) {
+    for (const id of this.game.levelManager.interaction?.activatedIds ?? []) {
+      if (this.announcedRelays.has(id)) continue;
+      this.announcedRelays.add(id); this.events.push({ t: 'relay', id, by });
+    }
+  }
+
+  /** The co-op part of a snapshot: robots, mission progress, team lives and story.
+   * @param {string} forId */
+  coopState(forId) {
+    const game = this.game, coop = game.coop, mission = game.mission, story = game.story;
+    if (!coop) return null;
+    const respawnAt = coop.respawns.get(forId);
+    return {
+      enemies: game.enemyManager.enemies.filter(/** @param {any} enemy */ enemy => enemy.mesh?.userData.spawnPointId).map(/** @param {any} enemy */ enemy => ({
+        id: enemy.mesh.userData.spawnPointId, type: enemy.type.name, p: packVector(enemy.mesh.position), q: packQuaternion(enemy.mesh.quaternion),
+        hp: Math.max(0, Math.round(enemy.health * 10) / 10), a: !!enemy.isActive })),
+      defeated: [...game.enemyManager.destroyedPredefinedEnemies],
+      relays: [...(game.levelManager.interaction?.activatedIds ?? [])],
+      ready: !!mission?.ready, escapeMs: mission?.remainingEscapeMs(game.session.timeMs) ?? null,
+      lives: coop.lives, respawnInMs: respawnAt === undefined ? null : Math.max(0, respawnAt - game.session.timeMs),
+      checkpoint: coop.checkpointLabel, toughness: game.enemyManager.toughness,
+      logs: story ? [...story.foundLogs] : [], aboard: story ? [...story.aboard] : [],
+      phase: game.session.phase,
+    };
   }
 
   /** Events since the last call (sent once with the next snapshot). */
@@ -117,7 +179,8 @@ export default class MatchRoom {
       pilots,
       pickups: game.powerUpManager.powerups.map(/** @param {any} powerup */ powerup => powerup.spawnId).filter(Boolean),
       // Placed pickups someone has taken and that are waiting to return (clients hide these).
-      taken: [...game.powerUpManager.respawnAt.keys()],
+      taken: game.powerUpManager.takenIds(),
+      coop: this.coopState(forId),
       match: match ? { over: match.over, winner: match.winnerId, fragLimit: match.rules.fragLimit, timeLeftMs: Math.max(0, match.rules.timeLimitMs - game.session.timeMs),
         standings: match.standings(), respawnInMs: match.respawns.has(forId) ? Math.max(0, /** @type {number} */ (match.respawns.get(forId)) - game.session.timeMs) : null,
         rematchInMs: this.overTick === null ? null : Math.max(0, REMATCH_DELAY_MS - (this.tick - this.overTick) * STEP * 1000) } : null,

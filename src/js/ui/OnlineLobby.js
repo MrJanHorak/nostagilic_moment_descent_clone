@@ -48,6 +48,13 @@ export function inviteLink(href, room, server) {
   return url.toString();
 }
 
+/** Missions a team can fly online: campaign missions first, then the rest with an objective.
+ * @param {any} game @returns {{id: string, name: string}[]} */
+export function coopMissions(game) {
+  const levels = (game?.levelManager?.levels ?? []).filter(/** @param {any} level */ level => level.mission && level.mode !== 'anarchy' && level.sourceDocument);
+  return [...levels].sort((a, b) => (a.campaignOrder ?? 99) - (b.campaignOrder ?? 99)).map(level => ({ id: level.id, name: level.name ?? level.id }));
+}
+
 /** @param {any} storage */
 function loadSaved(storage) {
   try { const value = JSON.parse(storage?.getItem(STORAGE_KEY) ?? 'null'); return value && typeof value === 'object' ? value : {}; } catch { return {}; }
@@ -63,17 +70,19 @@ export default function createOnlineLobby(game, { onBack, storage = globalThis.l
 
   const overlay = document.createElement('div');
   overlay.id = 'online-lobby'; overlay.setAttribute('role', 'dialog'); overlay.setAttribute('aria-label', 'Play online');
-  Object.assign(overlay.style, { position: 'fixed', inset: '0', zIndex: '1000', background: 'rgba(0, 8, 20, 0.94)', display: 'flex',
+  // Above the game's overlays (including development panels); the panel scrolls on short screens.
+  Object.assign(overlay.style, { position: 'fixed', inset: '0', zIndex: '2500', background: 'rgba(0, 8, 20, 0.94)', display: 'flex',
     alignItems: 'center', justifyContent: 'center', color: '#cafaff', font: '16px system-ui, sans-serif' });
   const panel = document.createElement('div');
-  Object.assign(panel.style, { width: 'min(520px, 92vw)', padding: '28px', border: '1px solid #00aaff', borderRadius: '10px',
-    background: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,10,20,0.9))', boxShadow: '0 0 20px #0066aa', display: 'grid', gap: '14px' });
+  Object.assign(panel.style, { width: 'min(520px, 92vw)', padding: '20px 24px', border: '1px solid #00aaff', borderRadius: '10px', boxSizing: 'border-box',
+    maxHeight: 'calc(100dvh - 24px)', overflowY: 'auto',
+    background: 'linear-gradient(rgba(0,0,0,0.7), rgba(0,10,20,0.9))', boxShadow: '0 0 20px #0066aa', display: 'grid', gap: '10px' });
   overlay.appendChild(panel);
 
-  const heading = document.createElement('h2'); heading.textContent = 'PLAY ONLINE · ANARCHY';
+  const heading = document.createElement('h2'); heading.textContent = 'PLAY ONLINE';
   Object.assign(heading.style, { margin: '0', color: '#fff', letterSpacing: '2px', textShadow: '0 0 8px #00aaff' });
   const intro = document.createElement('p');
-  intro.textContent = 'Free-for-all in Foundry Ring, up to 8 pilots. Create a room and share its code, or join a friend\'s.';
+  intro.textContent = 'Anarchy: free-for-all in Foundry Ring, up to 8 pilots. Co-op: fly a mission as a team of up to 4. Create a room and share its code, or join a friend\'s.';
   Object.assign(intro.style, { margin: '0', color: '#9fd8ea' });
 
   /** @param {string} label @param {string} id @param {string} value @param {Partial<HTMLInputElement>} [extra] */
@@ -91,6 +100,15 @@ export default function createOnlineLobby(game, { onBack, storage = globalThis.l
   const hint = document.createElement('small');
   hint.textContent = 'Run one with "npm run server" (port 8787). Online sites need a wss:// address.';
   hint.style.color = '#7fb9cc'; server.wrap.appendChild(hint);
+  // What a new room plays: Anarchy, or a co-op mission. Joining takes the room's choice.
+  const modeWrap = document.createElement('label'); Object.assign(modeWrap.style, { display: 'grid', gap: '4px' });
+  const modeCaption = document.createElement('span'); modeCaption.textContent = 'New room plays'; modeCaption.style.color = '#fff';
+  const mode = document.createElement('select'); mode.id = 'online-mode';
+  Object.assign(mode.style, { padding: '9px 10px', font: '16px system-ui', color: '#e8fbff', background: '#0b2433', border: '1px solid #3f7f95', borderRadius: '5px' });
+  mode.add(new Option('Anarchy · Foundry Ring (deathmatch)', 'anarchy:foundry-ring'));
+  for (const level of coopMissions(game)) mode.add(new Option(`Co-op · ${level.name}`, `coop:${level.id}`));
+  mode.value = [...mode.options].some(option => option.value === saved.mode) ? saved.mode : 'anarchy:foundry-ring';
+  modeWrap.append(modeCaption, mode);
   const room = field('Room code (to join)', 'online-room', invite.room ?? '', { maxLength: ROOM_CODE_LENGTH, placeholder: 'ABCD', autocomplete: 'off', spellcheck: false });
   room.input.style.textTransform = 'uppercase'; room.input.style.letterSpacing = '4px';
 
@@ -107,11 +125,11 @@ export default function createOnlineLobby(game, { onBack, storage = globalThis.l
   const create = button('CREATE ROOM', 'online-create', !invite.room), join = button('JOIN ROOM', 'online-join', !!invite.room), back = button('BACK', 'online-back');
   const row = document.createElement('div'); Object.assign(row.style, { display: 'flex', gap: '10px', flexWrap: 'wrap' });
   row.append(create, join, back);
-  panel.append(heading, intro, name.wrap, server.wrap, room.wrap, status, row);
+  panel.append(heading, intro, name.wrap, server.wrap, modeWrap, room.wrap, status, row);
 
   let busy = false;
   /** @param {boolean} value */
-  const setBusy = value => { busy = value; for (const element of [create, join, name.input, server.input, room.input]) element.disabled = value; };
+  const setBusy = value => { busy = value; for (const element of [create, join, name.input, server.input, room.input, mode]) element.disabled = value; };
 
   /** @param {string | null} code */
   async function go(code) {
@@ -121,10 +139,11 @@ export default function createOnlineLobby(game, { onBack, storage = globalThis.l
     if (page?.protocol === 'https:' && url.startsWith('ws:')) { status.textContent = 'This page is served over https, so the server address must start with wss://.'; server.input.focus(); return; }
     if (code !== null && !isRoomCode(code)) { status.textContent = 'Room codes are four letters (no I, L or O).'; room.input.focus(); return; }
     const pilotName = cleanName(name.input.value);
-    try { storage?.setItem(STORAGE_KEY, JSON.stringify({ name: name.input.value.trim(), server: url })); } catch { /* storage unavailable */ }
+    try { storage?.setItem(STORAGE_KEY, JSON.stringify({ name: name.input.value.trim(), server: url, mode: mode.value })); } catch { /* storage unavailable */ }
+    const [roomMode, map] = mode.value.split(':');
     setBusy(true); status.textContent = code ? `Joining room ${code}…` : 'Creating a room…';
     try {
-      const match = await game.joinOnline({ url, name: pilotName, room: code });
+      const match = await game.joinOnline({ url, name: pilotName, room: code, mode: roomMode === 'coop' ? 'coop' : 'anarchy', map });
       overlay.remove();
       // The address bar becomes an invite link for this room.
       try { globalThis.history?.replaceState?.(null, '', inviteLink(page.href, match.room, url)); } catch { /* not in a browser */ }

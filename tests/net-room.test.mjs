@@ -8,14 +8,14 @@ const input = (seq, extra = {}) => /** @type {any} */ (parseClientMessage(JSON.s
 
 test('client messages are cleaned: unknown fields dropped, amounts and turns clamped, bad frames refused', () => {
   const hello = parseClientMessage(JSON.stringify({ t: 'hello', protocol: 1, name: '  <b>Vey</b>!!  ', room: 'abcd', admin: true }));
-  assert.deepEqual(hello, { ok: true, message: { t: 'hello', protocol: 1, name: 'bVeyb', room: 'ABCD' } });
+  assert.deepEqual(hello, { ok: true, message: { t: 'hello', protocol: 1, name: 'bVeyb', room: 'ABCD', mode: 'anarchy', map: null } });
   assert.equal(parseClientMessage(JSON.stringify({ t: 'hello', protocol: 99 })).error, 'protocol-mismatch');
   assert.equal(parseClientMessage(JSON.stringify({ t: 'hello', protocol: 1, room: 'IL01' })).error, 'bad-room-code');
   assert.equal(parseClientMessage('{nope').error, 'bad-json');
   assert.equal(parseClientMessage('x'.repeat(5000)).error, 'too-large');
   assert.equal(parseClientMessage(JSON.stringify({ t: 'teleport' })).error, 'unknown-type');
   const message = input(3, { input: { forward: true, left: 7, speedHack: 9, up: -1 }, look: [5, -5], fire: 'yes', weapon: 'nuke' });
-  assert.deepEqual(message, { t: 'input', seq: 3, input: { forward: true, left: 1 }, look: [MAX_LOOK_PER_INPUT, -MAX_LOOK_PER_INPUT], fire: false, weapon: null });
+  assert.deepEqual(message, { t: 'input', seq: 3, input: { forward: true, left: 1 }, look: [MAX_LOOK_PER_INPUT, -MAX_LOOK_PER_INPUT], fire: false, weapon: null, interact: false });
   assert.equal(parseClientMessage(JSON.stringify({ t: 'input', seq: -1 })).error, 'bad-seq');
   assert.equal(cleanName(''), 'Pilot'); assert.equal(cleanName('x'.repeat(40)).length, 16);
   for (let i = 0; i < 20; i++) assert.ok(isRoomCode(makeRoomCode()));

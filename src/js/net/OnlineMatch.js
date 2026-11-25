@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { MIN_FIRE_INTERVAL_MS, PROTOCOL_VERSION } from './Protocol.js';
 import { InputHistory, ServerClock, SnapshotInterpolator, reconcileShip } from './ClientPrediction.js';
+import { fitEnemyCollider } from '../entities/EnemyFactory.js';
 
 /** Ship colours by join order, so every pilot is easy to tell apart. */
 export const PILOT_COLOURS = [0xe8554e, 0x4ea8e8, 0x6fdc5a, 0xf2c84b, 0xc46ef0, 0xf28c3c, 0x5ee6d8, 0xf0f0f0];
@@ -27,14 +28,19 @@ export function describeNetError(code) {
     'connect-timeout': 'The server did not answer. Check the address and that the server is running.',
     'connect-failed': 'Could not reach the game server. Check the address (ws:// or wss://) and that the server is running.',
     'connection-lost': 'The connection to the game server was lost.',
+    'unknown-map': 'The server does not have that mission.',
   })[code] ?? `The server refused the connection (${code}).`;
 }
 
 export default class OnlineMatch {
   /** @param {any} game the Game (browser or headless)
-   * @param {{url: string, name?: string, room?: string | null, WebSocketImpl?: typeof WebSocket, now?: () => number}} options */
-  constructor(game, { url, name = 'Pilot', room = null, WebSocketImpl = globalThis.WebSocket, now = () => performance.now() }) {
+   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null, WebSocketImpl?: typeof WebSocket, now?: () => number}} options
+   *   `mode` and `map` choose what a new room plays; joining takes the room's. */
+  constructor(game, { url, name = 'Pilot', room = null, mode = 'anarchy', map = null, WebSocketImpl = globalThis.WebSocket, now = () => performance.now() }) {
     this.game = game; this.url = url; this.name = name; this.requestedRoom = room;
+    /** @type {'anarchy' | 'coop'} */ this.mode = mode; this.requestedMap = map;
+    /** The server's co-op state from the latest snapshot. @type {any} */ this.coopState = null;
+    this.interactQueued = false;
     this.WebSocketImpl = WebSocketImpl; this.now = now;
     /** @type {WebSocket | null} */ this.socket = null;
     /** @type {string | null} */ this.id = null;
@@ -70,7 +76,7 @@ export default class OnlineMatch {
       this.socket = socket;
       socket.addEventListener('open', () => {
         this.connected = true;
-        this.send({ t: 'hello', protocol: PROTOCOL_VERSION, name: this.name, room: this.requestedRoom || null });
+        this.send({ t: 'hello', protocol: PROTOCOL_VERSION, name: this.name, room: this.requestedRoom || null, mode: this.mode, map: this.requestedMap });
       });
       socket.addEventListener('message', event => {
         /** @type {any} */ let message;
@@ -101,12 +107,15 @@ export default class OnlineMatch {
     const game = this.game;
     this.id = message.id; this.room = message.room; this.mapId = message.map; this.seed = message.seed;
     this.names.set(message.id, message.name);
-    this.levelIndex = game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === message.map && level.mode === 'anarchy');
-    if (this.levelIndex < 0) throw new Error(`This game has no Anarchy map "${message.map}"`);
+    this.mode = message.mode === 'coop' ? 'coop' : 'anarchy';
+    const coop = this.mode === 'coop';
+    this.levelIndex = game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === message.map &&
+      (coop ? !!level.mission && level.mode !== 'anarchy' : level.mode === 'anarchy'));
+    if (this.levelIndex < 0) throw new Error(coop ? `This game has no mission "${message.map}"` : `This game has no Anarchy map "${message.map}"`);
     game.gameState.localPilot.id = message.id;
     game.online = this;
-    if (!game.startSession({ endless: false, levelIndex: this.levelIndex, seed: message.seed })) throw new Error('Unable to start the online match');
-    game.uiManager?.showMessage?.(`ONLINE · Room ${message.room} · Share the code to bring friends in`, 4000, '#9ce5ed');
+    if (!game.startSession({ endless: false, levelIndex: this.levelIndex, seed: message.seed, coop })) throw new Error('Unable to start the online match');
+    game.uiManager?.showMessage?.(`ONLINE ${coop ? 'CO-OP' : 'ANARCHY'} · Room ${message.room} · Share the code to bring friends in`, 4000, '#9ce5ed');
   }
 
   /** @param {any} message */
@@ -165,6 +174,8 @@ export default class OnlineMatch {
   /** Shots are limited to the server's rate, so every shot drawn here is a real one. */
   canFire() { return this.now() - this.lastFireAt >= MIN_FIRE_INTERVAL_MS; }
   queueFire() { this.fireQueued = true; this.lastFireAt = this.now(); }
+  /** The relay key goes with the next input (co-op). */
+  queueInteract() { this.interactQueued = true; }
 
   /** One client step: number this input, keep it for replay, and send it.
    * @param {import('../contracts.js').FlightInput | null} input @param {number} dt */
@@ -172,8 +183,8 @@ export default class OnlineMatch {
     if (!this.id) return;
     const entry = this.history.push(input ?? NO_INPUT, this.look, dt);
     this.look[0] = 0; this.look[1] = 0;
-    this.send({ t: 'input', seq: entry.seq, input: entry.input, look: entry.look, fire: this.fireQueued, weapon: this.game.gameState.localPilot.currentWeapon });
-    this.fireQueued = false;
+    this.send({ t: 'input', seq: entry.seq, input: entry.input, look: entry.look, fire: this.fireQueued, weapon: this.game.gameState.localPilot.currentWeapon, interact: this.interactQueued });
+    this.fireQueued = false; this.interactQueued = false;
   }
 
   /** Stop the ship's thrust on the server (pause, menus, match end): it holds the last input. */
@@ -204,6 +215,7 @@ export default class OnlineMatch {
       }
     }
     game.powerUpManager?.setRemoteTaken?.(new Set(snapshot.taken ?? []));
+    if (snapshot.coop) this.applyCoop(snapshot.coop, snapshot.timeMs);
     this.applyMatch(snapshot.match);
     for (const event of snapshot.events ?? []) this.onEvent(event);
     if (now - this.lastPing > PING_EVERY_MS) { this.lastPing = now; this.send({ t: 'ping', time: now }); }
@@ -272,9 +284,48 @@ export default class OnlineMatch {
     }
   }
 
+  /** Co-op: robots, relays, team lives and the mission's end, from the server.
+   * @param {any} state @param {number} serverTimeMs */
+  applyCoop(state, serverTimeMs) {
+    const game = this.game, robots = game.enemyManager;
+    this.coopState = state;
+    if (game.coop) { game.coop.lives = state.lives; game.coop.checkpointLabel = state.checkpoint; }
+    const byId = new Map(state.enemies.map(/** @param {any} enemy */ enemy => [enemy.id, enemy]));
+    for (const enemy of state.enemies) this.interpolator.push(`e:${enemy.id}`, serverTimeMs, { p: enemy.p, q: enemy.q, v: [0, 0, 0], alive: enemy.a });
+    const defeated = new Set(state.defeated);
+    for (let index = robots.enemies.length - 1; index >= 0; index--) {
+      const enemy = robots.enemies[index], id = enemy.mesh?.userData.spawnPointId;
+      if (!id) continue;
+      if (defeated.has(id)) { robots.destroyEnemy(index, 'shot'); continue; }
+      const remote = byId.get(id);
+      if (remote) enemy.health = remote.hp;
+    }
+    const interaction = game.levelManager?.interaction;
+    for (const id of state.relays) {
+      if (!interaction || interaction.activatedIds.has(id)) continue;
+      const device = interaction.devices.find(/** @param {any} candidate */ candidate => candidate.id === id);
+      if (device) { interaction.activate(device); game.completeDeviceObjective({ id, label: device.label }); }
+    }
+    if (game.session.phase === 'paused' && state.phase !== 'playing') game.resumeGame?.();
+    if (game.session.phase === 'playing') {
+      if (state.phase === 'completed' && game.mission) { game.mission.completed = true; this.holdStill(); game.completeSession(); }
+      else if (state.phase === 'dead') { this.holdStill(); game.die('combat'); }
+    }
+  }
+
   /** @param {any} event */
   onEvent(event) {
     const game = this.game, ui = game.uiManager;
+    if (event.t === 'eshot') { if (game.session.phase === 'playing') game.enemyManager?.projectileManager?.spawnRemoteShot?.(event.kind, event.p, event.v); return; }
+    if (event.t === 'down') {
+      const lives = this.coopState?.lives;
+      if (event.id === this.id) ui?.showMessage?.(this.coopState?.respawnInMs !== null && this.coopState?.respawnInMs !== undefined
+        ? `SHIP LOST · Respawning at ${this.coopState.checkpoint ?? 'the drop point'} · ${lives} team lives left` : 'SHIP LOST · No team lives left · Your wingmates fly on', 3000, '#ff7755');
+      else ui?.showMessage?.(`${this.nameOf(event.id)} is down · ${lives ?? 0} team lives left`, 2200, '#ffaa66');
+      return;
+    }
+    if (event.t === 'relay') { if (event.by && event.by !== this.id) ui?.showMessage?.(`${this.nameOf(event.by)} opened a relay`, 1800, '#45ff96', 70); return; }
+    if (event.t === 'respawn' && this.mode === 'coop' && event.id !== this.id) { ui?.showMessage?.(`${this.nameOf(event.id)} is back`, 1500, '#45ff96', 70); return; }
     if (event.t === 'shot' && event.owner !== this.id) this.drawShot(event);
     else if (event.t === 'kill') {
       const { victim, attacker } = event;
@@ -306,7 +357,7 @@ export default class OnlineMatch {
   restart(seed) {
     this.seed = seed; this.history.clear(); this.interpolator.clear(); this.clock.reset(); this.aliveById.clear();
     if (this.lastSnapshot) this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed });
-    this.game.uiManager?.showMessage?.('REMATCH · Same pilots, fresh scores', 2500, '#9ce5ed');
+    this.game.uiManager?.showMessage?.(this.mode === 'coop' ? 'MISSION RESTART · Same team, full lives' : 'REMATCH · Same pilots, fresh scores', 2500, '#9ce5ed');
   }
 
   /** Once per rendered frame: pose the other ships from the interpolation buffer. */
@@ -321,11 +372,19 @@ export default class OnlineMatch {
       pilot.ship.group.visible = pose.alive;
       pilot.ship.group.position.copy(out.position); pilot.ship.group.quaternion.copy(out.quaternion);
     }
+    if (this.mode !== 'coop') return;
+    for (const enemy of this.game.enemyManager?.enemies ?? []) {
+      const id = enemy.mesh?.userData.spawnPointId;
+      if (!id || !enemy.isActive || !this.interpolator.sample(`e:${id}`, serverNow, out)) continue;
+      enemy.mesh.position.copy(out.position); enemy.mesh.quaternion.copy(out.quaternion);
+      fitEnemyCollider(enemy);
+    }
   }
 
   /** Text for the HUD: room code and round trip. */
   status() {
-    return `Room ${this.room ?? '----'}${this.rttMs === null ? '' : ` · ${Math.round(this.rttMs)} ms`}`;
+    const lives = this.mode === 'coop' && this.coopState ? ` · Team lives ${this.coopState.lives}` : '';
+    return `Room ${this.room ?? '----'}${this.rttMs === null ? '' : ` · ${Math.round(this.rttMs)} ms`}${lives}`;
   }
 
   close() {

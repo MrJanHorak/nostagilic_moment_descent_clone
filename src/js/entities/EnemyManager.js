@@ -38,6 +38,10 @@ class EnemyManager {
     this.scene = scene;
     this.playerTransform = playerTransform;
     this.gameState = gameState;
+    /** Co-op: damage robots take is divided by this (1 solo). */
+    this.toughness = 1;
+    /** Online co-op client: robots are puppets posed from server snapshots; no AI runs here. */
+    this.remote = false;
     this.audioManager = audioManager;
     this.levelManager = levelManager;
 
@@ -270,7 +274,8 @@ class EnemyManager {
     const index = this.enemies.findIndex(candidate => candidate === enemy);
     if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
     const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
-    enemy.health -= projectile.power * resistance;
+    // Co-op: bigger teams face tougher robots (the damage they take is divided).
+    enemy.health -= projectile.power * resistance / (this.toughness || 1);
     if (this.mineNavigation) this.minePursuit(this.enemies[index]).lastSeen = (this.shooterPosition(projectile) ?? this.aimOf(enemy).position).clone();
     this.effectsManager.createHitEffect(position.clone());
     if (this.audioManager?.initialized) {
@@ -596,6 +601,7 @@ class EnemyManager {
     } else {
       this.spawnPredefinedEnemies();
     }
+    if (this.remote) return;
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
@@ -868,7 +874,8 @@ class EnemyManager {
     // Ownership is retired before drop creation can call back into combat.
     if (cause === 'shot' && this.gameState.session.phase === 'playing') {
       if (this.levelManager?.currentLevel?.sourceDocument) {
-        this.powerUpManager?.spawnPowerup(enemy.mesh.position.clone(), MINE_SALVAGE[enemy.type.name], { persistent: true });
+        // Named after the robot, so an online client and the server agree on which salvage is which.
+        this.powerUpManager?.spawnPowerup(enemy.mesh.position.clone(), MINE_SALVAGE[enemy.type.name], { persistent: true, spawnId: spawnId ? `salvage:${spawnId}` : null });
       } else if (this.levelManager?.currentLevel?.kind !== 'arena') this.spawnEnemyDrop(enemy.mesh.position.clone(), enemy.type.name);
     }
     if (!this.isCurrent(generation, sessionId)) return true;

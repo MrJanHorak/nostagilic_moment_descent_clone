@@ -11,6 +11,9 @@ export const MIN_FIRE_INTERVAL_MS = 100;
 /** The most a single input may turn the ship (radians per axis), against cheats and jumps. */
 export const MAX_LOOK_PER_INPUT = 0.6;
 export const MAX_PLAYERS = 8;
+/** Co-op rooms are smaller: missions are built for up to four pilots. */
+export const MAX_COOP_PLAYERS = 4;
+export const ROOM_MODES = /** @type {const} */ (['anarchy', 'coop']);
 export const MAX_MESSAGE_BYTES = 4096;
 export const NAME_LIMIT = 16;
 /** Room codes avoid letters that read alike (I/L/O, 0/1). */
@@ -42,8 +45,8 @@ export function cleanName(value) {
 /** @param {unknown} value */
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 
-/** @typedef {{t: 'hello', protocol: number, name: string, room: string | null}} HelloMessage */
-/** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null}} InputMessage */
+/** @typedef {{t: 'hello', protocol: number, name: string, room: string | null, mode: 'anarchy' | 'coop', map: string | null}} HelloMessage */
+/** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null, interact: boolean}} InputMessage */
 /** @typedef {{t: 'ping', time: number}} PingMessage */
 /** @typedef {HelloMessage | InputMessage | PingMessage} ClientMessage */
 
@@ -59,7 +62,10 @@ export function parseClientMessage(text) {
     if (raw.protocol !== PROTOCOL_VERSION) return { ok: false, error: 'protocol-mismatch' };
     const room = raw.room == null || raw.room === '' ? null : String(raw.room).toUpperCase();
     if (room !== null && !isRoomCode(room)) return { ok: false, error: 'bad-room-code' };
-    return { ok: true, message: { t: 'hello', protocol: PROTOCOL_VERSION, name: cleanName(raw.name), room } };
+    // Creating a room may choose the mode and map; joining takes the room's.
+    const mode = raw.mode === 'coop' ? 'coop' : 'anarchy';
+    const map = typeof raw.map === 'string' && /^[a-z0-9-]{1,48}$/.test(raw.map) ? raw.map : null;
+    return { ok: true, message: { t: 'hello', protocol: PROTOCOL_VERSION, name: cleanName(raw.name), room, mode, map } };
   }
   if (raw.t === 'input') {
     if (!Number.isSafeInteger(raw.seq) || raw.seq < 0) return { ok: false, error: 'bad-seq' };
@@ -72,7 +78,7 @@ export function parseClientMessage(text) {
     const clampLook = /** @param {unknown} value */ value => finite(value) ? Math.max(-MAX_LOOK_PER_INPUT, Math.min(MAX_LOOK_PER_INPUT, /** @type {number} */ (value))) : 0;
     const look = Array.isArray(raw.look) ? raw.look : [];
     return { ok: true, message: { t: 'input', seq: raw.seq, input, look: [clampLook(look[0]), clampLook(look[1])], fire: raw.fire === true,
-      weapon: WEAPONS.has(raw.weapon) ? raw.weapon : null } };
+      weapon: WEAPONS.has(raw.weapon) ? raw.weapon : null, interact: raw.interact === true } };
   }
   if (raw.t === 'ping') return { ok: true, message: { t: 'ping', time: finite(raw.time) ? raw.time : 0 } };
   return { ok: false, error: 'unknown-type' };

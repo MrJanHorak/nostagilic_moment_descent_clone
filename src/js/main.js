@@ -20,6 +20,7 @@ import ControlBindings from './core/ControlBindings.js';
 import StoryController from './core/StoryController.js';
 import { describeMissionStatus } from './core/MissionStatus.js';
 import AnarchyMatch from './core/AnarchyMatch.js';
+import CoopMatch, { enemyToughness } from './core/CoopMatch.js';
 import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
 import createOnlineLobby from './ui/OnlineLobby.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
@@ -48,6 +49,10 @@ export default class Game {
     this.activeAnimations = [];
     this.mission = null;
     this.anarchy = null;
+    /** Co-op rules (shared lives, relay respawns, team extraction) when a mission is flown as a team. @type {CoopMatch | null} */
+    this.coop = null;
+    /** Whether the next start (and restarts) is co-op. */
+    this.coopMode = false;
     /** A game server's simulation: the host's own ship never flies, fights or scores. */
     this.dedicated = false;
     /** Online Anarchy: the connection to the game server, while in a room. @type {OnlineMatch | null} */
@@ -169,6 +174,7 @@ export default class Game {
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.mission = null;
     this.anarchy = null;
+    this.coop = null;
     this.story?.dispose();
     this.story = null;
     this.exploration = null;
@@ -184,14 +190,16 @@ export default class Game {
     this.uiManager?.resetSessionUI();
   }
 
-  /** @param {{endless?: boolean, levelIndex?: number, preparedWorld?: unknown, seed?: number}} [options] `seed` repeats a session exactly (replays, shared matches). */
-  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex, preparedWorld = null, seed = undefined } = {}) {
+  /** @param {{endless?: boolean, levelIndex?: number, preparedWorld?: unknown, seed?: number, coop?: boolean}} [options]
+   * `seed` repeats a session exactly (replays, shared matches). `coop` flies a mission as a team (kept for restarts). */
+  startSession({ endless = this.isEndlessMode, levelIndex = this.currentLevelIndex, preparedWorld = null, seed = undefined, coop = this.coopMode } = {}) {
     if (!endless && (!Number.isInteger(levelIndex) || !this.levelManager?.levels[levelIndex])) {
       throw new RangeError(`Unknown mission index: ${levelIndex}`);
     }
     this.endSession();
     this.isEndlessMode = endless;
     this.currentLevelIndex = levelIndex;
+    this.coopMode = coop;
     this.session.begin(seed);
     try {
       this.gameState.resetForSession();
@@ -220,6 +228,9 @@ export default class Game {
       this.powerUpManager.respawnMs = this.anarchy ? this.anarchy.rules.pickupRespawnMs : null;
       // Online, the server decides pickups, damage, frags and respawns; this game predicts flight only.
       this.powerUpManager.remoteTaken = this.online ? new Set() : null;
+      // Online co-op: robots are posed from the server and their shots are only pictures.
+      this.enemyManager.remote = !!this.online && !this.anarchy;
+      this.enemyManager.projectileManager.harmless = !!this.online;
       this.mission = !endless && level.mission && !this.anarchy ? new MissionObjective(level.mission) : null;
       if (this.anarchy) this.story = null;
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
@@ -241,7 +252,8 @@ export default class Game {
         getColliders: () => this.levelManager.solidColliders,
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
-        onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
+        onTargetHit: (enemy, projectile, position) => this.online ? this.enemyManager.effectsManager?.createHitEffect?.(position.clone())
+          : this.enemyManager.hitEnemy(enemy, projectile, position),
         ...(this.anarchy && !this.online ? {
           getPilotTargets: ownerId => this.projectileManager.pilotBodies(this.spaceship.group, this.gameState).filter(body => !ownerId || body.pilot?.id !== ownerId),
           onPilotHit: (pilot, power, attackerId, position) => {
@@ -270,6 +282,10 @@ export default class Game {
       }
       for (const pilot of this.gameState.pilots) this.placeAtSpawn(pilot);
       if (this.dedicated) this.gameState.localPilot.alive = false;
+      // Co-op: a team mission. Everyone respawns at the spawn until the team activates a relay.
+      this.coop = coop && !endless && this.mission ? new CoopMatch(this.spaceship.group.position) : null;
+      if (this.coop) for (const pilot of this.team()) this.coop.join(pilot.id);
+      this.enemyManager.toughness = this.coop ? enemyToughness(this.team().length) : 1;
       if (this.anarchy) for (const pilot of this.gameState.pilots) {
         if (pilot.local && this.dedicated) continue;
         this.armPilot(pilot); this.anarchy.standing(pilot.id);
@@ -308,7 +324,7 @@ export default class Game {
     }
   }
 
-  startGame() { this.userCampaign = null; return this.startSession(); }
+  startGame() { this.userCampaign = null; return this.startSession({ coop: false }); }
   // The editor/file UI can call this after reading JSON. Invalid data or staging
   // failures leave the active session intact. Reuse one imported catalog slot.
   // `campaign` marks a user campaign mission; replays keep it, other entries clear it.
@@ -323,8 +339,8 @@ export default class Game {
       if (!prepared.world.claimed) disposeObject(prepared.world.group);
     }
   }
-  selectLevel(index) { this.userCampaign = null; return this.startSession({ endless: false, levelIndex: index }); }
-  selectEndlessMode() { this.userCampaign = null; return this.startSession({ endless: true }); }
+  selectLevel(index) { this.userCampaign = null; return this.startSession({ endless: false, levelIndex: index, coop: false }); }
+  selectEndlessMode() { this.userCampaign = null; return this.startSession({ endless: true, coop: false }); }
   restartLevel() { return this.startSession(); }
   restartGame() { return this.startSession(); }
 
@@ -466,7 +482,7 @@ export default class Game {
     const target = this.campaignProgress.nextMission(campaign) ?? campaign[0];
     const index = target ? this.levelManager.levels.findIndex((level, i) => level.id === target.id && level.campaignOrder && i !== this.importedLevelIndex) : -1;
     this.userCampaign = null;
-    return this.startSession({ endless: false, levelIndex: Math.max(0, index) });
+    return this.startSession({ endless: false, levelIndex: Math.max(0, index), coop: false });
   }
 
   resetCampaignProgress() {
@@ -523,13 +539,27 @@ export default class Game {
   }
 
   interact() {
+    // Online, the relay key goes to the server with the next input.
+    if (this.online) { if (this.session.phase !== 'playing') return false; this.online.queueInteract(); return true; }
+    return this.interactAt(this.spaceship.group.position, true);
+  }
+
+  /** A remote pilot presses the relay key (co-op). @param {string} id */
+  pilotInteract(id) {
+    const pilot = this.gameState.pilot(id);
+    if (!pilot || pilot.local || !pilot.alive || !pilot.position) return false;
+    return this.interactAt(pilot.position, false);
+  }
+
+  /** @param {THREE.Vector3} position @param {boolean} local whether this screen's pilot pressed it (for the interlock message) */
+  interactAt(position, local) {
     if (this.session.phase !== 'playing') return false;
-    const nearby = this.levelManager.interaction?.nearest(this.spaceship.group.position);
+    const nearby = this.levelManager.interaction?.nearest(position);
     if (nearby && this.mission && !this.mission.canActivateDevice(nearby.id)) {
-      this.uiManager.showMessage('REACTOR INTERLOCK · Clear required drones and activate the other relays first', 2500, '#ffce77');
+      if (local) this.uiManager.showMessage('REACTOR INTERLOCK · Clear required drones and activate the other relays first', 2500, '#ffce77');
       return false;
     }
-    const device = this.levelManager.interaction?.tryActivate(this.spaceship.group.position);
+    const device = this.levelManager.interaction?.tryActivate(position);
     if (!device) return false;
     this.completeDeviceObjective(device);
     return true;
@@ -537,6 +567,9 @@ export default class Game {
 
   completeDeviceObjective(device) {
     this.mission?.recordDeviceActivation(device.id, this.session.timeMs);
+    // Co-op: the team now respawns at this relay.
+    const placed = this.levelManager.interaction?.devices?.find(/** @param {any} candidate */ candidate => candidate.id === device.id);
+    if (this.coop && placed?.position && placed.kind !== 'reactor') this.coop.setCheckpoint(placed.position, device.label);
     this.story?.deviceActivated(device.id);
     this.exploration?.completedDevices.add(device.id);
     const escape = this.mission?.definition.escape;
@@ -559,9 +592,30 @@ export default class Game {
 
   updateMission() {
     if (!this.mission || this.session.phase !== 'playing') return;
+    // Online, the server decides success and failure; this screen only shows the exit.
+    if (this.online) { this.levelManager.updateExitMarker(this.mission.ready); return; }
     if (this.mission.failed || this.mission.updateEscape(this.session.timeMs)) { this.die('reactor'); return; }
     this.levelManager.updateExitMarker(this.mission.ready);
+    if (this.coop) { this.updateTeamExtraction(); return; }
     if (this.mission.tryComplete(this.spaceship.group.position, this.spaceship.radius, this.session.timeMs)) this.completeSession();
+  }
+
+  /** Co-op extraction: every living pilot must reach the exit. */
+  updateTeamExtraction() {
+    const mission = this.mission, coop = this.coop;
+    if (!mission || !coop || !mission.ready) return;
+    const team = this.team(), atExit = /** @param {any} pilot */ pilot => !!pilot.position && mission.canExit(pilot.position, pilot.radius);
+    if (coop.everyoneOut(team, atExit)) {
+      const first = team.find(pilot => pilot.alive);
+      if (first && mission.tryComplete(first.position, first.radius, this.session.timeMs)) this.completeSession();
+      return;
+    }
+    const waiting = team.filter(pilot => pilot.alive && atExit(pilot)).length;
+    if (waiting && this.session.timeMs - (this.lastExtractionNotice ?? -Infinity) > 2500) {
+      this.lastExtractionNotice = this.session.timeMs;
+      const living = team.filter(pilot => pilot.alive).length;
+      this.uiManager?.showMessage?.(`EXTRACTION · ${waiting}/${living} pilots at the exit · Waiting for the team`, 2000, '#45ff96');
+    }
   }
 
   updateSimulation(delta) {
@@ -569,12 +623,12 @@ export default class Game {
     const generation = this.session.id;
     this.session.advance(delta);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
-    if (this.mission?.failed || this.mission?.updateEscape(this.session.timeMs)) { this.die('reactor'); return; }
+    if (!this.online && (this.mission?.failed || this.mission?.updateEscape(this.session.timeMs))) { this.die('reactor'); return; }
     this.levelManager.interaction?.update(delta);
     for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }
-    const grounded = this.anarchy && !this.gameState.localPilot.alive;
+    const grounded = (this.anarchy || this.coop) && !this.gameState.localPilot.alive;
     /** @type {import('./contracts.js').FlightInput | null | undefined} */ let input = null;
     if (grounded) this.spaceship.velocity.set(0, 0, 0);
     else input = this.inputManager.updateMovement(delta);
@@ -596,9 +650,15 @@ export default class Game {
     if (environment?.entered) this.uiManager.showMessage(environment.entered === 'lava'
       ? 'LAVA CONTACT · Move clear of the surface' : 'WATER / COOLANT · Surface contact', 1800, environment.entered === 'lava' ? '#ff9944' : '#70dce8');
     if (environment?.damage && !this.online) this.gameState.takeDamage(environment.damage);
+    // Every other pilot touches lava and water too (each with their own damage cadence).
+    if (this.levelManager.environment && !this.online) for (const pilot of this.gameState.pilots) {
+      if (pilot.local || !pilot.alive || !pilot.position) continue;
+      const contact = this.levelManager.environment.update(this.session, pilot.position, pilot.radius, pilot.id);
+      if (contact.damage) this.gameState.takeDamage(contact.damage, pilot);
+    }
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     this.exploration?.update(this.spaceship.group.position);
-    this.story?.update(this.spaceship.group.position, this.session.timeMs);
+    this.story?.update(this.spaceship.group.position, this.session.timeMs, this.wingmatePositions());
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.enemyManager.updateEnemies(delta);
     if (this.session.phase !== 'playing') return;
@@ -606,6 +666,8 @@ export default class Game {
     if (this.session.phase !== 'playing') return;
     this.powerUpManager.update(delta);
     if (!this.online) this.updateAnarchy();
+    if (this.session.phase !== 'playing') return;
+    this.updateCoop();
     if (this.session.phase !== 'playing') return;
     this.updateMission();
     if (this.session.phase !== 'playing') return;
@@ -625,6 +687,7 @@ export default class Game {
    * the kill is scored, and the session goes on. Returns false outside Anarchy.
    * @param {import('./core/Pilot.js').default} pilot @param {string | null} attackerId */
   pilotDown(pilot, attackerId) {
+    if (this.coop && this.session.phase === 'playing') return this.coopPilotDown(pilot);
     if (!this.anarchy || this.session.phase !== 'playing') return false;
     pilot.alive = false;
     this.anarchy.recordDeath(pilot.id, attackerId, this.session.timeMs);
@@ -635,6 +698,65 @@ export default class Game {
     if (pilot.local) this.uiManager?.showMessage(attackerId && attackerId !== pilot.id ? `DESTROYED BY ${attackerId.toUpperCase()} · Respawning in 3s` : 'SHIP LOST · −1 frag · Respawning in 3s', 2800, '#ff7755');
     else if (attackerId === local.id) this.uiManager?.showMessage(`FRAG · ${pilot.id.toUpperCase()} destroyed · ${this.anarchy.standing(local.id).frags} frags`, 1800, '#45ff96');
     return true;
+  }
+
+  /** The pilots flying this mission (a game server's own ship is not one of them). */
+  team() { return this.gameState.pilots.filter(pilot => !(pilot.local && this.dedicated)); }
+
+  /** Where the other living pilots are (story pickups count for the team). */
+  wingmatePositions() {
+    const positions = [];
+    for (const pilot of this.gameState.pilots) if (!pilot.local && pilot.alive && pilot.position) positions.push(pilot.position);
+    return positions;
+  }
+
+  /** Co-op: a pilot is down. With a life in the team pool they come back at the last
+   * relay; when nobody is flying and nobody is due back, the mission is lost.
+   * @param {import('./core/Pilot.js').default} pilot */
+  coopPilotDown(pilot) {
+    const coop = /** @type {CoopMatch} */ (this.coop);
+    pilot.alive = false;
+    const ship = pilot.local ? this.spaceship : pilot.ship;
+    if (ship) this.enemyManager.effectsManager?.createExplosion?.(ship.group.position.clone(), 0xffaa33, true, 3);
+    if (ship && !pilot.local) ship.group.visible = false;
+    if (pilot.local) this.spaceship.velocity.set(0, 0, 0);
+    const queued = coop.recordDown(pilot.id, this.session.timeMs);
+    const seconds = Math.round(coop.rules.respawnMs / 1000);
+    if (pilot.local) this.uiManager?.showMessage(queued ? `SHIP LOST · Respawning at ${coop.checkpointLabel ?? 'the drop point'} in ${seconds}s · ${coop.lives} team lives left` : 'SHIP LOST · No team lives left · Your wingmates fly on', 3000, '#ff7755');
+    else this.uiManager?.showMessage(queued ? `${pilot.id.toUpperCase()} DOWN · back in ${seconds}s · ${coop.lives} team lives left` : `${pilot.id.toUpperCase()} DOWN · no team lives left`, 2200, '#ffaa66');
+    if (coop.checkWipe(this.team())) this.die('combat');
+    return true;
+  }
+
+  /** Co-op each step: robot toughness for the team size, respawns, and the wipe check. */
+  updateCoop() {
+    const coop = this.coop;
+    if (!coop || this.online || this.session.phase !== 'playing') return;
+    const team = this.team();
+    this.enemyManager.toughness = enemyToughness(team.length);
+    for (const id of coop.dueRespawns(this.session.timeMs)) {
+      const pilot = this.gameState.pilot(id);
+      if (pilot) this.respawnTeamPilot(pilot);
+    }
+    if (coop.checkWipe(team)) this.die('combat');
+  }
+
+  /** Back in at the team's checkpoint with full shields and the mission's starting ammunition.
+   * @param {import('./core/Pilot.js').default} pilot */
+  respawnTeamPilot(pilot) {
+    const coop = this.coop;
+    if (!coop) return;
+    pilot.respawn(this.session);
+    const combat = this.levelManager.currentLevel?.combat;
+    if (Number.isFinite(combat?.initialPulseAmmo)) {
+      const ammo = scaleAmmo(combat.initialPulseAmmo, combat.maxPulseAmmo, this.gameState.difficulty);
+      pilot.weaponInventory.pulse.ammo = ammo.initial; pilot.pulseAmmoCapacity = ammo.capacity;
+    }
+    const ship = pilot.local ? this.spaceship : pilot.ship;
+    if (!ship) return;
+    ship.reset(); ship.group.visible = true;
+    ship.group.position.copy(coop.checkpoint);
+    if (pilot.local) { this.gameState.playerVelocity = ship.velocity; this.uiManager?.updateWeaponUI(); this.uiManager?.updateHUD(); this.uiManager?.showMessage('BACK IN THE FIGHT', 1500, '#45ff96'); }
   }
 
   /** Respawns, the time limit and the end of an Anarchy match. */
@@ -688,7 +810,7 @@ export default class Game {
 
   /** Join (or create, with no room code) an online Anarchy room on a game server.
    * Resolves once the match is running here; rejects with a readable message.
-   * @param {{url: string, name?: string, room?: string | null}} options */
+   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null}} options */
   async joinOnline(options) {
     this.leaveOnline();
     const match = new OnlineMatch(this, options);
@@ -726,6 +848,16 @@ export default class Game {
     this.scene.add(ship.group);
     this.placeAtSpawn(pilot);
     if (this.anarchy) { this.armPilot(pilot); this.anarchy.standing(pilot.id); }
+    if (this.coop) {
+      this.coop.join(pilot.id);
+      const combat = this.levelManager.currentLevel?.combat;
+      if (Number.isFinite(combat?.initialPulseAmmo)) {
+        const ammo = scaleAmmo(combat.initialPulseAmmo, combat.maxPulseAmmo, this.gameState.difficulty);
+        pilot.weaponInventory.pulse.ammo = ammo.initial; pilot.pulseAmmoCapacity = ammo.capacity;
+      }
+      // A late joiner arrives at the team's checkpoint.
+      pilot.ship?.group.position.copy(this.coop.checkpoint);
+    }
     return pilot;
   }
 
@@ -734,6 +866,8 @@ export default class Game {
     const pilot = this.gameState.pilot(id);
     if (!pilot || !this.gameState.removePilot(id)) return false;
     if (pilot.ship) this.scene.remove(pilot.ship.group);
+    this.coop?.leave(id);
+    this.levelManager?.environment?.forget?.(id);
     return true;
   }
 
