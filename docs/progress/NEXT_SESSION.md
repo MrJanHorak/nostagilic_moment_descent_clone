@@ -11,6 +11,14 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 Phase 3, steps 1–2: Anarchy rules and Foundry Ring
+
+Free-for-all rules run in the simulation, and there is a purpose-built arena. Details are in [ANARCHY.md](../ANARCHY.md).
+- `AnarchyMatch`: frags, self-kill penalty, 3 s respawn at the safest spawn, 20 s pickup return, frag and time limits, standings screen.
+- Player shots and splash hit other pilots, never their own shooter; going down does not end the session.
+- Foundry Ring (`scripts/build-foundry-ring.mjs`): 31 spaces, 6 loops, three levels, with weapon salvage.
+- 604 unit and simulation tests pass, plus a new browser test. Next: step 3, the Node game server.
+
 ## November 24 Phase 2: multiplayer-ready simulation
 
 The simulation now runs several pilots in one session, headless and deterministically, with single-player play unchanged. Details, APIs and the remaining gaps are in [the Phase 2 plan](../MULTIPLAYER_REFACTOR.md#status-november-24).

@@ -128,7 +128,9 @@ class ProjectileManager {
     const targets = [...(this.combatWorld.getTargets?.() ?? [])];
     const colliders = [...(this.combatWorld.getColliders?.() ?? [])];
     for (let count = 0; count <= targets.length; count++) {
-      const hit = traceShot(start, end, { colliders, targets: targets.filter(target => !projectile.hitTargets.has(target)), radius: 0.05 });
+      // Pilot-vs-pilot modes expose other ships as targets; a shot never hits its own pilot.
+      const pilots = this.combatWorld.getPilotTargets?.(projectile.ownerId) ?? [];
+      const hit = traceShot(start, end, { colliders, targets: targets.filter(target => !projectile.hitTargets.has(target)), players: pilots, radius: 0.05 });
       if (!hit) { projectile.mesh.position.copy(end); return false; }
       projectile.mesh.position.copy(hit.point);
       if (hit.kind === 'enemy' && projectile.penetrating) {
@@ -145,6 +147,7 @@ class ProjectileManager {
       if (!current()) return true;
       if (hit.kind === 'enemy') this.combatWorld.onTargetHit?.(hit.target, projectile, hit.point);
       else if (hit.kind === 'wall') this.combatWorld.onWallHit?.(hit.target, projectile, hit.point);
+      else if (hit.kind === 'player' && hit.target.pilot) this.combatWorld.onPilotHit?.(hit.target.pilot, projectile.power, projectile.ownerId ?? null, hit.point);
       if (projectile.explosive && current()) {
         // Stay on the incoming side of the struck wall for blast visibility.
         const center = hit.point.clone().addScaledVector(projectile.velocity.clone().normalize(), -0.01);
@@ -156,6 +159,13 @@ class ProjectileManager {
           if (distance >= projectile.explosionRadius || !hasLineOfSight(center, nearest, colliders)) continue;
           const power = projectile.power * 0.5 * (1 - distance / projectile.explosionRadius);
           this.combatWorld.onTargetHit?.(target, { ...projectile, power }, nearest);
+        }
+        // Splash reaches pilots too, the shooter included (a self-inflicted frag loss).
+        for (const body of this.combatWorld.getPilotTargets?.(null) ?? []) {
+          if (!current() || !body.pilot || hit.kind === 'player' && body.pilot === hit.target.pilot) continue;
+          const distance = Math.max(0, body.position.distanceTo(center) - body.radius);
+          if (distance >= projectile.explosionRadius || !hasLineOfSight(center, body.position, colliders)) continue;
+          this.combatWorld.onPilotHit?.(body.pilot, projectile.power * 0.5 * (1 - distance / projectile.explosionRadius), projectile.ownerId ?? null, body.position.clone());
         }
       }
       return true;
@@ -516,6 +526,7 @@ class ProjectileManager {
     this.assertUsable();
     const remote = !!pilot && !pilot.local;
     if (remote && (!pilot.alive || !pilot.ship)) return;
+    if (!remote && gameState.localPilot && !gameState.localPilot.alive) return;
     /** Loadout fields (weapon, inventory, power) come from the firing pilot. */
     const loadout = remote ? pilot : gameState;
     const feedback = remote ? null : gameState.uiManager;

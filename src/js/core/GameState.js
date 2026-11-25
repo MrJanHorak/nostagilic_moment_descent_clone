@@ -152,11 +152,16 @@ export default class GameState {
 
   /** Damage one pilot (the local one by default). Only the local pilot's damage
    * reaches this screen's HUD, audio and camera.
-   * @param {number} amount @param {Pilot} [pilot] */
-  takeDamage(amount, pilot = this.localPilot) {
+   * @param {number} amount @param {Pilot} [pilot] @param {string | null} [attackerId] The pilot who caused it, if any. */
+  takeDamage(amount, pilot = this.localPilot, attackerId = null) {
     if (this.session.phase !== 'playing' || amount <= 0 || !pilot.alive) return;
     amount = scaleIncomingDamage(amount, this.difficulty);
     pilot.health = Math.max(0, pilot.health - amount);
+    // A mode with respawns (Anarchy) takes over when a pilot goes down.
+    if (pilot.health === 0 && this.game?.pilotDown?.(pilot, attackerId)) {
+      if (pilot.local) { this.uiManager?.updateHUD(); this.audioManager?.playSound('playerDamage', { volume: 0.6 }); }
+      return;
+    }
     if (!pilot.local) { if (pilot.health === 0) pilot.alive = false; return; }
     this.audioManager?.playSound('playerDamage', { volume: 0.6 });
     this.uiManager?.updateHUD();

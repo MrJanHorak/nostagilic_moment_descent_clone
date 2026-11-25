@@ -11,6 +11,7 @@ import createDeepRelayLevel from './levels/DeepRelay.js';
 import createFighterDrill from './levels/FighterDrill.js';
 import createCrossfireRelay from './levels/CrossfireRelay.js';
 import createBomberDrill from './levels/BomberDrill.js';
+import createAnarchyMaps from './levels/Anarchy.js';
 import buildArena from './ArenaGeometry.js';
 import PortalVisibility from './PortalVisibility.js';
 import SurfaceEnvironment from './SurfaceEnvironment.js';
@@ -59,6 +60,7 @@ class LevelManager {
       createFighterDrill(),
       createBomberDrill(),
       createCrossfireRelay(),
+      ...createAnarchyMaps(),
     ];
     this.currentLevelIndex = 0;
     this.currentLevel = null;

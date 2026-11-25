@@ -52,6 +52,14 @@ export default class Pilot {
     this.weaponInventory = createWeaponInventory();
   }
 
+  /** Back in the fight after going down (Anarchy): full shields and a fresh loadout;
+   * kills this session are kept. @param {import('./GameSession.js').default} session */
+  respawn(session) {
+    const kills = this.kills;
+    this.resetForSession(session);
+    this.kills = kills;
+  }
+
   /** @param {import('./GameSession.js').default} session */
   resetForSession(session) {
     this.health = this.maxHealth;

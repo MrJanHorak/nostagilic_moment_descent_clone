@@ -168,6 +168,10 @@ export interface CombatWorld {
   readonly transientLights?: boolean;
   getColliders?(): readonly SolidCollider[];
   getTargets?(): readonly EnemyCombatTarget[];
+  /** Pilot-vs-pilot modes: every live pilot's body except `ownerId` (null: all pilots). */
+  getPilotTargets?(ownerId: string | null | undefined): readonly import('./contracts.js').ShotPlayer[];
+  /** A player shot or blast reached a pilot. */
+  onPilotHit?(pilot: import('./core/Pilot.js').default, power: number, attackerId: string | null, point: import('three').Vector3): void;
   getRules?(): { readonly pulseDamage: number } | null | undefined;
   onTargetHit?(enemy: EnemyCombatTarget, projectile: PlayerProjectile, position: Vector3): void;
   onWallHit?(collider: SolidCollider, projectile: PlayerProjectile, position: Vector3): void;

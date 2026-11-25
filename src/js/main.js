@@ -19,6 +19,7 @@ import CampaignProgress from './core/CampaignProgress.js';
 import ControlBindings from './core/ControlBindings.js';
 import StoryController from './core/StoryController.js';
 import { describeMissionStatus } from './core/MissionStatus.js';
+import AnarchyMatch from './core/AnarchyMatch.js';
 import { getDifficulty, scaleAmmo } from './core/Difficulty.js';
 import ShipView from './core/ShipView.js';
 import ExplorationMap from './core/ExplorationMap.js';
@@ -44,6 +45,7 @@ export default class Game {
     this.session = this.gameState.session;
     this.activeAnimations = [];
     this.mission = null;
+    this.anarchy = null;
     /** @type {StoryController | null} */
     this.story = null;
     /** @type {import('./core/StoryController.js').StorySummary | null} */
@@ -160,6 +162,7 @@ export default class Game {
     this.stepper.reset();
     this.session.end(); // Invalidate callbacks before touching entities or UI.
     this.mission = null;
+    this.anarchy = null;
     this.story?.dispose();
     this.story = null;
     this.exploration = null;
@@ -205,7 +208,12 @@ export default class Game {
       const level = this.levelManager.currentLevel;
       const transientLights = endless || level.kind !== 'arena';
       if (this.enemyManager.effectsManager) this.enemyManager.effectsManager.dynamicLights = transientLights;
-      this.mission = !endless && level.mission ? new MissionObjective(level.mission) : null;
+      // Anarchy: no mission or story, neutral difficulty, and a match that scores frags.
+      this.anarchy = !endless && level.mode === 'anarchy' ? new AnarchyMatch(level.anarchySpawns) : null;
+      if (this.anarchy) this.gameState.difficulty = getDifficulty('pilot');
+      this.powerUpManager.respawnMs = this.anarchy ? this.anarchy.rules.pickupRespawnMs : null;
+      this.mission = !endless && level.mission && !this.anarchy ? new MissionObjective(level.mission) : null;
+      if (this.anarchy) this.story = null;
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
         level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
@@ -226,6 +234,13 @@ export default class Game {
         getTargets: () => this.enemyManager.enemies,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.enemyManager.hitEnemy(enemy, projectile, position),
+        ...(this.anarchy ? {
+          getPilotTargets: ownerId => this.projectileManager.pilotBodies(this.spaceship.group, this.gameState).filter(body => !ownerId || body.pilot?.id !== ownerId),
+          onPilotHit: (pilot, power, attackerId, position) => {
+            this.gameState.takeDamage(power, pilot, attackerId);
+            this.enemyManager.effectsManager?.createExplosion?.(position, 0xff5533, true, 1);
+          },
+        } : {}),
         onExplosion: (position, radius) => this.enemyManager.effectsManager.createExplosion(position, 0xff8833, true, radius),
         onWallHit: (collider, projectile, position) => {
           const reactor = this.levelManager.interaction?.hitReactor(collider, level.combat?.pulseDamage ?? projectile.power, id => this.mission?.canActivateDevice(id) ?? true);
@@ -246,6 +261,7 @@ export default class Game {
         if (this.levelManager.currentLevel.spawnRotation) this.spaceship.group.quaternion.fromArray(this.levelManager.currentLevel.spawnRotation);
       }
       for (const pilot of this.gameState.pilots) this.placeAtSpawn(pilot);
+      if (this.anarchy) for (const pilot of this.gameState.pilots) { this.armPilot(pilot); this.anarchy.standing(pilot.id); }
       this.exploration = !endless && level.sourceDocument ? new ExplorationMap(level.sourceDocument) : null;
       this.exploration?.update(this.spaceship.group.position);
       if (this.cockpit) this.cockpit.lastUpdate = -Infinity;
@@ -461,7 +477,8 @@ export default class Game {
     const level = this.levelManager.levels[this.currentLevelIndex];
     if (level?.campaignOrder) return this.levelManager.levels.findIndex(candidate => candidate.campaignOrder === level.campaignOrder + 1);
     const next = this.currentLevelIndex + 1;
-    return next < this.levelManager.levels.length && next !== this.importedLevelIndex ? next : -1;
+    // Practice missions chain to the next practice mission, never into an Anarchy arena.
+    return next < this.levelManager.levels.length && next !== this.importedLevelIndex && this.levelManager.levels[next]?.mode !== 'anarchy' ? next : -1;
   }
 
   showUserLevels() {
@@ -533,8 +550,10 @@ export default class Game {
     for (let i = this.activeAnimations.length - 1; i >= 0; i--) {
       if (this.activeAnimations[i](delta)) this.activeAnimations.splice(i, 1);
     }
-    this.inputManager.updateMovement(delta);
-    if (!this.isEndlessMode && this.levelManager.currentLevel?.kind === 'arena') {
+    const grounded = this.anarchy && !this.gameState.localPilot.alive;
+    if (grounded) this.spaceship.velocity.set(0, 0, 0);
+    else this.inputManager.updateMovement(delta);
+    if (grounded) { /* Down in Anarchy: wait for the respawn. */ } else if (!this.isEndlessMode && this.levelManager.currentLevel?.kind === 'arena') {
       this.lastMovement = moveSphere(this.spaceship.group.position, this.spaceship.velocity,
         delta, this.levelManager.solidColliders, this.spaceship.radius);
     } else {
@@ -559,6 +578,8 @@ export default class Game {
     this.projectileManager.updateProjectiles(delta);
     if (this.session.phase !== 'playing') return;
     this.powerUpManager.update(delta);
+    this.updateAnarchy();
+    if (this.session.phase !== 'playing') return;
     this.updateMission();
     if (this.session.phase !== 'playing') return;
     if (this.caveParticles && this.session.timeMs - this.lastParticleUpdate >= 50) {
@@ -573,6 +594,71 @@ export default class Game {
     this.diagnostics.recordUpdate();
   }
 
+  /** Anarchy takes over when a pilot goes down: the pilot is out until the respawn,
+   * the kill is scored, and the session goes on. Returns false outside Anarchy.
+   * @param {import('./core/Pilot.js').default} pilot @param {string | null} attackerId */
+  pilotDown(pilot, attackerId) {
+    if (!this.anarchy || this.session.phase !== 'playing') return false;
+    pilot.alive = false;
+    this.anarchy.recordDeath(pilot.id, attackerId, this.session.timeMs);
+    const position = pilot.local ? this.spaceship.group.position : pilot.ship?.group.position;
+    if (position) this.enemyManager.effectsManager?.createExplosion?.(position.clone(), 0xffaa33, true, 3);
+    if (pilot.ship && !pilot.local) pilot.ship.group.visible = false;
+    const local = this.gameState.localPilot;
+    if (pilot.local) this.uiManager?.showMessage(attackerId && attackerId !== pilot.id ? `DESTROYED BY ${attackerId.toUpperCase()} · Respawning in 3s` : 'SHIP LOST · −1 frag · Respawning in 3s', 2800, '#ff7755');
+    else if (attackerId === local.id) this.uiManager?.showMessage(`FRAG · ${pilot.id.toUpperCase()} destroyed · ${this.anarchy.standing(local.id).frags} frags`, 1800, '#45ff96');
+    return true;
+  }
+
+  /** Respawns, the time limit and the end of an Anarchy match. */
+  updateAnarchy() {
+    const match = this.anarchy;
+    if (!match || this.session.phase !== 'playing') return;
+    for (const id of match.dueRespawns(this.session.timeMs)) {
+      const pilot = this.gameState.pilot(id);
+      if (pilot) this.respawnPilot(pilot);
+    }
+    match.checkTime(this.session.timeMs);
+    if (match.over) this.endAnarchy();
+  }
+
+  /** Back in at the spawn farthest from the live pilots.
+   * @param {import('./core/Pilot.js').default} pilot */
+  respawnPilot(pilot) {
+    if (!this.anarchy) return;
+    const occupied = this.gameState.pilots.filter(other => other !== pilot && other.alive).map(other => other.position).filter(position => position !== null);
+    const point = this.anarchy.safestSpawn(occupied);
+    pilot.respawn(this.session);
+    this.armPilot(pilot);
+    const ship = pilot.local ? this.spaceship : pilot.ship;
+    if (!ship) return;
+    ship.reset(); ship.group.visible = true;
+    ship.group.position.copy(point);
+    if (pilot.local) { this.gameState.playerVelocity = ship.velocity; this.uiManager?.updateWeaponUI(); this.uiManager?.updateHUD(); }
+  }
+
+  /** Anarchy loadout: the arena's starting pulse ammunition, the same for everyone.
+   * @param {import('./core/Pilot.js').default} pilot */
+  armPilot(pilot) {
+    const combat = this.levelManager.currentLevel?.combat;
+    if (!Number.isFinite(combat?.initialPulseAmmo)) return;
+    pilot.weaponInventory.pulse.ammo = combat.initialPulseAmmo;
+    pilot.pulseAmmoCapacity = combat.maxPulseAmmo ?? combat.initialPulseAmmo;
+  }
+
+  endAnarchy() {
+    const match = this.anarchy;
+    if (!match || this.session.phase !== 'playing') return false;
+    this.session.transition('completed');
+    this.session.tasks.clear();
+    this.inputManager.clearKeys();
+    this.releasePointerLock();
+    this.audioManager.stopAllSounds();
+    this.audioManager.playSound('powerup', { volume: 0.7 });
+    this.uiManager.showAnarchyResult?.(match.standings(), match.winnerId, this.gameState.localPilot.id);
+    return true;
+  }
+
   /** Add another pilot with their own ship (a remote player, or a second ship in
    * a headless test). They start at the mission spawn and are flown by setPilotInput.
    * @param {string} id @returns {import('./core/Pilot.js').default} */
@@ -581,6 +667,7 @@ export default class Game {
     const pilot = this.gameState.addPilot({ id, ship });
     this.scene.add(ship.group);
     this.placeAtSpawn(pilot);
+    if (this.anarchy) { this.armPilot(pilot); this.anarchy.standing(pilot.id); }
     return pilot;
   }
 
@@ -612,6 +699,11 @@ export default class Game {
   placeAtSpawn(pilot) {
     if (!pilot.ship || pilot.local) return;
     pilot.ship.reset();
+    if (this.anarchy) {
+      const occupied = this.gameState.pilots.filter(other => other !== pilot && other.alive).map(other => other.position).filter(position => position !== null);
+      pilot.ship.group.position.copy(this.anarchy.safestSpawn(occupied));
+      return;
+    }
     const level = this.levelManager?.currentLevel;
     if (level?.kind === 'arena' && !this.isEndlessMode) {
       pilot.ship.group.position.fromArray(level.spawn);

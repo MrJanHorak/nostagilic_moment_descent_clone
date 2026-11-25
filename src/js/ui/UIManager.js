@@ -1158,7 +1158,7 @@ class UIManager {
     this.transientElements.add(guide);
     this.arenaGuide = guide;
     this.updateMissionUI();
-    if (this.game.mission) {
+    if (this.game.mission || this.game.anarchy) {
       const reticle = document.createElement('div');
       reticle.id = 'aim-reticle';
       reticle.textContent = '+';
@@ -1226,6 +1226,7 @@ class UIManager {
   }
 
   updateMissionUI() {
+    if (this.game?.anarchy && this.arenaGuide) { this.updateAnarchyUI(this.game.anarchy); return; }
     const mission = this.game?.mission;
     if (!mission || !this.arenaGuide) return;
     const level = this.game.levelManager.currentLevel;
@@ -1378,6 +1379,32 @@ class UIManager {
       if (!campaignProgress.saved) lines.push('Browser storage unavailable: campaign progress is kept for this visit only');
     }
     this.showResult('MISSION COMPLETE', lines.join('\n'), actions);
+  }
+
+  /** The guide bar during Anarchy: your frags, the leader, the clock and respawn.
+   * @param {import('../core/AnarchyMatch.js').default} match */
+  updateAnarchyUI(match) {
+    const game = this.game, local = game.gameState.localPilot, me = match.standing(local.id), leader = match.standings()[0];
+    const left = Math.max(0, Math.ceil((match.rules.timeLimitMs - game.session.timeMs) / 1000));
+    const clock = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    const lead = leader && leader.id !== local.id ? ` · Leader ${leader.id} ${leader.frags}` : leader ? ' · You lead' : '';
+    const primary = `ANARCHY · ${me.frags}/${match.rules.fragLimit} frags · ${me.deaths} deaths${lead} · ${clock}`;
+    const respawn = match.respawns.get(local.id);
+    const nav = respawn !== undefined ? `Respawning in ${Math.max(0, Math.ceil((respawn - game.session.timeMs) / 1000))}s`
+      : `${game.gameState.pilots.length} pilots · Repairs in the corners · Weapons on the gantries, crane deck and slag pit`;
+    if (this.guidePrimary && this.guidePrimary.textContent !== primary) this.guidePrimary.textContent = primary;
+    if (this.guideNav && this.guideNav.textContent !== nav) this.guideNav.textContent = nav;
+    if (this.guideSummary && this.guideSummary.textContent !== primary) this.guideSummary.textContent = primary;
+    this.arenaGuide.style.borderColor = respawn !== undefined ? '#ff7755' : '#9ce5ed';
+  }
+
+  /** Final Anarchy standings. @param {readonly {id: string, frags: number, deaths: number}[]} standings
+   * @param {string | null} winnerId @param {string} localId */
+  showAnarchyResult(standings, winnerId, localId) {
+    const lines = standings.map((entry, index) => `${index + 1}. ${entry.id === localId ? `${entry.id} (you)` : entry.id} · ${entry.frags} frags · ${entry.deaths} deaths`);
+    this.showResult(winnerId === localId ? 'YOU WIN THE MATCH' : winnerId ? `${winnerId.toUpperCase()} WINS` : 'MATCH OVER', lines.join('\n'), [
+      ['REMATCH', () => this.game.restartLevel()], ['SELECT MISSION', () => this.game.showLevelSelection()],
+    ]);
   }
 
   showSessionError(error) {

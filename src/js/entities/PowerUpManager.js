@@ -240,6 +240,10 @@ class PowerUpManager {
     this.levelManager = levelManager; // Add this
     this.powerups = [];
     this.spawnedIds = new Set();
+    /** Placed pickups that come back (Anarchy): spawn id -> simulation time it returns. @type {Map<string, number>} */
+    this.respawnAt = new Map();
+    /** How long a collected placed pickup stays away; null: it never returns. @type {number | null} */
+    this.respawnMs = null;
     this.nextId = 0;
   }
 
@@ -377,6 +381,7 @@ class PowerUpManager {
           this.audioManager.playSound('powerup', { volume: 0.5 });
         }
 
+        if (powerup.spawnId && this.respawnMs !== null) this.respawnAt.set(powerup.spawnId, (this.gameState.session?.timeMs ?? 0) + this.respawnMs);
         // Remove power-up
         this.removePowerup(powerup.id);
       }
@@ -433,6 +438,8 @@ class PowerUpManager {
     if (!this.levelManager || !this.levelManager.currentLevel) return;
 
     const level = this.levelManager.currentLevel;
+    const now = this.gameState?.session?.timeMs ?? 0;
+    for (const [spawnId, at] of this.respawnAt) if (at <= now) { this.respawnAt.delete(spawnId); this.spawnedIds.delete(spawnId); }
 
     for (const [index, spawnPoint] of level.powerupSpawns.entries()) {
       const spawnId = spawnPoint.id ?? `pickup:${index}`;
@@ -460,6 +467,7 @@ class PowerUpManager {
   clear() {
     for (const powerup of [...this.powerups]) this.removePowerup(powerup.id);
     this.spawnedIds.clear();
+    this.respawnAt.clear();
   }
 }
 

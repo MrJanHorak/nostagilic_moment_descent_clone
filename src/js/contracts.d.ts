@@ -50,6 +50,8 @@ export interface PlayerAudio {
 export interface PlayerSessionActions {
   die(): boolean;
   completeSession(): boolean;
+  /** Modes with respawns (Anarchy) take over a pilot going down; true when handled. */
+  pilotDown?(pilot: import('./core/Pilot.js').default, attackerId: string | null): boolean;
   spaceship?: Pick<Spaceship, 'viewEffects'>;
 }
 export interface InputGameActions {

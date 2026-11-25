@@ -10,6 +10,7 @@ import LevelManager from '../src/js/core/LevelManager.js';
 import ProjectileManager from '../src/js/entities/ProjectileManager.js';
 import EnemyManager from '../src/js/entities/EnemyManager.js';
 import PowerUpManager from '../src/js/entities/PowerUpManager.js';
+import { headlessGame } from './helpers/headlessGame.mjs';
 
 test('a seed always produces the same sequence, and different seeds differ', () => {
   const a = new SessionRandom(42), b = new SessionRandom(42), c = new SessionRandom(43);
@@ -26,27 +27,6 @@ test('each session reseeds: a given seed repeats, and a fresh session draws a ne
   session.end(); session.begin(7); assert.deepEqual([session.random(), session.random()], first);
   session.end(); session.begin(); assert.ok(Number.isInteger(session.seed) && session.seed >= 0);
 });
-
-/** A headless game with stub presentation, like the other simulation tests. */
-export function headlessGame(t) {
-  t.mock.method(console, 'log', () => {});
-  const original = Object.getOwnPropertyDescriptor(globalThis, 'document');
-  Object.defineProperty(globalThis, 'document', { configurable: true, value: { pointerLockElement: null } });
-  t.after(() => original ? Object.defineProperty(globalThis, 'document', original) : delete globalThis.document);
-  const game = new Game(); game.camera = new THREE.PerspectiveCamera(); game.scene.add(game.camera);
-  game.spaceship = new Spaceship(); game.spaceship.attachCamera(game.camera);
-  game.uiManager = { resetSessionUI() {}, updateHUD() {}, updateEnemyCount() {}, updateWeaponUI() {}, hideStartScreen() {}, hideLevelSelect() {},
-    showMessage() {}, showPauseMenu() {}, hidePauseMenu() {}, showCompletion() {}, showGameOver() {}, showSessionError(error) { throw error; } };
-  game.levelManager = new LevelManager(game.scene, game.spaceship.group);
-  game.projectileManager = new ProjectileManager(game.scene, game.spaceship.group, null, game.session); game.projectileManager.setCanvas({});
-  game.enemyManager = new EnemyManager(game.scene, game.spaceship.group, game.gameState, null, game.levelManager);
-  game.powerUpManager = new PowerUpManager(game.scene, game.spaceship.group, game.gameState, null, game.uiManager, game.levelManager);
-  game.inputManager = new InputManager(game.camera, game.projectileManager, game.gameState, game.uiManager); game.inputManager.game = game;
-  t.mock.method(game, 'initializeAudio', () => {}); t.mock.method(game.inputManager, 'requestPointerLock', () => Promise.resolve(true));
-  game.gameState.setReferences(game.camera, null, game.uiManager, game.activeAnimations, game);
-  t.after(() => { game.endSession(); game.projectileManager.dispose(); game.enemyManager.projectileManager.dispose(); game.enemyManager.effectsManager.dispose(); });
-  return game;
-}
 
 /** Robots' positions, health, attack phases and shots after a fixed run. */
 function runCrossfire(game, seed, seconds) {

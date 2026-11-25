@@ -1,0 +1,1659 @@
+{
+  "formatVersion": 14,
+  "id": "foundry-ring",
+  "name": "Anarchy · Foundry Ring",
+  "rooms": [
+    {
+      "id": "atrium",
+      "label": "Furnace atrium",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        20,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "north-bay",
+      "label": "North bay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -44
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-bay",
+      "label": "South bay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        44
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-bay",
+      "label": "East bay",
+      "prefab": "box-room",
+      "position": [
+        44,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-bay",
+      "label": "West bay",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        0,
+        0
+      ],
+      "size": [
+        20,
+        14,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "ne-corner",
+      "label": "Northeast smelter",
+      "prefab": "box-room",
+      "position": [
+        44,
+        0,
+        -44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "nw-corner",
+      "label": "Northwest store",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        0,
+        -44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "se-corner",
+      "label": "Southeast store",
+      "prefab": "box-room",
+      "position": [
+        44,
+        0,
+        44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "sw-corner",
+      "label": "Southwest smelter",
+      "prefab": "box-room",
+      "position": [
+        -44,
+        0,
+        44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-gantry",
+      "label": "North gantry",
+      "prefab": "box-room",
+      "position": [
+        0,
+        30,
+        -44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "crane-deck",
+      "label": "Crane deck",
+      "prefab": "box-room",
+      "position": [
+        0,
+        30,
+        0
+      ],
+      "size": [
+        22,
+        12,
+        22
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 10451766,
+          "pattern": "hazard"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "south-gantry",
+      "label": "South gantry",
+      "prefab": "box-room",
+      "position": [
+        0,
+        30,
+        44
+      ],
+      "size": [
+        18,
+        12,
+        18
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "slag-pit",
+      "label": "Slag pit",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -28,
+        0
+      ],
+      "size": [
+        24,
+        12,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "north-spoke",
+      "label": "North spoke",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -24
+      ],
+      "size": [
+        10,
+        10,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "south-spoke",
+      "label": "South spoke",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        24
+      ],
+      "size": [
+        10,
+        10,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "east-spoke",
+      "label": "East spoke",
+      "prefab": "straight-corridor",
+      "position": [
+        24,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        10,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "west-spoke",
+      "label": "West spoke",
+      "prefab": "straight-corridor",
+      "position": [
+        -24,
+        0,
+        0
+      ],
+      "size": [
+        10,
+        10,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "ring-n-ne",
+      "label": "Ring: north to northeast",
+      "prefab": "straight-corridor",
+      "position": [
+        22.5,
+        0,
+        -44
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "ring-ne-e",
+      "label": "Ring: northeast to east",
+      "prefab": "straight-corridor",
+      "position": [
+        44,
+        0,
+        -22.5
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "ring-e-se",
+      "label": "Ring: east to southeast",
+      "prefab": "straight-corridor",
+      "position": [
+        44,
+        0,
+        22.5
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "ring-se-s",
+      "label": "Ring: southeast to south",
+      "prefab": "straight-corridor",
+      "position": [
+        22.5,
+        0,
+        44
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "ring-s-sw",
+      "label": "Ring: south to southwest",
+      "prefab": "straight-corridor",
+      "position": [
+        -22.5,
+        0,
+        44
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "ring-sw-w",
+      "label": "Ring: southwest to west",
+      "prefab": "straight-corridor",
+      "position": [
+        -44,
+        0,
+        22.5
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "ring-w-nw",
+      "label": "Ring: west to northwest",
+      "prefab": "straight-corridor",
+      "position": [
+        -44,
+        0,
+        -22.5
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "ring-nw-n",
+      "label": "Ring: northwest to north",
+      "prefab": "straight-corridor",
+      "position": [
+        -22.5,
+        0,
+        -44
+      ],
+      "size": [
+        10,
+        10,
+        25
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "north-shaft",
+      "label": "North shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        15.5,
+        -44
+      ],
+      "size": [
+        10,
+        10,
+        17
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "south-shaft",
+      "label": "South shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        15.5,
+        44
+      ],
+      "size": [
+        10,
+        10,
+        17
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    },
+    {
+      "id": "gantry-north",
+      "label": "Gantry walk north",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        30,
+        -23
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "gantry-south",
+      "label": "Gantry walk south",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        30,
+        23
+      ],
+      "size": [
+        8,
+        8,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "crane-drop",
+      "label": "Crane drop",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        17,
+        0
+      ],
+      "size": [
+        10,
+        10,
+        14
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    },
+    {
+      "id": "pit-hatch",
+      "label": "Pit hatch",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -16,
+        0
+      ],
+      "size": [
+        10,
+        10,
+        12
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "north-spoke-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-spoke",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-spoke-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-spoke",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-bay",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-spoke-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-spoke",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-spoke-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-spoke",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-bay",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-spoke-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-spoke",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-spoke-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-spoke",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-bay",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-spoke-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-spoke",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-spoke-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-spoke",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-bay",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-n-ne-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-bay",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-n-ne",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-n-ne-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-n-ne",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ne-corner",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-ne-e-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ne-corner",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-ne-e",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-ne-e-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-ne-e",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-bay",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-e-se-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-bay",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-e-se",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-e-se-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-e-se",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "se-corner",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-se-s-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "se-corner",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-se-s",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-se-s-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-se-s",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-bay",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-s-sw-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-bay",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-s-sw",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-s-sw-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-s-sw",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "sw-corner",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-sw-w-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "sw-corner",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-sw-w",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-sw-w-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-sw-w",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-bay",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-w-nw-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-bay",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-w-nw",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-w-nw-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-w-nw",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "nw-corner",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-nw-n-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "nw-corner",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "ring-nw-n",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "ring-nw-n-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "ring-nw-n",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-bay",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-bay",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "north-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "north-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-gantry",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-bay",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "south-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "south-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-gantry",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gantry-north-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-deck",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gantry-north",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gantry-north-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gantry-north",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "north-gantry",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gantry-south-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-deck",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gantry-south",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gantry-south-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gantry-south",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "south-gantry",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-drop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "crane-drop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-drop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-drop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "crane-deck",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pit-hatch-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "atrium",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pit-hatch",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pit-hatch-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pit-hatch",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "slag-pit",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [],
+  "doors": [],
+  "entities": [
+    {
+      "id": "ne-corner-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "ne-corner",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "nw-corner-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "nw-corner",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "se-corner-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "se-corner",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "sw-corner-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "sw-corner",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "north-bay-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "north-bay",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "south-bay-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "south-bay",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "east-bay-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "east-bay",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "west-bay-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "west-bay",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "crane-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "crane-deck",
+      "position": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "id": "pit-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "slag-pit",
+      "position": [
+        0,
+        2,
+        0
+      ]
+    },
+    {
+      "id": "pit-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "slag-pit",
+      "position": [
+        6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "unused-exit",
+      "kind": "exit",
+      "roomId": "atrium",
+      "position": [
+        9,
+        -6,
+        9
+      ],
+      "radius": 1.5
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "atrium",
+    "position": [
+      0,
+      0,
+      6
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [],
+    "requiredDeviceIds": [],
+    "exitId": "unused-exit"
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 60,
+    "maxPulseAmmo": 150
+  }
+}

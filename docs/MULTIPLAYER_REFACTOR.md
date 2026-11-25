@@ -37,6 +37,8 @@ Steps 1–7 are implemented; single-player play is unchanged (all 598 unit/simul
 - **Input per pilot:** `Pilot.input` holds a `FlightInput`. `Game.addPilot(id)`, `setPilotInput(id, input)`, `pilotFire(id)` and `removePilot(id)`. `moveRemotePilots` flies every remote pilot each step, with wall collisions.
 - **Tests:** `tests/multiplayer.test.mjs` (10). Seeds, exact replay of a live fight, the pilot model, split robot attention and retargeting, wingmate flight, collisions and shot ownership, kill credit, per-pilot pickups, bomb blasts on two pilots, and identical two-pilot replays.
 
+Phase 3 has started: the Anarchy rules and arena are described in [ANARCHY.md](ANARCHY.md).
+
 ### Known gaps, carried into Phase 3–4
 
 - Lava and water contact, mission exit checks, story pickups (logs and miners) and the exploration map still follow the local pilot only.
