@@ -3,13 +3,6 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import SessionRandom from '../src/js/core/SessionRandom.js';
 import GameSession from '../src/js/core/GameSession.js';
-import Game from '../src/js/main.js';
-import Spaceship from '../src/js/entities/Spaceship.js';
-import InputManager from '../src/js/core/InputManager.js';
-import LevelManager from '../src/js/core/LevelManager.js';
-import ProjectileManager from '../src/js/entities/ProjectileManager.js';
-import EnemyManager from '../src/js/entities/EnemyManager.js';
-import PowerUpManager from '../src/js/entities/PowerUpManager.js';
 import { headlessGame } from './helpers/headlessGame.mjs';
 
 test('a seed always produces the same sequence, and different seeds differ', () => {

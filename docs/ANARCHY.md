@@ -1,13 +1,13 @@
 # Anarchy (Phase 3)
 
-Free-for-all deathmatch: every pilot for themselves. Phase 3 builds it in five steps; steps 1–2 are done and run without a network.
+Free-for-all deathmatch: every pilot for themselves. Phase 3 builds it in five steps; steps 1–3 are done.
 
 | Step | What | Status |
 | --- | --- | --- |
 | 1 | Anarchy rules in the simulation | Done (November 24) |
 | 2 | Foundry Ring arena | Done (November 24) |
-| 3 | Authoritative Node game server (WebSocket rooms, room codes) | Next |
-| 4 | Client networking: sequenced inputs, 20–30 Hz snapshots, prediction and reconciliation, interpolated remote ships | Planned |
+| 3 | Authoritative Node game server (WebSocket rooms, room codes) | Done (November 24) |
+| 4 | Client networking: sequenced inputs, prediction and reconciliation, interpolated remote ships | Next |
 | 5 | Lobby with room codes and a server address | Planned |
 
 ## Rules
@@ -37,6 +37,54 @@ Built by `scripts/build-foundry-ring.mjs`, which writes `src/js/core/levels/docu
 - **Lower level:** a hatch from the atrium leads to the slag pit, which has a lava floor and the best supplies.
 - **Pickups:** repairs in the four corners and on the crane deck; pulse ammunition in the bays. Laser salvage is on the crane deck and in the east and west bays, missiles in the slag pit and on the north gantry, and plasma on the south gantry. Exposed places hold the best items.
 
+## Game server
+
+Run it with `npm run server` (default port 8787). `PORT`, `HOST` and `ALLOW_ORIGINS` (comma-separated, for example `https://your-site.netlify.app`) come from the environment. It has no dependencies beyond the game itself.
+
+- **Endpoints:** `GET /health` returns rooms, players and the protocol version. WebSocket play is at `/play`.
+- **Rooms:**
+  - Each room has a four-letter code from letters that don't read alike.
+  - Up to 8 pilots per room.
+  - An empty room is kept for 30 s, then closed.
+- **Simulation:**
+  - Each room runs the real game simulation headless (`src/js/net/MatchRoom.js` on `src/js/net/HeadlessGame.js`), so the rules are exactly the browser's.
+  - The server's own ship sits out (`game.dedicated`).
+  - All rooms share one fixed 60 Hz loop that catches up at most 10 steps after a stall.
+- **Snapshots** go to each player 20 times a second (`SNAPSHOT_EVERY = 3`).
+- **Rematch:** a finished match restarts by itself after 10 s with a new seed and the same pilots.
+- **WebSocket layer:** `server/WebSocket.mjs`, a small RFC 6455 implementation (text and control frames; client frames must be masked; 4 KB message limit).
+
+**Hosting:** Netlify serves static files only, so the server needs a Node host that allows WebSockets (Fly.io, Render, Railway, or any small VPS behind TLS, giving `wss://`). Bandwidth is small: a full 8-pilot snapshot is about 1–2 KB, 20 times a second per player.
+
+### Protocol (`src/js/net/Protocol.js`, version 1)
+
+One JSON text frame per message, each with a type field `t`.
+
+**Client to server:**
+- `{t:'hello', protocol:1, name, room?}`: with no room, the server creates one; with a room code, it joins that room.
+- `{t:'input', seq, input, look:[yaw, pitch], fire, weapon?}`:
+  - `input` is a `FlightInput` (thrust and keyboard turns), held until the next input.
+  - `look` is the mouse turn since the last input.
+  - Send one input per client step.
+- `{t:'ping', time}`.
+
+**Server to client:**
+- `welcome`: `{id, name, room, map, seed, tick, tickRate, snapshotEvery, rules}`.
+- `roster`: `{players:[{id, name}]}`, sent on every join and leave.
+- `snapshot`: `{tick, timeMs, ack, ammo, pilots:[{id, name, alive, hp, weapon, p, q, v}], pickups, match, events}`.
+  - `ack` is the last input sequence number the server applied, used for reconciliation.
+  - `match` holds standings, the time left, the respawn countdown, the winner and the rematch countdown.
+  - `events` lists `shot`, `kill`, `respawn`, `match-start` and `match-over` since the previous snapshot.
+- `pong`: `{time, tick}`.
+- `error`: `{error}`. Before joining, an error also closes the connection with code 4000. Reasons are `room-not-found`, `room-full`, `protocol-mismatch`, `bad-room-code`, `bad-json`, `too-large` and `hello-timeout`.
+
+**What the server never trusts:**
+- Inputs are cleaned: unknown keys are dropped and amounts clamped to 0–1.
+- Turns are capped at 0.6 rad per input.
+- Old or repeated sequence numbers are ignored.
+- Shots are limited to one per 100 ms, whatever the client sends.
+- Weapons switch only if the pilot has unlocked them.
+
 ## Tests
 
 - `tests/anarchy.test.mjs` (6 tests):
@@ -46,6 +94,8 @@ Built by `scripts/build-foundry-ring.mjs`, which writes `src/js/core/levels/docu
   - a live two-pilot fight where the rival destroys the local ship, the session continues and the local ship respawns away from the rival;
   - frag-limit end with standings;
   - pickup return after 20 s.
+- `tests/net-room.test.mjs` (6): message cleaning, room codes, spawning apart, inputs and sequence numbers, turn cap, fire-rate cap, kill and respawn events, automatic rematch, leaving and the 8-pilot limit.
+- `tests/net-server.test.mjs` (4): WebSocket frame encoding; two real clients creating and joining a room, flying and seeing each other, about 20 snapshots a second, ping, and the roster after leaving; refused hellos; a full room; the origin allow-list.
 - `tests/browser/anarchy.spec.js` opens the arena from the menu and checks the scoreline.
 - `tests/helpers/headlessGame.mjs` is the shared headless game, used by the multiplayer and Anarchy tests.
 
@@ -53,4 +103,5 @@ Built by `scripts/build-foundry-ring.mjs`, which writes `src/js/core/levels/docu
 
 - Lava and water damage only the local ship; a remote pilot crossing the slag pit is unhurt until the server applies the environment to every pilot (step 3).
 - Remote ships have no name tag or colour, and the kill feed is a message line.
-- Until step 3, the only other pilots are the ones added in tests with `game.addPilot`. Flying the arena alone is a scouting run.
+- The browser game cannot connect to the server yet (step 4). Until then, flying the arena alone is a scouting run.
+- Shots are not yet predicted on the client: they will appear when the server's snapshot arrives.

@@ -46,6 +46,8 @@ export default class Game {
     this.activeAnimations = [];
     this.mission = null;
     this.anarchy = null;
+    /** A game server's simulation: the host's own ship never flies, fights or scores. */
+    this.dedicated = false;
     /** @type {StoryController | null} */
     this.story = null;
     /** @type {import('./core/StoryController.js').StorySummary | null} */
@@ -261,7 +263,11 @@ export default class Game {
         if (this.levelManager.currentLevel.spawnRotation) this.spaceship.group.quaternion.fromArray(this.levelManager.currentLevel.spawnRotation);
       }
       for (const pilot of this.gameState.pilots) this.placeAtSpawn(pilot);
-      if (this.anarchy) for (const pilot of this.gameState.pilots) { this.armPilot(pilot); this.anarchy.standing(pilot.id); }
+      if (this.dedicated) this.gameState.localPilot.alive = false;
+      if (this.anarchy) for (const pilot of this.gameState.pilots) {
+        if (pilot.local && this.dedicated) continue;
+        this.armPilot(pilot); this.anarchy.standing(pilot.id);
+      }
       this.exploration = !endless && level.sourceDocument ? new ExplorationMap(level.sourceDocument) : null;
       this.exploration?.update(this.spaceship.group.position);
       if (this.cockpit) this.cockpit.lastUpdate = -Infinity;

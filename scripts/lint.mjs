@@ -7,10 +7,12 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const config = JSON.parse(await readFile(new URL('../tsconfig.check.json', import.meta.url), 'utf8'));
 const sourceFiles = config.files.filter(file => file.endsWith('.js'));
 const eslint = new ESLint({ cwd: root });
-const results = await eslint.lintFiles([...sourceFiles, 'eslint.config.js', 'scripts/lint.mjs']);
+// Modules that import the whole game (main.js) are outside the type check but still linted, as is the game server.
+const extraFiles = ['src/js/net/HeadlessGame.js', 'src/js/net/MatchRoom.js', 'server/WebSocket.mjs', 'server/GameServer.mjs', 'server/index.mjs'];
+const results = await eslint.lintFiles([...sourceFiles, ...extraFiles, 'eslint.config.js', 'scripts/lint.mjs']);
 const formatter = await eslint.loadFormatter('stylish');
 const output = formatter.format(results);
 if (output) process.stdout.write(output);
 const failures = results.reduce((count, result) => count + result.errorCount + result.warningCount, 0);
 if (failures) process.exitCode = 1;
-else process.stdout.write(`Lint passed: ${sourceFiles.length} runtime modules and 2 lint tooling files.\n`);
+else process.stdout.write(`Lint passed: ${sourceFiles.length + extraFiles.length} runtime and server modules and 2 lint tooling files.\n`);

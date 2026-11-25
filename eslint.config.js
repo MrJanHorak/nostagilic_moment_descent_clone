@@ -8,5 +8,6 @@ export default [
     rules: js.configs.recommended.rules,
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.browser },
   },
+  { files: ['server/*.mjs'], rules: js.configs.recommended.rules, languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.node } },
   { files: ['scripts/*.mjs', 'eslint.config.js'], languageOptions: { globals: globals.node } },
 ];

@@ -55,6 +55,7 @@
     "src/js/core/Pilot.js",
     "src/js/core/AnarchyMatch.js",
     "src/js/core/levels/Anarchy.js",
+    "src/js/net/Protocol.js",
     "src/js/core/ShipView.js",
     "src/js/core/ExplorationMap.js",
     "src/js/ui/CockpitView.js",

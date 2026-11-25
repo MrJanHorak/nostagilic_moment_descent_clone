@@ -11,6 +11,14 @@ Updated with Crossfire Relay, stronger tactics and durability/salvage/weapons af
 - `vite.config.js` puts three.js core in a shared, long-cached `three` vendor chunk (editor-only addons stay with the editor) and sets `chunkSizeWarningLimit` to 750 kB for that unsplittable chunk. This addresses the long-standing large-chunk advisory.
 - Verified on Linux: lint (83 runtime modules) and all 507 unit/simulation tests pass. Typecheck and production build need the Windows-native TypeScript/Rollup binaries in the local install and must be confirmed with `npm run verify` on the owner's machine.
 
+## November 24 Phase 3, step 3: game server
+
+`npm run server` starts an authoritative WebSocket server with room codes, running the real simulation headless for each room. Details are in [ANARCHY.md](../ANARCHY.md#game-server).
+- No new dependencies: `server/WebSocket.mjs` is a small RFC 6455 layer. Tests use Node's built-in WebSocket client.
+- `src/js/net/Protocol.js` cleans every client message; `MatchRoom` caps turns and fire rate and ignores stale inputs.
+- `createHeadlessGame()` (`src/js/net/HeadlessGame.js`) is now shared by the server and the simulation tests.
+- 614 unit, simulation and server tests pass. Next: step 4, client networking in the browser.
+
 ## November 24 Phase 3, steps 1–2: Anarchy rules and Foundry Ring
 
 Free-for-all rules run in the simulation, and there is a purpose-built arena. Details are in [ANARCHY.md](../ANARCHY.md).
