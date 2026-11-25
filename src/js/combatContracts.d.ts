@@ -61,6 +61,10 @@ export interface ScoutAttackState {
 export interface EnemyInstance extends EnemyCombatTarget {
   readonly mesh: Group;
   isActive: boolean;
+  /** Shields at spawn (boss phases are fractions of it). */
+  maxHealth?: number;
+  /** A boss's current phase, 1–3. */
+  bossPhase?: number;
 }
 export interface EnemyMeshBuilder {
   buildMesh(body: Group, enemyType: EnemyDefinition): void;

@@ -81,5 +81,9 @@ export default function validateSemantics(document, issue) {
   if (entities.get(document.mission.exitId)?.kind !== 'exit') issue('$.mission.exitId', 'reference', 'Mission exitId must identify an exit entity');
   if (document.entities.filter(entity => entity.kind === 'exit').length !== 1) issue('$.entities', 'exit', 'Exactly one exit is required');
   if (document.formatVersion !== 1) validateRelaySemantics(document, issue, ids, placements);
-  if (document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15) validateStorySemantics(document, issue, ids, placements, reachable);
+  if (document.formatVersion === 16) for (const [index, generator] of (document.generators ?? []).entries()) {
+    if (!document.rooms.some(room => room.id === generator.roomId)) issue(`$.generators[${index}].roomId`, 'reference', `Unknown generator room: ${generator.roomId}`);
+    if (document.entities.some(entity => entity.id === generator.id) || document.devices.some(device => device.id === generator.id) || (document.generators ?? []).some((other, j) => j < index && other.id === generator.id)) issue(`$.generators[${index}].id`, 'duplicate-id', `Generator id ${generator.id} is already used`);
+  }
+  if (document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15 || document.formatVersion === 16) validateStorySemantics(document, issue, ids, placements, reachable);
 }

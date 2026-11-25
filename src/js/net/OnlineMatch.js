@@ -302,10 +302,17 @@ export default class OnlineMatch {
     const byId = new Map(state.enemies.map(/** @param {any} enemy */ enemy => [enemy.id, enemy]));
     for (const enemy of state.enemies) this.interpolator.push(`e:${enemy.id}`, serverTimeMs, { p: enemy.p, q: enemy.q, v: [0, 0, 0], alive: enemy.a });
     const defeated = new Set(state.defeated);
+    // Robots the server made after the start (generators, boss escorts) are drawn as puppets here too.
+    const local = new Set(robots.enemies.map(/** @param {any} enemy */ enemy => enemy.mesh?.userData.spawnPointId).filter(Boolean));
+    for (const remote of state.enemies) {
+      if (local.has(remote.id) || !remote.a || !remote.id.includes('#') || game.session.phase !== 'playing') continue;
+      const puppet = robots.spawnEnemy(new THREE.Vector3().fromArray(remote.p), remote.type);
+      puppet.mesh.userData.spawnPointId = remote.id; puppet.mesh.userData.generatorId = remote.id.split('#')[0];
+    }
     for (let index = robots.enemies.length - 1; index >= 0; index--) {
       const enemy = robots.enemies[index], id = enemy.mesh?.userData.spawnPointId;
       if (!id) continue;
-      if (defeated.has(id)) { robots.destroyEnemy(index, 'shot'); continue; }
+      if (defeated.has(id) || (enemy.mesh.userData.generatorId && !byId.has(id))) { robots.destroyEnemy(index, 'shot'); continue; }
       const remote = byId.get(id);
       if (remote) enemy.health = remote.hp;
     }

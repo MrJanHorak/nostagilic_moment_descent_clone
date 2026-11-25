@@ -301,3 +301,19 @@ Added November 25, 2026. The mission may list `linkedRelays`: up to 8 pairs `{ "
 - **Window:** a team gets `windowSeconds`. A solo pilot gets four times as long (`SOLO_LINK_SCALE`), enough to fly between the two relays alone.
 - **Rules:** each pair names two different required relays (no reactors), and each relay may be in one pair at most. Older versions reject `linkedRelays`. Everything else is the same as version 14.
 - The editor opens and plays version 15 documents and keeps the version when rooms are renamed, but it cannot author linked pairs yet. The team missions are built by `scripts/build-team-missions.mjs`.
+
+## Version 16: robot generators
+
+Added November 25, 2026. An optional top-level `generators` list (up to 16). Each entry is `{ "id", "roomId", "position", "enemyType", "count", "intervalSeconds", "maxAlive" }`:
+
+| Field | Values |
+| --- | --- |
+| `enemyType` | scout, fighter, bomber or destroyer |
+| `count` | 1–12 robots in total |
+| `intervalSeconds` | 2–60 between releases |
+| `maxAlive` | 1–4 of its own robots active at once (default 2) |
+
+- A generator wakes when a living pilot first enters its room, then releases robots until `count` is used up.
+- Generated robots never count toward `requiredEnemyIds` and drop no salvage.
+- `id` must not clash with entity or relay ids, and `roomId` must name a room. Older versions reject `generators`.
+- See [PHASE_5.md](PHASE_5.md).

@@ -63,7 +63,7 @@ function pruneStory(draft, removed) {
 function ensureStory(draft) {
   const modern = modernize(draft);
   Object.assign(modern, { formatVersion: Math.max(13, modern.formatVersion) });
-  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14 | 15}>} */ (modern);
+  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14 | 15 | 16}>} */ (modern);
   upgraded.story ??= { messages: [], logs: [], survivors: [] };
   return /** @type {MutableStory} */ (upgraded.story);
 }
@@ -92,14 +92,14 @@ function storyMessage(message) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.

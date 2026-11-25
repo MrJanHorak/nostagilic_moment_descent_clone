@@ -22,6 +22,7 @@ import { describeMissionStatus } from './core/MissionStatus.js';
 import AnarchyMatch from './core/AnarchyMatch.js';
 import CoopMatch, { PER_PILOT_PICKUPS, enemyToughness } from './core/CoopMatch.js';
 import { SOLO_LINK_SCALE } from './core/RelayController.js';
+import RobotGenerators from './entities/RobotGenerators.js';
 import { QUICK_CHAT, SignalLimiter, aimPoint, cleanSignal } from './core/TeamSignals.js';
 import TeamMarkers from './ui/TeamMarkers.js';
 import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
@@ -253,6 +254,15 @@ export default class Game {
       this.lastStorySummary = null;
       this.story = !endless && level.story && level.sourceDocument
         ? new StoryController(level.story, level.sourceDocument, this.scene, event => this.uiManager.showStoryEvent?.(event)) : null;
+      // Robot generators (v16) and heavy robots' feedback.
+      this.enemyManager.generators = !endless && level.generators?.length ? new RobotGenerators(level.generators) : null;
+      this.enemyManager.onGeneratorWake = (id, count) => this.uiManager?.showMessage(`ROBOT GENERATOR ACTIVE · ${count} robots inbound`, 2400, '#ff9944');
+      this.enemyManager.onBossPhase = (enemy, phase) => this.uiManager?.showMessage(phase >= 3 ? 'BOSS CRITICAL · It is fighting for its life' : 'BOSS SHIELDS FAILING · Escorts inbound', 2600, '#ff7755');
+      this.enemyManager.onArmorHit = () => {
+        if (this.session.timeMs - (this.lastArmorHint ?? -Infinity) < 8000) return;
+        this.lastArmorHint = this.session.timeMs;
+        this.uiManager?.showMessage('DESTROYER FRONT ARMOR · Flank it: the rear plate takes double damage', 2400, '#ffce77');
+      };
       this.enemyManager.onEnemyDefeated = (id, cause) => {
         if (this.session.phase === 'playing') this.story?.enemyDefeated(id);
         if (this.session.phase === 'playing') this.mission?.recordDefeat(id, cause);

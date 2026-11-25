@@ -17,6 +17,7 @@ import { MINE_FIGHTER, mineSpeed, mineHealth } from './EnemyTactics.js';
 import { DIFFICULTIES, scaleEnemyHealth, scaleFireInterval } from '../core/Difficulty.js';
 import { MINE_BOMBER, advanceBomberAttack, bomberCommitted, createBomberAttack, presentBomberAttack } from './BomberAttack.js';
 import { MINE_SALVAGE } from './EnemySalvage.js';
+import { BOSS_ESCORTS, bossPhase, hitScale } from './HeavyRoles.js';
 
 /** How long a robot keeps its chosen pilot before looking again (simulation ms). */
 export const TARGET_HOLD_MS = 500;
@@ -42,6 +43,11 @@ class EnemyManager {
     this.toughness = 1;
     /** Online co-op client: robots are puppets posed from server snapshots; no AI runs here. */
     this.remote = false;
+    /** Robot generators for this attempt (v16 levels). @type {import('./RobotGenerators.js').default | null} */
+    this.generators = null;
+    /** @type {((id: string, count: number) => void) | null} */ this.onGeneratorWake = null;
+    /** @type {((enemy: any, phase: number) => void) | null} */ this.onBossPhase = null;
+    /** @type {((enemy: any) => void) | null} */ this.onArmorHit = null;
     this.audioManager = audioManager;
     this.levelManager = levelManager;
 
@@ -273,9 +279,11 @@ class EnemyManager {
   hitEnemy(enemy, projectile, position) {
     const index = this.enemies.findIndex(candidate => candidate === enemy);
     if (index === -1 || !enemy.isActive || enemy.health <= 0 || this.gameState.session.phase !== 'playing') return;
-    const resistance = enemy.type.name === 'boss' ? 0.7 : enemy.type.name === 'destroyer' ? 0.8 : 1;
+    // Destroyers: heavy front plate, weak rear. Boss: resists everywhere.
+    const { scale, side } = hitScale(enemy, projectile, position);
+    if (side === 'front') this.onArmorHit?.(enemy);
     // Co-op: bigger teams face tougher robots (the damage they take is divided).
-    enemy.health -= projectile.power * resistance / (this.toughness || 1);
+    enemy.health -= projectile.power * scale / (this.toughness || 1);
     if (this.mineNavigation) this.minePursuit(this.enemies[index]).lastSeen = (this.shooterPosition(projectile) ?? this.aimOf(enemy).position).clone();
     this.effectsManager.createHitEffect(position.clone());
     if (this.audioManager?.initialized) {
@@ -288,6 +296,33 @@ class EnemyManager {
     const shooter = projectile.ownerId ? this.gameState.pilot?.(projectile.ownerId) : null;
     if (shooter) shooter.kills++;
     this.destroyEnemy(this.enemies.findIndex(candidate => candidate === enemy));
+  }
+
+  /** Generators release robots while a living pilot is in their room. */
+  updateGenerators() {
+    if (!this.generators || !this.mineNavigation) return;
+    const occupied = new Set();
+    for (const target of this.targets()) { const room = this.mineNavigation.roomAt(target.transform.position); if (room !== null) occupied.add(room); }
+    const alive = /** @param {string} id */ id => this.enemies.filter(enemy => enemy.isActive && enemy.mesh.userData.generatorId === id).length;
+    const woke = this.generators.update(this.gameState.session.timeMs, occupied, alive, (definition, name) => {
+      const enemy = this.spawnEnemy(definition.position, definition.enemyType);
+      enemy.mesh.userData.spawnPointId = name; enemy.mesh.userData.generatorId = definition.id;
+    });
+    for (const id of woke) this.onGeneratorWake?.(id, this.generators.remaining(id));
+  }
+
+  /** A boss entering a new phase calls in escorts. @param {any} enemy */
+  updateBossPhase(enemy) {
+    const phase = bossPhase(enemy.health / (enemy.maxHealth || enemy.health || 1));
+    if (phase <= (enemy.bossPhase ?? 1)) return;
+    enemy.bossPhase = phase;
+    const name = enemy.mesh.userData.spawnPointId ?? 'boss';
+    for (let i = 0; i < BOSS_ESCORTS; i++) {
+      const offset = new THREE.Vector3(i ? 2.5 : -2.5, 1, 0).applyQuaternion(enemy.mesh.quaternion);
+      const escort = this.spawnEnemy(enemy.mesh.position.clone().add(offset), 'scout');
+      escort.mesh.userData.spawnPointId = `${name}#escort${phase}-${i + 1}`; escort.mesh.userData.generatorId = `${name}#escorts`;
+    }
+    this.onBossPhase?.(enemy, phase);
   }
 
   // Spawn enemy at a position
@@ -315,6 +350,7 @@ class EnemyManager {
     }
 
     this.enemies.push(enemy);
+    enemy.maxHealth = enemy.health;
     enemy.lastFireTime = this.gameState.session?.timeMs ?? 0;
     if (enemy.type.name === 'fighter') {
       if (authored) enemy.fireRate = this.fighterInterval(MINE_FIGHTER.intervalMs);
@@ -602,11 +638,13 @@ class EnemyManager {
       this.spawnPredefinedEnemies();
     }
     if (this.remote) return;
+    this.updateGenerators();
 
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       if (!this.isCurrent(generation, sessionId) || this.gameState.session.phase !== 'playing') return;
       const enemy = this.enemies[i];
       if (!enemy.isActive) continue;
+      if (enemy.type.name === 'boss') this.updateBossPhase(enemy);
       const arena = !this.levelManager?.isEndless && this.levelManager?.currentLevel?.kind === 'arena';
       this.chooseTarget(enemy);
       const aim = this.aimOf(enemy);
@@ -770,8 +808,10 @@ class EnemyManager {
             // Boss fires faster and more frequently
             enemy.fireRate = 800 + this.random() * 700;
 
-            // Boss occasionally fires from multiple weapons at once
-            if (this.random() < 0.3) {
+            // Later phases fire faster and always in volleys; phase 1 only sometimes.
+            const phase = enemy.bossPhase ?? 1;
+            if (phase >= 2) enemy.fireRate *= phase >= 3 ? 0.55 : 0.75;
+            if (phase >= 2 || this.random() < 0.3) {
               this.gameState.session.schedule(200, () => {
                 if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                   this.projectileManager.fireEnemyProjectile(
@@ -781,7 +821,7 @@ class EnemyManager {
                 }
               });
 
-              if (this.random() < 0.2) {
+              if (phase >= 3 || this.random() < 0.2) {
                 this.gameState.session.schedule(400, () => {
                   if (enemy.isActive && enemy.mesh.parent && this.canSeePlayer(enemy)) {
                     this.projectileManager.fireEnemyProjectile(
@@ -872,7 +912,8 @@ class EnemyManager {
     this.removeEnemy(index);
     if (!this.isCurrent(generation, sessionId)) return true;
     // Ownership is retired before drop creation can call back into combat.
-    if (cause === 'shot' && this.gameState.session.phase === 'playing') {
+    // Generated robots and boss escorts drop nothing (generators would otherwise flood the mine with salvage).
+    if (cause === 'shot' && this.gameState.session.phase === 'playing' && !enemy.mesh.userData.generatorId) {
       if (this.levelManager?.currentLevel?.sourceDocument) {
         // Named after the robot, so an online client and the server agree on which salvage is which.
         this.powerUpManager?.spawnPowerup(enemy.mesh.position.clone(), MINE_SALVAGE[enemy.type.name], { persistent: true, spawnId: spawnId ? `salvage:${spawnId}` : null });

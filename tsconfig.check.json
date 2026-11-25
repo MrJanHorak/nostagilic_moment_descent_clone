@@ -94,6 +94,8 @@
     "src/js/entities/ProjectileManager.js",
     "src/js/entities/EnemyTypes.js",
     "src/js/entities/EnemyManager.js",
+    "src/js/entities/HeavyRoles.js",
+    "src/js/entities/RobotGenerators.js",
     "src/js/entities/EnemyAnimations.js",
     "src/js/entities/FighterAttack.js",
     "src/js/entities/FighterMovement.js",
