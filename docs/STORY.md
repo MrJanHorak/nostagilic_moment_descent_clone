@@ -61,7 +61,18 @@ Act 1 ends on Vey's line at the quay: "we need to talk about who we're actually 
   - The Consortium declares Kestrel a hostile contractor.
   - 8 radio messages (FOREMAN opens it); logs: the hard-override authorisation, FOREMAN's maintenance journal, and Hana's offer of a bunk for the machine.
   - Miners: Eva Lund (cable run), Oskar Brandt (old lift).
-- **Act 3 beats (next):** FOREMAN's core travels with Kestrel. The Consortium sends everything after it, including the first boss. The choice at the core comes at the end: destroy it (finish the contract) or free it (expose the Consortium). Rescues across the campaign change the ending.
+## Act 3 status
+
+- **Dead Signal (mission 09, v16): written.** FOREMAN's core rides in Kestrel's cargo bay ("THE COFFEE MACHINE IS NOT INTELLIGENT"). The Consortium has jammed the quay. Two kills both jammers together (a linked pair), powers the old mast and puts Kestrel on air. Hana Okafor speaks on the open channel and offers the twenty-three as witnesses.
+  - 8 radio messages; logs: the Asset Protection field order ("Contractor personnel are not a recovery priority") and a quay maintenance tag.
+  - Dockhands: Teo Mori (generator hall), Bisi Ade (relay gallery).
+- **Breaker Yard (mission 10, v16): written.** The broadcast gave Kestrel's position away. In the old breaker yard, the Consortium depot holds recovery cradles, one of them FOREMAN-sized. **The Warden**, the first boss, guards the breaker floor. The breaker console starts a 90-second escape through the molten scrap line.
+  - 7 radio messages; logs: the Warden spec ("Cost: more than the miners' back pay") and the yard whiteboard.
+  - Miners: Grace Hollis (depot), Ren Nakamura (scrap tunnel).
+- **Core of the Matter (mission 11, v17): written. Ends the campaign.** At the deep relay, the only place FOREMAN can be uploaded off-world or purged, **the Executor** waits. After the relay syncs, FOREMAN sets out both honest choices and refuses to argue: **Release** (it goes everywhere, and AC-77 with it) or **Purge** (Kestrel's contract is paid in full). Only the first relay touched answers.
+  - 8 radio messages, with a different FOREMAN farewell for each choice; logs: the Executor order, clause 9 of Kestrel's contract with Vey's pencilled note, and FOREMAN's last maintenance entry.
+  - Technicians: Tomas Varga (open line), Ngozi Iwu (purge furnace), Mikko Salo (antechamber).
+- **Endings:** there are two epilogues, *Open line* and *Contract closed*. Each changes with the miners brought home across all 11 missions: 90% or more, half or more, or fewer. With many witnesses, the hearings succeed either way. With few, the Open line keeps the files alive but the hearings stall, and the Contract closed ending fades into a settlement nobody reads. The text is in `campaignEnding` (`src/js/core/levels/Campaign.js`).
 
 ## Authoring story in the editor
 

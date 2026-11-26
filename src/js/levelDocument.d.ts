@@ -84,10 +84,12 @@ export type LevelDocument = LevelDocumentBase & (
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[] } }
   | { readonly formatVersion: 10 | 11 | 12; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition } }
-  | { readonly formatVersion: 13 | 14 | 15 | 16; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
+  | { readonly formatVersion: 13 | 14 | 15 | 16 | 17; readonly devices: readonly DeviceDocument[]; readonly doors: readonly DoorDocument[];
       readonly mission: DocumentMission & { readonly type: 'relay-clear-and-exit'; readonly requiredDeviceIds: readonly string[]; readonly escape?: EscapeDefinition;
         /** Version 15: relays that count only when both are activated within a window. */
-        readonly linkedRelays?: readonly LinkedRelays[] };
+        readonly linkedRelays?: readonly LinkedRelays[];
+        /** Version 17: relays of which only the first activated counts; the others lock. */
+        readonly choice?: { readonly deviceIds: readonly string[] } };
       readonly story?: StoryDocument; readonly generators?: readonly GeneratorDocument[] }
 );
 export interface ValidationIssue { readonly path: string; readonly code: string; readonly message: string }

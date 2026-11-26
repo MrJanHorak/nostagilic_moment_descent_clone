@@ -28,6 +28,26 @@ export function createDocument() {
   };
 }
 
+/** Drop linked pairs and choices that name a deleted relay, and generators in a
+ * deleted room. A choice left with one relay ends; that relay becomes required.
+ * @param {any} draft @param {Set<string>} devices @param {Set<string>} rooms */
+function pruneRelayRules(draft, devices, rooms) {
+  const mission = draft.mission;
+  if (mission.linkedRelays) {
+    mission.linkedRelays = mission.linkedRelays.filter(/** @param {{ids: string[]}} link */ link => !link.ids.some(id => devices.has(id)));
+    if (!mission.linkedRelays.length) delete mission.linkedRelays;
+  }
+  if (mission.choice) {
+    const left = mission.choice.deviceIds.filter(/** @param {string} id */ id => !devices.has(id));
+    if (left.length >= 2) mission.choice = { deviceIds: left };
+    else { delete mission.choice; for (const id of left) if (!mission.requiredDeviceIds.includes(id)) mission.requiredDeviceIds.push(id); }
+  }
+  if (draft.generators) {
+    draft.generators = draft.generators.filter(/** @param {{roomId: string}} generator */ generator => !rooms.has(generator.roomId));
+    if (!draft.generators.length) delete draft.generators;
+  }
+}
+
 /** @param {LevelDocument} document @param {string} prefix */
 function nextId(document, prefix) {
   const ids = new Set([document.id, ...document.rooms.map(value => value.id), ...document.connections.map(value => value.id),
@@ -63,7 +83,7 @@ function pruneStory(draft, removed) {
 function ensureStory(draft) {
   const modern = modernize(draft);
   Object.assign(modern, { formatVersion: Math.max(13, modern.formatVersion) });
-  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14 | 15 | 16}>} */ (modern);
+  const upgraded = /** @type {Extract<LevelDocument, {formatVersion: 13 | 14 | 15 | 16 | 17}>} */ (modern);
   upgraded.story ??= { messages: [], logs: [], survivors: [] };
   return /** @type {MutableStory} */ (upgraded.story);
 }
@@ -92,14 +112,14 @@ function storyMessage(message) {
 }
 
 /** Upgrade a copy only when an edit needs v3. Old files retain their version on import.
- * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16}>} */
+ * @param {LevelDocument} draft @returns {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17}>} */
 function modernize(draft) {
   if (draft.formatVersion === 1 || draft.formatVersion === 2) Object.assign(draft, {
     formatVersion: 3, devices: draft.formatVersion === 1 ? [] : draft.devices,
     doors: draft.formatVersion === 1 ? [] : draft.doors,
     mission: { ...draft.mission, type: 'relay-clear-and-exit', requiredDeviceIds: draft.formatVersion === 1 ? [] : draft.mission.requiredDeviceIds },
   });
-  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16}>} */ (draft);
+  return /** @type {Extract<LevelDocument, {formatVersion: 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17}>} */ (draft);
 }
 
 /** Room ports use the runtime's exact world plane and clearance conventions.
@@ -313,6 +333,7 @@ export default class EditorDocument {
         modern.devices = modern.devices.filter(device => !devices.has(device.id)); modern.doors = modern.doors.filter(door => !connections.has(door.connectionId) && (!door.deviceId || !devices.has(door.deviceId)));
         modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(id => !devices.has(id));
         if ('escape' in modern.mission && modern.mission.escape && devices.has(modern.mission.escape.triggerDeviceId)) delete modern.mission.escape;
+        pruneRelayRules(modern, devices, new Set([roomId]));
         pruneStory(draft, { rooms: new Set([roomId]), devices, enemies: removed });
       }
     });
@@ -539,6 +560,71 @@ export default class EditorDocument {
     });
   }
 
+  /** Team and choice rules for relays. Linked pairs (format 15) count only when both
+   * relays fire within the window; a choice (format 17) lets the first of its relays
+   * answer and locks the rest. Choice relays stop being required; relays leaving a
+   * choice become required again.
+   * @param {{linked?: {ids: [string, string], windowSeconds: number}[], choice?: string[]}} rules */
+  setRelayRules({ linked = [], choice = [] }) {
+    this.checked(candidate => {
+      if (candidate.document.formatVersion === 1) throw new Error('Add a relay first.');
+      const draft = modernize(candidate.document), devices = new Set(draft.devices.map(device => device.id));
+      const picked = [...new Set(choice.filter(Boolean))];
+      for (const id of [...linked.flatMap(link => link.ids), ...picked]) if (id && !devices.has(id)) throw new Error(`Unknown relay: ${id}`);
+      if (picked.length === 1) throw new Error('A choice needs two or three relays.');
+      if (picked.length > 3) throw new Error('A choice can offer at most three relays.');
+      const mission = /** @type {any} */ (draft.mission);
+      const previous = new Set(mission.choice?.deviceIds ?? []);
+      // Relays leaving a choice become ordinary required relays again.
+      for (const id of previous) if (!picked.includes(id) && devices.has(id) && !mission.requiredDeviceIds.includes(id)) mission.requiredDeviceIds.push(id);
+      mission.requiredDeviceIds = mission.requiredDeviceIds.filter(/** @param {string} id */ id => !picked.includes(id));
+      const pairs = linked.filter(link => link.ids[0] || link.ids[1]).map(link => {
+        if (!link.ids[0] || !link.ids[1]) throw new Error('Pick both relays of a linked pair.');
+        if (!Number.isFinite(link.windowSeconds) || link.windowSeconds < 1 || link.windowSeconds > 60) throw new Error('A linked window is 1 to 60 seconds.');
+        return { ids: /** @type {[string, string]} */ ([link.ids[0], link.ids[1]]), windowSeconds: link.windowSeconds };
+      });
+      if (pairs.length) mission.linkedRelays = pairs; else delete mission.linkedRelays;
+      if (picked.length) mission.choice = { deviceIds: picked }; else delete mission.choice;
+      const needed = picked.length ? 17 : pairs.length ? 15 : draft.formatVersion;
+      Object.assign(draft, { formatVersion: Math.max(needed, draft.formatVersion) });
+    });
+  }
+
+  /** Place a finite robot generator (format 16) at a room-local point.
+   * @param {string} roomId @param {[number, number, number]} position
+   * @param {{enemyType: import('../contracts.js').EnemyType, count: number, intervalSeconds: number, maxAlive?: number}} settings @returns {string} */
+  placeGenerator(roomId, position, { enemyType, count, intervalSeconds, maxAlive = 2 }) {
+    this.room(roomId);
+    if (!['scout', 'fighter', 'bomber', 'destroyer'].includes(enemyType)) throw new Error('Generators release scouts, fighters, bombers or destroyers.');
+    if (!Number.isInteger(count) || count < 1 || count > 12) throw new Error('A generator releases 1 to 12 robots.');
+    if (!Number.isFinite(intervalSeconds) || intervalSeconds < 2 || intervalSeconds > 60) throw new Error('The release interval is 2 to 60 seconds.');
+    if (!Number.isInteger(maxAlive) || maxAlive < 1 || maxAlive > 4) throw new Error('At most 1 to 4 of its robots may be active at once.');
+    const existing = /** @type {any[]} */ (/** @type {any} */ (this.document).generators ?? []);
+    if (existing.length >= 16) throw new Error('Generator limit reached (16).');
+    const taken = new Set(existing.map(generator => generator.id));
+    let index = 1; while (taken.has(`generator-${index}`)) index++;
+    const id = `generator-${index}`;
+    this.checked(candidate => {
+      if (candidate.document.formatVersion === 1) throw new Error('Generators need a relay mission. Place a relay first.');
+      const draft = modernize(candidate.document);
+      Object.assign(draft, { formatVersion: Math.max(16, draft.formatVersion) });
+      const list = /** @type {any} */ (draft).generators ??= [];
+      list.push({ id, roomId, position: [...position], enemyType, count, intervalSeconds, maxAlive });
+    });
+    return id;
+  }
+
+  /** @param {readonly string[]} ids */
+  removeGenerators(ids) {
+    const remove = new Set(ids);
+    this.change(draft => {
+      const list = /** @type {any} */ (draft).generators;
+      if (!list) return;
+      /** @type {any} */ (draft).generators = list.filter(/** @param {{id: string}} generator */ generator => !remove.has(generator.id));
+      if (!/** @type {any} */ (draft).generators.length) delete /** @type {any} */ (draft).generators;
+    });
+  }
+
   /** @param {string} id */
   disconnect(id) {
     this.change(draft => {
@@ -675,6 +761,7 @@ export default class EditorDocument {
         const modern = modernize(draft); modern.devices = modern.devices.filter(value => value.id !== id);
         modern.doors = modern.doors.filter(door => door.deviceId !== id); modern.mission.requiredDeviceIds = modern.mission.requiredDeviceIds.filter(value => value !== id);
         if ('escape' in modern.mission && modern.mission.escape?.triggerDeviceId === id) delete modern.mission.escape;
+        pruneRelayRules(modern, new Set([id]), new Set());
         pruneStory(draft, { devices: new Set([id]), enemies: new Set([id]) });
       }
       const story = /** @type {MutableStory | undefined} */ (storyOf(draft));

@@ -1,9 +1,10 @@
 import { DIFFICULTIES, isDifficultyId } from './Difficulty.js';
+import { bestMedal, isMedal } from './MissionRating.js';
 
 export const CAMPAIGN_PROGRESS_KEY = 'descended.campaign.v1';
 
 /** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, lastCompletedAt: string,
- *   hardestDifficulty: import('./Difficulty.js').DifficultyId, mostRescued: number, logIds: readonly string[] }} MissionRecord */
+ *   hardestDifficulty: import('./Difficulty.js').DifficultyId, mostRescued: number, logIds: readonly string[], bestMedal?: import('./MissionRating.js').Medal }} MissionRecord */
 /** @typedef {{ id: string, campaignOrder: number }} CampaignMission */
 
 const MAX_COUNT = 1e6, MAX_SCORE = 1e9, MAX_TIME_MS = 864e5, MAX_LOGS = 32;
@@ -31,7 +32,7 @@ function normalizeRecord(source) {
   const saved = record.hardestDifficulty;
   const hardestDifficulty = isDifficultyId(saved) ? saved : 'pilot';
   return Object.freeze({ completions, bestScore, bestTimeMs, lastCompletedAt: when, hardestDifficulty,
-    mostRescued: bounded(record.mostRescued, 64) ?? 0, logIds: logList(record.logIds) });
+    mostRescued: bounded(record.mostRescued, 64) ?? 0, logIds: logList(record.logIds), ...(isMedal(record.bestMedal) ? { bestMedal: record.bestMedal } : {}) });
 }
 
 /** @param {unknown} source @returns {Readonly<Record<string, MissionRecord>>} */
@@ -95,7 +96,7 @@ export default class CampaignProgress {
 
   /** Record a successful extraction.
    * @param {CampaignMission} mission
-   * @param {{ score: number, timeMs: number, difficulty?: import('./Difficulty.js').DifficultyId, rescued?: number, logIds?: readonly string[] }} result
+   * @param {{ score: number, timeMs: number, difficulty?: import('./Difficulty.js').DifficultyId, rescued?: number, logIds?: readonly string[], medal?: import('./MissionRating.js').Medal }} result
    * @param {Date} [now] */
   recordCompletion(mission, result, now = new Date()) {
     if (!mission || !Number.isInteger(mission.campaignOrder) || mission.campaignOrder < 1 || typeof mission.id !== 'string') return null;
@@ -113,6 +114,8 @@ export default class CampaignProgress {
       // Best rescue count and every data log ever recovered in this mission.
       mostRescued: Math.max(previous?.mostRescued ?? 0, bounded(result.rescued, 64) ?? 0),
       logIds: logList([...(previous?.logIds ?? []), ...(result.logIds ?? [])]),
+      // The best medal ever earned here (Phase 5 ratings).
+      ...(bestMedal(previous?.bestMedal, isMedal(result.medal) ? result.medal : null) ? { bestMedal: /** @type {import('./MissionRating.js').Medal} */ (bestMedal(previous?.bestMedal, isMedal(result.medal) ? result.medal : null)) } : {}),
     });
     this.missions = Object.freeze({ ...this.missions, [mission.id]: record });
     this.save();
@@ -121,6 +124,7 @@ export default class CampaignProgress {
       newBestScore: !!previous && score > previous.bestScore,
       newBestTime: !!previous && timeMs < previous.bestTimeMs,
       newHardestDifficulty: !!previous && hardestDifficulty !== previous.hardestDifficulty,
+      newBestMedal: isMedal(result.medal) && result.medal !== previous?.bestMedal && bestMedal(previous?.bestMedal, result.medal) === result.medal,
     };
   }
 

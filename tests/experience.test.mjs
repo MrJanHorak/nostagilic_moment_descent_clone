@@ -97,7 +97,7 @@ test('original music is deterministic stereo with bounded samples and a continuo
 for (const level of createCampaign()) test(`${level.name}: valid round trip, gated progression and all physical portals traverse after activation`, () => {
   const document = level.sourceDocument;
   assert.equal(validateLevelDocument(JSON.parse(JSON.stringify(document))).valid, true);
-  assert.equal(document.rooms.length, level.id === 'asterion-deepworks' ? 48 : level.id === 'the-seal' ? 26 : level.id === 'fabricator' ? 19 : ['witness', 'moving-day'].includes(level.id) ? 17 : level.id === 'signal-breach' ? 11 : 7);
+  assert.equal(document.rooms.length, level.id === 'asterion-deepworks' ? 48 : level.id === 'the-seal' ? 26 : level.id === 'fabricator' ? 19 : ['witness', 'moving-day', 'dead-signal'].includes(level.id) ? 17 : level.id === 'breaker-yard' ? 20 : level.id === 'core-of-the-matter' ? 22 : level.id === 'signal-breach' ? 11 : 7);
   const world = buildArena(level), session = new GameSession(); session.begin(); session.transition('playing');
   const relay = new RelayController(level, world.group, world.colliders, session), mission = new MissionObjective(level.mission);
   assert.equal(mission.ready, false); assert.equal(mission.tryComplete(new THREE.Vector3(...level.mission.exit.position)), false);
@@ -118,7 +118,11 @@ for (const level of createCampaign()) test(`${level.name}: valid round trip, gat
     assert(reachable().has(device.roomId), `Relay ${device.id} must be accessible before its door opens`);
     const runtime = level.devices.find(item => item.id === device.id);
     if (device.kind === 'reactor') assert.equal(relay.hitReactor(world.colliders.find(c => c.id === device.id), device.health)?.destroyed, true);
-    else assert.equal(relay.tryActivate(new THREE.Vector3(...runtime.position))?.id, device.id);
+    else if (relay.lockedIds.has(device.id)) {
+      // The other side of a choice (v17) is locked once one is made; open it directly to check its portals.
+      assert.equal(relay.tryActivate(new THREE.Vector3(...runtime.position)), null);
+      relay.activate(/** @type {any} */ (relay.devices.find(item => item.id === device.id)));
+    } else assert.equal(relay.tryActivate(new THREE.Vector3(...runtime.position))?.id, device.id);
     mission.recordDeviceActivation(device.id);
     relay.update(1);
   }

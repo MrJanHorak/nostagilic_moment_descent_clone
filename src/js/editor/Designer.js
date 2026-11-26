@@ -1,6 +1,7 @@
 import connectionDialog from './ConnectionDialog.js';
 import doorDialog from './DoorDialog.js';
 import escapeDialog from './EscapeDialog.js';
+import { generatorsDialog, relayRulesDialog } from './RelayRulesDialog.js';
 import storyDialog from './StoryDialog.js';
 import { storyPlacements } from './StoryContent.js';
 import EditorDocument, { createDocument } from './EditorDocument.js';
@@ -29,7 +30,7 @@ host.innerHTML = `
     <div class="brand"><span>DESCENDED</span><h1>Level designer</h1><a href="/" class="back-link">Back to game</a><button id="open-tutorial" class="link-button">Tutorial</button></div>
     <nav aria-label="Document controls">
       <div class="nav-group" role="group" aria-label="Open"><button id="new">New mine</button><button id="sample">Open example</button><button id="deepworks">Open Deepworks</button><button id="import">Import JSON</button></div>
-      <div class="nav-group" role="group" aria-label="Mission"><button id="story-settings">Story &amp; radio…</button><button id="escape-settings">Reactor escape…</button></div>
+      <div class="nav-group" role="group" aria-label="Mission"><button id="story-settings">Story &amp; radio…</button><button id="escape-settings">Reactor escape…</button><button id="relay-rules">Team &amp; choice relays…</button><button id="generator-settings">Robot generators…</button></div>
       <div class="nav-group" role="group" aria-label="Test and save"><button id="playtest">Playtest level</button><button id="save-library">Save to My Levels</button><button id="save-library-copy" hidden>Save a copy</button><button id="export" class="primary">Export JSON</button></div>
     </nav>
     <input id="file" type="file" accept=".json,application/json" hidden />
@@ -311,7 +312,7 @@ function refresh(rebuild = true) {
   element('inspector-selection').textContent = group.size ? `${group.size + 1} ${selectionKind === 'content' ? 'items' : 'rooms'} selected · editing ${selectionKind === 'content' ? selectedContentId : selectedId}` : selectionKind === 'wall' && selectedFace ? `${room.id} · ${faceLabel(room, selectedFace)}` : selectionKind === 'content' ? `${selectedContentId === '@spawn' ? 'Player spawn' : selectedContentId} · ${roomTitle(room)}` : `${roomTitle(room)} · Room`;
   input('name').value = model.document.name;
   element('save-state').textContent = model.dirty ? 'Unsaved changes · Export a backup' : 'No unsaved changes';
-  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 16 ? ' · Robot generators' : model.document.formatVersion >= 15 ? ' · Linked relays for team missions' : model.document.formatVersion >= 14 ? ' · Room names and story' : model.document.formatVersion >= 13 ? ' · Story: radio messages, data logs and miners' : model.document.formatVersion >= 12 ? ' · Destructible reactors and escape' : model.document.formatVersion >= 11 ? ' · Relay force fields and reactor escape' : model.document.formatVersion >= 10 ? ' · Reactor escape countdown' : model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
+  element('format-version').textContent = `Format ${model.document.formatVersion}${model.document.formatVersion >= 17 ? ' · Choice relays' : model.document.formatVersion >= 16 ? ' · Robot generators' : model.document.formatVersion >= 15 ? ' · Linked relays for team missions' : model.document.formatVersion >= 14 ? ' · Room names and story' : model.document.formatVersion >= 13 ? ' · Story: radio messages, data logs and miners' : model.document.formatVersion >= 12 ? ' · Destructible reactors and escape' : model.document.formatVersion >= 11 ? ' · Relay force fields and reactor escape' : model.document.formatVersion >= 10 ? ' · Reactor escape countdown' : model.document.formatVersion >= 9 ? ' · Lava, water and sliding doors' : model.document.formatVersion >= 8 ? ' · Sliding and concealed doors' : model.document.formatVersion === 7 ? ' · Shared openings and loop connections' : model.document.formatVersion >= 6 ? ' · Expanded dimensions and 256 rooms' : model.document.formatVersion === 5 ? ' · Supports sloped and diagonal corridors' : model.document.formatVersion === 4 ? ' · Supports pitch, roll, offset openings and face styles' : model.document.formatVersion === 3 ? ' · Supports offset openings and face styles' : ''}`;
   element('room-count').textContent = `${model.document.rooms.length} / ${EXPANDED_LIMITS.rooms}`;
   button('undo').disabled = !model.past.length; button('redo').disabled = !model.future.length;
   button('undo').title = model.undoLabel ? `Undo: ${model.undoLabel} (Ctrl+Z)` : 'Nothing to undo';
@@ -542,6 +543,8 @@ element('join-dialog').onclick = () => { try { positionMenu(); if (menu) { conne
 element('join-wall').onclick = () => { try { positionMenu(); if (menu && selectedFace) { connectionDialog(selectedId, selectedFace, model, menu, commit); viewport.controls.enabled = false; } } catch (error) { report(error); } };
 element('door-dialog').onclick = () => { positionMenu(); if (menu) { doorDialog(select('opening-connection').value, model, menu, commit); viewport.controls.enabled = false; } };
 element('escape-settings').onclick = () => { positionMenu(); if (menu) { escapeDialog(model, menu, commit); viewport.controls.enabled = false; } };
+element('relay-rules').onclick = () => { positionMenu(); if (menu) { relayRulesDialog(model, menu, commit); viewport.controls.enabled = false; } };
+element('generator-settings').onclick = () => { positionMenu(); if (menu) { generatorsDialog(model, menu, commit); viewport.controls.enabled = false; } };
 element('story-settings').onclick = () => { positionMenu(); if (menu) { storyDialog(model, menu, commit); viewport.controls.enabled = false; } };
 element('fit-opening').onclick = () => perform(() => model.fitOpening(select('opening-connection').value));
 element('properties').onsubmit = event => {

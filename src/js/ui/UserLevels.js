@@ -3,10 +3,11 @@ import UserCampaignLibrary, { CAMPAIGN_LIMITS, importCampaignBundle } from '../c
 import campaignSection from './UserCampaigns.js';
 import { LIMITS } from '../core/levels/document/LevelContent.js';
 import { serializeLevelDocument } from '../core/levels/document/validateLevelDocument.js';
+import { createGameServerApi, savedServer } from '../net/GameServerApi.js';
 
 /** @param {(document: import('../levelDocument.js').LevelDocument) => void} play
  * @param {() => void} back @param {UserLevelLibrary} [library]
- * @param {{campaigns?: UserCampaignLibrary, playCampaign?: (campaignKey: string, index: number) => void}} [options] */
+ * @param {{campaigns?: UserCampaignLibrary, playCampaign?: (campaignKey: string, index: number) => void, api?: ReturnType<typeof createGameServerApi>}} [options] */
 export default function createUserLevels(play, back, library = new UserLevelLibrary(), options = {}) {
   library.sync();
   const campaigns = options.campaigns ?? new UserCampaignLibrary(); campaigns.sync();
@@ -58,8 +59,39 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
   const status = document.createElement('p'); status.setAttribute('role', 'status'); status.textContent = library.status;
   const list = document.createElement('div'); list.id = 'user-level-list';
   const returnButton = document.createElement('button'); returnButton.textContent = 'RETURN TO MAIN MENU'; returnButton.onclick = back;
-  toolbar.append(importButton, designer, newCampaign, importCampaign);
-  article.append(title, help, toolbar, file, campaignFile, status, campaignTitle, campaignList, levelTitle, list, returnButton); root.append(style, article);
+  // Online sharing (Phase 5): levels uploaded to the game server everyone can browse.
+  const api = options.api ?? createGameServerApi();
+  const sharedButton = document.createElement('button'); sharedButton.textContent = 'Browse shared levels';
+  const sharedTitle = document.createElement('h2'); sharedTitle.className = 'group-title'; sharedTitle.textContent = 'SHARED ONLINE'; sharedTitle.hidden = true;
+  const sharedList = document.createElement('div'); sharedList.id = 'shared-level-list'; sharedList.hidden = true;
+  if (!api.available) { sharedButton.disabled = true; sharedButton.title = 'Set a game server in Play Online first'; }
+  toolbar.append(importButton, designer, newCampaign, importCampaign, sharedButton);
+  article.append(title, help, toolbar, file, campaignFile, status, sharedTitle, sharedList, campaignTitle, campaignList, levelTitle, list, returnButton); root.append(style, article);
+
+  sharedButton.onclick = async () => {
+    sharedTitle.hidden = false; sharedList.hidden = false;
+    sharedList.replaceChildren(Object.assign(document.createElement('p'), { textContent: 'Loading shared levels…' }));
+    const result = await api.listLevels();
+    sharedList.replaceChildren();
+    if (!result || result.error) { sharedList.append(Object.assign(document.createElement('p'), { textContent: 'The game server could not be reached. Check the address in Play Online.' })); return; }
+    if (!result.levels.length) { sharedList.append(Object.assign(document.createElement('p'), { textContent: 'Nothing shared yet. Use "Share online" on one of your levels.' })); return; }
+    for (const shared of result.levels) {
+      const card = document.createElement('section'); card.className = 'level-card'; card.dataset.sharedId = shared.id;
+      const heading = document.createElement('h2'); heading.textContent = shared.name;
+      const summary = document.createElement('p'); summary.textContent = `by ${shared.author} · ${shared.rooms} rooms · ${shared.downloads} downloads · ${new Date(shared.createdAt).toLocaleDateString()}`;
+      const actions = document.createElement('div'); actions.className = 'level-actions';
+      /** @param {boolean} keep */
+      const fetchLevel = async keep => {
+        const got = await api.getLevel(shared.id);
+        if (!got?.document) { status.textContent = 'That level could not be downloaded.'; return; }
+        if (!keep) { play(got.document); return; }
+        run(() => { const entry = library.save(JSON.stringify(got.document)); status.textContent = `Saved ${entry.document.name} to My Levels. ${library.status}`; render(entry.key); });
+      };
+      const playButton = document.createElement('button'); playButton.textContent = 'Play'; playButton.onclick = () => fetchLevel(false);
+      const keepButton = document.createElement('button'); keepButton.textContent = 'Save to My Levels'; keepButton.onclick = () => fetchLevel(true);
+      actions.append(playButton, keepButton); card.append(heading, summary, actions); sharedList.append(card);
+    }
+  };
 
   /** @param {unknown} error */
   const report = error => { status.textContent = `${error instanceof Error ? error.message : String(error)} ${library.status}`; };
@@ -88,6 +120,13 @@ export default function createUserLevels(play, back, library = new UserLevelLibr
       const button = (label, action) => { const node = document.createElement('button'); node.textContent = label; node.onclick = () => run(action); actions.append(node); return node; };
       button('Play level', () => play(entry.document));
       if (library.persistent) { const edit = document.createElement('a'); edit.textContent = 'Open in editor'; edit.href = `/editor.html?level=${encodeURIComponent(entry.key)}`; actions.append(edit); }
+      if (api.available) button('Share online', async () => {
+        if (!window.confirm(`Share "${entry.document.name}" on ${api.base}? Anyone using that server can play and download it.`)) return;
+        status.textContent = 'Uploading…';
+        const result = await api.shareLevel(entry.document, { name: entry.document.name, author: savedServer().name || 'Anonymous' });
+        status.textContent = result?.level ? `Shared ${result.level.name} online.` : result?.error === 'slow-down' ? 'You can share one level a minute. Try again shortly.'
+          : `Sharing failed: ${result?.details?.join('; ') ?? result?.error ?? 'server unreachable'}.`;
+      });
       button('Export JSON', () => {
         const url = URL.createObjectURL(new Blob([serializeLevelDocument(entry.document)], { type: 'application/json' }));
         const link = document.createElement('a'); link.href = url; link.download = `${entry.document.id}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);

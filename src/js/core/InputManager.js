@@ -1,7 +1,7 @@
 // Input Manager for handling keyboard and mouse inputs
 import { shakeCamera } from '../utils/effectsUtils.js';
 import ControlBindings from './ControlBindings.js';
-import { GAMEPAD_BUTTONS, GamepadTracker, MENU_BUTTONS, choosePad, neutralFlight, readFlight } from './GamepadInput.js';
+import { GAMEPAD_BUTTONS, GamepadTracker, MENU_BUTTONS, QUICK_CHAT_BUTTONS, choosePad, neutralFlight, readFlight } from './GamepadInput.js';
 
 /** @typedef {import('./ControlBindings.js').ControlAction} ControlAction */
 /** @type {readonly (keyof import('./GamepadInput.js').AnalogFlight)[]} */
@@ -190,6 +190,9 @@ class InputManager {
     for (const index of pressed) {
       if (index === MENU_BUTTONS.pause && this.gameState.isGameStarted && ['playing', 'paused'].includes(phase)) { this.game?.togglePause(); continue; }
       if (phase === 'playing') {
+        // Quick-chat open: the D-pad and face buttons pick a phrase instead of flying.
+        const phrase = this.game?.quickChatOpen ? QUICK_CHAT_BUTTONS.indexOf(index) : -1;
+        if (phrase !== -1) { this.game?.sendQuickChat?.(phrase); continue; }
         const action = GAMEPAD_BUTTONS[index];
         if (action && !['up', 'down', 'rollLeft', 'rollRight', 'pause'].includes(action)) this.performAction(/** @type {any} */ (action));
         continue;

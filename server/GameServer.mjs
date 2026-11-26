@@ -3,6 +3,9 @@
 // to every player 20 times per second.
 import { createServer } from 'node:http';
 import { acceptWebSocket } from './WebSocket.mjs';
+import { createHttpApi } from './HttpApi.mjs';
+import { campaignDocuments } from '../src/js/core/levels/Campaign.js';
+import { teamDocuments } from '../src/js/core/levels/TeamMissions.js';
 import MatchRoom from '../src/js/net/MatchRoom.js';
 import { MAX_MESSAGE_BYTES, PROTOCOL_VERSION, SNAPSHOT_EVERY, TICK_RATE, makeRoomCode, parseClientMessage } from '../src/js/net/Protocol.js';
 
@@ -13,15 +16,18 @@ const EMPTY_ROOM_MS = 30000;
 const MAX_CATCH_UP = 10;
 
 /**
- * @param {{port?: number, host?: string, log?: (line: string) => void, rules?: object, allowOrigins?: string[] | null}} [options]
+ * @param {{port?: number, host?: string, log?: (line: string) => void, rules?: object, allowOrigins?: string[] | null, dataDir?: string | null, adminToken?: string | null}} [options]
  * @returns {Promise<{port: number, rooms: Map<string, any>, close: () => Promise<void>}>}
  */
-export async function startGameServer({ port = 8787, host = '0.0.0.0', log = line => console.log(line), rules = {}, allowOrigins = null } = {}) {
+export async function startGameServer({ port = 8787, host = '0.0.0.0', log = line => console.log(line), rules = {}, allowOrigins = null, dataDir = null, adminToken = null } = {}) {
   /** code -> { room, sockets: Map<pilotId, connection>, emptySince } */
   const rooms = new Map();
   let players = 0;
 
-  const http = createServer((request, response) => {
+  // Leaderboards and shared levels (Phase 5), stored in dataDir when given.
+  const api = await createHttpApi({ dataDir, allowOrigins, adminToken, missionIds: [...campaignDocuments, ...teamDocuments].map(document => document.id) });
+  const http = createServer(async (request, response) => {
+    if (await api.handle(request, response)) return;
     if (request.url === '/health' || request.url === '/') {
       response.writeHead(200, { 'content-type': 'application/json', 'access-control-allow-origin': '*' });
       response.end(JSON.stringify({ ok: true, game: 'descended', protocol: PROTOCOL_VERSION, rooms: rooms.size, players }));

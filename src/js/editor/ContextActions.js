@@ -6,6 +6,7 @@ import { faceLabel, placementPosition } from './EditorPicking.js';
 import { FACES, MATERIALS, ROOM_LABEL_LIMIT, STORY_LIMITS, SURFACE_PATTERNS, openingRules } from '../core/levels/document/LevelContent.js';
 import { connectableFace, portFrame, openingFrame, toWorld } from '../core/levels/document/RoomMath.js';
 import { enemyTypes } from '../entities/EnemyTypes.js';
+import { GENERATOR_FIELDS } from './RelayRulesDialog.js';
 
 /** @param {import('./EditorPicking.js').ViewportTarget} target
  * @param {{model: EditorDocument, viewport: import('./EditorViewport.js').default, menu: import('./ViewportMenu.js').default,
@@ -110,6 +111,11 @@ export default function openContextActions(target, { model, viewport, menu, comm
     { label: 'Place ammo here', preview: () => preview('pulseAmmo'), action: () => place('pulseAmmo') },
     { label: 'Place reactor here', action: () => place('reactor'), preview: () => preview('reactor') },
     { label: 'Place relay here', preview: () => preview('relay'), action: () => place('relay') },
+    { label: 'Place robot generator here…', preview: () => preview('enemy'), action: () => menu.form('Place robot generator', `${room.id} · wakes when a pilot first enters this room. Generated robots never count toward objectives.`,
+      /** @type {any} */ ([...GENERATOR_FIELDS]), values => commit(() => {
+        model.placeGenerator(room.id, placementPosition(room, target.localPoint, 'enemy', 'scout'), { enemyType: /** @type {any} */ (values.enemyType),
+          count: Number(values.count), intervalSeconds: Number(values.intervalSeconds), maxAlive: Number(values.maxAlive) });
+      }), 'Place generator', () => preview('enemy')) },
     { label: 'Place data log here…', preview: () => preview('log'), action: () => menu.form('Place data log', `${room.id} · the pilot collects it by flying through. Read later from the mission log.`, [
       { id: 'title', label: 'Log title', value: 'Shift report', maxLength: STORY_LIMITS.title },
       { id: 'text', label: `Log text (up to ${STORY_LIMITS.logText} characters)`, type: 'textarea', value: '', maxLength: STORY_LIMITS.logText },

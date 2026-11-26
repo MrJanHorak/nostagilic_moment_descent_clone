@@ -30,6 +30,8 @@ Any controller the browser reports with the standard mapping (Xbox, PlayStation 
 | D-pad ↑ ↓ ← → | Map · headlights · camera · HUD |
 | Menu / Options | Pause / resume |
 | View / Share | Mission log (pauses); D-pad ↑ still expands the map |
+| L3 (left stick click) | Open quick chat; while it is open, D-pad ↑ ↓ ← → and A B X Y send phrases 1–8 |
+| R3 (right stick click) | Mark target (ping) for the team |
 | In menus | D-pad ↑ ↓ moves focus · A selects · B goes back |
 
 - **Stick look sensitivity** (0.25–3×) and **Invert stick Y** are in the Controls section. They are separate from the mouse settings.

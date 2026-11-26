@@ -6,6 +6,8 @@ export const INTERACTION_DISTANCE = 2.5;
 /** A solo pilot gets this many times a linked pair's window, to make the run between the two relays alone. */
 export const SOLO_LINK_SCALE = 4;
 const ARMED_COLOUR = 0xffb347;
+/** A choice relay that can no longer be picked. */
+const LOCKED_COLOUR = 0x3a3f44;
 
 /** Session-owned one-way doors. Old documents retain instant relay gates;
  * v8 panels slide with matching colliders and never close on a ship. */
@@ -25,6 +27,10 @@ export default class RelayController {
       this.links.set(link.ids[0], { partner: link.ids[1], windowMs: link.windowSeconds * 1000 });
       this.links.set(link.ids[1], { partner: link.ids[0], windowMs: link.windowSeconds * 1000 });
     }
+    /** Choice relays (v17): activating one locks the others. @type {string[]} */
+    this.choiceIds = [...(level.mission?.choice?.deviceIds ?? [])];
+    /** @type {Set<string>} */ this.lockedIds = new Set();
+    /** The choice made, once one is. @type {string | null} */ this.chosenId = null;
     /** Window multiplier: 1 for a team, SOLO_LINK_SCALE alone (set by the game). */
     this.linkScale = 1;
     /** Armed linked relays and when they disarm (simulation ms). @type {Map<string, number>} */ this.armed = new Map();
@@ -136,7 +142,7 @@ export default class RelayController {
     /** @type {(typeof this.devices)[number] | null} */ let nearest = null;
     for (const device of this.devices) {
       const squared = position.distanceToSquared(device.position);
-      if (device.kind !== 'reactor' && !this.activatedIds.has(device.id) && squared <= distance && hasLineOfSight(position, device.position, this.colliders)) {
+      if (device.kind !== 'reactor' && !this.activatedIds.has(device.id) && !this.lockedIds.has(device.id) && squared <= distance && hasLineOfSight(position, device.position, this.colliders)) {
         nearest = device; distance = squared;
       }
     }
@@ -182,6 +188,10 @@ export default class RelayController {
   activate(device) {
     // Commit the unlock before publishing; sliding panels clear in simulation.
     this.activatedIds.add(device.id);
+    if (this.choiceIds.includes(device.id) && !this.chosenId) {
+      this.chosenId = device.id;
+      for (const other of this.choiceIds) if (other !== device.id) { this.lockedIds.add(other); this.paint(other, LOCKED_COLOUR); }
+    }
     for (const door of this.doors) if (door.deviceId === device.id) this.open(door);
     this.root.children.find(child => child.name === device.id)?.traverse(child => {
       if (child instanceof Mesh && child.material instanceof MeshBasicMaterial) child.material.color.setHex(0x45ff96);

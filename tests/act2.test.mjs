@@ -9,7 +9,7 @@ const steps = (game, seconds) => { for (let i = 0; i < Math.round(seconds * 60);
 
 test('Act 2 missions 06–08 follow The Seal in the campaign, with story, generators and heavy robots', () => {
   const campaign = createCampaign();
-  assert.deepEqual(campaign.slice(5).map(level => [level.campaignOrder, level.id]), [[6, 'witness'], [7, 'fabricator'], [8, 'moving-day']]);
+  assert.deepEqual(campaign.slice(5, 8).map(level => [level.campaignOrder, level.id]), [[6, 'witness'], [7, 'fabricator'], [8, 'moving-day']]);
   for (const id of ACT2) {
     const document = campaignDocuments.find(value => value.id === id), level = campaign.find(value => value.id === id);
     assert.equal(validateLevelDocument(document).valid, true, id);
@@ -58,6 +58,6 @@ test('each Act 2 mission plays through in the simulation: fabricators wake, obje
     game.spaceship.group.position.copy(mission.exitPosition); game.spaceship.velocity.set(0, 0, 0);
     steps(game, 0.2);
     assert.equal(game.session.phase, 'completed', `${id}: extracted`);
-    assert.equal(game.nextMissionIndex(), id === 'moving-day' ? -1 : index + 1, `${id}: next mission`);
+    assert.equal(game.nextMissionIndex(), index + 1, `${id}: next mission`);
   }
 });

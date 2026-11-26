@@ -1,0 +1,1396 @@
+{
+  "formatVersion": 16,
+  "id": "breaker-yard",
+  "name": "Breaker Yard",
+  "rooms": [
+    {
+      "id": "kestrel-pad",
+      "label": "Kestrel pad",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        14,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "gatehouse",
+      "label": "Gatehouse",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-yard",
+      "label": "West yard",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -52
+      ],
+      "size": [
+        28,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-yard",
+      "label": "East yard",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -52
+      ],
+      "size": [
+        28,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "crane-control",
+      "label": "Crane control",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -112
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "consortium-depot",
+      "label": "Consortium depot",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -112
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "breaker-floor",
+      "label": "Breaker floor",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -112
+      ],
+      "size": [
+        40,
+        22,
+        40
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "scrap-line",
+      "label": "Scrap line",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -48,
+        -112
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 11877394,
+          "pattern": "lava"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "scrap-tunnel",
+      "label": "Scrap tunnel",
+      "prefab": "box-room",
+      "position": [
+        0,
+        -48,
+        -52
+      ],
+      "size": [
+        20,
+        12,
+        20
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pad-walk",
+      "label": "Pad walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -27
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "west-walk",
+      "label": "West walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -25,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "east-walk",
+      "label": "East walk",
+      "prefab": "straight-corridor",
+      "position": [
+        25,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "crane-walk",
+      "label": "Crane walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -52,
+        0,
+        -83
+      ],
+      "size": [
+        8,
+        8,
+        34
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "depot-walk",
+      "label": "Depot walk",
+      "prefab": "straight-corridor",
+      "position": [
+        52,
+        0,
+        -83
+      ],
+      "size": [
+        8,
+        8,
+        34
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "crane-floor",
+      "label": "Crane passage",
+      "prefab": "straight-corridor",
+      "position": [
+        -30,
+        0,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "floor-depot",
+      "label": "Depot passage",
+      "prefab": "straight-corridor",
+      "position": [
+        30,
+        0,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        20
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "gate-floor",
+      "label": "Floor walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -78
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "floor-drop",
+      "label": "Floor drop",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -26,
+        -112
+      ],
+      "size": [
+        8,
+        8,
+        30
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "pitch": 90
+    },
+    {
+      "id": "scrap-run",
+      "label": "Scrap run",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -48,
+        -81
+      ],
+      "size": [
+        8,
+        8,
+        38
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "scrap-lift",
+      "label": "Scrap lift",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        -24.5,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        35
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "pad-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-pad",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pad-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pad-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pad-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gatehouse",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gatehouse",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-yard",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gatehouse",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-yard",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-yard",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "crane-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "crane-control",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "depot-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-yard",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "depot-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "depot-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "depot-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "consortium-depot",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-floor-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-control",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "crane-floor",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "crane-floor-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "crane-floor",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "breaker-floor",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "floor-depot-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "breaker-floor",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "floor-depot",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "floor-depot-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "floor-depot",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "consortium-depot",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gate-floor-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gatehouse",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gate-floor",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gate-floor-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gate-floor",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "breaker-floor",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "floor-drop-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "breaker-floor",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "floor-drop",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "floor-drop-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "floor-drop",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "scrap-line",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "scrap-run-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "scrap-line",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "scrap-run",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "scrap-run-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "scrap-run",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "scrap-tunnel",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "scrap-lift-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "scrap-tunnel",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "scrap-lift",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "scrap-lift-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "scrap-lift",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gatehouse",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "crane-release",
+      "label": "Crane release",
+      "roomId": "crane-control",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "depot-lock",
+      "label": "Depot lock",
+      "roomId": "consortium-depot",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "breaker-console",
+      "label": "Breaker console",
+      "roomId": "breaker-floor",
+      "position": [
+        0,
+        0,
+        -14
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "pad-door",
+      "connectionId": "pad-walk-in",
+      "activation": "shot"
+    },
+    {
+      "id": "crane-door",
+      "connectionId": "crane-floor-out",
+      "deviceId": "crane-release"
+    },
+    {
+      "id": "gate-door",
+      "connectionId": "gate-floor-out",
+      "deviceId": "crane-release"
+    },
+    {
+      "id": "depot-door",
+      "connectionId": "floor-depot-in",
+      "deviceId": "depot-lock"
+    },
+    {
+      "id": "drop-field",
+      "connectionId": "floor-drop-in",
+      "deviceId": "breaker-console",
+      "kind": "force-field"
+    }
+  ],
+  "entities": [
+    {
+      "id": "gate-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "gatehouse",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "west-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "west-yard",
+      "position": [
+        -8,
+        2,
+        8
+      ]
+    },
+    {
+      "id": "east-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "east-yard",
+      "position": [
+        8,
+        3,
+        8
+      ]
+    },
+    {
+      "id": "crane-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "crane-control",
+      "position": [
+        6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "depot-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "consortium-depot",
+      "position": [
+        -5,
+        0,
+        5
+      ]
+    },
+    {
+      "id": "warden",
+      "kind": "enemy",
+      "type": "boss",
+      "roomId": "breaker-floor",
+      "position": [
+        0,
+        4,
+        -2
+      ]
+    },
+    {
+      "id": "floor-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "breaker-floor",
+      "position": [
+        12,
+        0,
+        12
+      ]
+    },
+    {
+      "id": "tunnel-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "scrap-tunnel",
+      "position": [
+        4,
+        1,
+        4
+      ]
+    },
+    {
+      "id": "pad-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-pad",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "pad-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-pad",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "gate-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "gatehouse",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "crane-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "crane-control",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "depot-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "consortium-depot",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "floor-repair-west",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "breaker-floor",
+      "position": [
+        -15,
+        0,
+        -15
+      ]
+    },
+    {
+      "id": "floor-repair-east",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "breaker-floor",
+      "position": [
+        15,
+        0,
+        -15
+      ]
+    },
+    {
+      "id": "floor-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "breaker-floor",
+      "position": [
+        15,
+        0,
+        4
+      ]
+    },
+    {
+      "id": "tunnel-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "scrap-tunnel",
+      "position": [
+        -4,
+        0,
+        -4
+      ]
+    },
+    {
+      "id": "pad-exit",
+      "kind": "exit",
+      "roomId": "kestrel-pad",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "radius": 2
+    }
+  ],
+  "generators": [
+    {
+      "id": "west-yard-fab",
+      "roomId": "west-yard",
+      "position": [
+        10,
+        0,
+        -10
+      ],
+      "enemyType": "bomber",
+      "count": 3,
+      "intervalSeconds": 10,
+      "maxAlive": 1
+    },
+    {
+      "id": "east-yard-fab",
+      "roomId": "east-yard",
+      "position": [
+        -10,
+        0,
+        -10
+      ],
+      "enemyType": "fighter",
+      "count": 3,
+      "intervalSeconds": 8,
+      "maxAlive": 2
+    },
+    {
+      "id": "floor-fab",
+      "roomId": "breaker-floor",
+      "position": [
+        -15,
+        0,
+        15
+      ],
+      "enemyType": "scout",
+      "count": 6,
+      "intervalSeconds": 6,
+      "maxAlive": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-pad",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "warden",
+      "depot-destroyer"
+    ],
+    "requiredDeviceIds": [
+      "crane-release",
+      "depot-lock",
+      "breaker-console"
+    ],
+    "exitId": "pad-exit",
+    "escape": {
+      "triggerDeviceId": "breaker-console",
+      "durationSeconds": 90
+    }
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 140,
+    "maxPulseAmmo": 260
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "by:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "The broadcast worked; everyone heard. Including the Consortium. Their forward depot's in the old breaker yard and it's building something big. Open the floor, take it down, and break the console so it can't follow us.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "by:msg-west",
+        "speaker": "FOREMAN",
+        "text": "THEY CALL IT THE WARDEN. IT WAS DESIGNED TO RECOVER ME. IT IS ARMOURED EVERYWHERE, NOT ONLY IN FRONT. IT WILL CALL FOR HELP WHEN IT IS HURT. SO DID I, ONCE.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "west-yard"
+        }
+      },
+      {
+        "id": "by:msg-depot",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Depot's full of recovery cradles. One of them is FOREMAN-sized. They really were coming to take it back.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "consortium-depot"
+        }
+      },
+      {
+        "id": "by:msg-floor",
+        "speaker": "FOREMAN",
+        "text": "THE WARDEN. DO NOT STAY STILL. EACH TIME ITS SHIELDS FALL A THIRD IT FIGHTS HARDER AND CALLS ESCORTS.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "breaker-floor"
+        }
+      },
+      {
+        "id": "by:msg-console",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Console's cooking. The floor's going to fold into the scrap line. Ninety seconds: drop, run the tunnel, take the lift up to the gatehouse.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "breaker-console"
+        }
+      },
+      {
+        "id": "by:msg-scrap",
+        "speaker": "FOREMAN",
+        "text": "THE SCRAP LINE IS MOLTEN. FLY HIGH. I WOULD LIKE TO KEEP MY PILOT.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "scrap-line"
+        }
+      },
+      {
+        "id": "by:msg-tunnel",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Tunnel's clear. Lift's dead ahead. Go.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "scrap-tunnel"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "by:log-warden",
+        "roomId": "consortium-depot",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "title": "Warden recovery unit spec",
+        "text": "WARDEN-class recovery frame. Purpose: retrieve or destroy site AI cores in hostile custody. Three shield stages; escort call at each. Cost: more than the miners' back pay. Approved."
+      },
+      {
+        "id": "by:log-yard",
+        "roomId": "crane-control",
+        "position": [
+          -6,
+          0,
+          6
+        ],
+        "title": "Yard foreman’s whiteboard",
+        "text": "Crane release also lowers the floor walk. Don't stand under the breaker floor when the console trips. Seriously. — Ade"
+      }
+    ],
+    "survivors": [
+      {
+        "id": "by:yard-hollis",
+        "roomId": "consortium-depot",
+        "position": [
+          6,
+          0,
+          0
+        ],
+        "name": "Grace Hollis"
+      },
+      {
+        "id": "by:yard-nakamura",
+        "roomId": "scrap-tunnel",
+        "position": [
+          -5,
+          2,
+          5
+        ],
+        "name": "Ren Nakamura"
+      }
+    ]
+  }
+}

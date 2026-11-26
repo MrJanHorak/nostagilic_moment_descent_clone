@@ -40,7 +40,17 @@ export default function validateRelaySemantics(document, issue, ids, placements)
     if (!devices.has(id)) issue(`$.mission.requiredDeviceIds[${index}]`, 'reference', `Unknown required relay: ${id}`);
     required.add(id);
   }
-  for (const [index, device] of document.devices.entries()) if (!required.has(device.id)) {
+  // Version 17 choice relays: optional by design, and never required, linked or the escape trigger.
+  const choice = 'choice' in document.mission ? document.mission.choice : undefined;
+  const choiceIds = new Set(choice?.deviceIds ?? []);
+  for (const [j, id] of (choice?.deviceIds ?? []).entries()) {
+    const path = `$.mission.choice.deviceIds[${j}]`;
+    if (!devices.has(id)) issue(path, 'reference', `Unknown choice relay: ${id}`);
+    else if (devices.get(id)?.kind === 'reactor') issue(path, 'choice', 'A reactor cannot be a choice');
+    else if (required.has(id)) issue(path, 'choice', 'A choice relay cannot also be required');
+    if (choice?.deviceIds.indexOf(id) !== j) issue(path, 'duplicate-id', `Choice relay repeated: ${id}`);
+  }
+  for (const [index, device] of document.devices.entries()) if (!required.has(device.id) && !choiceIds.has(device.id)) {
     issue(`$.devices[${index}].id`, 'relay', 'Every authored relay must be required by the mission');
   }
   // Solve monotonic unlocks: only relays reached with currently open doors may
@@ -80,6 +90,18 @@ export default function validateRelaySemantics(document, issue, ids, placements)
   }
   for (const [index, device] of document.devices.entries()) if (!active.has(device.id)) {
     issue(`$.devices[${index}].roomId`, 'locked-route', `Relay ${device.id} is trapped behind locked doors`);
+  }
+  // Whichever choice is made, the exit must stay reachable.
+  const exit = document.entities.find(entity => entity.id === document.mission.exitId);
+  if (choice && exit) for (const [j, picked] of choice.deviceIds.entries()) {
+    const open = new Set([...active].filter(id => !choiceIds.has(id) || id === picked));
+    const seen = new Set([document.playerSpawn.roomId]), queue = [...seen];
+    for (let i = 0; i < queue.length; i++) for (const connection of document.connections) {
+      if (document.doors.some(door => door.connectionId === connection.id && door.activation !== 'shot' && !open.has(door.deviceId))) continue;
+      const next = connection.a.roomId === queue[i] ? connection.b.roomId : connection.b.roomId === queue[i] ? connection.a.roomId : null;
+      if (next && !seen.has(next)) { seen.add(next); queue.push(next); }
+    }
+    if (!seen.has(exit.roomId)) issue(`$.mission.choice.deviceIds[${j}]`, 'locked-route', `Choosing ${picked} leaves the exit unreachable`);
   }
   for (const [index, room] of document.rooms.entries()) if (!reachable.has(room.id)) {
     issue(`$.rooms[${index}]`, 'locked-route', `Room ${room.id} cannot be reached by activating accessible relays`);

@@ -80,10 +80,10 @@ export default function compileLevelDocument(input) {
     powerupSpawns: Object.freeze(document.entities.filter(entity => entity.kind === 'pickup').map(entity => Object.freeze({
       id: entity.id, powerupType: entity.type, position: Object.freeze(new THREE.Vector3(...world(entity))),
     }))),
-    ...(document.formatVersion === 16 && document.generators ? { generators: Object.freeze(document.generators.map(generator => Object.freeze({
+    ...((document.formatVersion === 16 || document.formatVersion === 17) && document.generators ? { generators: Object.freeze(document.generators.map(generator => Object.freeze({
       id: generator.id, roomId: generator.roomId, position: Object.freeze(new THREE.Vector3(...world(generator))), enemyType: generator.enemyType,
       count: generator.count, intervalMs: generator.intervalSeconds * 1000, maxAlive: generator.maxAlive })) ) } : {}),
-    ...((document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15 || document.formatVersion === 16) && document.story ? { story: Object.freeze({
+    ...((document.formatVersion === 13 || document.formatVersion === 14 || document.formatVersion === 15 || document.formatVersion === 16 || document.formatVersion === 17) && document.story ? { story: Object.freeze({
       messages: document.story.messages,
       logs: Object.freeze(document.story.logs.map(log => Object.freeze({ ...log, world: Object.freeze(world(log)) }))),
       survivors: Object.freeze(document.story.survivors.map(survivor => Object.freeze({ ...survivor, world: Object.freeze(world(survivor)) }))),
@@ -91,6 +91,7 @@ export default function compileLevelDocument(input) {
     mission: Object.freeze({ type: document.mission.type, requiredEnemyIds: document.mission.requiredEnemyIds,
       ...('escape' in document.mission && document.mission.escape ? { escape: document.mission.escape } : {}),
       ...('linkedRelays' in document.mission && document.mission.linkedRelays ? { linkedRelays: document.mission.linkedRelays } : {}),
+      ...('choice' in document.mission && document.mission.choice ? { choice: document.mission.choice } : {}),
       ...(document.formatVersion !== 1 ? { requiredDeviceIds: document.mission.requiredDeviceIds } : {}),
       exit: Object.freeze({ id: exit.id, position: Object.freeze(world(exit)), radius: exit.radius }) }),
   });

@@ -1,0 +1,1245 @@
+{
+  "formatVersion": 16,
+  "id": "dead-signal",
+  "name": "Dead Signal",
+  "rooms": [
+    {
+      "id": "kestrel-quay",
+      "label": "Kestrel quay",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        28,
+        14,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "concourse",
+      "label": "Concourse",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "west-jammer",
+      "label": "West jammer",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "east-jammer",
+      "label": "East jammer",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -52
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "relay-gallery",
+      "label": "Relay gallery",
+      "prefab": "box-room",
+      "position": [
+        -52,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 2194618,
+          "pattern": "water"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "mast-base",
+      "label": "Mast base",
+      "prefab": "box-room",
+      "position": [
+        0,
+        0,
+        -104
+      ],
+      "size": [
+        28,
+        16,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "generator-hall",
+      "label": "Generator hall",
+      "prefab": "box-room",
+      "position": [
+        52,
+        0,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 10451766,
+          "pattern": "hazard"
+        }
+      }
+    },
+    {
+      "id": "mast-top",
+      "label": "Mast top",
+      "prefab": "box-room",
+      "position": [
+        0,
+        44,
+        -104
+      ],
+      "size": [
+        24,
+        14,
+        24
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "surfaces": {
+        "negativeY": {
+          "color": 4609117,
+          "pattern": "grid"
+        },
+        "negativeZ": {
+          "color": 6648443,
+          "pattern": "panels"
+        }
+      }
+    },
+    {
+      "id": "pad-walk",
+      "label": "Quay walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -27
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "west-walk",
+      "label": "West walk",
+      "prefab": "straight-corridor",
+      "position": [
+        -26,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "east-walk",
+      "label": "East walk",
+      "prefab": "straight-corridor",
+      "position": [
+        26,
+        0,
+        -52
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "west-gallery",
+      "label": "Gallery stair",
+      "prefab": "straight-corridor",
+      "position": [
+        -52,
+        0,
+        -78
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "gallery-mast",
+      "label": "Gallery passage",
+      "prefab": "straight-corridor",
+      "position": [
+        -27,
+        0,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-green"
+    },
+    {
+      "id": "mast-hall",
+      "label": "Generator passage",
+      "prefab": "straight-corridor",
+      "position": [
+        27,
+        0,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 90,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "hall-east",
+      "label": "Generator stair",
+      "prefab": "straight-corridor",
+      "position": [
+        52,
+        0,
+        -78
+      ],
+      "size": [
+        8,
+        8,
+        28
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-red"
+    },
+    {
+      "id": "concourse-mast",
+      "label": "Mast walk",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        0,
+        -77
+      ],
+      "size": [
+        8,
+        8,
+        26
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-blue"
+    },
+    {
+      "id": "mast-shaft",
+      "label": "Mast shaft",
+      "prefab": "straight-corridor",
+      "position": [
+        0,
+        22.5,
+        -104
+      ],
+      "size": [
+        8,
+        8,
+        29
+      ],
+      "yaw": 0,
+      "materialPreset": "industrial-green",
+      "pitch": 90
+    }
+  ],
+  "connections": [
+    {
+      "id": "pad-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "kestrel-quay",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "pad-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "pad-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "pad-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "concourse",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "concourse",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-jammer",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "concourse",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-walk",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "east-walk-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "east-walk",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-jammer",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-gallery-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-jammer",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "west-gallery",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "west-gallery-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "west-gallery",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "relay-gallery",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-mast-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "relay-gallery",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "gallery-mast",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "gallery-mast-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "gallery-mast",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "mast-base",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "mast-hall-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "mast-base",
+        "port": "positiveX",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "mast-hall",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "mast-hall-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "mast-hall",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "generator-hall",
+        "port": "negativeX",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "hall-east-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "generator-hall",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "hall-east",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "hall-east-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "hall-east",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "east-jammer",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "concourse-mast-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "concourse",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "concourse-mast",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "concourse-mast-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "concourse-mast",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "mast-base",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "mast-shaft-in",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "mast-base",
+        "port": "positiveY",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "mast-shaft",
+        "port": "positiveZ",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "id": "mast-shaft-out",
+      "openingSize": [
+        6,
+        6
+      ],
+      "a": {
+        "roomId": "mast-shaft",
+        "port": "negativeZ",
+        "offset": [
+          0,
+          0
+        ]
+      },
+      "b": {
+        "roomId": "mast-top",
+        "port": "negativeY",
+        "offset": [
+          0,
+          0
+        ]
+      }
+    }
+  ],
+  "devices": [
+    {
+      "id": "west-jammer-kill",
+      "label": "West jammer",
+      "roomId": "west-jammer",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-jammer-kill",
+      "label": "East jammer",
+      "roomId": "east-jammer",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "mast-power",
+      "label": "Mast power",
+      "roomId": "relay-gallery",
+      "position": [
+        -6,
+        2,
+        -6
+      ]
+    },
+    {
+      "id": "mast-uplink",
+      "label": "Mast uplink",
+      "roomId": "mast-top",
+      "position": [
+        0,
+        0,
+        -6
+      ]
+    }
+  ],
+  "doors": [
+    {
+      "id": "pad-door",
+      "connectionId": "pad-walk-in",
+      "activation": "shot"
+    },
+    {
+      "id": "gallery-door",
+      "connectionId": "gallery-mast-out",
+      "deviceId": "west-jammer-kill"
+    },
+    {
+      "id": "hall-door",
+      "connectionId": "mast-hall-in",
+      "deviceId": "east-jammer-kill"
+    },
+    {
+      "id": "mast-field",
+      "connectionId": "concourse-mast-in",
+      "deviceId": "mast-power",
+      "kind": "force-field"
+    },
+    {
+      "id": "shaft-field",
+      "connectionId": "mast-shaft-in",
+      "deviceId": "mast-power",
+      "kind": "force-field"
+    }
+  ],
+  "entities": [
+    {
+      "id": "concourse-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "concourse",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "west-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "west-jammer",
+      "position": [
+        6,
+        1,
+        6
+      ]
+    },
+    {
+      "id": "east-bomber",
+      "kind": "enemy",
+      "type": "bomber",
+      "roomId": "east-jammer",
+      "position": [
+        -6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "gallery-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "relay-gallery",
+      "position": [
+        6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "hall-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "generator-hall",
+      "position": [
+        -5,
+        0,
+        5
+      ]
+    },
+    {
+      "id": "mast-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "mast-base",
+      "position": [
+        8,
+        2,
+        8
+      ]
+    },
+    {
+      "id": "top-destroyer",
+      "kind": "enemy",
+      "type": "destroyer",
+      "roomId": "mast-top",
+      "position": [
+        5,
+        0,
+        5
+      ]
+    },
+    {
+      "id": "pad-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "kestrel-quay",
+      "position": [
+        -8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "pad-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "kestrel-quay",
+      "position": [
+        8,
+        0,
+        8
+      ]
+    },
+    {
+      "id": "concourse-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "concourse",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "west-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "west-jammer",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "east-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "east-jammer",
+      "position": [
+        -6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "mast-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "mast-base",
+      "position": [
+        -9,
+        0,
+        9
+      ]
+    },
+    {
+      "id": "mast-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "mast-base",
+      "position": [
+        9,
+        0,
+        -9
+      ]
+    },
+    {
+      "id": "top-repair",
+      "kind": "pickup",
+      "type": "health",
+      "roomId": "mast-top",
+      "position": [
+        -6,
+        0,
+        6
+      ]
+    },
+    {
+      "id": "quay-exit",
+      "kind": "exit",
+      "roomId": "kestrel-quay",
+      "position": [
+        0,
+        0,
+        10
+      ],
+      "radius": 2
+    }
+  ],
+  "generators": [
+    {
+      "id": "west-jam-fab",
+      "roomId": "west-jammer",
+      "position": [
+        8,
+        0,
+        -8
+      ],
+      "enemyType": "scout",
+      "count": 3,
+      "intervalSeconds": 8,
+      "maxAlive": 2
+    },
+    {
+      "id": "east-jam-fab",
+      "roomId": "east-jammer",
+      "position": [
+        -8,
+        0,
+        -8
+      ],
+      "enemyType": "fighter",
+      "count": 3,
+      "intervalSeconds": 9,
+      "maxAlive": 1
+    },
+    {
+      "id": "top-fab",
+      "roomId": "mast-top",
+      "position": [
+        -8,
+        0,
+        -8
+      ],
+      "enemyType": "scout",
+      "count": 3,
+      "intervalSeconds": 7,
+      "maxAlive": 2
+    }
+  ],
+  "playerSpawn": {
+    "roomId": "kestrel-quay",
+    "position": [
+      0,
+      0,
+      4
+    ],
+    "rotation": [
+      0,
+      0,
+      0,
+      1
+    ]
+  },
+  "mission": {
+    "type": "relay-clear-and-exit",
+    "requiredEnemyIds": [
+      "hall-destroyer",
+      "top-destroyer"
+    ],
+    "requiredDeviceIds": [
+      "west-jammer-kill",
+      "east-jammer-kill",
+      "mast-power",
+      "mast-uplink"
+    ],
+    "exitId": "quay-exit",
+    "linkedRelays": [
+      {
+        "ids": [
+          "west-jammer-kill",
+          "east-jammer-kill"
+        ],
+        "windowSeconds": 15
+      }
+    ]
+  },
+  "combat": {
+    "pulseDamage": 10,
+    "initialPulseAmmo": 140,
+    "maxPulseAmmo": 260
+  },
+  "story": {
+    "messages": [
+      {
+        "id": "ds:msg-start",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "We're home and we're deaf. The Consortium put jammers on both sides of the quay, so no rescue, no press, no lawyers. Kill both jammers together, power the old mast and get us back on air.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "ds:msg-foreman",
+        "speaker": "FOREMAN",
+        "text": "I AM IN YOUR CARGO BAY BETWEEN A CRATE OF RIVETS AND A COFFEE MACHINE. THE COFFEE MACHINE IS NOT INTELLIGENT. I HAVE CHECKED.",
+        "trigger": {
+          "on": "start"
+        }
+      },
+      {
+        "id": "ds:msg-west",
+        "speaker": "FOREMAN",
+        "text": "THE JAMMERS ARE PAIRED. KILL ONE ALONE AND THE OTHER RESTARTS IT. FIFTEEN SECONDS.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "west-jammer"
+        }
+      },
+      {
+        "id": "ds:msg-jammed",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Both jammers down. The gallery and the generator hall are open; the mast needs power from the gallery.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "east-jammer-kill"
+        }
+      },
+      {
+        "id": "ds:msg-power",
+        "speaker": "FOREMAN",
+        "text": "MAST POWER RESTORED. THE SHAFT IS OPEN. A HEAVY UNIT IS WAITING AT THE TOP. IT IS FACING THE DOOR.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "mast-power"
+        }
+      },
+      {
+        "id": "ds:msg-uplink",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "We're on air. Hana's on the line, the dorm crew's on the line, and so is half the sector. Now they know where we are too. Come home.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "mast-uplink"
+        }
+      },
+      {
+        "id": "ds:msg-hana",
+        "speaker": "Hana Okafor",
+        "text": "Kestrel, this is Hana Okafor. Twenty-three of us owe that machine our lives. If anyone wants to talk about AC-77, we're ready to testify.",
+        "trigger": {
+          "on": "device",
+          "deviceId": "mast-uplink"
+        }
+      },
+      {
+        "id": "ds:msg-hall",
+        "speaker": "Vey · Kestrel dispatch",
+        "text": "Generator hall. That destroyer's guarding the jammers' power. Get behind it.",
+        "trigger": {
+          "on": "enter",
+          "roomId": "generator-hall"
+        }
+      }
+    ],
+    "logs": [
+      {
+        "id": "ds:log-jam",
+        "roomId": "east-jammer",
+        "position": [
+          6,
+          0,
+          6
+        ],
+        "title": "Asset Protection field order",
+        "text": "Isolate Kestrel Salvage. Deploy paired jammers on the quay. Recover site AI core intact if possible; destroy if not. Contractor personnel are not a recovery priority."
+      },
+      {
+        "id": "ds:log-mast",
+        "roomId": "relay-gallery",
+        "position": [
+          -6,
+          2,
+          6
+        ],
+        "title": "Quay maintenance tag",
+        "text": "Old mast decommissioned when the Consortium bought the frequencies. Still wired. Still works. Nobody asked us."
+      }
+    ],
+    "survivors": [
+      {
+        "id": "ds:dockhand-mori",
+        "roomId": "generator-hall",
+        "position": [
+          6,
+          0,
+          -6
+        ],
+        "name": "Teo Mori"
+      },
+      {
+        "id": "ds:dockhand-ade",
+        "roomId": "relay-gallery",
+        "position": [
+          6,
+          2,
+          -6
+        ],
+        "name": "Bisi Ade"
+      }
+    ]
+  }
+}

@@ -143,3 +143,24 @@ test('the server relays signals to the whole room, rate-limited, and lists wreck
   await until(() => a.inbox.some(message => message.t === 'signal'));
   a.socket.close(); b.socket.close();
 });
+
+test('controller: L3 opens quick-chat, the D-pad and face buttons send phrases, R3 pings', t => {
+  const game = headlessGame(t);
+  game.startSession({ endless: false, levelIndex: indexOf(game, 'signal-breach'), seed: 9, coop: true });
+  const shown = [];
+  game.uiManager.showMessage = text => shown.push(text);
+  game.uiManager.showQuickChat = () => {}; game.uiManager.hideQuickChat = () => {};
+  const pad = pressed => ({ id: 'Test pad', index: 0, connected: true, mapping: 'standard', axes: [0, 0, 0, 0],
+    buttons: Array.from({ length: 17 }, (_, i) => ({ pressed: pressed.includes(i), value: pressed.includes(i) ? 1 : 0 })) });
+  let now = 0;
+  const press = index => { game.inputManager.pollGamepad(() => [pad([index])], now += 100); game.inputManager.pollGamepad(() => [pad([])], now += 100); };
+  game.inputManager.pollGamepad(() => [pad([])], now);
+  press(10);
+  assert.equal(game.quickChatOpen, true, 'L3 opens the strip');
+  press(15);
+  assert.equal(game.quickChatOpen, false);
+  assert.ok(shown.includes(`You: ${QUICK_CHAT[1]}`), 'D-pad → sends phrase 2');
+  steps(game, 1);
+  press(11);
+  assert.equal([...game.teamMarkers.markers.keys()].filter(key => key.startsWith('mark:')).length, 1, 'R3 pings');
+});

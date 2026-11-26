@@ -1,7 +1,8 @@
 import { formatMissionTime } from '../core/CampaignProgress.js';
 import { DIFFICULTIES, DIFFICULTY_ORDER } from '../core/Difficulty.js';
+import { MEDAL_ICONS } from '../core/MissionRating.js';
 
-/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, hardestDifficulty?: import('../core/Difficulty.js').DifficultyId, logIds?: readonly string[], mostRescued?: number }} MissionProgress */
+/** @typedef {{ completions: number, bestScore: number, bestTimeMs: number, hardestDifficulty?: import('../core/Difficulty.js').DifficultyId, logIds?: readonly string[], mostRescued?: number, bestMedal?: import('../core/MissionRating.js').Medal }} MissionProgress */
 /** @param {readonly {name: string, id?: string, campaignOrder?: number, briefing?: string, story?: { logs: readonly { id: string, title: string, text: string }[], survivors: readonly unknown[] }}[]} levels
  * @param {(index: number) => void} choose @param {() => void} back
  * @param {{userLevels?: () => void, hiddenIndex?: number | null,
@@ -79,7 +80,7 @@ export default function createMissionSelect(levels, choose, back, options = {}) 
       if (record) {
         const status = document.createElement('div'); status.className = 'mission-status';
         const hardest = record.hardestDifficulty && record.hardestDifficulty !== 'pilot' ? ` on ${DIFFICULTIES[record.hardestDifficulty].label}` : '';
-        status.textContent = `✓ COMPLETED${hardest}${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
+        status.textContent = `${record.bestMedal ? `${MEDAL_ICONS[record.bestMedal]} ` : ''}✓ COMPLETED${hardest}${record.completions > 1 ? ` ×${record.completions}` : ''} · Best time ${formatMissionTime(record.bestTimeMs)} · Best score ${record.bestScore}`;
         button.setAttribute('aria-description', 'Completed');
         const survivors = level.story?.survivors.length ?? 0;
         if (survivors) status.textContent += ` · Rescued ${record.mostRescued ?? 0}/${survivors}`;

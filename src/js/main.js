@@ -23,6 +23,9 @@ import AnarchyMatch from './core/AnarchyMatch.js';
 import CoopMatch, { PER_PILOT_PICKUPS, enemyToughness } from './core/CoopMatch.js';
 import { SOLO_LINK_SCALE } from './core/RelayController.js';
 import RobotGenerators from './entities/RobotGenerators.js';
+import { parTimeMs, rateMission } from './core/MissionRating.js';
+import { FINAL_CHOICE, campaignDocuments, campaignEnding } from './core/levels/Campaign.js';
+import { createGameServerApi, leaderboardLines, savedServer } from './net/GameServerApi.js';
 import { QUICK_CHAT, SignalLimiter, aimPoint, cleanSignal } from './core/TeamSignals.js';
 import TeamMarkers from './ui/TeamMarkers.js';
 import OnlineMatch, { describeNetError } from './net/OnlineMatch.js';
@@ -252,6 +255,7 @@ export default class Game {
         this.gameState.pulseAmmoCapacity = ammo.capacity;
       }
       this.lastStorySummary = null;
+      this.lastRating = null;
       this.story = !endless && level.story && level.sourceDocument
         ? new StoryController(level.story, level.sourceDocument, this.scene, event => this.uiManager.showStoryEvent?.(event)) : null;
       // Robot generators (v16) and heavy robots' feedback.
@@ -437,6 +441,12 @@ export default class Game {
     // Survivors count only on extraction; recovered logs add a small bonus.
     this.lastStorySummary = this.story?.summary() ?? null;
     if (this.lastStorySummary) this.gameState.score += this.lastStorySummary.rescued * 250 + this.lastStorySummary.logsFound * 100;
+    // Medal: time against par, miners rescued and logs recovered.
+    const rated = this.levelManager.currentLevel;
+    const parMs = rated ? parTimeMs(rated) : 0;
+    this.lastRating = rated ? { ...rateMission({ timeMs: this.session.timeMs, parMs, rescued: this.lastStorySummary?.rescued ?? 0,
+      survivorsTotal: this.lastStorySummary?.survivorsTotal ?? 0, logsFound: this.lastStorySummary?.logsFound ?? 0, logsTotal: this.lastStorySummary?.logsTotal ?? 0 }),
+      parMs, timeMs: this.session.timeMs, missionId: rated.id ?? null } : null;
     const progress = this.recordCampaignProgress();
     const campaignProgress = this.recordUserCampaignProgress();
     this.inputManager.clearKeys();
@@ -444,8 +454,40 @@ export default class Game {
     this.audioManager.stopAllSounds();
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.updateHUD();
-    this.uiManager.showCompletion(this.userCampaign ? this.nextUserCampaignIndex() !== null : this.nextMissionIndex() !== -1, progress, campaignProgress);
+    const showResults = () => {
+      this.uiManager.showCompletion(this.userCampaign ? this.nextUserCampaignIndex() !== null : this.nextMissionIndex() !== -1, progress, campaignProgress);
+      this.submitToLeaderboard(rated);
+    };
+    this.lastEnding = progress ? this.campaignEndingFor(rated) : null;
+    if (this.lastEnding && this.uiManager.showEpilogue) this.uiManager.showEpilogue(this.lastEnding, showResults);
+    else showResults();
     return true;
+  }
+
+  /** The epilogue after the campaign's final mission: the choice made at the deep
+   * relay and the miners rescued across every campaign mission (best run of each).
+   * @param {any} level @returns {(ReturnType<typeof campaignEnding> & {choice: 'free' | 'destroy', rescued: number, total: number}) | null} */
+  campaignEndingFor(level) {
+    if (level?.id !== FINAL_CHOICE.missionId) return null;
+    const chosen = this.levelManager.interaction?.chosenId;
+    const choice = chosen === FINAL_CHOICE.free ? 'free' : chosen === FINAL_CHOICE.destroy ? 'destroy' : null;
+    if (!choice) return null;
+    const total = campaignDocuments.reduce((sum, document) => sum + (/** @type {any} */ (document).story?.survivors?.length ?? 0), 0);
+    const rescued = campaignDocuments.reduce((sum, document) => sum + (this.campaignProgress.get(document.id)?.mostRescued ?? 0), 0);
+    return { ...campaignEnding(choice, rescued, total), choice, rescued, total };
+  }
+
+  /** Post an authored mission's time to the game server's leaderboard, when a
+   * server and pilot name are known (both come from the online lobby).
+   * @param {any} level */
+  submitToLeaderboard(level) {
+    if (!level?.id || !(level.campaignOrder || level.team) || this.currentLevelIndex === this.importedLevelIndex || !this.lastRating) return;
+    const api = createGameServerApi();
+    const name = savedServer().name;
+    if (!api.available || !name) return;
+    const screen = this.uiManager.resultScreen;
+    api.submitScore({ mission: level.id, name, timeMs: this.session.timeMs, score: this.gameState.score, medal: this.lastRating.medal, difficulty: this.gameState.difficulty.id })
+      .then(result => { if (this.uiManager.resultScreen === screen) this.uiManager.appendResultLines(leaderboardLines(result, name)); });
   }
 
   /** Show a user campaign mission's briefing; launching starts it from My Levels.
@@ -494,7 +536,7 @@ export default class Game {
     if (!level?.campaignOrder || !level.id || this.currentLevelIndex === this.importedLevelIndex) return null;
     const result = this.campaignProgress.recordCompletion({ id: level.id, campaignOrder: level.campaignOrder },
       { score: this.gameState.score, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty.id,
-        rescued: this.lastStorySummary?.rescued ?? 0, logIds: this.lastStorySummary?.logIds ?? [] });
+        rescued: this.lastStorySummary?.rescued ?? 0, logIds: this.lastStorySummary?.logIds ?? [], ...(this.lastRating ? { medal: this.lastRating.medal } : {}) });
     if (!result) return null;
     const campaign = this.campaignMissions();
     return { ...result, timeMs: this.session.timeMs, difficulty: this.gameState.difficulty, saved: this.campaignProgress.saveStatus === 'saved',

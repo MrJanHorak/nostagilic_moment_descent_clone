@@ -3,7 +3,7 @@ import SettingsDialog from './SettingsDialog.js';
 import MineGuide from '../core/levels/document/MineGuide.js';
 import createMissionSelect from './MissionSelect.js';
 import createUserLevels from './UserLevels.js';
-import createOnlineLobby, { inviteLink, parseInvite } from './OnlineLobby.js';
+import { inviteLink, parseInvite } from './OnlineLobby.js';
 import UserLevelLibrary from '../core/UserLevelLibrary.js';
 import UserCampaignLibrary from '../core/UserCampaignLibrary.js';
 import { missionLabel } from './UserCampaigns.js';
@@ -14,6 +14,7 @@ import { keyLabel } from '../core/ControlBindings.js';
 import CommsPanel from './CommsPanel.js';
 import MissionLogPanel from './MissionLogPanel.js';
 import { optionalSummary } from '../core/MissionStatus.js';
+import { MEDAL_ICONS, MEDAL_LABELS } from '../core/MissionRating.js';
 
 /** How long each attempt shows control hints in the bottom guide. */
 const GUIDE_HINT_MS = 15000;
@@ -1399,6 +1400,11 @@ class UIManager {
       lines.push([story.survivorsTotal ? `Survivors rescued: ${story.rescued}/${story.survivorsTotal}` : '',
         story.logsTotal ? `Data logs: ${story.logsFound}/${story.logsTotal}` : ''].filter(Boolean).join(' · '));
     }
+    const rating = this.game?.lastRating;
+    if (rating) {
+      lines.push(`${MEDAL_ICONS[rating.medal]} ${MEDAL_LABELS[rating.medal].toUpperCase()} MEDAL · Par ${formatMissionTime(rating.parMs)}${progress?.newBestMedal ? ' · NEW BEST MEDAL' : ''}`);
+      if (rating.next) lines.push(rating.next);
+    }
     if (progress) {
       const record = progress.record;
       lines.push(`Difficulty: ${progress.difficulty.label}`);
@@ -1416,6 +1422,24 @@ class UIManager {
       if (!campaignProgress.saved) lines.push('Browser storage unavailable: campaign progress is kept for this visit only');
     }
     this.showResult('MISSION COMPLETE', lines.join('\n'), actions);
+  }
+
+  /** The campaign epilogue, before the mission results.
+   * @param {{title: string, text: string}} ending @param {() => void} next */
+  showEpilogue(ending, next) {
+    this.showResult(ending.title, ending.text, [['CONTINUE', next]]);
+    if (this.resultScreen) this.resultScreen.dataset.epilogue = 'true';
+    this.resultScreen?.querySelector('button')?.focus();
+  }
+
+  /** Add the server leaderboard under the result once it arrives. @param {string[]} lines */
+  appendResultLines(lines) {
+    if (!lines.length || !this.resultScreen) return;
+    const board = document.createElement('p');
+    board.className = 'result-leaderboard';
+    board.textContent = lines.join('\n');
+    Object.assign(board.style, { whiteSpace: 'pre-line', textAlign: 'center', margin: '0 16px', color: '#ffe08a', fontFamily: 'monospace' });
+    this.resultScreen.querySelector('p')?.after(board);
   }
 
   /** The guide bar during Anarchy: your frags, the leader, the clock and respawn.
@@ -1546,7 +1570,7 @@ class UIManager {
       background: '#001624e6', border: '1px solid #45e5ed', borderRadius: '6px', color: '#e3fbff', font: '14px Arial, sans-serif', lineHeight: '1.6', pointerEvents: 'none' });
     const title = document.createElement('strong'); title.textContent = 'QUICK-CHAT · press a number'; title.style.display = 'block';
     strip.append(title, ...phrases.map((phrase, index) => { const line = document.createElement('div'); line.textContent = `${index + 1}  ${phrase}`; return line; }));
-    const close = document.createElement('small'); close.textContent = `${this.boundKey('quickChat', 'KeyT')} closes`; close.style.color = '#9fc6d6';
+    const close = document.createElement('small'); close.textContent = `${this.boundKey('quickChat', 'KeyT')} or L3 closes · Controller: D-pad ↑→↓← then A B X Y = 1–8`; close.style.color = '#9fc6d6';
     strip.append(close);
     document.body.appendChild(strip);
     this.transientElements.add(strip);

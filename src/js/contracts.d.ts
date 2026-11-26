@@ -93,6 +93,8 @@ export interface MissionDefinition {
   readonly escape?: EscapeDefinition;
   /** Pairs of relays that count only when both are activated within a window (team missions). */
   readonly linkedRelays?: readonly { readonly ids: readonly [string, string]; readonly windowSeconds: number }[];
+  /** Version 17: relays of which only the first activated counts; the rest lock. */
+  readonly choice?: { readonly deviceIds: readonly string[] };
   readonly exit: { readonly id?: string; readonly position: readonly [number, number, number]; readonly radius: number };
 }
 

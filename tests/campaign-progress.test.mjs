@@ -15,6 +15,7 @@ const campaign = Object.freeze([
   { id: 'signal-breach', campaignOrder: 1 }, { id: 'vector-foundry', campaignOrder: 2 },
   { id: 'nightfall-reactor', campaignOrder: 3 }, { id: 'asterion-deepworks', campaignOrder: 4 }, { id: 'the-seal', campaignOrder: 5 },
   { id: 'witness', campaignOrder: 6 }, { id: 'fabricator', campaignOrder: 7 }, { id: 'moving-day', campaignOrder: 8 },
+  { id: 'dead-signal', campaignOrder: 9 }, { id: 'breaker-yard', campaignOrder: 10 }, { id: 'core-of-the-matter', campaignOrder: 11 },
 ]);
 
 test('built-in campaign missions have unique stable ids for saved progress', () => {
@@ -127,7 +128,7 @@ test('the game records only built-in campaign completions and continues at the n
   assert.equal(game.started.at(-1), 1, 'fresh progress starts Signal Breach');
 
   const recorded = game.recordCampaignProgress();
-  assert.deepEqual([recorded?.firstCompletion, recorded?.completed, recorded?.total, recorded?.saved, recorded?.timeMs], [true, 1, 8, true, 101_000]);
+  assert.deepEqual([recorded?.firstCompletion, recorded?.completed, recorded?.total, recorded?.saved, recorded?.timeMs], [true, 1, 11, true, 101_000]);
   assert.equal(recorded?.record.hardestDifficulty, 'veteran'); assert.equal(recorded?.difficulty, DIFFICULTIES.veteran);
   game.continueCampaign();
   assert.equal(game.started.at(-1), 2, 'continue resumes at Vector Foundry');
@@ -139,10 +140,10 @@ test('the game records only built-in campaign completions and continues at the n
   }
   assert.equal(game.campaignProgress.completedCount(game.campaignMissions()), 1);
 
-  for (const index of [2, 3, 4, 5, 6, 7, 8]) { game.currentLevelIndex = index; game.recordCampaignProgress(); }
+  for (const index of [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]) { game.currentLevelIndex = index; game.recordCampaignProgress(); }
   game.continueCampaign();
   assert.equal(game.started.at(-1), 1, 'a finished campaign replays from mission 1');
-  assert.equal(new CampaignProgress(() => storage).completedCount(game.campaignMissions()), 8);
+  assert.equal(new CampaignProgress(() => storage).completedCount(game.campaignMissions()), 11);
 
   assert.equal(game.resetCampaignProgress(), 'saved');
   game.continueCampaign();
