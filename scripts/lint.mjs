@@ -8,7 +8,7 @@ const config = JSON.parse(await readFile(new URL('../tsconfig.check.json', impor
 const sourceFiles = config.files.filter(file => file.endsWith('.js'));
 const eslint = new ESLint({ cwd: root });
 // Modules that import the whole game (main.js) are outside the type check but still linted, as is the game server.
-const extraFiles = ['src/js/net/HeadlessGame.js', 'src/js/net/MatchRoom.js', 'server/WebSocket.mjs', 'server/GameServer.mjs', 'server/index.mjs'];
+const extraFiles = ['src/js/net/HeadlessGame.js', 'src/js/net/MatchRoom.js', 'server/WebSocket.mjs', 'server/GameServer.mjs', 'server/HttpApi.mjs', 'server/index.mjs'];
 const results = await eslint.lintFiles([...sourceFiles, ...extraFiles, 'eslint.config.js', 'scripts/lint.mjs']);
 const formatter = await eslint.loadFormatter('stylish');
 const output = formatter.format(results);

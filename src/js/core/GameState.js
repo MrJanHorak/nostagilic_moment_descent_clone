@@ -16,6 +16,8 @@ export default class GameState {
     /** Snapshotted at mission start; Pilot leaves authored balance unchanged.
      * @type {import('./Difficulty.js').DifficultyTier} */
     this.difficulty = getDifficulty(undefined);
+    /** Hangar weapon capacitor for the local pilot (1 = stock). */
+    this.hangarPower = 1;
     /** Shared by all pilots. @type {number} */
     this.score = 0;
     /** @type {Record<import('../contracts.js').EnemyType, number>} */

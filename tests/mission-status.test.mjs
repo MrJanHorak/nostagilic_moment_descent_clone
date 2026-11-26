@@ -21,7 +21,7 @@ test('status lists required objectives with progress, then optional counts, time
   assert.deepEqual(status.required.map(item => [item.label, item.done]), [['Activate Signal uplink', false], ['Reach extraction', false]]);
   assert.match(status.required[1].detail, /Locked/);
   assert.deepEqual(status.optional, [
-    { label: 'Survivors aboard', count: 0, total: 2 }, { label: 'Data logs recovered', count: 1, total: 2 }, { label: 'Robots destroyed', count: 1, total: 2 }]);
+    { label: 'Survivors aboard', count: 0, total: 2 }, { label: 'Data logs recovered', count: 1, total: 2 }, { label: 'Robots destroyed', count: 1, total: 4 }]);
   assert.deepEqual([status.timeMs, status.difficulty, status.escapeMs, status.exitReady], [75_000, 'Veteran', null, false]);
   assert.equal(optionalSummary(status), 'Aboard 0/2 · Logs 1/2');
   mission.recordDeviceActivation('relay-signal', 1);

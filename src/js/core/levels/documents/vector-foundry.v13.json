@@ -318,6 +318,39 @@
       ]
     },
     {
+      "id": "works-scout-upper",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "upper-works",
+      "position": [
+        5,
+        0,
+        -5
+      ]
+    },
+    {
+      "id": "control-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "lift-control",
+      "position": [
+        0,
+        3,
+        -6
+      ]
+    },
+    {
+      "id": "works-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "upper-works",
+      "position": [
+        -6,
+        0,
+        5
+      ]
+    },
+    {
       "id": "exit",
       "kind": "exit",
       "roomId": "extraction",

@@ -140,7 +140,7 @@ One JSON text frame per message, each with a type field `t`.
 
 - Fixed November 25: lava and water now hurt every pilot on the server (Phase 4 per-pilot hazards); a lava death costs a frag.
 
-- No lag compensation: you hit what the server sees, so with high latency you must lead targets by your round trip. Other ships are drawn 100 ms in the past.
+- Lag compensation (since November 25): the server checks your shots against ships where you saw them, up to 250 ms in the past (your round trip plus the 100 ms interpolation delay). See [PHASE_6.md](PHASE_6.md#2-lag-compensation-srcjsnetlagcompensationjs).
 - The kill feed is a message line.
 - There is no room browser or public matchmaking; rooms are shared by code or invite link.
 - The hosted site needs a deployed server and `VITE_GAME_SERVER` set at build time before strangers can play without typing an address.

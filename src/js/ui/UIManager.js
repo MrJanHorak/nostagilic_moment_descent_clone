@@ -15,6 +15,9 @@ import CommsPanel from './CommsPanel.js';
 import MissionLogPanel from './MissionLogPanel.js';
 import { optionalSummary } from '../core/MissionStatus.js';
 import { MEDAL_ICONS, MEDAL_LABELS } from '../core/MissionRating.js';
+import { DailyRecords, dayKey } from '../core/DailyChallenge.js';
+import Hangar from '../core/Hangar.js';
+import openHangar from './HangarPanel.js';
 
 /** How long each attempt shows control hints in the bottom guide. */
 const GUIDE_HINT_MS = 15000;
@@ -662,11 +665,35 @@ class UIManager {
       Object.assign(myLevelsButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#dcf8ff', background: '#24485c', border: '1px solid #5e9cae', borderRadius: '5px', font: '16px system-ui', cursor: 'pointer' });
       myLevelsButton.onclick = () => this.game.showUserLevels();
       startScreen.firstElementChild.appendChild(myLevelsButton);
+      const hangarButton = document.createElement('button');
+      hangarButton.id = 'hangar-btn';
+      const hangarLabel = () => { hangarButton.textContent = `HANGAR · ${(this.game.hangar ??= new Hangar()).credits} CREDITS`; };
+      hangarLabel();
+      Object.assign(hangarButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#ffe7a8', background: '#3c2e10', border: '1px solid #b8914a', borderRadius: '5px', font: '16px system-ui', cursor: 'pointer' });
+      hangarButton.onclick = () => openHangar(this.game.hangar ??= new Hangar(), { onClose: () => { hangarLabel(); hangarButton.focus(); } });
+      startScreen.firstElementChild.appendChild(hangarButton);
       const onlineButton = document.createElement('button');
       onlineButton.id = 'play-online-btn'; onlineButton.textContent = 'PLAY ONLINE · ANARCHY & CO-OP';
       Object.assign(onlineButton.style, { display: 'block', margin: '14px auto', padding: '10px 20px', color: '#001018', background: '#38d0f0', border: '1px solid #8be8f0', borderRadius: '5px', font: 'bold 16px system-ui', cursor: 'pointer', letterSpacing: '1px' });
       onlineButton.onclick = () => this.game.showOnlineLobby();
       startScreen.firstElementChild.appendChild(onlineButton);
+      const daily = this.game.todaysChallenge?.();
+      if (daily) {
+        const dailyButton = document.createElement('button');
+        dailyButton.id = 'daily-challenge-btn';
+        const records = this.game.dailyRecords ??= new DailyRecords();
+        const today = records.get(daily.dayKey), streak = records.streak(daily.dayKey) || records.streak(dayKey(new Date(Date.parse(`${daily.dayKey}T00:00:00Z`) - 86_400_000)));
+        dailyButton.textContent = `DAILY CHALLENGE · ${daily.missionName} · ${daily.modifier.label}`;
+        dailyButton.title = `${daily.modifier.summary}. Same mission, seed and rules for everyone today (UTC).`;
+        Object.assign(dailyButton.style, { display: 'block', margin: '14px auto 4px', padding: '10px 20px', color: '#1a1000', background: '#ffcf5a', border: '1px solid #ffe7a8', borderRadius: '5px', font: 'bold 16px system-ui', cursor: 'pointer', letterSpacing: '1px' });
+        dailyButton.onclick = () => this.game.startDailyChallenge();
+        const dailyStatus = document.createElement('p');
+        dailyStatus.id = 'daily-challenge-status';
+        dailyStatus.textContent = [today ? `Best today ${formatMissionTime(today.timeMs)}${today.medal ? ` · ${MEDAL_ICONS[/** @type {'gold'} */ (today.medal)]}` : ''}` : 'Not flown today',
+          streak ? `Streak ${streak} day${streak === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+        Object.assign(dailyStatus.style, { margin: '0 auto 10px', textAlign: 'center', color: '#ffe7a8', font: '13px system-ui', position: 'relative', zIndex: '2' });
+        startScreen.firstElementChild.append(dailyButton, dailyStatus);
+      }
       const settingsButton = this.createSettingsButton();
       Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
       startScreen.querySelector('.title-container').appendChild(settingsButton);
@@ -1392,6 +1419,7 @@ class UIManager {
     if (this.game.online) { this.showOnlineMissionResult('TEAM EXTRACTED', 'Every living pilot made it out.'); return; }
     const actions = [];
     if (hasNext) actions.push(['NEXT MISSION', () => this.game.nextMission()]);
+    if (this.game?.lastCredits) actions.push(['HANGAR', () => openHangar(this.game.hangar)]);
     actions.push(['REPLAY MISSION', () => this.game.restartLevel()],
       campaignProgress ? ['MY LEVELS', () => this.game.showUserLevels()] : ['SELECT MISSION', () => this.game.showLevelSelection()]);
     const lines = [`Score: ${this.gameState.score} (includes 1,000 completion bonus)`];
@@ -1400,6 +1428,13 @@ class UIManager {
       lines.push([story.survivorsTotal ? `Survivors rescued: ${story.rescued}/${story.survivorsTotal}` : '',
         story.logsTotal ? `Data logs: ${story.logsFound}/${story.logsTotal}` : ''].filter(Boolean).join(' · '));
     }
+    const daily = this.game?.lastDaily;
+    if (daily) {
+      lines.unshift(`DAILY CHALLENGE · ${daily.challenge.dayKey} · ${daily.challenge.modifier.label}`);
+      lines.push(`Best today: ${formatMissionTime(daily.record.timeMs)}${daily.newBest ? ' · NEW DAILY BEST' : ''} · Runs today: ${daily.record.runs} · Streak: ${daily.streak} day${daily.streak === 1 ? '' : 's'}`);
+    }
+    const credits = this.game?.lastCredits;
+    if (credits) lines.push(`+${credits.earned} credits · ${credits.total} in the hangar`);
     const rating = this.game?.lastRating;
     if (rating) {
       lines.push(`${MEDAL_ICONS[rating.medal]} ${MEDAL_LABELS[rating.medal].toUpperCase()} MEDAL · Par ${formatMissionTime(rating.parMs)}${progress?.newBestMedal ? ' · NEW BEST MEDAL' : ''}`);

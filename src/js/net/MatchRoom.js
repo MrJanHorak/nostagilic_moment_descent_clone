@@ -1,12 +1,13 @@
 import createHeadlessGame, { disposeHeadlessGame } from './HeadlessGame.js';
 import { SignalLimiter } from '../core/TeamSignals.js';
+import LagHistory, { rewindFor } from './LagCompensation.js';
 import { MAX_COOP_PLAYERS, MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQuaternion, packVector } from './Protocol.js';
 
 /** Seconds between the end of a match and the automatic rematch. */
 export const REMATCH_DELAY_MS = 10000;
 const STEP = 1 / TICK_RATE;
 
-/** @typedef {{id: string, name: string, lastSeq: number, lastFireMs: number}} RoomPlayer */
+/** @typedef {{id: string, name: string, lastSeq: number, lastFireMs: number, rttMs: number | null}} RoomPlayer */
 /** @typedef {{t: 'shot', owner: string, weapon: string, p: number[], q: number[]} | {t: 'kill', victim: string, attacker: string | null}
  *  | {t: 'respawn', id: string} | {t: 'match-start', seed: number} | {t: 'match-over', winner: string | null}
  *  | {t: 'eshot', kind: string, p: number[], v: number[]} | {t: 'down', id: string} | {t: 'relay', id: string, by: string | null}
@@ -27,6 +28,11 @@ export default class MatchRoom {
     this.mapId = mapId ?? (mode === 'coop' ? DEFAULT_COOP_MAP : 'foundry-ring');
     this.game = createHeadlessGame();
     this.game.dedicated = true;
+    /** Recent positions for lag compensation. */
+    this.lagHistory = new LagHistory();
+    this.game.lagHistory = this.lagHistory;
+    /** Rewind pilots' shots to what they saw (off only for tests). */
+    this.lagCompensation = true;
     this.levelIndex = this.game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === this.mapId &&
       (mode === 'coop' ? level.mission && level.mode !== 'anarchy' : level.mode === 'anarchy'));
     if (this.levelIndex < 0) throw new Error(mode === 'coop' ? `No co-op mission ${this.mapId}` : `No Anarchy map ${this.mapId}`);
@@ -51,6 +57,7 @@ export default class MatchRoom {
     this.seed = seed;
     if (!this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed, coop: this.mode === 'coop' })) throw new Error('Unable to start the match');
     if (this.game.anarchy) Object.assign(this.game.anarchy.rules, this.rules);
+    this.lagHistory.clear();
     this.overTick = null; this.lastKill = null; this.announcedRelays.clear(); this.downIds.clear(); this.seenEnemyShots = new WeakSet();
     for (const player of this.players.values()) { player.lastFireMs = -Infinity; }
     this.events.push({ t: 'match-start', seed });
@@ -59,7 +66,7 @@ export default class MatchRoom {
   /** A new pilot joins the match in progress. @param {string} name @returns {RoomPlayer} */
   join(name) {
     if (this.full) throw new Error('room-full');
-    const player = { id: `p${this.nextId++}`, name, lastSeq: -1, lastFireMs: -Infinity };
+    const player = { id: `p${this.nextId++}`, name, lastSeq: -1, lastFireMs: -Infinity, rttMs: null };
     this.players.set(player.id, player);
     this.game.addPilot(player.id);
     return player;
@@ -81,6 +88,7 @@ export default class MatchRoom {
     const player = this.players.get(id), pilot = this.game.gameState.pilot(id);
     if (!player || !pilot || message.seq <= player.lastSeq) return false;
     player.lastSeq = message.seq;
+    if (message.rtt !== undefined) player.rttMs = message.rtt;
     if (this.game.session.phase !== 'playing' || !pilot.alive || !pilot.ship) { pilot.input = {}; return true; }
     pilot.ship.rotate(message.look[0], message.look[1]);
     this.game.setPilotInput(id, message.input);
@@ -95,6 +103,8 @@ export default class MatchRoom {
       const shot = this.game.pilotFire(id);
       if (shot) {
         player.lastFireMs = now;
+        const rewindMs = this.lagCompensation ? rewindFor(player.rttMs) : 0;
+        if (rewindMs) /** @type {any} */ (shot).rewindMs = rewindMs;
         this.events.push({ t: 'shot', owner: id, weapon: shot.type ?? pilot.currentWeapon, p: packVector(shot.mesh.position), q: packQuaternion(shot.mesh.quaternion) });
       }
     }
@@ -107,6 +117,7 @@ export default class MatchRoom {
     if (game.session.phase === 'playing') {
       const before = new Set(game.gameState.pilots.filter(/** @param {any} pilot */ pilot => !pilot.alive).map(/** @param {any} pilot */ pilot => pilot.id));
       game.updateSimulation(STEP);
+      this.lagHistory.record(game.session.timeMs, game.gameState.pilots, game.enemyManager.enemies);
       const kill = this.match?.lastKill;
       if (kill && kill !== this.lastKill) { this.lastKill = kill; this.events.push({ t: 'kill', victim: kill.victimId, attacker: kill.attackerId }); }
       for (const id of before) if (game.gameState.pilot(id)?.alive) this.events.push({ t: 'respawn', id });

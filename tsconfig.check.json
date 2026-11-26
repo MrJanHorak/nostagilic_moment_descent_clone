@@ -139,6 +139,13 @@
     "src/js/core/ForceField.js",
     "src/js/core/Reactor.js",
     "src/js/core/PortalVisibility.js",
-    "src/js/core/InteriorDetails.js"
+    "src/js/core/InteriorDetails.js",
+    "src/js/core/MissionRating.js",
+    "src/js/core/DailyChallenge.js",
+    "src/js/core/Hangar.js",
+    "src/js/net/LagCompensation.js",
+    "src/js/net/GameServerApi.js",
+    "src/js/editor/RelayRulesDialog.js",
+    "src/js/ui/HangarPanel.js"
   ]
 }

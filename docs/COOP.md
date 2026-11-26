@@ -118,4 +118,8 @@ Choose **PLAY ONLINE · ANARCHY & CO-OP**, then pick a mission under *New room p
 - Shot-opened doors and the reactor are simulated on each screen from the shots drawn there; with heavy lag a door may open a moment apart on different screens.
 - The exploration map on each screen shows only that pilot's discoveries.
 - Story radio follows each screen's pilot; recovered logs are counted on the server but each screen shows the ones it saw collected.
-- No lag compensation for hits (as in Anarchy).
+- Lag compensation for hits was added on November 25 (see below).
+
+## Lag compensation
+
+Since November 25, the server checks each pilot's shots against robots and ships where that pilot saw them: their round trip plus the 100 ms interpolation delay, capped at 250 ms. See [PHASE_6.md](PHASE_6.md#2-lag-compensation-srcjsnetlagcompensationjs).

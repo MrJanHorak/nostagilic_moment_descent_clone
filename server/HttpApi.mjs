@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { cleanName } from '../src/js/net/Protocol.js';
 import { isMedal } from '../src/js/core/MissionRating.js';
+import { isCurrentDailyId } from '../src/js/core/DailyChallenge.js';
 import { validateLevelDocument } from '../src/js/core/levels/document/validateLevelDocument.js';
 
 export const API_LIMITS = Object.freeze({
@@ -94,7 +95,8 @@ export async function createHttpApi({ dataDir = null, allowOrigins = null, missi
   /** @param {any} body */
   function cleanScore(body) {
     const mission = typeof body?.mission === 'string' ? body.mission : '';
-    if (!missions.has(mission)) return { error: 'unknown-mission' };
+    // Daily boards are open from the day before to the day after (time zones).
+    if (!missions.has(mission) && !isCurrentDailyId(mission, new Date(now()))) return { error: 'unknown-mission' };
     const timeMs = Math.round(Number(body.timeMs)), score = Math.round(Number(body.score));
     if (!Number.isFinite(timeMs) || timeMs < 10_000 || timeMs > 7_200_000) return { error: 'bad-time' };
     if (!Number.isFinite(score) || score < 0 || score > 10_000_000) return { error: 'bad-score' };
@@ -118,7 +120,7 @@ export async function createHttpApi({ dataDir = null, allowOrigins = null, missi
       // ── Leaderboards ──
       if (url.pathname === '/scores' && request.method === 'GET') {
         const mission = url.searchParams.get('mission') ?? '';
-        if (!missions.has(mission)) { send(response, 404, { error: 'unknown-mission' }, origin); return true; }
+        if (!missions.has(mission) && !/^daily-\d{4}-\d{2}-\d{2}$/.test(mission)) { send(response, 404, { error: 'unknown-mission' }, origin); return true; }
         send(response, 200, { mission, entries: board(mission) }, origin); return true;
       }
       if (url.pathname === '/scores' && request.method === 'POST') {
@@ -130,6 +132,8 @@ export async function createHttpApi({ dataDir = null, allowOrigins = null, missi
         const kept = list.some(other => other.name === entry.name) ? list : [...list, entry];
         kept.sort((a, b) => a.timeMs - b.timeMs || b.score - a.score);
         scores[mission] = kept.slice(0, API_LIMITS.scoresKept);
+        // Keep the last 30 daily boards.
+        for (const old of Object.keys(scores).filter(key => key.startsWith('daily-')).sort().slice(0, -30)) delete scores[old];
         await save(join(dataDir ?? '', 'scores.json'), JSON.stringify(scores));
         const rank = scores[mission].findIndex(other => other.name === entry.name) + 1;
         send(response, 200, { mission, rank: rank || null, personalBest: scores[mission].find(other => other.name === entry.name) ?? null, entries: board(mission) }, origin);

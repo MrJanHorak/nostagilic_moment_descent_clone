@@ -24,6 +24,8 @@ import CoopMatch, { PER_PILOT_PICKUPS, enemyToughness } from './core/CoopMatch.j
 import { SOLO_LINK_SCALE } from './core/RelayController.js';
 import RobotGenerators from './entities/RobotGenerators.js';
 import { parTimeMs, rateMission } from './core/MissionRating.js';
+import { DailyRecords, dailyChallenge } from './core/DailyChallenge.js';
+import Hangar, { creditsForRun } from './core/Hangar.js';
 import { FINAL_CHOICE, campaignDocuments, campaignEnding } from './core/levels/Campaign.js';
 import { createGameServerApi, leaderboardLines, savedServer } from './net/GameServerApi.js';
 import { QUICK_CHAT, SignalLimiter, aimPoint, cleanSignal } from './core/TeamSignals.js';
@@ -79,6 +81,8 @@ export default class Game {
     this.importedLevelIndex = null;
     /** The user campaign mission being played, if any. @type {{key: string, missionId: string} | null} */
     this.userCampaign = null;
+    /** Today's daily challenge while one is being flown. @type {any} */
+    this.daily = null;
     this.isEndlessMode = true;
     this.powerupSpawnInterval = 15000;
     this.diagnostics = new RuntimeDiagnostics(!!import.meta.env?.DEV &&
@@ -214,10 +218,12 @@ export default class Game {
     this.isEndlessMode = endless;
     this.currentLevelIndex = levelIndex;
     this.coopMode = coop;
-    this.session.begin(seed);
+    // The daily challenge fixes the seed for its mission, restarts included.
+    const daily = this.daily && !endless && levelIndex === this.daily.levelIndex ? this.daily : null;
+    this.session.begin(seed ?? daily?.seed);
     try {
       this.gameState.resetForSession();
-      this.gameState.difficulty = getDifficulty(this.settings.values.difficulty);
+      this.gameState.difficulty = daily ? /** @type {any} */ (daily.difficulty) : getDifficulty(this.settings.values.difficulty);
       this.failureReason = null;
       this.spaceship.reset();
       this.gameState.localPilot.ship = this.spaceship;
@@ -249,13 +255,17 @@ export default class Game {
       if (this.anarchy) this.story = null;
       if (!endless && (level.devices?.length || level.doors?.length)) this.levelManager.interaction = new RelayController(
         level, this.levelManager.levelSegments[0], this.levelManager.solidColliders, this.session);
+      // Hangar upgrades: single player only; the daily challenge and online play use the stock ship.
+      const upgrades = !daily && !this.online && !this.anarchy ? (this.hangar ??= new Hangar()).effects : { maxHealth: 100, power: 1, ammo: 1, speed: 1 };
+      this.gameState.localPilot.maxHealth = upgrades.maxHealth; this.gameState.localPilot.health = upgrades.maxHealth;
+      this.gameState.hangarPower = upgrades.power; this.spaceship.hangarSpeed = upgrades.speed;
       if (!endless && Number.isFinite(level.combat?.initialPulseAmmo)) {
         const ammo = scaleAmmo(level.combat.initialPulseAmmo, level.combat.maxPulseAmmo, this.gameState.difficulty);
-        this.gameState.weaponInventory.pulse.ammo = ammo.initial;
-        this.gameState.pulseAmmoCapacity = ammo.capacity;
+        this.gameState.weaponInventory.pulse.ammo = Math.round(ammo.initial * upgrades.ammo);
+        this.gameState.pulseAmmoCapacity = Number.isFinite(ammo.capacity) ? Math.round(ammo.capacity * upgrades.ammo) : ammo.capacity;
       }
       this.lastStorySummary = null;
-      this.lastRating = null;
+      this.lastRating = null; this.lastDaily = null; this.lastCredits = null;
       this.story = !endless && level.story && level.sourceDocument
         ? new StoryController(level.story, level.sourceDocument, this.scene, event => this.uiManager.showStoryEvent?.(event)) : null;
       // Robot generators (v16) and heavy robots' feedback.
@@ -275,6 +285,8 @@ export default class Game {
         transientLights,
         getColliders: () => this.levelManager.solidColliders,
         getTargets: () => this.enemyManager.enemies,
+        // Lag compensation: the game server sets lagHistory; clients never rewind.
+        rewindView: ms => this.lagHistory?.view(this.session.timeMs - ms) ?? null,
         getRules: () => this.isEndlessMode ? null : this.levelManager.currentLevel?.combat,
         onTargetHit: (enemy, projectile, position) => this.online ? this.enemyManager.effectsManager?.createHitEffect?.(position.clone())
           : this.enemyManager.hitEnemy(enemy, projectile, position),
@@ -352,13 +364,30 @@ export default class Game {
     }
   }
 
-  startGame() { this.userCampaign = null; return this.startSession({ coop: false }); }
+  startGame() { this.userCampaign = null; this.daily = null; return this.startSession({ coop: false }); }
+
+  /** Today's daily challenge, ready to start. @param {Date} [now] */
+  todaysChallenge(now = new Date()) {
+    const levels = this.levelManager?.levels ?? [];
+    const available = levels.filter((level, i) => level.id && i !== this.importedLevelIndex && (level.campaignOrder || level.team)).map(level => level.id);
+    const challenge = dailyChallenge(now, available);
+    const levelIndex = levels.findIndex((level, i) => level.id === challenge.missionId && i !== this.importedLevelIndex && (level.campaignOrder || level.team));
+    return levelIndex === -1 ? null : { ...challenge, levelIndex, missionName: levels[levelIndex].name ?? challenge.missionId };
+  }
+
+  /** Start today's daily challenge: same mission, seed and modifier for everyone. @param {Date} [now] */
+  startDailyChallenge(now = new Date()) {
+    const challenge = this.todaysChallenge(now);
+    if (!challenge) return false;
+    this.userCampaign = null; this.daily = challenge;
+    return this.startSession({ endless: false, levelIndex: challenge.levelIndex, coop: false });
+  }
   // The editor/file UI can call this after reading JSON. Invalid data or staging
   // failures leave the active session intact. Reuse one imported catalog slot.
   // `campaign` marks a user campaign mission; replays keep it, other entries clear it.
   startLevelDocument(input, campaign = null) {
     const prepared = prepareLevelDocument(input);
-    this.userCampaign = campaign;
+    this.userCampaign = campaign; this.daily = null;
     try {
       this.importedLevelIndex ??= this.levelManager.levels.length;
       this.levelManager.levels[this.importedLevelIndex] = prepared.level;
@@ -367,8 +396,8 @@ export default class Game {
       if (!prepared.world.claimed) disposeObject(prepared.world.group);
     }
   }
-  selectLevel(index) { this.userCampaign = null; return this.startSession({ endless: false, levelIndex: index, coop: false }); }
-  selectEndlessMode() { this.userCampaign = null; return this.startSession({ endless: true, coop: false }); }
+  selectLevel(index) { this.userCampaign = null; this.daily = null; return this.startSession({ endless: false, levelIndex: index, coop: false }); }
+  selectEndlessMode() { this.userCampaign = null; this.daily = null; return this.startSession({ endless: true, coop: false }); }
   restartLevel() { return this.startSession(); }
   restartGame() { return this.startSession(); }
 
@@ -454,8 +483,19 @@ export default class Game {
     this.audioManager.stopAllSounds();
     this.audioManager.playSound('powerup', { volume: 0.7 });
     this.uiManager.updateHUD();
+    // Hangar credits for the run (single player): full for a first campaign or team clear, half for replays.
+    const ratedLevel = this.levelManager.currentLevel;
+    const authored = !!ratedLevel?.id && !!(ratedLevel.campaignOrder || ratedLevel.team) && this.currentLevelIndex !== this.importedLevelIndex;
+    const kills = Object.values(this.gameState.enemyKills).reduce((sum, value) => sum + value, 0);
+    const hangar = (this.hangar ??= new Hangar());
+    const kind = !authored ? 'other' : hangar.markCleared(/** @type {string} */ (ratedLevel.id)) ? 'first' : 'replay';
+    this.lastCredits = this.online ? null : { earned: hangar.earn(creditsForRun({ kills, rescued: this.lastStorySummary?.rescued ?? 0,
+      logs: this.lastStorySummary?.logsFound ?? 0, medal: this.lastRating?.medal ?? null, kind })), total: this.hangar.credits };
+    // Daily challenge: keep the best run of the day and the streak.
+    this.lastDaily = this.daily && this.currentLevelIndex === this.daily.levelIndex
+      ? { challenge: this.daily, ...(this.dailyRecords ??= new DailyRecords()).record(this.daily.dayKey, { timeMs: this.session.timeMs, medal: this.lastRating?.medal ?? null }) } : null;
     const showResults = () => {
-      this.uiManager.showCompletion(this.userCampaign ? this.nextUserCampaignIndex() !== null : this.nextMissionIndex() !== -1, progress, campaignProgress);
+      this.uiManager.showCompletion(this.lastDaily ? false : this.userCampaign ? this.nextUserCampaignIndex() !== null : this.nextMissionIndex() !== -1, progress, campaignProgress);
       this.submitToLeaderboard(rated);
     };
     this.lastEnding = progress ? this.campaignEndingFor(rated) : null;
@@ -486,7 +526,8 @@ export default class Game {
     const name = savedServer().name;
     if (!api.available || !name) return;
     const screen = this.uiManager.resultScreen;
-    api.submitScore({ mission: level.id, name, timeMs: this.session.timeMs, score: this.gameState.score, medal: this.lastRating.medal, difficulty: this.gameState.difficulty.id })
+    // A daily run goes to the day's board, not the mission's.
+    api.submitScore({ mission: this.lastDaily?.challenge.id ?? level.id, name, timeMs: this.session.timeMs, score: this.gameState.score, medal: this.lastRating.medal, difficulty: this.gameState.difficulty.id })
       .then(result => { if (this.uiManager.resultScreen === screen) this.uiManager.appendResultLines(leaderboardLines(result, name)); });
   }
 
@@ -548,7 +589,7 @@ export default class Game {
     const campaign = this.campaignMissions();
     const target = this.campaignProgress.nextMission(campaign) ?? campaign[0];
     const index = target ? this.levelManager.levels.findIndex((level, i) => level.id === target.id && level.campaignOrder && i !== this.importedLevelIndex) : -1;
-    this.userCampaign = null;
+    this.userCampaign = null; this.daily = null;
     return this.startSession({ endless: false, levelIndex: Math.max(0, index), coop: false });
   }
 
@@ -565,6 +606,7 @@ export default class Game {
     }
     const next = this.nextMissionIndex();
     if (next === -1) return false;
+    this.daily = null;
     return this.startSession({ endless: false, levelIndex: next });
   }
 
@@ -976,7 +1018,7 @@ export default class Game {
    * Resolves once the match is running here; rejects with a readable message.
    * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null}} options */
   async joinOnline(options) {
-    this.leaveOnline();
+    this.leaveOnline(); this.daily = null;
     const match = new OnlineMatch(this, options);
     try { await match.connect(); return match; } catch (error) {
       if (this.online === match) this.leaveOnline(); else match.close();

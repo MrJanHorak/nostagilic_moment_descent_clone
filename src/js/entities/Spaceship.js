@@ -26,6 +26,8 @@ class Spaceship {
     this.acceleration = 8; // Lowered for better control
     this.damping = 0.96; // Slightly more friction
     this.maxSpeed = 6; // Cap the max speed
+    /** Hangar thrusters (single player): scales acceleration and top speed. */
+    this.hangarSpeed = 1;
 
     this.rotationSpeed = 1.5; // Radians/second for keyboard rotation
     this.radius = PLAYER_RADIUS;
@@ -169,9 +171,9 @@ class Spaceship {
       // Diagonal keys never exceed full thrust; a partly deflected stick gives partial thrust.
       if (thrust.lengthSq() > 1) thrust.normalize();
       thrust.applyQuaternion(this.group.quaternion);
-      this.velocity.addScaledVector(thrust, this.acceleration * speedMultiplier * delta);
+      this.velocity.addScaledVector(thrust, this.acceleration * speedMultiplier * this.hangarSpeed * delta);
     } else this.velocity.multiplyScalar(Math.pow(this.damping, delta * 60));
-    this.velocity.clampLength(0, this.maxSpeed * speedMultiplier);
+    this.velocity.clampLength(0, this.maxSpeed * speedMultiplier * this.hangarSpeed);
   }
 }
 

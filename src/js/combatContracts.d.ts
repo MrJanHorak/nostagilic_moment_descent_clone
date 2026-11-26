@@ -144,6 +144,8 @@ export interface PlayerProjectile extends ProjectileBase {
   acceleration: number;
   hitTargets: Set<EnemyCombatTarget>;
   resolving?: boolean;
+  /** Server lag compensation: trace this shot against targets this many ms in the past. */
+  rewindMs?: number;
   light?: PointLight;
   pulseData?: { originalScale: number; pulseSpeed: number; pulseAmount: number; baseOpacity: number; lastPulse: number };
 }
@@ -172,6 +174,8 @@ export interface CombatWorld {
   readonly transientLights?: boolean;
   getColliders?(): readonly SolidCollider[];
   getTargets?(): readonly EnemyCombatTarget[];
+  /** Lag compensation: where targets were `ms` ago (game server only). */
+  rewindView?(ms: number): { enemyBox(enemy: object): import('three').Box3 | null; pilotPosition(id: string): Vector3 | null } | null;
   /** Pilot-vs-pilot modes: every live pilot's body except `ownerId` (null: all pilots). */
   getPilotTargets?(ownerId: string | null | undefined): readonly import('./contracts.js').ShotPlayer[];
   /** A player shot or blast reached a pilot. */

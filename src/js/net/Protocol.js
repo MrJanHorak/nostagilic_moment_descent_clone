@@ -48,7 +48,7 @@ export function cleanName(value) {
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 
 /** @typedef {{t: 'hello', protocol: number, name: string, room: string | null, mode: 'anarchy' | 'coop', map: string | null}} HelloMessage */
-/** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null, interact: boolean}} InputMessage */
+/** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null, interact: boolean, rtt?: number}} InputMessage */
 /** @typedef {{t: 'ping', time: number}} PingMessage */
 /** @typedef {{t: 'signal', signal: import('../core/TeamSignals.js').TeamSignal}} SignalMessage */
 /** @typedef {HelloMessage | InputMessage | PingMessage | SignalMessage} ClientMessage */
@@ -81,7 +81,9 @@ export function parseClientMessage(text) {
     const clampLook = /** @param {unknown} value */ value => finite(value) ? Math.max(-MAX_LOOK_PER_INPUT, Math.min(MAX_LOOK_PER_INPUT, /** @type {number} */ (value))) : 0;
     const look = Array.isArray(raw.look) ? raw.look : [];
     return { ok: true, message: { t: 'input', seq: raw.seq, input, look: [clampLook(look[0]), clampLook(look[1])], fire: raw.fire === true,
-      weapon: WEAPONS.has(raw.weapon) ? raw.weapon : null, interact: raw.interact === true } };
+      weapon: WEAPONS.has(raw.weapon) ? raw.weapon : null, interact: raw.interact === true,
+      // The client's measured round trip, for lag compensation (clamped again by the server).
+      ...(finite(raw.rtt) && raw.rtt >= 0 ? { rtt: Math.min(1000, Math.round(raw.rtt)) } : {}) } };
   }
   if (raw.t === 'signal') {
     const signal = cleanSignal(raw);

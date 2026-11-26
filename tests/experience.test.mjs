@@ -207,10 +207,10 @@ test('Signal Breach: the guard fires real damaging projectiles, takes four norma
   }
   assert.equal(state.weaponInventory.pulse.ammo, 76);
   assert.equal(state.enemyKills.fighter, 1); assert.equal(state.score, 100);
-  assert.equal(manager.enemies.length, 1, 'the optional branch remains independent');
+  assert.equal(manager.enemies.length, 3, 'the optional maintenance scouts and the extraction scout remain independent');
   manager.resetLevel(); state.resetForSession(); manager.updateEnemies(0);
   assert.equal(state.playerHealth, 100);
-  assert.equal(manager.enemies.length, 2);
+  assert.equal(manager.enemies.length, 4);
   assert.equal(manager.enemies.find(enemy => enemy.type.name === 'fighter').health, 40);
   assert.equal(manager.projectileManager.enemyProjectiles.length, 0);
 });

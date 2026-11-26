@@ -132,11 +132,19 @@ class ProjectileManager {
     const current = () => !this.disposed && this.generation === generation && (!this.session || this.session.id === sessionId && this.session.phase === 'playing');
     const targets = [...(this.combatWorld.getTargets?.() ?? [])];
     const colliders = [...(this.combatWorld.getColliders?.() ?? [])];
+    // Lag compensation (server only): trace against targets where the shooter saw them.
+    const past = projectile.rewindMs ? this.combatWorld.rewindView?.(projectile.rewindMs) ?? null : null;
+    /** @param {any} target */
+    const rewound = target => { const box = past?.enemyBox(target); return box ? { isActive: target.isActive, collider: box, original: target } : target; };
     for (let count = 0; count <= targets.length; count++) {
       // Pilot-vs-pilot modes expose other ships as targets; a shot never hits its own pilot.
-      const pilots = this.combatWorld.getPilotTargets?.(projectile.ownerId) ?? [];
-      const hit = traceShot(start, end, { colliders, targets: targets.filter(target => !projectile.hitTargets.has(target)), players: pilots, radius: 0.05 });
+      const pilots = (this.combatWorld.getPilotTargets?.(projectile.ownerId) ?? []).map(body => {
+        const position = past && body.pilot ? past.pilotPosition(body.pilot.id) : null;
+        return position ? { ...body, position } : body;
+      });
+      const hit = traceShot(start, end, { colliders, targets: targets.filter(target => !projectile.hitTargets.has(target)).map(rewound), players: pilots, radius: 0.05 });
       if (!hit) { projectile.mesh.position.copy(end); return false; }
+      if (hit.kind === 'enemy' && /** @type {any} */ (hit.target).original) hit.target = /** @type {any} */ (hit.target).original;
       projectile.mesh.position.copy(hit.point);
       if (hit.kind === 'enemy' && projectile.penetrating) {
         projectile.hitTargets.add(hit.target);
@@ -589,7 +597,8 @@ class ProjectileManager {
     }
 
     // Use weapon power from gameState
-    const weaponPower = loadout.weaponPower || 1;
+    // Hangar weapon capacitor (single player), on top of any timed power-up.
+    const weaponPower = (loadout.weaponPower || 1) * (remote ? 1 : gameState.hangarPower ?? 1);
 
     // Configure weapon properties based on type
     /** @type {THREE.ColorRepresentation} */

@@ -361,6 +361,39 @@
       ]
     },
     {
+      "id": "junction-fighter",
+      "kind": "enemy",
+      "type": "fighter",
+      "roomId": "lift-junction",
+      "position": [
+        -6,
+        2,
+        6
+      ]
+    },
+    {
+      "id": "control-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "upper-control",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "junction-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "lift-junction",
+      "position": [
+        6,
+        0,
+        -6
+      ]
+    },
+    {
       "id": "exit",
       "kind": "exit",
       "roomId": "arrival",

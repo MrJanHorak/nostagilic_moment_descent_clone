@@ -536,6 +536,39 @@
       ]
     },
     {
+      "id": "extraction-scout",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "extraction",
+      "position": [
+        -5,
+        0,
+        3
+      ]
+    },
+    {
+      "id": "hall-ammo",
+      "kind": "pickup",
+      "type": "pulseAmmo",
+      "roomId": "signal-hall",
+      "position": [
+        7,
+        0,
+        -6
+      ]
+    },
+    {
+      "id": "maintenance-scout-2",
+      "kind": "enemy",
+      "type": "scout",
+      "roomId": "maintenance",
+      "position": [
+        5,
+        2,
+        5
+      ]
+    },
+    {
       "id": "exit",
       "kind": "exit",
       "roomId": "extraction",
@@ -608,7 +641,7 @@
     "messages": [
       {
         "id": "sb:msg-start",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "You're inside, Two. Asterion's Ridge relay has been dark for nine days and the Consortium wants its uplink back. Shoot the striped door, find the relay, get out. Easy money.",
         "trigger": {
           "on": "start"
@@ -625,7 +658,7 @@
       },
       {
         "id": "sb:msg-hall",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "That guard isn't on any Asterion manifest I have. It's flying security patterns, not mining ones. Use the doorway, or take the gallery overhead.",
         "trigger": {
           "on": "enter",
@@ -634,7 +667,7 @@
       },
       {
         "id": "sb:msg-guard-down",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "Guard's down. The uplink is right beside you. Bring it online.",
         "trigger": {
           "on": "defeat",
@@ -643,7 +676,7 @@
       },
       {
         "id": "sb:msg-uplink",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "Uplink's live, and the gate is open. Odd: the first thing it's relaying isn't telemetry. It's a distress loop from inside the mine. Sweep the side bays before you leave.",
         "trigger": {
           "on": "device",
@@ -652,7 +685,7 @@
       },
       {
         "id": "sb:msg-alcove",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "A hidden cache. Somebody stocked this on purpose. Asterion doesn't hide supplies from its own crews.",
         "trigger": {
           "on": "enter",
@@ -670,7 +703,7 @@
       },
       {
         "id": "sb:msg-life-signs",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "I'm reading life signs. If anyone's down there, fly close and take them aboard. There's room in the hold, and they only count if you get them out.",
         "trigger": {
           "on": "enter",
@@ -679,7 +712,7 @@
       },
       {
         "id": "sb:msg-extraction",
-        "speaker": "Vey \u00b7 Kestrel dispatch",
+        "speaker": "Vey · Kestrel dispatch",
         "text": "Gate's clear. Bring it home, Two. Then we talk about why a mining AI is guarding an empty relay.",
         "trigger": {
           "on": "enter",
