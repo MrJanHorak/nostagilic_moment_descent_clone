@@ -26,3 +26,5 @@ dist-ssr
 # Browser test evidence is generated per run; curated checkpoint evidence lives in docs/progress.
 test-results/
 playwright-report/
+*.env
+.env
