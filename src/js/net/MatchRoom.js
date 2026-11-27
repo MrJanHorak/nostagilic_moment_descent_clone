@@ -1,5 +1,5 @@
-import * as THREE from 'three';
 import createHeadlessGame, { disposeHeadlessGame } from './HeadlessGame.js';
+import BotPilot from './BotPilot.js';
 import { SignalLimiter } from '../core/TeamSignals.js';
 import LagHistory, { rewindFor } from './LagCompensation.js';
 import { MAX_COOP_PLAYERS, MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQuaternion, packVector } from './Protocol.js';
@@ -45,6 +45,7 @@ export default class MatchRoom {
     /** Events since the last snapshot. @type {RoomEvent[]} */ this.events = [];
     this.tick = 0; this.nextId = 1; this.seed = 0;
     /** @type {Set<string>} */ this.bots = new Set();
+    /** @type {Map<string, BotPilot>} */ this.botPilots = new Map();
     /** @type {number | null} */ this.overTick = null;
     this.start(seed ?? Math.floor(random() * 4294967296));
   }
@@ -59,6 +60,7 @@ export default class MatchRoom {
     this.seed = seed;
     if (!this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed, coop: this.mode === 'coop' })) throw new Error('Unable to start the match');
     if (this.game.anarchy) Object.assign(this.game.anarchy.rules, this.rules);
+    this.botPilots.clear();
     this.lagHistory.clear();
     this.overTick = null; this.lastKill = null; this.announcedRelays.clear(); this.downIds.clear(); this.seenEnemyShots = new WeakSet();
     for (const player of this.players.values()) { player.lastFireMs = -Infinity; }
@@ -77,7 +79,7 @@ export default class MatchRoom {
   /** @param {string} id */
   leave(id) {
     if (!this.players.delete(id)) return false;
-    this.game.removePilot(id); this.bots.delete(id);
+    this.game.removePilot(id); this.bots.delete(id); this.botPilots.delete(id);
     this.match?.scores.delete(id); this.match?.respawns.delete(id);
     return true;
   }
@@ -122,23 +124,20 @@ export default class MatchRoom {
     }
   }
 
-  /** Steer toward the nearest living opponent and fire when aimed at them. */
+  /** Run server-controlled pilots through the same input path as human players. */
   updateBots() {
     for (const id of this.bots) {
       const pilot = this.game.gameState.pilot(id), player = this.players.get(id);
-      if (!pilot?.alive || !pilot.ship || !player) continue;
-      const targets = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other)).filter(other => other?.alive && other.ship);
-      targets.sort((a, b) => pilot.ship.group.position.distanceToSquared(a.ship.group.position) - pilot.ship.group.position.distanceToSquared(b.ship.group.position));
-      const target = targets[0];
-      if (!target) { this.game.setPilotInput(id, {}); continue; }
-      const direction = new THREE.Vector3().subVectors(target.ship.group.position, pilot.ship.group.position);
-      const distance = direction.length();
-      direction.applyQuaternion(pilot.ship.group.quaternion.clone().invert());
-      const yaw = Math.atan2(-direction.x, -direction.z);
-      const pitch = Math.atan2(direction.y, Math.hypot(direction.x, direction.z));
-      /** @param {number} value */
-      const turn = value => Math.max(-0.045, Math.min(0.045, value));
-      this.input(id, { t: 'input', seq: player.lastSeq + 1, look: [turn(yaw), turn(pitch)], input: distance > 15 ? { forward: true } : distance < 7 ? { backward: true } : {}, fire: Math.abs(yaw) < 0.12 && Math.abs(pitch) < 0.12 && distance < 65, weapon: null, interact: false });
+      if (!pilot?.alive || !pilot.ship || !player) { this.botPilots.delete(id); continue; }
+      let brain = this.botPilots.get(id);
+      if (!brain) {
+        const document = this.game.levelManager.currentLevel?.sourceDocument;
+        if (!document) continue;
+        brain = new BotPilot(document); this.botPilots.set(id, brain);
+      }
+      const opponents = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other));
+      const command = brain.command(this.game, pilot, opponents, player.lastFireMs);
+      this.input(id, { t: 'input', seq: player.lastSeq + 1, ...command, look: /** @type {[number, number]} */ (command.look), weapon: null, interact: false });
     }
   }
 

@@ -50,6 +50,28 @@ test('co-op rooms do not add Anarchy bots', t => {
   match.join('Ana'); match.addBots(3);
   assert.equal(match.players.size, 1);
 });
+
+test('a bot routes through portals toward an opponent behind a wall without shooting through it', t => {
+  const match = room(t), human = match.join('Ana');
+  match.addBots(1);
+  const id = [...match.bots][0], bot = match.game.gameState.pilot(id), target = match.game.gameState.pilot(human.id);
+  bot.ship.group.position.set(0, 0, 0); bot.ship.group.quaternion.identity(); bot.ship.velocity.set(0, 0, 0);
+  target.ship.group.position.set(44, 0, 8); target.ship.velocity.set(0, 0, 0);
+  match.takeEvents(); match.step();
+  assert.ok(match.botPilots.get(id).route.length > 0, 'plans a path through the room portals');
+  assert.equal(match.events.some(event => event.t === 'shot' && event.owner === id), false);
+  for (let i = 0; i < 12 * 60; i++) match.step();
+  assert.ok(bot.ship.group.position.x > 15, 'flies through the atrium opening');
+});
+
+test('a bot with low ammunition collects an available ammo pickup', t => {
+  const match = room(t); match.join('Ana'); match.addBots(1);
+  const id = [...match.bots][0], bot = match.game.gameState.pilot(id);
+  bot.ship.group.position.set(44, 0, 5); bot.ship.group.quaternion.identity(); bot.ship.velocity.set(0, 0, 0);
+  bot.weaponInventory.pulse.ammo = 0;
+  for (let i = 0; i < 5 * 60 && bot.weaponInventory.pulse.ammo === 0; i++) match.step();
+  assert.ok(bot.weaponInventory.pulse.ammo > 0, 'collects ammo using normal pickup rules');
+});
 const steps = (match, count) => { for (let i = 0; i < count; i++) match.step(); };
 
 test('a room runs Foundry Ring; joining pilots spawn apart and the host never plays', t => {
