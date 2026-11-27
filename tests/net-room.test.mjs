@@ -27,6 +27,29 @@ function room(t, options = {}) {
   t.after(() => value.dispose());
   return value;
 }
+
+test('Anarchy bots join within capacity, pursue opponents and fire through the normal simulation', t => {
+  const match = room(t), human = match.join('Ana');
+  match.addBots(20);
+  assert.equal(match.players.size, 8);
+  assert.equal(match.bots.size, 7);
+  const botId = [...match.bots][0];
+  const bot = match.game.gameState.pilot(botId), target = match.game.gameState.pilot(human.id);
+  for (const id of [...match.bots].slice(1)) match.leave(id);
+  bot.ship.group.position.set(0, 0, 6); bot.ship.group.quaternion.identity();
+  target.ship.group.position.set(0, 0, -6);
+  match.takeEvents();
+  for (let i = 0; i < 120; i++) match.step();
+  assert.ok(match.events.some(event => event.t === 'shot' && event.owner === botId));
+  assert.ok(target.health < 100 || !target.alive);
+  assert.ok(match.snapshot(human.id).pilots.some(pilot => pilot.id === botId));
+});
+
+test('co-op rooms do not add Anarchy bots', t => {
+  const match = room(t, { mode: 'coop' });
+  match.join('Ana'); match.addBots(3);
+  assert.equal(match.players.size, 1);
+});
 const steps = (match, count) => { for (let i = 0; i < count; i++) match.step(); };
 
 test('a room runs Foundry Ring; joining pilots spawn apart and the host never plays', t => {

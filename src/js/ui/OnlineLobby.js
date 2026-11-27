@@ -2,6 +2,7 @@
 /** The online lobby: pilot name, game server address, and create or join a room
  * by its four-letter code. Invite links (?room=ABCD&server=...) open it filled in. */
 import { cleanName, isRoomCode, ROOM_CODE_LENGTH } from '../net/Protocol.js';
+import { PILOT_COLOURS } from '../net/OnlineMatch.js';
 
 const STORAGE_KEY = 'descended.online.v1';
 export const DEFAULT_PORT = 8787;
@@ -345,6 +346,15 @@ export default function createOnlineLobby(
       const copy = button('COPY INVITE LINK', 'online-copy');
       const players = document.createElement('ul');
       players.id = 'online-players';
+      Object.assign(players.style, { listStyle: 'none', padding: '0', margin: '4px 0', display: 'grid', gap: '8px' });
+      const botWrap = document.createElement('label');
+      Object.assign(botWrap.style, { display: 'grid', gap: '5px', color: '#fff' });
+      botWrap.textContent = 'Computer opponents';
+      const bots = document.createElement('select');
+      bots.id = 'online-bots';
+      Object.assign(bots.style, { padding: '9px', color: '#e8fbff', background: '#0b2433', border: '1px solid #3f7f95', borderRadius: '5px', font: '16px system-ui' });
+      for (let i = 0; i <= 7; i++) bots.add(new Option(i === 0 ? 'None' : `${i} ${i === 1 ? 'bot' : 'bots'}`, String(i)));
+      botWrap.append(bots);
       const waitingStatus = document.createElement('p');
       waitingStatus.id = 'online-waiting-status';
       waitingStatus.setAttribute('role', 'status');
@@ -353,7 +363,7 @@ export default function createOnlineLobby(
       const controls = document.createElement('div');
       Object.assign(controls.style, { display: 'flex', gap: '10px', flexWrap: 'wrap' });
       controls.append(start, leave);
-      panel.append(heading, detail, link.wrap, copy, players, waitingStatus, controls);
+      panel.append(heading, detail, link.wrap, copy, players, botWrap, waitingStatus, controls);
       copy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(link.input.value); waitingStatus.textContent = 'Invite link copied.'; }
         catch { link.input.focus(); link.input.select(); waitingStatus.textContent = 'Select and copy the invite link above.'; }
@@ -361,17 +371,29 @@ export default function createOnlineLobby(
       const refresh = () => {
         players.replaceChildren(...match.roster.map(/** @param {{id: string, name: string}} player */ player => {
           const item = document.createElement('li');
-          item.textContent = `${player.name}${player.id === match.hostId ? ' (host)' : ''}${player.id === match.id ? ' (you)' : ''}`;
+          const colour = PILOT_COLOURS[(Number(player.id.slice(1)) - 1 + PILOT_COLOURS.length) % PILOT_COLOURS.length] ?? PILOT_COLOURS[0];
+          const css = `#${colour.toString(16).padStart(6, '0')}`;
+          Object.assign(item.style, { display: 'flex', alignItems: 'center', gap: '14px', padding: '10px 14px', border: `1px solid ${css}77`, borderRadius: '8px', background: 'linear-gradient(90deg, #142e3e, #091925)' });
+          const ship = document.createElement('span');
+          ship.setAttribute('aria-hidden', 'true');
+          ship.innerHTML = `<svg width="52" height="32" viewBox="0 0 52 32"><path d="M26 2 L33 17 L47 24 L47 28 L30 24 L26 30 L22 24 L5 28 L5 24 L19 17 Z" fill="${css}" stroke="#e9faff" stroke-width="1.2"/><path d="M26 8 L29 19 L26 22 L23 19 Z" fill="#132c3b"/></svg>`;
+          const label = document.createElement('span');
+          label.textContent = `${player.name}${player.id === match.hostId ? ' (host)' : ''}${player.id === match.id ? ' (you)' : ''}`;
+          item.append(ship, label);
           return item;
         }));
         const host = match.hostId === match.id;
         start.hidden = !host;
+        botWrap.style.display = host && match.mode === 'anarchy' ? 'grid' : 'none';
+        const available = Math.max(0, 8 - match.roster.length);
+        for (const option of bots.options) option.disabled = Number(option.value) > available;
+        if (Number(bots.value) > available) bots.value = String(available);
         waitingStatus.textContent = host ? 'Invite your friends, then start when everyone is ready.' : 'Waiting for the host to start the game.';
       };
       match.onLobbyChange = refresh;
       match.onStarted = () => overlay.remove();
       match.onDisconnected = () => overlay.remove();
-      start.addEventListener('click', () => { start.disabled = true; match.send({ t: 'start' }); });
+      start.addEventListener('click', () => { start.disabled = true; match.send({ t: 'start', bots: match.mode === 'anarchy' ? Number(bots.value) : 0 }); });
       leave.addEventListener('click', () => { match.onDisconnected = null; game.leaveOnline(); overlay.remove(); onBack(); });
       refresh();
       start.hidden ? leave.focus() : start.focus();

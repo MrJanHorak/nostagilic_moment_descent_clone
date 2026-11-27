@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import createHeadlessGame, { disposeHeadlessGame } from './HeadlessGame.js';
 import { SignalLimiter } from '../core/TeamSignals.js';
 import LagHistory, { rewindFor } from './LagCompensation.js';
@@ -43,6 +44,7 @@ export default class MatchRoom {
     /** @type {Map<string, RoomPlayer>} */ this.players = new Map();
     /** Events since the last snapshot. @type {RoomEvent[]} */ this.events = [];
     this.tick = 0; this.nextId = 1; this.seed = 0;
+    /** @type {Set<string>} */ this.bots = new Set();
     /** @type {number | null} */ this.overTick = null;
     this.start(seed ?? Math.floor(random() * 4294967296));
   }
@@ -75,7 +77,7 @@ export default class MatchRoom {
   /** @param {string} id */
   leave(id) {
     if (!this.players.delete(id)) return false;
-    this.game.removePilot(id);
+    this.game.removePilot(id); this.bots.delete(id);
     this.match?.scores.delete(id); this.match?.respawns.delete(id);
     return true;
   }
@@ -111,10 +113,40 @@ export default class MatchRoom {
     return true;
   }
 
+  /** Add computer pilots up to the available room capacity. @param {number} count */
+  addBots(count) {
+    if (this.mode !== 'anarchy') return;
+    for (let i = 0; i < count && !this.full; i++) {
+      const player = this.join(`Bot ${i + 1}`);
+      this.bots.add(player.id);
+    }
+  }
+
+  /** Steer toward the nearest living opponent and fire when aimed at them. */
+  updateBots() {
+    for (const id of this.bots) {
+      const pilot = this.game.gameState.pilot(id), player = this.players.get(id);
+      if (!pilot?.alive || !pilot.ship || !player) continue;
+      const targets = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other)).filter(other => other?.alive && other.ship);
+      targets.sort((a, b) => pilot.ship.group.position.distanceToSquared(a.ship.group.position) - pilot.ship.group.position.distanceToSquared(b.ship.group.position));
+      const target = targets[0];
+      if (!target) { this.game.setPilotInput(id, {}); continue; }
+      const direction = new THREE.Vector3().subVectors(target.ship.group.position, pilot.ship.group.position);
+      const distance = direction.length();
+      direction.applyQuaternion(pilot.ship.group.quaternion.clone().invert());
+      const yaw = Math.atan2(-direction.x, -direction.z);
+      const pitch = Math.atan2(direction.y, Math.hypot(direction.x, direction.z));
+      /** @param {number} value */
+      const turn = value => Math.max(-0.045, Math.min(0.045, value));
+      this.input(id, { t: 'input', seq: player.lastSeq + 1, look: [turn(yaw), turn(pitch)], input: distance > 15 ? { forward: true } : distance < 7 ? { backward: true } : {}, fire: Math.abs(yaw) < 0.12 && Math.abs(pitch) < 0.12 && distance < 65, weapon: null, interact: false });
+    }
+  }
+
   /** One fixed simulation step; also notes kills and respawns and runs the rematch. */
   step() {
     const game = this.game;
     if (game.session.phase === 'playing') {
+      this.updateBots();
       const before = new Set(game.gameState.pilots.filter(/** @param {any} pilot */ pilot => !pilot.alive).map(/** @param {any} pilot */ pilot => pilot.id));
       game.updateSimulation(STEP);
       this.lagHistory.record(game.session.timeMs, game.gameState.pilots, game.enemyManager.enemies);
