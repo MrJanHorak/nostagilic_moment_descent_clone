@@ -19,8 +19,8 @@ export default class BotPilot {
     this.goal = ''; this.goalRoom = null; this.replanAt = 0;
   }
 
-  /** @param {any} game @param {any} pilot @param {any[]} opponents @param {number} lastFireMs */
-  command(game, pilot, opponents, lastFireMs) {
+  /** @param {any} game @param {any} pilot @param {any[]} opponents @param {number} lastFireMs @param {number} [decisionSteps] */
+  command(game, pilot, opponents, lastFireMs, decisionSteps = 1) {
     const ship = pilot.ship, position = ship.group.position, now = game.session.timeMs;
     const solids = game.levelManager.solidColliders ?? [];
     const enemies = opponents.filter(other => other?.alive && other.ship);
@@ -59,7 +59,7 @@ export default class BotPilot {
     const localAim = new Vector3().subVectors(aim, position).applyQuaternion(ship.group.quaternion.clone().invert());
     const yaw = Math.atan2(-localAim.x, -localAim.z);
     const pitch = Math.atan2(localAim.y, Math.hypot(localAim.x, localAim.z));
-    const turn = /** @param {number} value */ value => Math.max(-this.skill.turn, Math.min(this.skill.turn, value));
+    const turn = /** @param {number} value */ value => Math.max(-this.skill.turn, Math.min(this.skill.turn, value / decisionSteps));
 
     // Limit speed near turns and use all six thrust directions to brake and fly
     // through portals even while the ship is turning.

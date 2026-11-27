@@ -24,6 +24,29 @@ test('input history numbers inputs, clamps turns and drops what the server ackno
   assert.equal(history.pending.length, MAX_PENDING);
 });
 
+test('downed inputs do not replay movement or stale aim after respawn', () => {
+  const ship = new Spaceship();
+  const pilot = { alive: false, health: 0, currentWeapon: 'pulse', weaponInventory: {
+    pulse: { unlocked: true, ammo: 0 }, laser: { unlocked: false, ammo: 0 },
+    missile: { unlocked: false, ammo: 0 }, plasma: { unlocked: false, ammo: 0 },
+  } };
+  const game = { gameState: { localPilot: pilot }, spaceship: ship };
+  const match = new OnlineMatch(game, { url: 'ws://localhost' });
+  match.id = 'p1'; match.addLook(0.4, 0.2);
+  match.step({ forward: true }, 1 / 60);
+  assert.equal(match.history.pending[0].dt, 0);
+  assert.deepEqual(match.history.pending[0].look, [0, 0]);
+  assert.deepEqual(match.history.pending[0].input, {});
+  match.addLook(0.3, 0.1);
+  match.applyOwnState({ alive: true, hp: 100, p: [10, 0, 0], q: [0, 0, 0, 1], v: [0, 0, 0] }, { ack: 0, ammo: { pulse: 60 } }, false);
+  assert.equal(pilot.alive, true);
+  assert.equal(match.history.pending.length, 0);
+  assert.deepEqual(match.look, [0, 0]);
+  match.step({ forward: true }, 1 / 60);
+  assert.equal(match.history.pending[0].dt, 1 / 60);
+  assert.equal(match.history.pending[0].seq, 2);
+});
+
 test('reconciling replays unacknowledged inputs from the server state and keeps agreed aim', () => {
   const steps = Array.from({ length: 20 }, (_, i) => ({ seq: i + 1, input: { forward: true, ...(i % 3 ? {} : { yawLeft: true }) }, look: [0.01, -0.005], dt: 1 / 60 }));
   // The server applied the first 8 inputs; this screen has predicted all 20.

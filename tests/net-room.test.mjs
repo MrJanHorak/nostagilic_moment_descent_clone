@@ -91,8 +91,21 @@ test('bot difficulty changes fire cadence and bots use available weapons', t => 
   assert.equal(bot.currentWeapon, 'laser');
   assert.ok(match.events.some(event => event.t === 'shot' && event.owner === id && event.weapon === 'laser'));
   bot.weaponInventory.laser.ammo = 0;
-  match.step();
+  for (let i = 0; i < 7; i++) match.step();
   assert.equal(bot.currentWeapon, 'pulse', 'falls back when special ammunition runs out');
+});
+
+test('bot perception runs at 10 Hz while held flight commands run every tick', t => {
+  const match = room(t); match.join('Ana'); match.addBots(1);
+  const id = [...match.bots][0], bot = match.game.gameState.pilot(id);
+  const command = t.mock.fn(() => ({ input: { forward: true }, look: [0, 0], fire: false, weapon: null }));
+  match.botPilots.set(id, { command });
+  const start = bot.ship.group.position.clone();
+  for (let i = 0; i < 60; i++) match.step();
+  assert.ok(command.mock.callCount() >= 10 && command.mock.callCount() <= 11);
+  assert.ok(bot.ship.group.position.distanceTo(start) > 1);
+  bot.alive = false; match.step();
+  assert.equal(match.botCommands.has(id), false, 'death discards the held command');
 });
 const steps = (match, count) => { for (let i = 0; i < count; i++) match.step(); };
 

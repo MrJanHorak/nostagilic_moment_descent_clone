@@ -208,7 +208,8 @@ export default class OnlineMatch {
    * @param {import('../contracts.js').FlightInput | null} input @param {number} dt */
   step(input, dt) {
     if (!this.id) return;
-    const entry = this.history.push(input ?? NO_INPUT, this.look, dt);
+    const grounded = !this.game.gameState.localPilot.alive;
+    const entry = this.history.push(grounded ? NO_INPUT : (input ?? NO_INPUT), grounded ? [0, 0] : this.look, grounded ? 0 : dt);
     this.look[0] = 0; this.look[1] = 0;
     this.send({ t: 'input', seq: entry.seq, input: entry.input, look: entry.look, fire: this.fireQueued, weapon: this.game.gameState.localPilot.currentWeapon, interact: this.interactQueued,
       ...(this.rttMs !== null ? { rtt: Math.round(this.rttMs) } : {}) });
@@ -280,7 +281,7 @@ export default class OnlineMatch {
     }
     if (!pilot.alive || wasAlive === false) {
       // Back from a respawn: take the server's pose outright.
-      pilot.alive = true; this.history.clear();
+      pilot.alive = true; this.history.clear(); this.look[0] = 0; this.look[1] = 0;
       ship.group.position.fromArray(state.p); ship.group.quaternion.fromArray(state.q); ship.velocity.fromArray(state.v);
       gameState.playerVelocity = ship.velocity;
       ui?.updateHUD?.();

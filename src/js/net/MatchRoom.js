@@ -7,6 +7,8 @@ import { MAX_COOP_PLAYERS, MAX_PLAYERS, MIN_FIRE_INTERVAL_MS, TICK_RATE, packQua
 /** Seconds between the end of a match and the automatic rematch. */
 export const REMATCH_DELAY_MS = 10000;
 const STEP = 1 / TICK_RATE;
+/** Expensive perception and route decisions run at 10 Hz; flight still runs at 60 Hz. */
+const BOT_DECISION_STEPS = 6;
 
 /** @typedef {{id: string, name: string, lastSeq: number, lastFireMs: number, rttMs: number | null}} RoomPlayer */
 /** @typedef {{t: 'shot', owner: string, weapon: string, p: number[], q: number[]} | {t: 'kill', victim: string, attacker: string | null}
@@ -46,6 +48,7 @@ export default class MatchRoom {
     this.tick = 0; this.nextId = 1; this.seed = 0;
     /** @type {Set<string>} */ this.bots = new Set();
     /** @type {Map<string, BotPilot>} */ this.botPilots = new Map();
+    /** @type {Map<string, {command: any, remaining: number}>} */ this.botCommands = new Map();
     /** @type {'easy' | 'normal' | 'hard'} */ this.botDifficulty = 'normal';
     /** @type {number | null} */ this.overTick = null;
     this.start(seed ?? Math.floor(random() * 4294967296));
@@ -61,7 +64,7 @@ export default class MatchRoom {
     this.seed = seed;
     if (!this.game.startSession({ endless: false, levelIndex: this.levelIndex, seed, coop: this.mode === 'coop' })) throw new Error('Unable to start the match');
     if (this.game.anarchy) Object.assign(this.game.anarchy.rules, this.rules);
-    this.botPilots.clear();
+    this.botPilots.clear(); this.botCommands.clear();
     this.lagHistory.clear();
     this.overTick = null; this.lastKill = null; this.announcedRelays.clear(); this.downIds.clear(); this.seenEnemyShots = new WeakSet();
     for (const player of this.players.values()) { player.lastFireMs = -Infinity; }
@@ -80,7 +83,7 @@ export default class MatchRoom {
   /** @param {string} id */
   leave(id) {
     if (!this.players.delete(id)) return false;
-    this.game.removePilot(id); this.bots.delete(id); this.botPilots.delete(id);
+    this.game.removePilot(id); this.bots.delete(id); this.botPilots.delete(id); this.botCommands.delete(id);
     this.match?.scores.delete(id); this.match?.respawns.delete(id);
     return true;
   }
@@ -130,16 +133,24 @@ export default class MatchRoom {
   updateBots() {
     for (const id of this.bots) {
       const pilot = this.game.gameState.pilot(id), player = this.players.get(id);
-      if (!pilot?.alive || !pilot.ship || !player) { this.botPilots.delete(id); continue; }
+      if (!pilot?.alive || !pilot.ship || !player) { this.botPilots.delete(id); this.botCommands.delete(id); continue; }
       let brain = this.botPilots.get(id);
       if (!brain) {
         const document = this.game.levelManager.currentLevel?.sourceDocument;
         if (!document) continue;
         brain = new BotPilot(document, this.botDifficulty, id); this.botPilots.set(id, brain);
       }
-      const opponents = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other));
-      const command = brain.command(this.game, pilot, opponents, player.lastFireMs);
-      this.input(id, { t: 'input', seq: player.lastSeq + 1, ...command, look: /** @type {[number, number]} */ (command.look), interact: false });
+      let cached = this.botCommands.get(id), deciding = false;
+      if (!cached || cached.remaining <= 0) {
+        const opponents = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other));
+        // Spread bots across ticks after their first decision so all their line-of-sight
+        // checks do not land on the same server frame.
+        const steps = cached ? BOT_DECISION_STEPS : 1 + (Number(id.slice(1)) - 1) % BOT_DECISION_STEPS;
+        cached = { command: brain.command(this.game, pilot, opponents, player.lastFireMs, steps), remaining: steps };
+        this.botCommands.set(id, cached); deciding = true;
+      }
+      cached.remaining--;
+      this.input(id, { t: 'input', seq: player.lastSeq + 1, ...cached.command, fire: deciding && cached.command.fire, interact: false });
     }
   }
 
