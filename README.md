@@ -9,8 +9,8 @@ DESCENDED is a browser-based six-degree-of-freedom shooter inspired by Descent. 
 The campaign has **11 missions across three acts**: Signal Breach, Vector Foundry, Nightfall Reactor, Asterion Deepworks, The Seal, Witness, Fabricator, Moving Day, Dead Signal, Breaker Yard and Core of the Matter. Its story includes radio messages, collectible logs, miner rescues and a final choice. Mission progress, best results and collected records are saved in browser storage.
 
 - **Single player:** Continue the campaign, select a mission or try the practice and prototype levels. Earn credits for the hangar and buy ship upgrades. Four difficulty settings adjust the challenge.
-- **Online co-op:** Create or join a room for up to four pilots. Fly campaign missions or the two dedicated team missions, Twin Valves and Deep Freight. Teams share lives and can revive teammates, send quick messages and mark targets.
-- **Online Anarchy:** Free-for-all in Foundry Ring for up to eight pilots. Share a room code or invite link to play together.
+- **Online co-op:** Create or join a room for up to four pilots. Share the invite link from the waiting room, see who has joined, and start when the host is ready. Fly campaign missions or the two dedicated team missions, Twin Valves and Deep Freight. Teams share lives and can revive teammates, send quick messages and mark targets.
+- **Online Anarchy:** Free-for-all in Foundry Ring for up to eight pilots. The host starts the match from the waiting room after sharing the room code or invite link.
 - **Daily challenge:** Each UTC day selects an authored mission and modifier. The challenge uses the stock ship and saves local results and streaks.
 - **My Levels:** Play, import, export and organize custom missions and user campaigns. With a configured game server, players can also share and browse levels online.
 

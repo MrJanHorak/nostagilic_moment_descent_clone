@@ -324,8 +324,8 @@ export default function createOnlineLobby(
         room: code,
         mode: roomMode === 'coop' ? 'coop' : 'anarchy',
         map,
+        lobby: true,
       });
-      overlay.remove();
       // The address bar becomes an invite link for this room.
       try {
         globalThis.history?.replaceState?.(
@@ -336,6 +336,45 @@ export default function createOnlineLobby(
       } catch {
         /* not in a browser */
       }
+      if (!match.waiting) { overlay.remove(); return; }
+      panel.replaceChildren();
+      heading.textContent = 'WAITING ROOM';
+      const detail = document.createElement('p');
+      detail.textContent = `Room ${match.room} · ${match.mode === 'coop' ? 'Co-op' : 'Anarchy'} · ${match.mapId}`;
+      const link = field('Invite link', 'online-invite', inviteLink(page.href, match.room, url), { readOnly: true });
+      const copy = button('COPY INVITE LINK', 'online-copy');
+      const players = document.createElement('ul');
+      players.id = 'online-players';
+      const waitingStatus = document.createElement('p');
+      waitingStatus.id = 'online-waiting-status';
+      waitingStatus.setAttribute('role', 'status');
+      const start = button('START GAME', 'online-start', true);
+      const leave = button('LEAVE ROOM', 'online-leave');
+      const controls = document.createElement('div');
+      Object.assign(controls.style, { display: 'flex', gap: '10px', flexWrap: 'wrap' });
+      controls.append(start, leave);
+      panel.append(heading, detail, link.wrap, copy, players, waitingStatus, controls);
+      copy.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(link.input.value); waitingStatus.textContent = 'Invite link copied.'; }
+        catch { link.input.focus(); link.input.select(); waitingStatus.textContent = 'Select and copy the invite link above.'; }
+      });
+      const refresh = () => {
+        players.replaceChildren(...match.roster.map(/** @param {{id: string, name: string}} player */ player => {
+          const item = document.createElement('li');
+          item.textContent = `${player.name}${player.id === match.hostId ? ' (host)' : ''}${player.id === match.id ? ' (you)' : ''}`;
+          return item;
+        }));
+        const host = match.hostId === match.id;
+        start.hidden = !host;
+        waitingStatus.textContent = host ? 'Invite your friends, then start when everyone is ready.' : 'Waiting for the host to start the game.';
+      };
+      match.onLobbyChange = refresh;
+      match.onStarted = () => overlay.remove();
+      match.onDisconnected = () => overlay.remove();
+      start.addEventListener('click', () => { start.disabled = true; match.send({ t: 'start' }); });
+      leave.addEventListener('click', () => { match.onDisconnected = null; game.leaveOnline(); overlay.remove(); onBack(); });
+      refresh();
+      start.hidden ? leave.focus() : start.focus();
     } catch (error) {
       status.textContent =
         /** @type {Error} */ (error).message || 'Unable to connect.';

@@ -73,15 +73,43 @@ Then trigger a redeploy (Deploys → Trigger deploy). The lobby's *Game server* 
 
 ## Updating the server after you push
 
-The startup script fetches the latest `main` each time it runs:
+Commit and push your changes to the branch deployed by the VM first. The startup
+script defaults to `main`, unless the VM's `branch` metadata specifies another
+branch. It fetches that branch, resets `/opt/descended` to it, installs runtime
+dependencies, and restarts the game server and Caddy. **The reset discards local
+code changes in `/opt/descended`, and restarting ends rooms in progress.** Data
+in `/var/lib/descended` is separate from the checkout.
 
-```bash
-gcloud compute ssh descended-server --zone=us-east1-b --command='sudo google_metadata_script_runner startup'
+On an existing VM, Git may reject the update with `detected dubious ownership`:
+the startup script runs as root, but the checkout is owned by the `descended`
+service user. If that happens, trust this specific checkout for root once:
+
+```powershell
+gcloud compute ssh descended-server --zone=us-east1-b --command="sudo git config --global --add safe.directory /opt/descended"
 ```
 
-Restarting the VM does the same (`gcloud compute instances reset descended-server --zone=us-east1-b`). Rooms in progress end when the server restarts.
+Then run the update (including after the one-time ownership fix):
+
+```powershell
+gcloud compute ssh descended-server --zone=us-east1-b --command="sudo google_metadata_script_runner startup"
+```
+
+Check the output for Git errors, even if the script reports exit status 0. Verify
+the deployed commit against the latest commit on the configured branch in GitHub,
+and check that the service is active:
+
+```powershell
+gcloud compute ssh descended-server --zone=us-east1-b --command="sudo git -C /opt/descended log -1 --oneline && sudo systemctl is-active descended"
+```
+
+The service should report `active`. Also check
+`https://<ip-with-dashes>.sslip.io/health`; a healthy response alone does not
+prove the latest commit was deployed. Restarting the VM also runs the startup
+script (`gcloud compute instances reset descended-server --zone=us-east1-b`).
 
 ## Useful extras
+
+The host-controlled online waiting room needs both the updated website and the updated game server. After pushing, update the VM and deploy the matching website; players should reload the site to get the new client.
 
 - **Logs:** `gcloud compute ssh descended-server --zone=us-east1-b --command='sudo journalctl -u descended -n 100 --no-pager'`
 - **Status:** `https://<ip-with-dashes>.sslip.io/health` shows the open rooms and connected players.

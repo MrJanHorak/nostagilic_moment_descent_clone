@@ -47,11 +47,11 @@ export function cleanName(value) {
 /** @param {unknown} value */
 const finite = value => typeof value === 'number' && Number.isFinite(value);
 
-/** @typedef {{t: 'hello', protocol: number, name: string, room: string | null, mode: 'anarchy' | 'coop', map: string | null}} HelloMessage */
+/** @typedef {{t: 'hello', protocol: number, name: string, room: string | null, mode: 'anarchy' | 'coop', map: string | null, lobby?: true}} HelloMessage */
 /** @typedef {{t: 'input', seq: number, input: import('../contracts.js').FlightInput, look: [number, number], fire: boolean, weapon: string | null, interact: boolean, rtt?: number}} InputMessage */
 /** @typedef {{t: 'ping', time: number}} PingMessage */
 /** @typedef {{t: 'signal', signal: import('../core/TeamSignals.js').TeamSignal}} SignalMessage */
-/** @typedef {HelloMessage | InputMessage | PingMessage | SignalMessage} ClientMessage */
+/** @typedef {HelloMessage | InputMessage | PingMessage | SignalMessage | {t: 'start'}} ClientMessage */
 
 /** Parse and clean one client frame. Unknown fields are dropped and amounts clamped,
  * so the server never trusts a client's numbers.
@@ -68,8 +68,9 @@ export function parseClientMessage(text) {
     // Creating a room may choose the mode and map; joining takes the room's.
     const mode = raw.mode === 'coop' ? 'coop' : 'anarchy';
     const map = typeof raw.map === 'string' && /^[a-z0-9-]{1,48}$/.test(raw.map) ? raw.map : null;
-    return { ok: true, message: { t: 'hello', protocol: PROTOCOL_VERSION, name: cleanName(raw.name), room, mode, map } };
+    return { ok: true, message: { t: 'hello', protocol: PROTOCOL_VERSION, name: cleanName(raw.name), room, mode, map, ...(raw.lobby === true ? { lobby: true } : {}) } };
   }
+  if (raw.t === 'start') return { ok: true, message: { t: 'start' } };
   if (raw.t === 'input') {
     if (!Number.isSafeInteger(raw.seq) || raw.seq < 0) return { ok: false, error: 'bad-seq' };
     /** @type {Record<string, boolean | number>} */ const input = {};

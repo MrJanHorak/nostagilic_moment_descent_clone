@@ -1016,7 +1016,7 @@ export default class Game {
 
   /** Join (or create, with no room code) an online Anarchy room on a game server.
    * Resolves once the match is running here; rejects with a readable message.
-   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null}} options */
+   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null, lobby?: boolean}} options */
   async joinOnline(options) {
     this.leaveOnline(); this.daily = null;
     const match = new OnlineMatch(this, options);

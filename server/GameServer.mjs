@@ -48,17 +48,17 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
   const fail = (connection, error) => { send(connection, { t: 'error', error }); connection.close(4000, error); };
 
   /** @param {'anarchy' | 'coop'} mode @param {string | null} map */
-  function newRoom(mode = 'anarchy', map = null) {
+  function newRoom(mode = 'anarchy', map = null, waiting = false) {
     let code;
     do code = makeRoomCode(); while (rooms.has(code));
-    const entry = { room: new MatchRoom({ code, rules, mode, mapId: map }), sockets: new Map(), emptySince: Date.now() };
+    const entry = { room: new MatchRoom({ code, rules, mode, mapId: map }), sockets: new Map(), emptySince: Date.now(), waiting, host: null };
     rooms.set(code, entry);
     log(`room ${code} opened`);
     return entry;
   }
 
   function roster(entry) {
-    const message = { t: 'roster', players: [...entry.room.players.values()].map(({ id, name }) => ({ id, name })) };
+    const message = { t: 'roster', players: [...entry.room.players.values()].map(({ id, name }) => ({ id, name })), host: entry.host, waiting: entry.waiting };
     for (const connection of entry.sockets.values()) send(connection, message);
   }
 
@@ -72,20 +72,27 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
       if (message.t === 'ping') { send(connection, { t: 'pong', time: message.time, tick: entry?.room.tick ?? 0 }); return; }
       if (message.t === 'hello') {
         if (pilotId) return;
-        try { entry = message.room ? rooms.get(message.room) : newRoom(message.mode, message.map); } catch { fail(connection, 'unknown-map'); return; }
+        try { entry = message.room ? rooms.get(message.room) : newRoom(message.mode, message.map, message.lobby === true); } catch { fail(connection, 'unknown-map'); return; }
         if (!entry) { fail(connection, 'room-not-found'); return; }
+        if (entry.waiting && !message.lobby) { fail(connection, 'lobby-version'); return; }
         if (entry.room.full) { fail(connection, 'room-full'); return; }
         clearTimeout(timer);
         const player = entry.room.join(message.name);
         pilotId = player.id; players++;
+        if (!entry.host) entry.host = pilotId;
         entry.sockets.set(pilotId, connection); entry.emptySince = null;
         send(connection, { t: 'welcome', id: pilotId, name: player.name, room: entry.room.code, mode: entry.room.mode, map: entry.room.mapId, seed: entry.room.seed,
-          tick: entry.room.tick, tickRate: TICK_RATE, snapshotEvery: SNAPSHOT_EVERY, rules: entry.room.match?.rules ?? null });
+          tick: entry.room.tick, tickRate: TICK_RATE, snapshotEvery: SNAPSHOT_EVERY, rules: entry.room.match?.rules ?? null, waiting: entry.waiting, host: entry.host });
         log(`room ${entry.room.code}: ${player.name} joined as ${pilotId}`);
         roster(entry);
         return;
       }
-      if (message.t === 'input' && pilotId) entry.room.input(pilotId, message);
+      if (message.t === 'start' && pilotId && entry.waiting && entry.host === pilotId) {
+        entry.waiting = false;
+        for (const other of entry.sockets.values()) send(other, { t: 'started' });
+        roster(entry);
+      }
+      if (message.t === 'input' && pilotId && !entry.waiting) entry.room.input(pilotId, message);
       if (message.t === 'signal' && pilotId) {
         const relay = entry.room.signal(pilotId, message.signal);
         if (relay) for (const other of entry.sockets.values()) send(other, relay);
@@ -95,6 +102,7 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
       clearTimeout(timer);
       if (!pilotId || !entry) return;
       entry.room.leave(pilotId); entry.sockets.delete(pilotId); players--;
+      if (entry.host === pilotId) entry.host = entry.sockets.keys().next().value ?? null;
       log(`room ${entry.room.code}: ${pilotId} left`);
       if (!entry.sockets.size) entry.emptySince = Date.now();
       roster(entry);
@@ -114,7 +122,7 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
       if (entry.emptySince !== null && Date.now() - entry.emptySince > EMPTY_ROOM_MS) {
         entry.room.dispose(); rooms.delete(code); log(`room ${code} closed`); continue;
       }
-      if (!entry.sockets.size) continue;
+      if (!entry.sockets.size || entry.waiting) continue;
       for (let i = 0; i < steps; i++) {
         entry.room.step();
         if (entry.room.tick % SNAPSHOT_EVERY === 0) {

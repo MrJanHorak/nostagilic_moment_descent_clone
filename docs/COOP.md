@@ -88,6 +88,8 @@ A new room plays Anarchy by default; `hello` may ask for `mode: 'coop'` and a `m
 
 Choose **PLAY ONLINE · ANARCHY & CO-OP**, then pick a mission under *New room plays*.
 
+The host can share the invite link from the waiting room and see each pilot join before choosing **START GAME**. The server's mission clock and simulation do not run while waiting. If the host leaves, the next player becomes host. Players may still join a running room.
+
 - **Robots are puppets.** No robot AI runs on a client: robots are drawn from snapshots, interpolated 100 ms behind like other ships. Shields come from the server. A robot the server destroys explodes here and counts for the mission.
 - **Robot fire** is drawn from `eshot` events and hurts nobody here (`ProjectileManager.harmless`); damage arrives in snapshots.
 - **Your shots** are drawn at once but damage robots only on the server.

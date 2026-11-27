@@ -1,5 +1,7 @@
 # Anarchy (Phase 3)
 
+New rooms open in a waiting room: share the invite link or code, check the roster, and have the host choose **START GAME**. The server clock stays stopped until then. If the host leaves before starting, the next player becomes host. Joining a match already in progress remains possible.
+
 Free-for-all deathmatch: every pilot for themselves. Phase 3 built it in five steps; all five are done, so friends can now play each other online.
 
 | Step | What | Status |

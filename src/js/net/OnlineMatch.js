@@ -29,15 +29,21 @@ export function describeNetError(code) {
     'connect-failed': 'Could not reach the game server. Check the address (ws:// or wss://) and that the server is running.',
     'connection-lost': 'The connection to the game server was lost.',
     'unknown-map': 'The server does not have that mission.',
+    'lobby-version': 'This room requires an updated game client. Reload the page.',
   })[code] ?? `The server refused the connection (${code}).`;
 }
 
 export default class OnlineMatch {
   /** @param {any} game the Game (browser or headless)
-   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null, WebSocketImpl?: typeof WebSocket, now?: () => number}} options
+   * @param {{url: string, name?: string, room?: string | null, mode?: 'anarchy' | 'coop', map?: string | null, lobby?: boolean, WebSocketImpl?: typeof WebSocket, now?: () => number}} options
    *   `mode` and `map` choose what a new room plays; joining takes the room's. */
-  constructor(game, { url, name = 'Pilot', room = null, mode = 'anarchy', map = null, WebSocketImpl = globalThis.WebSocket, now = () => performance.now() }) {
+  constructor(game, { url, name = 'Pilot', room = null, mode = 'anarchy', map = null, lobby = false, WebSocketImpl = globalThis.WebSocket, now = () => performance.now() }) {
     this.game = game; this.url = url; this.name = name; this.requestedRoom = room;
+    this.requestLobby = lobby; this.waiting = false; this.hostId = null;
+    /** @type {{id: string, name: string}[]} */ this.roster = [];
+    /** @type {(() => void) | null} */ this.onLobbyChange = null;
+    /** @type {(() => void) | null} */ this.onStarted = null;
+    /** @type {(() => void) | null} */ this.onDisconnected = null;
     /** @type {'anarchy' | 'coop'} */ this.mode = mode; this.requestedMap = map;
     /** The server's co-op state from the latest snapshot. @type {any} */ this.coopState = null;
     this.interactQueued = false;
@@ -76,7 +82,7 @@ export default class OnlineMatch {
       this.socket = socket;
       socket.addEventListener('open', () => {
         this.connected = true;
-        this.send({ t: 'hello', protocol: PROTOCOL_VERSION, name: this.name, room: this.requestedRoom || null, mode: this.mode, map: this.requestedMap });
+        this.send({ t: 'hello', protocol: PROTOCOL_VERSION, name: this.name, room: this.requestedRoom || null, mode: this.mode, map: this.requestedMap, ...(this.requestLobby ? { lobby: true } : {}) });
       });
       socket.addEventListener('message', event => {
         /** @type {any} */ let message;
@@ -92,7 +98,7 @@ export default class OnlineMatch {
       socket.addEventListener('close', () => {
         this.connected = false;
         if (!this.id) finish(Object.assign(new Error(describeNetError('connect-failed')), { code: 'connect-failed' }));
-        else if (!this.closedByUs) this.game.onlineConnectionLost?.(this);
+        else if (!this.closedByUs) { this.onDisconnected?.(); this.game.onlineConnectionLost?.(this); }
       });
     });
   }
@@ -105,6 +111,7 @@ export default class OnlineMatch {
   /** @param {any} message */
   onWelcome(message) {
     const game = this.game;
+    if (this.requestLobby && typeof message.waiting !== 'boolean') throw new Error('The game server needs an update before it can use the waiting room.');
     this.id = message.id; this.room = message.room; this.mapId = message.map; this.seed = message.seed;
     this.names.set(message.id, message.name);
     this.mode = message.mode === 'coop' ? 'coop' : 'anarchy';
@@ -112,16 +119,25 @@ export default class OnlineMatch {
     this.levelIndex = game.levelManager.levels.findIndex(/** @param {any} level */ level => level.id === message.map &&
       (coop ? !!level.mission && level.mode !== 'anarchy' : level.mode === 'anarchy'));
     if (this.levelIndex < 0) throw new Error(coop ? `This game has no mission "${message.map}"` : `This game has no Anarchy map "${message.map}"`);
-    game.gameState.localPilot.id = message.id;
+    this.waiting = message.waiting === true; this.hostId = message.host ?? null;
     game.online = this;
-    if (!game.startSession({ endless: false, levelIndex: this.levelIndex, seed: message.seed, coop })) throw new Error('Unable to start the online match');
-    game.uiManager?.showMessage?.(`ONLINE ${coop ? 'CO-OP' : 'ANARCHY'} · Room ${message.room} · Share the code to bring friends in`, 4000, '#9ce5ed');
+    if (this.waiting) return;
+    this.startGame();
+  }
+
+  startGame() {
+    const game = this.game, coop = this.mode === 'coop';
+    game.gameState.localPilot.id = this.id;
+    if (!game.startSession({ endless: false, levelIndex: this.levelIndex, seed: this.seed, coop })) throw new Error('Unable to start the online match');
+    if (this.roster.length) this.onRoster(this.roster);
+    game.uiManager?.showMessage?.(`ONLINE ${coop ? 'CO-OP' : 'ANARCHY'} · Room ${this.room} · Share the code to bring friends in`, 4000, '#9ce5ed');
   }
 
   /** @param {any} message */
   handle(message) {
     if (message.t === 'snapshot') this.onSnapshot(message);
-    else if (message.t === 'roster') this.onRoster(message.players);
+    else if (message.t === 'roster') { this.hostId = message.host ?? this.hostId; this.onRoster(message.players); }
+    else if (message.t === 'started' && this.waiting) { this.waiting = false; this.startGame(); this.onStarted?.(); }
     else if (message.t === 'signal') { const { from, kind, phrase, p } = message; this.game.showSignal?.(from, kind === 'quick' ? { kind, phrase } : { kind, p }); }
     else if (message.t === 'pong') this.rttMs = Math.max(0, this.now() - message.time);
     else if (message.t === 'error') console.warn('Game server:', message.error);
@@ -130,6 +146,8 @@ export default class OnlineMatch {
   /** Keeps a ship in this game for every other player in the room.
    * @param {{id: string, name: string}[]} players */
   onRoster(players) {
+    this.roster = players;
+    if (this.waiting) { this.onLobbyChange?.(); return; }
     const game = this.game, present = new Set(players.map(player => player.id));
     for (const [index, player] of players.entries()) {
       this.names.set(player.id, player.name);
