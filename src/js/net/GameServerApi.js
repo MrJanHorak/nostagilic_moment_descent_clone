@@ -108,6 +108,7 @@ export function leaderboardLines(result, name) {
     result.rank
       ? `Server leaderboard: you are #${result.rank}`
       : 'Server leaderboard',
+    'Unverified runs; difficulty and upgrades may differ.',
   ];
   for (const [i, entry] of result.entries.slice(0, 5).entries())
     lines.push(

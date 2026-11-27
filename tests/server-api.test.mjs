@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import { startGameServer } from '../server/GameServer.mjs';
 import { readFileSync } from 'node:fs';
 import { parTimeMs, rateMission, bestMedal } from '../src/js/core/MissionRating.js';
+import { leaderboardLines } from '../src/js/net/GameServerApi.js';
 
 async function server(t, options = {}) {
   const running = await startGameServer({ port: 0, host: '127.0.0.1', log: () => {}, ...options });
@@ -41,6 +42,23 @@ test('leaderboard keeps each pilot\'s best time, ranks by time and persists to D
   assert.equal((await post('/scores', { mission: 'signal-breach', name: 'X', timeMs: 5, score: 1 }, { 'x-forwarded-for': '4.4.4.4' })).status, 400, 'impossible time');
   const saved = JSON.parse(await readFile(join(dataDir, 'scores.json'), 'utf8'));
   assert.equal(saved['signal-breach'].length, 2);
+});
+
+test('leaderboard retains all game difficulty IDs and defaults unknown values', async t => {
+  const { post } = await server(t);
+  for (const [index, difficulty] of ['trainee', 'pilot', 'veteran', 'insane', 'unknown'].entries()) {
+    const response = await post('/scores', { mission: 'signal-breach', name: `Pilot${index}`, timeMs: 150_000, score: 100, difficulty },
+      { 'x-forwarded-for': `192.0.2.${index + 1}` });
+    assert.equal(response.status, 200);
+    const result = await response.json();
+    assert.equal(result.personalBest.difficulty, difficulty === 'unknown' ? 'pilot' : difficulty);
+  }
+});
+
+test('leaderboard results disclose that submitted times may use different settings', () => {
+  const lines = leaderboardLines({ rank: 1, entries: [{ name: 'Ada', timeMs: 60_000 }] }, 'Ada');
+  assert.match(lines.join('\n'), /Unverified runs; difficulty and upgrades may differ/);
+  assert.match(lines.join('\n'), /Ada 1:00/);
 });
 
 test('shared levels: upload validates, lists, downloads and only an admin can delete', async t => {

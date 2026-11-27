@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { randomBytes } from 'node:crypto';
 import { cleanName } from '../src/js/net/Protocol.js';
 import { isMedal } from '../src/js/core/MissionRating.js';
+import { isDifficultyId } from '../src/js/core/Difficulty.js';
 import { isCurrentDailyId } from '../src/js/core/DailyChallenge.js';
 import { validateLevelDocument } from '../src/js/core/levels/document/validateLevelDocument.js';
 
@@ -24,7 +25,6 @@ export const API_LIMITS = Object.freeze({
   levelIntervalMs: 60_000,
   levelNameLength: 48,
 });
-const DIFFICULTIES = new Set(['cadet', 'pilot', 'veteran', 'ace']);
 const LEVEL_ID = /^[a-z0-9]{10}$/;
 
 /** @param {{dataDir?: string | null, allowOrigins?: string[] | null, missionIds?: Iterable<string>, adminToken?: string | null, now?: () => number}} options */
@@ -101,7 +101,7 @@ export async function createHttpApi({ dataDir = null, allowOrigins = null, missi
     if (!Number.isFinite(timeMs) || timeMs < 10_000 || timeMs > 7_200_000) return { error: 'bad-time' };
     if (!Number.isFinite(score) || score < 0 || score > 10_000_000) return { error: 'bad-score' };
     return { mission, entry: { name: cleanName(body.name), timeMs, score, medal: isMedal(body.medal) ? body.medal : null,
-      difficulty: DIFFICULTIES.has(body.difficulty) ? body.difficulty : 'pilot', at: new Date(now()).toISOString() } };
+      difficulty: isDifficultyId(body.difficulty) ? body.difficulty : 'pilot', at: new Date(now()).toISOString() } };
   }
 
   /** Handle an API request. Returns false for paths that are not the API's.

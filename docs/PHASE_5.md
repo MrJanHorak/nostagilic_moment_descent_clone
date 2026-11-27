@@ -41,7 +41,7 @@ Built by `scripts/build-act3.mjs` and registered as campaign missions 9–11. Th
   - The server keeps each pilot name's best time (top 20 per mission), ranked by time, then score.
   - Only built-in campaign and team missions count. Times must be 10 s to 2 h, and each address may post once every 5 s.
 - **Client:** `src/js/net/GameServerApi.js`. After a campaign or team mission, the game posts the run if Play Online has a server and a pilot name. It then adds "you are #N" and the top 5 to the results screen. With no server it does nothing.
-- These are honour-system leaderboards: the server checks that values are plausible, but it cannot prove a run happened. Server-verified runs would need the mission to be replayed on the server.
+- These are honour-system leaderboards: the server checks that values are plausible, but it cannot prove a run happened. Server-verified runs would need the mission to be replayed on the server. A mission board mixes difficulty levels and hangar upgrades, so its times are not directly comparable; the results screen labels this limitation. Difficulty IDs from new submissions are saved accurately, but older entries previously recorded as `pilot` cannot be reconstructed automatically.
 
 ## Step 5: sharing levels online
 
