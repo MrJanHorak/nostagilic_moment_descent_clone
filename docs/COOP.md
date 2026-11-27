@@ -117,9 +117,9 @@ The host can share the invite link from the waiting room and see each pilot join
 
 ## Known gaps
 
-- Shot-opened doors and the reactor are simulated on each screen from the shots drawn there; with heavy lag a door may open a moment apart on different screens.
+- Shot-opened door progress and reactor health are sent by the server, including to late joiners.
 - The exploration map on each screen shows only that pilot's discoveries.
-- Story radio follows each screen's pilot; recovered logs are counted on the server but each screen shows the ones it saw collected.
+- Story radio follows each screen's pilot; recovered logs and miners are synchronized from the server.
 - Lag compensation for hits was added on November 25 (see below).
 
 ## Lag compensation

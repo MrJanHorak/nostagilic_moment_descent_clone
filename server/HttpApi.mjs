@@ -10,6 +10,8 @@ import { isMedal } from '../src/js/core/MissionRating.js';
 import { isDifficultyId } from '../src/js/core/Difficulty.js';
 import { isCurrentDailyId } from '../src/js/core/DailyChallenge.js';
 import { validateLevelDocument } from '../src/js/core/levels/document/validateLevelDocument.js';
+import { createAccountStore, createFirebaseVerifier } from './FirebaseAccounts.mjs';
+import { parseProgress } from '../src/js/core/ProgressBackup.js';
 
 export const API_LIMITS = Object.freeze({
   /** Entries kept per mission leaderboard (one per pilot name). */
@@ -28,8 +30,10 @@ export const API_LIMITS = Object.freeze({
 const LEVEL_ID = /^[a-z0-9]{10}$/;
 
 /** @param {{dataDir?: string | null, allowOrigins?: string[] | null, missionIds?: Iterable<string>, adminToken?: string | null, now?: () => number}} options */
-export async function createHttpApi({ dataDir = null, allowOrigins = null, missionIds = [], adminToken = null, now = () => Date.now() } = {}) {
+export async function createHttpApi({ dataDir = null, allowOrigins = null, missionIds = [], adminToken = null, firebaseProjectId = null, now = () => Date.now() } = {}) {
   const missions = new Set(missionIds);
+  const accounts = dataDir && firebaseProjectId ? createAccountStore(dataDir) : null;
+  const verifyAccount = firebaseProjectId ? createFirebaseVerifier(firebaseProjectId) : null;
   /** mission id -> best entries @type {Record<string, {name: string, timeMs: number, score: number, medal: string | null, difficulty: string, at: string}[]>} */
   let scores = {};
   /** @type {{id: string, name: string, author: string, rooms: number, version: number, createdAt: string, downloads: number}[]} */
@@ -108,15 +112,30 @@ export async function createHttpApi({ dataDir = null, allowOrigins = null, missi
    * @param {import('node:http').IncomingMessage} request @param {import('node:http').ServerResponse} response */
   async function handle(request, response) {
     const url = new URL(request.url ?? '/', 'http://local');
-    if (!url.pathname.startsWith('/scores') && !url.pathname.startsWith('/levels')) return false;
+    if (!url.pathname.startsWith('/scores') && !url.pathname.startsWith('/levels') && !url.pathname.startsWith('/account/')) return false;
     const origin = corsOrigin(request);
     if (request.method === 'OPTIONS') {
-      response.writeHead(origin ? 204 : 403, origin ? { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, POST, DELETE, OPTIONS',
+      response.writeHead(origin ? 204 : 403, origin ? { 'access-control-allow-origin': origin, 'access-control-allow-methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'access-control-allow-headers': 'content-type, authorization', 'access-control-max-age': '86400', vary: 'Origin' } : {});
       response.end(); return true;
     }
     if (allowOrigins && request.headers.origin && !origin) { send(response, 403, { error: 'origin' }, null); return true; }
     try {
+      if (url.pathname === '/account/progress' && ['GET', 'PUT'].includes(request.method ?? '')) {
+        if (!accounts || !verifyAccount) { send(response, 503, { error: 'accounts-unavailable' }, origin); return true; }
+        const bearer = /^Bearer ([A-Za-z0-9_.-]+)$/.exec(request.headers.authorization ?? '');
+        if (!bearer) { send(response, 401, { error: 'unauthorized' }, origin); return true; }
+        let uid;
+        try { uid = await verifyAccount(bearer[1]); }
+        catch (error) { send(response, /** @type {Error} */ (error).message === 'unauthorized' ? 401 : 503, { error: 'authentication-failed' }, origin); return true; }
+        if (request.method === 'GET') { send(response, 200, await accounts.read(uid), origin); return true; }
+        const body = await readBody(request);
+        if (!Number.isSafeInteger(body?.revision) || body.revision < 0) { send(response, 400, { error: 'bad-revision' }, origin); return true; }
+        try { parseProgress(JSON.stringify(body.progress)); } catch { send(response, 400, { error: 'invalid-progress' }, origin); return true; }
+        const saved = await accounts.write(uid, body.revision, body.progress);
+        if ('conflict' in saved) { send(response, 409, { error: 'save-conflict', revision: saved.revision }, origin); return true; }
+        send(response, 200, { revision: saved.revision }, origin); return true;
+      }
       // ── Leaderboards ──
       if (url.pathname === '/scores' && request.method === 'GET') {
         const mission = url.searchParams.get('mission') ?? '';

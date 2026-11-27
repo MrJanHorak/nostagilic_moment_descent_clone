@@ -318,6 +318,7 @@ export default class OnlineMatch {
   applyCoop(state, serverTimeMs) {
     const game = this.game, robots = game.enemyManager;
     this.coopState = state;
+    game.story?.syncDiscoveries?.(state.logs ?? [], state.aboard ?? [], serverTimeMs);
     if (game.coop) { game.coop.lives = state.lives; game.coop.checkpointLabel = state.checkpoint; }
     const byId = new Map(state.enemies.map(/** @param {any} enemy */ enemy => [enemy.id, enemy]));
     for (const enemy of state.enemies) this.interpolator.push(`e:${enemy.id}`, serverTimeMs, { p: enemy.p, q: enemy.q, v: [0, 0, 0], alive: enemy.a });
@@ -342,6 +343,7 @@ export default class OnlineMatch {
       const device = interaction.devices.find(/** @param {any} candidate */ candidate => candidate.id === id);
       if (device) { interaction.activate(device); game.completeDeviceObjective({ id, label: device.label }); }
     }
+    if (state.world) interaction?.syncNetworkState?.(state.world);
     if (game.session.phase === 'paused' && state.phase !== 'playing') game.resumeGame?.();
     if (game.session.phase === 'playing') {
       if (state.phase === 'completed' && game.mission) { game.mission.completed = true; this.holdStill(); game.completeSession(); }

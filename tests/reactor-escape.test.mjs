@@ -13,10 +13,33 @@ import LevelManager from '../src/js/core/LevelManager.js';
 import EnemyManager from '../src/js/entities/EnemyManager.js';
 import ProjectileManager from '../src/js/entities/ProjectileManager.js';
 import PowerUpManager from '../src/js/entities/PowerUpManager.js';
+import fs from 'node:fs';
+import compileLevelDocument from '../src/js/core/levels/document/compileLevelDocument.js';
+import buildArena from '../src/js/core/ArenaGeometry.js';
+import RelayController from '../src/js/core/RelayController.js';
+import disposeObject from '../src/js/utils/disposeObject.js';
 
 const definition = { type: 'relay-clear-and-exit', requiredEnemyIds: ['guard'], requiredDeviceIds: ['coolant', 'reactor'],
   escape: { triggerDeviceId: 'reactor', durationSeconds: 60 }, exit: { position: [0, 0, 0], radius: 1.5 } };
 function arm(mission, now = 1000) { mission.recordDefeat('guard', 'shot'); mission.recordDeviceActivation('coolant', now); return mission.recordDeviceActivation('reactor', now); }
+
+test('co-op reactor snapshots synchronize health and remove the destroyed collider', t => {
+  const document = JSON.parse(fs.readFileSync(new URL('../src/js/core/levels/documents/asterion-deepworks.v13.json', import.meta.url), 'utf8'));
+  const level = compileLevelDocument(document), worlds = [buildArena(level), buildArena(level)];
+  const sessions = worlds.map(() => { const session = new GameSession(); session.begin(); session.transition('playing'); return session; });
+  const [server, client] = worlds.map((world, i) => new RelayController(level, world.group, world.colliders, sessions[i]));
+  t.after(() => { for (const world of worlds) disposeObject(world.group); for (const session of sessions) session.end(); });
+  const core = server.reactors[0];
+  server.hitReactor(core.collider, 10);
+  client.syncNetworkState(server.networkState());
+  assert.equal(client.reactors[0].health, core.health);
+  server.hitReactor(core.collider, 10000);
+  client.syncNetworkState(server.networkState());
+  assert.equal(client.reactors[0].health, 0);
+  assert.equal(client.reactors[0].mesh.visible, false);
+  assert.equal(worlds[1].colliders.includes(client.reactors[0].collider), false);
+  assert.equal(client.activatedIds.has(core.device.id), true);
+});
 
 test('reactor requires every other objective, arms exactly once and keeps a full simulation-time allowance', () => {
   const mission = new MissionObjective(definition);

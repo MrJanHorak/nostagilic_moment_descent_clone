@@ -299,6 +299,7 @@ export default class Game {
         } : {}),
         onExplosion: (position, radius) => this.enemyManager.effectsManager.createExplosion(position, 0xff8833, true, radius),
         onWallHit: (collider, projectile, position) => {
+          if (this.online?.coopState?.world) return;
           const reactor = this.levelManager.interaction?.hitReactor(collider, level.combat?.pulseDamage ?? projectile.power, id => this.mission?.canActivateDevice(id) ?? true);
           if (reactor) {
             if (reactor.blocked) this.uiManager.showMessage('REACTOR SHIELDED · Clear required drones and other controls first', 1800, '#ffce77');
@@ -488,7 +489,7 @@ export default class Game {
     const authored = !!ratedLevel?.id && !!(ratedLevel.campaignOrder || ratedLevel.team) && this.currentLevelIndex !== this.importedLevelIndex;
     const kills = Object.values(this.gameState.enemyKills).reduce((sum, value) => sum + value, 0);
     const hangar = (this.hangar ??= new Hangar());
-    const kind = !authored ? 'other' : hangar.markCleared(/** @type {string} */ (ratedLevel.id)) ? 'first' : 'replay';
+    const kind = !authored || this.online ? 'other' : hangar.markCleared(/** @type {string} */ (ratedLevel.id)) ? 'first' : 'replay';
     this.lastCredits = this.online ? null : { earned: hangar.earn(creditsForRun({ kills, rescued: this.lastStorySummary?.rescued ?? 0,
       logs: this.lastStorySummary?.logsFound ?? 0, medal: this.lastRating?.medal ?? null, kind })), total: this.hangar.credits };
     // Daily challenge: keep the best run of the day and the streak.
@@ -745,7 +746,7 @@ export default class Game {
     this.session.advance(delta);
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     if (!this.online && (this.mission?.failed || this.mission?.updateEscape(this.session.timeMs))) { this.die('reactor'); return; }
-    this.levelManager.interaction?.update(delta);
+    this.levelManager.interaction?.update(delta, !this.online?.coopState?.world);
     for (const id of this.levelManager.interaction?.expired ?? []) {
       const label = this.levelManager.interaction?.devices.find(/** @param {any} device */ device => device.id === id)?.label ?? id;
       this.uiManager?.showMessage(`LINK LOST · ${label} disarmed · both relays must be activated together`, 2600, '#ff9944');
@@ -783,7 +784,7 @@ export default class Game {
     }
     if (this.session.id !== generation || this.session.phase !== 'playing') return;
     this.exploration?.update(this.spaceship.group.position);
-    this.story?.update(this.spaceship.group.position, this.session.timeMs, this.wingmatePositions());
+    this.story?.update(this.spaceship.group.position, this.session.timeMs, this.wingmatePositions(), !this.online);
     this.enemyManager.setLevelSegments(this.levelManager.getLevelSegments());
     this.enemyManager.updateEnemies(delta);
     if (this.session.phase !== 'playing') return;

@@ -71,8 +71,9 @@ export default class StoryController {
 
   /** Per simulation step: room-entry messages, collection and presentation.
    * @param {THREE.Vector3} position @param {number} timeMs
-   * @param {readonly THREE.Vector3[]} [wingmates] other pilots' positions (co-op), who can also collect */
-  update(position, timeMs, wingmates = []) {
+   * @param {readonly THREE.Vector3[]} [wingmates] other pilots' positions (co-op), who can also collect
+   * @param {boolean} [collect] whether this simulation owns collection */
+  update(position, timeMs, wingmates = [], collect = true) {
     this.now = timeMs;
     const room = this.navigation.roomAt(position);
     if (room !== null && room !== this.lastRoom) { this.lastRoom = room; this.fire(trigger => trigger.on === 'enter' && trigger.roomId === room); }
@@ -80,12 +81,14 @@ export default class StoryController {
     const reached = /** @param {import('../levelDocument.js').Vec3} at @param {number} radius */ (at, radius) =>
       this.touching(at, position, radius) || wingmates.some(other => this.touching(at, other, radius));
     for (const log of this.story.logs) {
+      if (!collect) break;
       if (this.foundLogs.has(log.id) || !reached(log.world, LOG_RADIUS)) continue;
       this.foundLogs.add(log.id); this.remove(log.id);
       this.history.push({ kind: 'log', label: log.title, text: log.text, timeMs });
       this.emit({ kind: 'log', id: log.id, title: log.title, text: log.text, found: this.foundLogs.size, total: this.story.logs.length });
     }
     for (const survivor of this.story.survivors) {
+      if (!collect) break;
       if (this.aboard.has(survivor.id) || !reached(survivor.world, SURVIVOR_RADIUS)) continue;
       this.aboard.add(survivor.id); this.remove(survivor.id);
       this.emit({ kind: 'survivor', id: survivor.id, name: survivor.name, aboard: this.aboard.size, total: this.story.survivors.length });
@@ -94,6 +97,23 @@ export default class StoryController {
     for (const [id, mesh] of this.meshes) {
       if (mesh.name.startsWith('story-log:')) { mesh.rotation.y = t * 1.6; mesh.position.y = (this.story.logs.find(log => log.id === id)?.world[1] ?? 0) + Math.sin(t * 2) * 0.08; }
       else animateSurvivor(mesh, t, mesh.userData.phase ?? 0, position);
+    }
+  }
+
+  /** Apply the server's team discoveries, including ones made before a player joined.
+   * @param {readonly string[]} logs @param {readonly string[]} survivors @param {number} timeMs */
+  syncDiscoveries(logs, survivors, timeMs) {
+    const found = new Set(logs), aboard = new Set(survivors);
+    for (const log of this.story.logs) {
+      if (!found.has(log.id) || this.foundLogs.has(log.id)) continue;
+      this.foundLogs.add(log.id); this.remove(log.id);
+      this.history.push({ kind: 'log', label: log.title, text: log.text, timeMs });
+      this.emit({ kind: 'log', id: log.id, title: log.title, text: log.text, found: this.foundLogs.size, total: this.story.logs.length });
+    }
+    for (const survivor of this.story.survivors) {
+      if (!aboard.has(survivor.id) || this.aboard.has(survivor.id)) continue;
+      this.aboard.add(survivor.id); this.remove(survivor.id);
+      this.emit({ kind: 'survivor', id: survivor.id, name: survivor.name, aboard: this.aboard.size, total: this.story.survivors.length });
     }
   }
 

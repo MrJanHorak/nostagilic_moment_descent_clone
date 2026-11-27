@@ -9,6 +9,7 @@ import UserCampaignLibrary from '../core/UserCampaignLibrary.js';
 import { missionLabel } from './UserCampaigns.js';
 import NavigationDisplay from './NavigationDisplay.js';
 import { formatMissionTime } from '../core/CampaignProgress.js';
+import { exportProgress, importProgress, parseProgress, MAX_BACKUP_BYTES } from '../core/ProgressBackup.js';
 import { DIFFICULTIES } from '../core/Difficulty.js';
 import { keyLabel } from '../core/ControlBindings.js';
 import CommsPanel from './CommsPanel.js';
@@ -697,6 +698,39 @@ class UIManager {
       const settingsButton = this.createSettingsButton();
       Object.assign(settingsButton.style, { display: 'block', margin: '16px auto 0' });
       startScreen.querySelector('.title-container').appendChild(settingsButton);
+      const transfer = document.createElement('div');
+      Object.assign(transfer.style, { display: 'flex', justifyContent: 'center', gap: '8px', flexWrap: 'wrap', margin: '10px auto' });
+      const exportButton = document.createElement('button'), importButton = document.createElement('button');
+      exportButton.id = 'export-progress-btn'; exportButton.textContent = 'EXPORT PROGRESS';
+      importButton.id = 'import-progress-btn'; importButton.textContent = 'IMPORT PROGRESS';
+      for (const button of [exportButton, importButton]) Object.assign(button.style, { padding: '7px 10px', color: '#ccefff', background: '#16344b', border: '1px solid #4b91a9', borderRadius: '5px', cursor: 'pointer' });
+      const file = document.createElement('input'); file.type = 'file'; file.accept = '.json,application/json'; file.hidden = true;
+      const transferStatus = document.createElement('p'); transferStatus.id = 'progress-transfer-status'; transferStatus.setAttribute('role', 'status');
+      Object.assign(transferStatus.style, { color: '#bdeafa', textAlign: 'center', font: '13px system-ui', margin: '4px' });
+      exportButton.onclick = () => {
+        try {
+          const blob = new Blob([exportProgress(globalThis.localStorage)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob), link = document.createElement('a');
+          link.href = url; link.download = 'descended-progress.json'; link.click(); URL.revokeObjectURL(url);
+          transferStatus.textContent = 'Progress exported. Copy the file to your other computer.';
+        } catch { transferStatus.textContent = 'Could not export progress from browser storage.'; }
+      };
+      importButton.onclick = () => file.click();
+      file.onchange = async () => {
+        const selected = file.files?.[0]; file.value = '';
+        if (!selected) return;
+        try {
+          if (selected.size > MAX_BACKUP_BYTES) throw new Error('This progress file is too large.');
+          const text = await selected.text();
+          // Validate before asking to replace the current browser's progress.
+          parseProgress(text);
+          if (!globalThis.confirm('Replace this browser’s campaign progress, hangar and daily records with the backup? Export the current progress first if you want to keep it.')) return;
+          importProgress(globalThis.localStorage, text);
+          globalThis.location.reload();
+        } catch (error) { transferStatus.textContent = /** @type {Error} */ (error).message || 'Could not import progress.'; }
+      };
+      transfer.append(exportButton, importButton, file);
+      startScreen.querySelector('.title-container').append(transfer, transferStatus);
       Object.assign(startScreen.querySelector('.title-container').style, {
         boxSizing: 'border-box', maxHeight: 'calc(100dvh - 32px)', overflowY: 'auto' });
 

@@ -105,10 +105,57 @@ export default class RelayController {
     return { ...reactor.device, health: reactor.health, destroyed: !reactor.health, blocked: false };
   }
 
+  /** Authoritative shot-operated doors and reactor health for online clients. */
+  networkState() {
+    return {
+      doors: this.slides.filter(slide => slide.door.activation === 'shot').map(slide => ({ id: slide.door.id, elapsed: slide.elapsed })),
+      reactors: this.reactors.map(reactor => ({ id: reactor.device.id, health: reactor.health })),
+    };
+  }
+
+  /** Apply server-owned world changes, including when joining after they occurred.
+   * @param {{doors?: {id: string, elapsed: number}[], reactors?: {id: string, health: number}[]}} state */
+  syncNetworkState(state) {
+    for (const remote of state.doors ?? []) {
+      const slide = this.slides.find(value => value.door.id === remote.id && value.door.activation === 'shot');
+      if (!slide || !Number.isFinite(remote.elapsed) || remote.elapsed < 0) continue;
+      // Never move an already opening door backward between snapshots.
+      slide.elapsed = Math.max(slide.elapsed, Math.min(DOOR_OPEN_SECONDS, remote.elapsed));
+      this.placeSlide(slide);
+    }
+    for (const remote of state.reactors ?? []) {
+      const reactor = this.reactors.find(value => value.device.id === remote.id);
+      if (!reactor || !Number.isFinite(remote.health)) continue;
+      reactor.health = Math.max(0, remote.health);
+      if (reactor.health !== 0) continue;
+      if (!this.activatedIds.has(reactor.device.id)) this.activate(reactor.device);
+      if (reactor.mesh) reactor.mesh.visible = false;
+      if (reactor.collider) {
+        const index = this.colliders.indexOf(reactor.collider); if (index !== -1) this.colliders.splice(index, 1);
+      }
+    }
+  }
+
+  /** @param {(typeof this.slides)[number]} slide */
+  placeSlide(slide) {
+    const t = slide.elapsed / DOOR_OPEN_SECONDS, eased = t * t * (3 - 2 * t), axis = slide.door.slideAxis ?? 0;
+    for (const panel of slide.panels) {
+      const offset = new Vector3().setComponent(axis, panel.side * (slide.door.solid.size[axis] / 2 + 0.06) * eased);
+      panel.mesh.position.copy(panel.origin).add(offset); panel.collider.box.copy(panel.box).translate(offset);
+    }
+    if (slide.elapsed === DOOR_OPEN_SECONDS && this.closedConnections.has(slide.door.connectionId)) {
+      for (const panel of slide.panels) {
+        panel.mesh.visible = false;
+        const index = this.colliders.indexOf(panel.collider); if (index !== -1) this.colliders.splice(index, 1);
+      }
+      this.closedConnections.delete(slide.door.connectionId); this.revision++;
+    }
+  }
+
   /** Simulation time controls both the panels and their collision. Navigation
    * remains closed until the passage is fully clear; pause freezes the motion.
-   * @param {number} delta */
-  update(delta) {
+   * @param {number} delta @param {boolean} [advanceShotDoors] */
+  update(delta, advanceShotDoors = true) {
     this.expired = [];
     if (!this.isLive() || !Number.isFinite(delta) || delta <= 0) return;
     for (const [id, until] of this.armed) {
@@ -118,20 +165,10 @@ export default class RelayController {
     this.fieldTime += delta;
     for (const material of this.fieldMaterials) material.uniforms.time.value = this.fieldTime;
     for (const slide of this.slides) {
+      if (!advanceShotDoors && slide.door.activation === 'shot') continue;
       if (slide.elapsed < 0 || slide.elapsed >= DOOR_OPEN_SECONDS) continue;
       slide.elapsed = Math.min(DOOR_OPEN_SECONDS, slide.elapsed + delta);
-      const t = slide.elapsed / DOOR_OPEN_SECONDS, eased = t * t * (3 - 2 * t), axis = slide.door.slideAxis ?? 0;
-      for (const panel of slide.panels) {
-        const offset = new Vector3().setComponent(axis, panel.side * (slide.door.solid.size[axis] / 2 + 0.06) * eased);
-        panel.mesh.position.copy(panel.origin).add(offset); panel.collider.box.copy(panel.box).translate(offset);
-      }
-      if (slide.elapsed === DOOR_OPEN_SECONDS) {
-        for (const panel of slide.panels) {
-          panel.mesh.visible = false;
-          const index = this.colliders.indexOf(panel.collider); if (index !== -1) this.colliders.splice(index, 1);
-        }
-        this.closedConnections.delete(slide.door.connectionId); this.revision++;
-      }
+      this.placeSlide(slide);
     }
   }
 

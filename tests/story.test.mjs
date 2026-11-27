@@ -97,6 +97,19 @@ test('logs and survivors are collected once by flying through them and reported 
   assert.equal(scene.getObjectByName('story-content'), undefined);
 });
 
+test('online team discoveries are server-owned, recorded once and available to late joiners', t => {
+  const { level, story, events } = controller(t);
+  const [log] = level.story.logs, [survivor] = level.story.survivors;
+  story.update(new THREE.Vector3(...log.world), 0, [], false);
+  assert.equal(story.summary().logsFound, 0, 'client proximity does not collect');
+  story.syncDiscoveries([log.id], [survivor.id], 100);
+  story.syncDiscoveries([log.id], [survivor.id], 200);
+  assert.deepEqual(story.summary(), { logsFound: 1, logsTotal: 2, logIds: [log.id], rescued: 1, survivorsTotal: 2 });
+  assert.equal(events.filter(event => event.kind === 'log').length, 1);
+  assert.equal(events.filter(event => event.kind === 'survivor').length, 1);
+  assert.ok(story.history.some(entry => entry.kind === 'log' && entry.label === log.title));
+});
+
 function signalGame(t) {
   t.mock.method(console, 'log', () => {}); t.mock.method(Math, 'random', () => 0.5);
   const original = Object.getOwnPropertyDescriptor(globalThis, 'document');

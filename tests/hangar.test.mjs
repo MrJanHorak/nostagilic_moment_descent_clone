@@ -40,6 +40,20 @@ test('upgrade effects', () => {
   assert.equal(top.maxHealth, 130); assert.ok(Math.abs(top.power - 1.3) < 1e-9); assert.ok(Math.abs(top.ammo - 1.45) < 1e-9); assert.ok(Math.abs(top.speed - 1.15) < 1e-9);
 });
 
+test('an online completion does not use the solo first-clear hangar reward', t => {
+  const game = headlessGame(t);
+  game.hangar = new Hangar(() => /** @type {any} */ (memory()));
+  const signal = game.levelManager.levels.findIndex(level => level.id === 'signal-breach');
+  game.selectLevel(signal);
+  game.online = /** @type {any} */ ({ holdStill() {} });
+  game.mission.completed = true;
+  game.completeSession();
+  assert.equal(game.lastCredits, null);
+  assert.equal(game.hangar.cleared.has('signal-breach'), false);
+  assert.equal(game.hangar.markCleared('signal-breach'), true);
+  game.online = null;
+});
+
 test('in the game: upgrades apply in single player, never in the daily challenge, and missions pay credits', t => {
   const game = headlessGame(t);
   game.hangar = new Hangar(() => /** @type {any} */ (memory()));

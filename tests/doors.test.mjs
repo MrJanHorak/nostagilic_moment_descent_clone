@@ -98,6 +98,23 @@ test('real player shots spend ammo, stop at the first wall and trigger a door on
   assert.equal(hits(), 2); assert.equal(controller.revision, 1); assert.equal(state.score, 0);
 });
 
+test('online shot doors follow authoritative progress including for late joiners', t => {
+  const server = fixture(t), client = fixture(t);
+  const slide = server.controller.slides[0];
+  server.controller.hitDoor(slide.panels[0].collider);
+  server.controller.update(DOOR_OPEN_SECONDS / 2);
+  client.controller.syncNetworkState(server.controller.networkState());
+  const remote = client.controller.slides[0];
+  assert.equal(remote.elapsed, slide.elapsed);
+  assert.ok(remote.panels[0].mesh.position.distanceTo(slide.panels[0].mesh.position) < 1e-9);
+  client.controller.update(1, false);
+  assert.equal(remote.elapsed, slide.elapsed, 'online shot doors do not advance independently');
+  server.controller.update(DOOR_OPEN_SECONDS);
+  client.controller.syncNetworkState(server.controller.networkState());
+  assert.equal(client.controller.closedConnections.size, 0);
+  assert.ok(remote.panels.every(panel => !client.world.colliders.includes(panel.collider)));
+});
+
 test('hostile shots cannot open doors; pause, retirement and stale sessions freeze door motion', t => {
   const { shots, player, tick, controller, world, state, hits } = fixture(t);
   const mesh = new THREE.Group(); mesh.position.set(0, 0, -12);

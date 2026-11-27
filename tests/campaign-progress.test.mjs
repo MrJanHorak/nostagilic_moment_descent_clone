@@ -1,5 +1,26 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { exportProgress, importProgress, parseProgress, PROGRESS_KEYS } from '../src/js/core/ProgressBackup.js';
+
+test('portable progress transfers campaign, hangar and daily records and rejects invalid files before writing', () => {
+  const makeStorage = initial => {
+    const values = new Map(Object.entries(initial));
+    return { getItem: key => values.get(key) ?? null, setItem: (key, value) => values.set(key, value), removeItem: key => values.delete(key) };
+  };
+  const source = makeStorage({
+    [PROGRESS_KEYS[0]]: JSON.stringify({ version: 1, missions: { 'signal-breach': { completions: 1, bestScore: 100, bestTimeMs: 5000 } } }),
+    [PROGRESS_KEYS[1]]: JSON.stringify({ version: 1, credits: 500, levels: {}, cleared: [] }),
+    [PROGRESS_KEYS[2]]: JSON.stringify({ version: 1, days: {} }),
+  });
+  const destination = makeStorage({});
+  const backup = exportProgress(source);
+  importProgress(destination, backup);
+  for (const key of PROGRESS_KEYS) assert.deepEqual(JSON.parse(destination.getItem(key)), JSON.parse(source.getItem(key)));
+  const before = destination.getItem(PROGRESS_KEYS[0]);
+  assert.throws(() => importProgress(destination, '{"format":"descended-progress","version":1,"records":{}}'), /invalid/);
+  assert.equal(destination.getItem(PROGRESS_KEYS[0]), before);
+  assert.throws(() => parseProgress('x'.repeat(1_000_001)), /large/);
+});
 import CampaignProgress, { CAMPAIGN_PROGRESS_KEY, formatMissionTime } from '../src/js/core/CampaignProgress.js';
 import Game from '../src/js/main.js';
 import createCampaign from '../src/js/core/levels/Campaign.js';

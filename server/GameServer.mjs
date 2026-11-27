@@ -19,13 +19,13 @@ const MAX_CATCH_UP = 10;
  * @param {{port?: number, host?: string, log?: (line: string) => void, rules?: object, allowOrigins?: string[] | null, dataDir?: string | null, adminToken?: string | null}} [options]
  * @returns {Promise<{port: number, rooms: Map<string, any>, close: () => Promise<void>}>}
  */
-export async function startGameServer({ port = 8787, host = '0.0.0.0', log = line => console.log(line), rules = {}, allowOrigins = null, dataDir = null, adminToken = null } = {}) {
+export async function startGameServer({ port = 8787, host = '0.0.0.0', log = line => console.log(line), rules = {}, allowOrigins = null, dataDir = null, adminToken = null, firebaseProjectId = null } = {}) {
   /** code -> { room, sockets: Map<pilotId, connection>, emptySince } */
   const rooms = new Map();
   let players = 0;
 
   // Leaderboards and shared levels (Phase 5), stored in dataDir when given.
-  const api = await createHttpApi({ dataDir, allowOrigins, adminToken, missionIds: [...campaignDocuments, ...teamDocuments].map(document => document.id) });
+  const api = await createHttpApi({ dataDir, allowOrigins, adminToken, firebaseProjectId, missionIds: [...campaignDocuments, ...teamDocuments].map(document => document.id) });
   const http = createServer(async (request, response) => {
     if (await api.handle(request, response)) return;
     if (request.url === '/health' || request.url === '/') {

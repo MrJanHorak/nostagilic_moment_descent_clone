@@ -222,6 +222,7 @@ export default class MatchRoom {
         hp: Math.max(0, Math.round(enemy.health * 10) / 10), a: !!enemy.isActive })),
       defeated: [...game.enemyManager.destroyedPredefinedEnemies],
       relays: [...(game.levelManager.interaction?.activatedIds ?? [])],
+      world: game.levelManager.interaction?.networkState() ?? null,
       armed: game.levelManager.interaction?.armedState() ?? [],
       ready: !!mission?.ready, escapeMs: mission?.remainingEscapeMs(game.session.timeMs) ?? null,
       lives: coop.lives, respawnInMs: respawnAt === undefined ? null : Math.max(0, respawnAt - game.session.timeMs),
