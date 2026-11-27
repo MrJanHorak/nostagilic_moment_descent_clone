@@ -98,11 +98,16 @@ test('development: invited player waits with the host until the host starts', as
     await expect(guest.locator('#online-players')).toContainText('Host (host)');
     await expect(host.locator('#online-players')).toContainText('Guest');
     await expect(guest.locator('#online-start')).toBeHidden();
+    await expect(guest.locator('#online-bots')).toBeHidden();
     await expect(guest.locator('#online-waiting-status')).toContainText('Waiting for the host');
     expect([...server.rooms.values()][0].room.game.session.timeMs).toBe(0);
+    await expect(host.locator('#online-bot-difficulty')).toBeHidden();
+    await host.locator('#online-bots').selectOption('2');
+    await host.locator('#online-bot-difficulty').selectOption('hard');
     await host.locator('#online-start').click();
     await expect(host.locator('#online-lobby')).toHaveCount(0);
     await expect(guest.locator('#online-lobby')).toHaveCount(0);
-    await expect(guest.locator('#arena-guide')).toContainText('2 pilots');
+    await expect(guest.locator('#arena-guide')).toContainText('4 pilots');
+    expect([...server.rooms.values()][0].room.botDifficulty).toBe('hard');
   } finally { await hostContext.close(); await guestContext.close(); await server.close(); }
 });

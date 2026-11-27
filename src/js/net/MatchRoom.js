@@ -46,6 +46,7 @@ export default class MatchRoom {
     this.tick = 0; this.nextId = 1; this.seed = 0;
     /** @type {Set<string>} */ this.bots = new Set();
     /** @type {Map<string, BotPilot>} */ this.botPilots = new Map();
+    /** @type {'easy' | 'normal' | 'hard'} */ this.botDifficulty = 'normal';
     /** @type {number | null} */ this.overTick = null;
     this.start(seed ?? Math.floor(random() * 4294967296));
   }
@@ -115,9 +116,10 @@ export default class MatchRoom {
     return true;
   }
 
-  /** Add computer pilots up to the available room capacity. @param {number} count */
-  addBots(count) {
+  /** Add computer pilots up to the available room capacity. @param {number} count @param {'easy' | 'normal' | 'hard'} [difficulty] */
+  addBots(count, difficulty = 'normal') {
     if (this.mode !== 'anarchy') return;
+    this.botDifficulty = difficulty;
     for (let i = 0; i < count && !this.full; i++) {
       const player = this.join(`Bot ${i + 1}`);
       this.bots.add(player.id);
@@ -133,11 +135,11 @@ export default class MatchRoom {
       if (!brain) {
         const document = this.game.levelManager.currentLevel?.sourceDocument;
         if (!document) continue;
-        brain = new BotPilot(document); this.botPilots.set(id, brain);
+        brain = new BotPilot(document, this.botDifficulty, id); this.botPilots.set(id, brain);
       }
       const opponents = [...this.players.keys()].filter(other => other !== id).map(other => this.game.gameState.pilot(other));
       const command = brain.command(this.game, pilot, opponents, player.lastFireMs);
-      this.input(id, { t: 'input', seq: player.lastSeq + 1, ...command, look: /** @type {[number, number]} */ (command.look), weapon: null, interact: false });
+      this.input(id, { t: 'input', seq: player.lastSeq + 1, ...command, look: /** @type {[number, number]} */ (command.look), interact: false });
     }
   }
 

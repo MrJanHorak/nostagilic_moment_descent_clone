@@ -108,17 +108,20 @@ test('waiting room freezes the clock, restricts start to the host and transfers 
   guest.send({ t: 'hello', protocol: 1, name: 'Guest', room: welcome.room, lobby: true });
   const joined = await guest.next(type('welcome'));
   await host.next(message => message.t === 'roster' && message.players.length === 2);
-  guest.send({ t: 'start' });
+  guest.send({ t: 'start', bots: 2, botDifficulty: 'hard' });
   await new Promise(resolve => setTimeout(resolve, 150));
   const entry = rooms.get(welcome.room);
   assert.equal(entry.waiting, true); assert.equal(entry.room.tick, 0); assert.equal(entry.room.game.session.timeMs, 0);
   host.socket.close();
   const roster = await guest.next(message => message.t === 'roster' && message.host === joined.id);
   assert.equal(roster.players.length, 1);
-  guest.send({ t: 'start' });
+  guest.send({ t: 'start', bots: 2, botDifficulty: 'hard' });
   await guest.next(type('started'));
   const snapshot = await guest.next(type('snapshot'));
   assert.ok(snapshot.timeMs > 0); assert.equal(entry.waiting, false);
+  assert.equal(entry.room.botDifficulty, 'hard');
+  assert.equal(entry.room.bots.size, 2);
+  assert.equal(snapshot.pilots.length, 3);
 });
 
 test('a room refuses a ninth player and other origins can be blocked', async t => {

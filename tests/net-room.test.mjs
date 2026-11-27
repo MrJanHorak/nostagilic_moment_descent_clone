@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import MatchRoom, { REMATCH_DELAY_MS } from '../src/js/net/MatchRoom.js';
+import BotPilot from '../src/js/net/BotPilot.js';
 import { MAX_LOOK_PER_INPUT, MIN_FIRE_INTERVAL_MS, isRoomCode, makeRoomCode, parseClientMessage, cleanName } from '../src/js/net/Protocol.js';
 
 const input = (seq, extra = {}) => /** @type {any} */ (parseClientMessage(JSON.stringify({ t: 'input', seq, ...extra }))).message;
@@ -17,6 +18,8 @@ test('client messages are cleaned: unknown fields dropped, amounts and turns cla
   const message = input(3, { input: { forward: true, left: 7, speedHack: 9, up: -1 }, look: [5, -5], fire: 'yes', weapon: 'nuke' });
   assert.deepEqual(message, { t: 'input', seq: 3, input: { forward: true, left: 1 }, look: [MAX_LOOK_PER_INPUT, -MAX_LOOK_PER_INPUT], fire: false, weapon: null, interact: false });
   assert.equal(parseClientMessage(JSON.stringify({ t: 'input', seq: -1 })).error, 'bad-seq');
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'start', bots: 3, botDifficulty: 'hard' })).message.botDifficulty, 'hard');
+  assert.equal(parseClientMessage(JSON.stringify({ t: 'start', botDifficulty: 'unfair' })).message.botDifficulty, undefined);
   assert.equal(cleanName(''), 'Pilot'); assert.equal(cleanName('x'.repeat(40)).length, 16);
   for (let i = 0; i < 20; i++) assert.ok(isRoomCode(makeRoomCode()));
 });
@@ -71,6 +74,25 @@ test('a bot with low ammunition collects an available ammo pickup', t => {
   bot.weaponInventory.pulse.ammo = 0;
   for (let i = 0; i < 5 * 60 && bot.weaponInventory.pulse.ammo === 0; i++) match.step();
   assert.ok(bot.weaponInventory.pulse.ammo > 0, 'collects ammo using normal pickup rules');
+});
+
+test('bot difficulty changes fire cadence and bots use available weapons', t => {
+  const match = room(t), human = match.join('Ana'); match.addBots(1, 'hard');
+  const id = [...match.bots][0], bot = match.game.gameState.pilot(id), target = match.game.gameState.pilot(human.id);
+  bot.ship.group.position.set(0, 0, 6); bot.ship.group.quaternion.identity();
+  target.ship.group.position.set(0, 0, -6);
+  bot.weaponInventory.laser = { unlocked: true, ammo: 2 };
+  const doc = match.game.levelManager.currentLevel.sourceDocument;
+  const hard = new BotPilot(doc, 'hard', id), easy = new BotPilot(doc, 'easy', id);
+  const lastFire = match.game.session.timeMs - 400;
+  assert.equal(hard.command(match.game, bot, [target], lastFire).fire, true);
+  assert.equal(easy.command(match.game, bot, [target], lastFire).fire, false);
+  match.step();
+  assert.equal(bot.currentWeapon, 'laser');
+  assert.ok(match.events.some(event => event.t === 'shot' && event.owner === id && event.weapon === 'laser'));
+  bot.weaponInventory.laser.ammo = 0;
+  match.step();
+  assert.equal(bot.currentWeapon, 'pulse', 'falls back when special ammunition runs out');
 });
 const steps = (match, count) => { for (let i = 0; i < count; i++) match.step(); };
 

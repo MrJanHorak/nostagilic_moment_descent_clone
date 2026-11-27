@@ -88,7 +88,7 @@ export async function startGameServer({ port = 8787, host = '0.0.0.0', log = lin
         return;
       }
       if (message.t === 'start' && pilotId && entry.waiting && entry.host === pilotId) {
-        entry.room.addBots(message.bots ?? 0);
+        entry.room.addBots(message.bots ?? 0, message.botDifficulty);
         roster(entry);
         entry.waiting = false;
         for (const other of entry.sockets.values()) send(other, { t: 'started' });

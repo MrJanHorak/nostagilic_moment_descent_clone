@@ -355,6 +355,15 @@ export default function createOnlineLobby(
       Object.assign(bots.style, { padding: '9px', color: '#e8fbff', background: '#0b2433', border: '1px solid #3f7f95', borderRadius: '5px', font: '16px system-ui' });
       for (let i = 0; i <= 7; i++) bots.add(new Option(i === 0 ? 'None' : `${i} ${i === 1 ? 'bot' : 'bots'}`, String(i)));
       botWrap.append(bots);
+      const difficultyWrap = document.createElement('label');
+      Object.assign(difficultyWrap.style, { display: 'grid', gap: '5px', color: '#fff' });
+      difficultyWrap.textContent = 'Bot difficulty';
+      const botDifficulty = document.createElement('select');
+      botDifficulty.id = 'online-bot-difficulty';
+      Object.assign(botDifficulty.style, { padding: '9px', color: '#e8fbff', background: '#0b2433', border: '1px solid #3f7f95', borderRadius: '5px', font: '16px system-ui' });
+      for (const [label, value] of [['Easy', 'easy'], ['Normal', 'normal'], ['Hard', 'hard']]) botDifficulty.add(new Option(label, value));
+      botDifficulty.value = 'normal';
+      difficultyWrap.append(botDifficulty);
       const waitingStatus = document.createElement('p');
       waitingStatus.id = 'online-waiting-status';
       waitingStatus.setAttribute('role', 'status');
@@ -363,7 +372,7 @@ export default function createOnlineLobby(
       const controls = document.createElement('div');
       Object.assign(controls.style, { display: 'flex', gap: '10px', flexWrap: 'wrap' });
       controls.append(start, leave);
-      panel.append(heading, detail, link.wrap, copy, players, botWrap, waitingStatus, controls);
+      panel.append(heading, detail, link.wrap, copy, players, botWrap, difficultyWrap, waitingStatus, controls);
       copy.addEventListener('click', async () => {
         try { await navigator.clipboard.writeText(link.input.value); waitingStatus.textContent = 'Invite link copied.'; }
         catch { link.input.focus(); link.input.select(); waitingStatus.textContent = 'Select and copy the invite link above.'; }
@@ -385,15 +394,18 @@ export default function createOnlineLobby(
         const host = match.hostId === match.id;
         start.hidden = !host;
         botWrap.style.display = host && match.mode === 'anarchy' ? 'grid' : 'none';
+        difficultyWrap.style.display = host && match.mode === 'anarchy' && Number(bots.value) > 0 ? 'grid' : 'none';
         const available = Math.max(0, 8 - match.roster.length);
         for (const option of bots.options) option.disabled = Number(option.value) > available;
         if (Number(bots.value) > available) bots.value = String(available);
+        if (!Number(bots.value)) difficultyWrap.style.display = 'none';
         waitingStatus.textContent = host ? 'Invite your friends, then start when everyone is ready.' : 'Waiting for the host to start the game.';
       };
       match.onLobbyChange = refresh;
       match.onStarted = () => overlay.remove();
       match.onDisconnected = () => overlay.remove();
-      start.addEventListener('click', () => { start.disabled = true; match.send({ t: 'start', bots: match.mode === 'anarchy' ? Number(bots.value) : 0 }); });
+      bots.addEventListener('change', refresh);
+      start.addEventListener('click', () => { start.disabled = true; match.send({ t: 'start', bots: match.mode === 'anarchy' ? Number(bots.value) : 0, botDifficulty: botDifficulty.value }); });
       leave.addEventListener('click', () => { match.onDisconnected = null; game.leaveOnline(); overlay.remove(); onBack(); });
       refresh();
       start.hidden ? leave.focus() : start.focus();
